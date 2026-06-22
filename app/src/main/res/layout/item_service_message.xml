@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="11dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_money"
+                app:tint="@color/green_primary" />
+
+            <TextView
+                android:id="@+id/tvServiceTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Service Payment"
+                android:textColor="@color/green_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium" />
+
+            <TextView
+                android:id="@+id/tvPaymentStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PENDING"
+                android:textColor="@color/orange_primary"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:background="@drawable/bg_badge_orange" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="12dp"
+            android:background="@color/ripple_gray" />
+
+        <!-- Service Name -->
+        <TextView
+            android:id="@+id/tvServiceName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Consultation"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_medium" />
+
+        <!-- Fee Details -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Total Fee:"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_regular" />
+
+            <TextView
+                android:id="@+id/tvTotalFee"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50,000 TZS"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_medium" />
+        </LinearLayout>
+
+        <!-- Patient Percentage -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/tvPercentageLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="You Pay (50%):"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_regular" />
+
+            <TextView
+                android:id="@+id/tvPatientPay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="25,000 TZS"
+                android:textColor="@color/green_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium" />
+        </LinearLayout>
+
+        <!-- Pay Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPay"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="12dp"
+            android:text="PAY NOW"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_medium"
+            app:cornerRadius="12dp"
+            app:backgroundTint="@color/green_primary"
+            app:icon="@drawable/ic_money"
+            app:iconTint="@color/white"
+            app:iconGravity="textStart" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

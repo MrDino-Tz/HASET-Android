@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:background="@drawable/option_background"
+    android:padding="4dp"
+    android:orientation="horizontal">
+
+    <!-- English Toggle -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cvEn"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerEn"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:shimmer_auto_start="true">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/shimmer_circle_placeholder" />
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <ImageView
+                android:id="@+id/ivFlagEn"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_language"
+                app:tint="@color/green_primary" />
+
+            <TextView
+                android:id="@+id/tvEn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="EN"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="@font/poppins_medium" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <View
+        android:layout_width="8dp"
+        android:layout_height="0dp" />
+
+    <!-- Swahili Toggle -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cvSw"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerSw"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:shimmer_auto_start="true">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/shimmer_circle_placeholder" />
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <ImageView
+                android:id="@+id/ivFlagSw"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_language"
+                app:tint="@color/green_primary" />
+
+            <TextView
+                android:id="@+id/tvSw"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="SW"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="@font/poppins_medium" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

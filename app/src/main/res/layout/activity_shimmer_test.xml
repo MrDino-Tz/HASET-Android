@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/background_primary">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Shimmer Effect Test"
+        android:textColor="@color/text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:id="@+id/testText"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="This text will be replaced with shimmer"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:background="@color/background_card"
+        android:layout_marginBottom="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp">
+
+        <Button
+            android:id="@+id/btnShowShimmer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Show Shimmer"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/green_primary" />
+
+        <Button
+            android:id="@+id/btnHideShimmer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Hide Shimmer"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/colorError" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnListShimmer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test List Shimmer (5 items)"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/info_color"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="List Container:"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+</LinearLayout>

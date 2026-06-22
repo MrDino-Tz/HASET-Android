@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- Banner shimmer -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_shimmer_rounded" />
+
+    <!-- Section title shimmer -->
+    <View
+        android:layout_width="140dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_shimmer_rounded" />
+
+    <!-- Cards shimmer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:layout_marginTop="12dp">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+    </LinearLayout>
+
+    <!-- Popular Articles section -->
+    <View
+        android:layout_width="140dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_shimmer_rounded" />
+
+    <!-- Article items shimmer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:layout_marginTop="12dp">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+    </LinearLayout>
+
+    <!-- Quick Access section -->
+    <View
+        android:layout_width="120dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_shimmer_rounded" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:layout_marginTop="12dp">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_shimmer_rounded" />
+    </LinearLayout>
+
+    <!-- Health Quote section -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_shimmer_rounded" />
+
+</LinearLayout>

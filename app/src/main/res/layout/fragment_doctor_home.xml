@@ -1,0 +1,731 @@
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="80dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Top Header Bar (Matching Patient UI) -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- Profile Photo/Initials Container -->
+                <FrameLayout
+                    android:id="@+id/profileImageContainer"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color"
+                    android:background="@drawable/bg_search_circle">
+
+                    <com.facebook.shimmer.ShimmerFrameLayout
+                        android:id="@+id/shimmerProfileHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:shimmer_auto_start="true"
+                        app:shimmer_base_alpha="0.8"
+                        app:shimmer_highlight_alpha="1.0">
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_search_circle" />
+                    </com.facebook.shimmer.ShimmerFrameLayout>
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/ivProfileHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/profile_photo"
+                        android:visibility="gone"
+                        app:civ_border_width="1dp"
+                        app:civ_border_color="@color/divider" />
+
+                    <TextView
+                        android:id="@+id/tvUserInitials"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_search_circle"
+                        android:foreground="@drawable/ripple_effect_circular"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:fontFamily="@font/poppins"
+                        android:gravity="center"
+                        android:text="DN"
+                        android:textColor="@color/green_primary"
+                        android:textSize="18sp" />
+                </FrameLayout>
+
+                <!-- Greeting and Name -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="12dp"
+                    android:layout_toEndOf="@id/profileImageContainer"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvGreeting"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="@string/good_morning"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="-2dp"/>
+
+                    <TextView
+                        android:id="@+id/tvDoctorName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="Dr. Davis"
+                        android:textColor="@color/green_primary"
+                        android:textSize="15sp"
+                        android:layout_marginTop="-2dp"/>
+                </LinearLayout>
+
+                <!-- Action Buttons (Status Toggle, Notification) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <!-- Online Status Toggle -->
+                    <LinearLayout
+                        android:id="@+id/llOnlineStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_status_toggle"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground">
+
+                        <View
+                            android:id="@+id/statusIndicator"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/bg_status_dot_offline" />
+
+                        <TextView
+                            android:id="@+id/tvOnlineStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:fontFamily="@font/poppins_medium"
+                            android:text="@string/offline"
+                            android:textColor="@color/text_hint"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Notification Icon with Badge -->
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:id="@+id/ivNotification"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:foreground="@drawable/ripple_effect_circular"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:stateListAnimator="@animator/press_scale"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_bell"
+                            app:tint="@color/green_primary"
+                            android:elevation="24dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+
+                        <TextView
+                            android:id="@+id/tvNotificationBadge"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="top|end"
+                            android:background="@drawable/bg_notification_badge"
+                            android:gravity="center"
+                            android:textColor="@color/white"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            android:elevation="25dp"
+                            tools:text="3"
+                            tools:visibility="visible" />
+                    </FrameLayout>
+
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Full Page Shimmer Loading -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerPageLoading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="visible"
+                app:shimmer_auto_start="true"
+                app:shimmer_duration="1200">
+
+                <include layout="@layout/shimmer_doctor_home" />
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Main Content Container (toggled with shimmer) -->
+            <LinearLayout
+                android:id="@+id/layoutHomeContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <!-- Quick Stats Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="14dp"
+                    android:layout_marginTop="8dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:src="@drawable/ic_calendar"
+                            app:tint="@color/green_dark" />
+
+                        <TextView
+                            android:id="@+id/tvTodayDate"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Today, Nov 22"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins_medium"/>
+
+                        <LinearLayout
+                            android:id="@+id/llWallet"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:background="@drawable/ripple_effect_rounded"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="4dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="8dp"
+                                android:src="@drawable/ic_money"
+                                app:tint="@color/green_dark" />
+
+                            <TextView
+                                android:id="@+id/tvWalletBalance"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="••••TZS"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/poppins_medium"/>
+
+                            <ImageView
+                                android:id="@+id/ivToggleWalletBalance"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginStart="6dp"
+                                android:src="@drawable/ic_eye"
+                                android:padding="2dp"
+                                android:alpha="0.4"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                app:tint="@color/green_dark" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Stats Cards with improved layout -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    android:orientation="horizontal"
+                    android:weightSum="3"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardPending"
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:foreground="@drawable/ripple_effect_rounded"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        app:cardBackgroundColor="@color/status_pending"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="24dp"
+                        app:strokeColor="@color/white_primary"
+                        app:strokeWidth="1dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="0dp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_pending"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:id="@+id/tvPendingCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:text="0"
+                                android:textColor="@color/white"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/poppins_black"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:text="@string/pending"
+                                android:textColor="@color/white_dark"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/poppins_medium"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardApproved"
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_marginHorizontal="8dp"
+                        android:layout_weight="1"
+                        android:foreground="@drawable/ripple_effect_rounded"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        app:cardBackgroundColor="@color/status_approved"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="24dp"
+                        app:strokeColor="@color/white_light"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="0dp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_completed"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:id="@+id/tvApprovedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:fontFamily="@font/poppins_black"
+                                android:text="0"
+                                android:textColor="@color/white"
+                                android:textSize="26sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:text="@string/approved"
+                                android:textColor="@color/white_dark"
+                                android:textSize="14sp"
+                                android:fontFamily="@font/poppins_medium"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardCancelled"
+                        android:layout_width="0dp"
+                        android:layout_height="120dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:foreground="@drawable/ripple_effect_rounded"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        app:cardBackgroundColor="@color/status_declined"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="24dp"
+                        android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                        android:outlineSpotShadowColor="@color/chat_shadow_color"
+                        app:strokeColor="@color/white_light"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="0dp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:src="@drawable/ic_close"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:id="@+id/tvCancelledCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:text="0"
+                                android:textColor="@color/white"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/poppins_black"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="0dp"
+                                android:text="@string/canceled"
+                                android:textColor="@color/white_dark"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/poppins_medium"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Quick Actions and Services -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="24dp"
+                    android:fontFamily="@font/poppins"
+                    android:text="@string/quick_actions"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginHorizontal="10dp"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:weightSum="4"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <!-- Schedule -->
+                    <LinearLayout
+                        android:id="@+id/llSchedule"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="18dp"
+                            android:src="@drawable/ic_schedule"
+                            app:tint="@color/green_primary"
+                            android:elevation="24dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="@string/schedule"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <!-- Patients -->
+                    <LinearLayout
+                        android:id="@+id/llPatients"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="18dp"
+                            android:src="@drawable/ic_appointment"
+                            app:tint="@color/green_primary"
+                            android:elevation="24dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="@string/patients"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <!-- Articles -->
+                    <LinearLayout
+                        android:id="@+id/llArticlesAction"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="18dp"
+                            android:src="@drawable/ic_news_paper"
+                            app:tint="@color/green_primary"
+                            android:elevation="24dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="@string/articles"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                </LinearLayout>
+
+                <!-- Recent Appointments Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginEnd="24dp"
+                        android:layout_marginBottom="16dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/recent_appointments"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/poppins" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnViewAll"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            app:cornerRadius="12dp"
+                            app:strokeColor="@color/green_primary"
+                            app:strokeWidth="1dp"
+                            android:text="@string/view_all"
+                            android:textColor="@color/green_primary"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/poppins_medium"
+                            style="@style/Widget.Material3.Button.TextButton" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnFilter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="@color/green_primary"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            app:cornerRadius="12dp"
+                            app:icon="@drawable/ic_filter"
+                            app:iconGravity="textStart"
+                            app:iconPadding="4dp"
+                            app:iconTint="@color/white"
+                            android:text="@string/filter"
+                            android:textColor="@color/white"
+                            android:textSize="13sp"
+                            android:fontFamily="@font/poppins_medium"
+                            style="@style/Widget.Material3.Button.TextButton" />
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvRecentAppointments"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:orientation="horizontal"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="8dp"
+                        tools:listitem="@layout/item_appointment_recent" />
+
+                </LinearLayout>
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/emptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:src="@drawable/ic_empty_calendar"
+                        app:tint="@color/white_dark" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/no_pending_appointments"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="@string/all_caught_up"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginVertical="32dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

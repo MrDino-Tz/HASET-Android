@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="180dp"
+    android:orientation="vertical"
+    android:background="@color/green_primary"
+    android:padding="26dp"
+    android:gravity="bottom"
+    android:fitsSystemWindows="false">
+
+    <FrameLayout
+        android:id="@+id/layoutNavHeaderProfile"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginBottom="12dp">
+
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmerNavHeaderProfile"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:shimmer_auto_start="true"
+            app:shimmer_base_alpha="0.8"
+            app:shimmer_highlight_alpha="1.0">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/shimmer_circle" />
+
+        </com.facebook.shimmer.ShimmerFrameLayout>
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/navHeaderProfileImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/profile_photo"
+            />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/navHeaderUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Admin User"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium" />
+
+    <TextView
+        android:id="@+id/navHeaderUserEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="admin@hasetapp.com"
+        android:textColor="@color/white_light"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_regular"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>
+

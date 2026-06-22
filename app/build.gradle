@@ -1,0 +1,157 @@
+plugins {
+    alias(libs.plugins.android.application)
+    id 'com.google.gms.google-services' version '4.4.0'
+}
+
+android {
+    namespace 'com.haset.hasetapp'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.haset.hasetapp"
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Only include ARM architectures (exclude x86/x86_64 for emulators)
+        // This reduces APK size from ~201MB to ~60MB
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a'
+        }
+        
+        // Room schema export location (for database migration tracking)
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
+    }
+
+    signingConfigs {
+        release {
+            def keystoreFile = rootProject.file("haset-release.jks")
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword System.getenv("STORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    
+    buildFeatures {
+        viewBinding true
+    }
+    
+    // Fix for 16 KB page alignment (Android 15+ compatibility)
+    // Setting this to true extracts native libs at install time, avoiding alignment issues
+    // with older libraries like Fresco (libimagepipeline.so) that are not 16KB aligned.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+dependencies {
+
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    implementation libs.lifecycle.livedata.ktx
+    implementation libs.lifecycle.viewmodel.ktx
+    implementation libs.androidx.browser
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+    
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-database'
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-storage'
+    
+    // Room Database (Local Storage)
+    implementation 'androidx.room:room-runtime:2.6.1'
+    annotationProcessor 'androidx.room:room-compiler:2.6.1'
+    
+    // OkHttp BOM (Bill of Materials) - must be declared as platform
+    implementation platform('com.squareup.okhttp3:okhttp-bom:4.12.0')
+    implementation 'com.squareup.okhttp3:okhttp'
+    implementation 'com.squareup.okhttp3:logging-interceptor'
+    
+    // Retrofit for API
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    
+    // Lifecycle & ViewModel
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.6.2'
+    
+    // Navigation
+    implementation 'androidx.navigation:navigation-fragment:2.7.6'
+    implementation 'androidx.navigation:navigation-ui:2.7.6'
+    
+    // RecyclerView & CardView
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    
+    // ViewPager2
+    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+    
+    // SwipeRefreshLayout
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    
+    // Glide for images
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+    
+    // CircleImageView
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
+    
+    // Material DateTime Picker
+    implementation 'com.google.android.material:material:1.11.0'
+    
+    // Google Play Services Location
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    
+    // Gson for JSON parsing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Facebook Shimmer for loading effects
+    implementation 'com.facebook.shimmer:shimmer:0.5.0'
+    
+    // Cloudinary for media upload
+    implementation 'com.cloudinary:cloudinary-android:2.3.1'
+    
+    // Force Fresco 3.4.0 for Android 15 16KB page size compatibility (Pulled by Cloudinary)
+    implementation 'com.facebook.fresco:fresco:3.4.0'
+    implementation 'com.facebook.fresco:imagepipeline:3.4.0'
+    implementation 'com.facebook.fresco:nativeimagefilters:3.4.0'
+    implementation 'com.facebook.fresco:nativeimagetranscoder:3.4.0'
+    
+    // ZXing for QR Code generation
+    implementation 'com.google.zxing:core:3.5.2'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    
+    // WorkManager for background tasks
+    implementation 'androidx.work:work-runtime:2.9.0'
+}

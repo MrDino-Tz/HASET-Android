@@ -1,0 +1,864 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HASET+</string>
+    <string name="tagline">Afya Yako, Kipaumbele Chetu</string>
+
+    <!-- Common -->
+    <string name="yes">Ndiyo</string>
+    <string name="no">Hapana</string>
+    <string name="cancel">Ghairi</string>
+    <string name="ok">Sawa</string>
+
+    <!-- Authentication -->
+    <string name="login">Ingia</string>
+    <string name="email_address">Barua pepe</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title1">Karibu!</string>
+    <string name="onboarding_desc1">Weka miadi na madaktari papo hapo na kwa urahisi.</string>
+    <string name="onboarding_title2">Chat kwa Usalama</string>
+    <string name="onboarding_desc2">Chat ya muda halisi na ujumbe wa faragha.</string>
+    <string name="onboarding_title3">HASET</string>
+    <string name="onboarding_desc3">Fuatilia miadi na maelezo ya dawa.</string>
+    <string name="remember_me">Nikumbuke</string>
+    <string name="sign_up_here">Jisajili hapa</string>
+    <string name="or_continue_with_account">Au Endelea Na Akaunti</string>
+    <string name="google">Google</string>
+    <string name="login_with_google">Ingia na Google</string>
+    <string name="forgot_password_description">Weka barua pepe yako na tutakutumia kiungo cha kubadilisha nenosiri lako.</string>
+    <string name="send_reset_link">Tuma Kiungo cha Kuweka Upya</string>
+    <string name="remember_password">Unakumbuka nenosiri lako?</string>
+    <string name="sending_reset_email">Inatuma barua pepe ya kuweka upya...</string>
+    <string name="register">Jisajili</string>
+    <string name="email">Barua pepe</string>
+    <string name="password">Nenosiri</string>
+    <string name="phone">Namba ya Simu</string>
+    <string name="full_name">Jina Kamili</string>
+    <string name="age">Umri</string>
+    <string name="gender">Jinsia</string>
+    <string name="male">Mwanaume</string>
+    <string name="female">Mwanamke</string>
+    <string name="other">Nyingine</string>
+    <string name="confirm_password">Thibitisha Nenosiri</string>
+    <string name="forgot_password">Umesahau Nenosiri?</string>
+    <string name="dont_have_account">Hauna akaunti?</string>
+    <string name="already_have_account">Tayari unayo akaunti?</string>
+    <string name="sign_up">Jisajili</string>
+    <string name="sign_in">Ingia</string>
+
+    <!-- Roles -->
+    <string name="select_role">Chagua Jukumu Lako</string>
+    <string name="i_am_patient">Mimi ni Mgonjwa</string>
+    <string name="i_am_doctor">Mimi ni Daktari</string>
+    <string name="i_am_admin">Mimi ni Msimamizi</string>
+    <string name="patient">Mgonjwa</string>
+    <string name="doctor">Daktari</string>
+    <string name="admin">Msimamizi</string>
+    <string name="administrator">Msimamizi</string>
+
+    <!-- Navigation -->
+    <string name="home">Nyumbani</string>
+    <string name="appointments">Miadi</string>
+    <string name="chat">Soga</string>
+    <string name="profile">Wasifu</string>
+
+    <!-- Patient Dashboard -->
+    <string name="find_doctors">Tafuta Madaktari</string>
+    <string name="search_specialty">Tafuta kwa utaalamu</string>
+    <string name="book_appointment">Weka Miadi</string>
+    <string name="my_appointments">Miadi Yangu</string>
+<!--    <string name="prescriptions">Maagizo ya Dawa</string>-->
+    <string name="upcoming_appointments">Miadi Ijayo</string>
+
+    <!-- Doctor Dashboard -->
+    <string name="pending_appointments">Miadi Inayosubiri</string>
+    <string name="approved_appointments">Miadi Iliyoidhinishwa</string>
+    <string name="manage_schedule">Simamia Ratiba</string>
+    <string name="my_patients">Wagonjwa Wangu</string>
+
+    <!-- Appointment -->
+    <string name="select_date">Chagua Tarehe</string>
+    <string name="select_time">Chagua Muda</string>
+    <string name="appointment_details">Maelezo ya Miadi</string>
+    <string name="approve">Idhinisha</string>
+    <string name="decline">Kataa</string>
+    <string name="reschedule">Panga Upya</string>
+    <string name="status">Hali</string>
+    <string name="pending">Inasubiri</string>
+    <string name="approved">Imeidhinishwa</string>
+    <string name="declined">Imekataliwa</string>
+    <string name="completed">Imekamilika</string>
+    <string name="canceled">Imeghairiwa</string>
+    <string name="system">Mfumo</string>
+    <string name="activity_logs">Maarifa ya Shughuli</string>
+    <string name="admin_notifications">Arifa za Msimamizi</string>
+
+    <!-- Doctor Profile -->
+    <string name="specialty">Utaalamu</string>
+    <string name="experience">Uzoefu</string>
+    <string name="rating">Nafasi/Ukadiriaji</string>
+    <string name="about">Kuhusu</string>
+    <string name="available_times">Muda Unaopatikana</string>
+
+    <!-- Chat -->
+    <string name="type_message">Andika ujumbe...</string>
+    <string name="send">Tuma</string>
+    <string name="online">Yuko Mtandaoni</string>
+    <string name="offline">Hayuko Mtandaoni</string>
+    <string name="typing">anaandika...</string>
+
+    <!-- Prescription -->
+<!--    <string name="upload_prescription">Pakia Maagizo ya Dawa</string>-->
+<!--    <string name="view_prescription">Angalia Maagizo ya Dawa</string>-->
+<!--    <string name="prescription_details">Maelezo ya Maelezo ya Dawa</string>-->
+    <string name="medicines">Dawa</string>
+<!--    <string name="instructions">Maelekezo</string>-->
+
+    <!-- Settings -->
+    <string name="settings">Mipangilio</string>
+    <string name="edit_profile">Hariri Wasifu</string>
+    <string name="notifications">Arifa</string>
+    <string name="logout">Ondoka</string>
+<!--    <string name="save">Hifadhi</string>-->
+
+    <!-- Messages -->
+    <string name="loading">Inapakia...</string>
+    <string name="switching_language">Inabadilisha Lugha...</string>
+    <string name="no_data">Hakuna data inayopatikana</string>
+<!--    <string name="no_data">Hakuna data inayopatikana</string>-->
+    <string name="error_occurred">Hitilafu imetokea</string>
+    <string name="error_required">Sehemu hii inahitajika</string>
+    <string name="success">Mafanikio</string>
+    <string name="appointment_booked">Miadi imewekwa kwa mafanikio</string>
+<!--    <string name="appointment_cancelled">Miadi imeghairiwa</string>-->
+    <string name="appointment_approved">Miadi Imeidhinishwa</string>
+    <string name="appointment_declined">Miadi imekataliwa</string>
+    <string name="appointment_cancelled">Miadi imeghairiwa</string>
+    <string name="appointment_approved_success">Miadi imeidhinishwa kwa mafanikio</string>
+    <string name="would_you_like_to_start_chat">Ungependa kuanza mazungumza na mgonjwa sasa?</string>
+    <string name="start_chat_now">Anza Mazungumzo Sasa</string>
+    <string name="later">Baadaye</string>
+    <string name="appointment_with_patient">Miadi na %s</string>
+    <string name="appointment_declined_success">Miadi imekataliwa kwa mafanikio</string>
+    <string name="appointment_cancelled_success">Miadi imeghairiwa kwa mafanikio</string>
+    <string name="failed_to_approve_appointment">Imeshindwa kuidhinisha miadi: %s</string>
+    <string name="failed_to_decline_appointment">Imeshindwa kukataa miadi: %s</string>
+    <string name="failed_to_cancel_appointment">Imeshindwa kughairi miadi: %s</string>
+    <string name="invalid_appointment">Miadi isiyo sahihi</string>
+    <string name="reschedule_soon">Utendaji wa kupanga upya unakuja hivi karibuni</string>
+    <string name="no_pending_appointments_title">Hakuna Miadi Inayongoja</string>
+    <string name="no_pending_appointments_desc">Huna miadi yoyote inayongoja.</string>
+    <string name="no_completed_appointments_title">Hakuna Miadi Iliyokamilika</string>
+    <string name="no_completed_appointments_desc">Huna miadi yoyote iliyokamilika bado.</string>
+    <string name="no_canceled_appointments_title">Hakuna Miadi Iliyogaibishwa</string>
+    <string name="no_canceled_appointments_desc">Huna miadi yoyote iliyoghairiwa.</string>
+    <string name="filter_appointments">Chuja Miadi</string>
+    <string name="network_lost">Muunganisho wa mtandao umekatika</string>
+    <string name="coming_soon">Inakuja Hivi Karibuni!</string>
+    <string name="feature_coming_soon">%s Inakuja Hivi Karibuni!</string>
+    <string name="more_options_soon">Chaguzi zaidi zinakuja hivi karibuni!</string>
+
+    <!-- Validation -->
+    <string name="error_email">Tafadhali weka barua pepe sahihi</string>
+    <string name="error_password">Nenosiri lazima liwe na angalau herufi 6</string>
+    <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
+    <string name="error_name">Tafadhali weka jina lako</string>
+    <string name="error_password_match">Manenosiri hayafanani</string>
+    <string name="error_fields">Tafadhali jaza sifa zote</string>
+    <string name="age_label">Umri: %d</string>
+    <string name="gender_label">Jinsia: %s</string>
+
+    <!-- New UI Strings -->
+    <string name="search">Tafuta</string>
+    <string name="favorite">Kipenzi</string>
+    <string name="time">Muda</string>
+    <string name="date">Tarehe</string>
+    <string name="see_all">Angalia Zote</string>
+    <string name="today_appointments">Miadi ya Leo</string>
+    <string name="doctor_specialty">Utaalamu wa Daktari</string>
+    <string name="popular_doctors">Madaktari Maarufu</string>
+    <string name="back">Nyuma</string>
+    <string name="like">Penda</string>
+    <string name="comment">Maoni</string>
+    <string name="share">Shiriki</string>
+<!--    <string name="just_now">Sasa hivi</string>-->
+<!--    <string name="minute_ago">Dakika 1 iliyopita</string>-->
+<!--    <string name="minutes_ago">Dakika %d zilizopita</string>-->
+<!--    <string name="hour_ago">Saa 1 iliyopita</string>-->
+<!--    <string name="hours_ago">Saa %d zilizopita</string>-->
+<!--    <string name="day_ago">Siku 1 iliyopita</string>-->
+<!--    <string name="days_ago">Siku %d zilizopita</string>-->
+    <string name="all_articles">Makala Zote</string>
+    <string name="my_posts">Posti Zangu</string>
+    <string name="all_users">Watumiaji Wote</string>
+    <string name="doctors">Madaktari</string>
+    <string name="haset_admin">Msimamizi wa H-Care</string>
+    <string name="article_liked">Umependa makala</string>
+    <string name="article_unliked">Umeondoa pendo</string>
+    <string name="comment_posted">Maoni yametumwa</string>
+    <string name="welcome_text_about_us">Karibu kwenye H-Care, mshirika wako unayeaminika kwa huduma ya afya inayopatikana na ya kibinafsi. Madaktari wetu wataalam wanatoa ushauri wa mtandaoni na huduma maalum, wakipa kipaumbele ustawi wako. Jiunge nasi katika safari hii kuelekea afya bora.</string>
+    <string name="title_activity_notification2">Shughuli ya Arifa</string>
+    <string name="tab_text_1">Kichupo cha 1</string>
+    <string name="tab_text_2">Kichupo cha 2</string>
+    <string name="doctor_image">Picha ya daktari</string>
+    <string name="latest_update_image">Sasisho la picha</string>
+    <string name="favorite_doctor">Daktari Kipenzi</string>
+    <string name="location">Eneo</string>
+    <string name="available_time">Muda Unaopatikana</string>
+    <string name="consultation_fee">Ada ya Ushauri</string>
+    <string name="menstruation_tracker">Kifuatilia Hedhi</string>
+    <string name="afya_class">Darasa la Afya</string>
+    <string name="childrens">Watoto</string>
+    <string name="supplements">Virutubisho</string>
+    <string name="health_devices">Vifaa vya Afya</string>
+    <string name="personal_care">Utunzaji Binafsi</string>
+    <string name="conversation">Mazungumzo</string>
+    <string name="more_options">Chaguo zaidi</string>
+    <string name="delete_messages">Futa ujumbe</string>
+    <string name="search_messages">Tafuta ujumbe</string>
+    <string name="clear_chat">Futa Soga</string>
+    <string name="export_chat">Hamisha Soga</string>
+    <string name="mute_notifications">Nyamazisha Arifa</string>
+    <string name="view_contact">Angalia Taarifa za Mawasiliano</string>
+    <string name="report">Ripoti</string>
+    <string name="general">Jumla</string>
+    <string name="language">Lugha</string>
+    <string name="theme">Mandhari</string>
+    <string name="notification_label">Arifa</string>
+    <string name="notification_desc">Binafsisha upendeleo wako wa arifa</string>
+    <string name="select_language">Chagua Lugha</string>
+    <string name="english_variant">English (US)</string>
+    <string name="swahili_variant">Kiswahili</string>
+    <string name="change_profile_picture_desc">Badilisha picha ya wasifu, namba, Barua pepe</string>
+    <string name="change_password">Badilisha Nenosiri</string>
+    <string name="change_password_desc">Sasisha na uimarishe usalama wa akaunti</string>
+    <string name="location_permission">Ufikiaji wa Mahali</string>
+    <string name="location_permission_desc">Ruhusu programu kufikia mahali popote kwa wagonjwa wa karibu</string>
+    <string name="location_permission_denied">Ruhusa ya mahali imkanwa</string>
+    <string name="terms_of_use">Masharti ya Matumizi</string>
+    <string name="terms_of_use_desc">Linda akaunti yako sasa</string>
+<!--    <string name="professional_info">Taarifa za Kitaaluma</string>-->
+    <string name="specialty_label">Utaalamu</string>
+    <string name="consultation_fee_label">Ada ya Ushauri</string>
+    <string name="available_times_label">Muda Unaopatikana</string>
+    <string name="bio_label">Wasifu mfupi</string>
+    <string name="location_label">Eneo</string>
+    <string name="doctor_policy">Sera ya Daktari</string>
+    <string name="doctor_policy_desc">Taarifa kuhusu ada ya kila huduma</string>
+<!--    <string name="edit_professional_info">Hariri Taarifa za Kitaaluma</string>-->
+    <string name="edit_professional_info_desc">Badilisha utaalamu, ada, n.k.</string>
+    <string name="current_password_hint">Nenosiri la Sasa</string>
+    <string name="new_password_hint">Nenosiri Mpya</string>
+    <string name="confirm_new_password_hint">Thibitisha Nenosiri Mpya</string>
+    <string name="update_btn">Sasisha</string>
+    <string name="cancel_btn">Ghairi</string>
+    <string name="select_theme">Chagua Mandhari</string>
+    <string name="theme_light">Mwanga</string>
+    <string name="theme_dark">Giza</string>
+    <string name="theme_system">Chaguo-msingi la Mfumo</string>
+    <string name="delete_account">Futa Akaunti</string>
+    <string name="delete_account_msg">Je, una uhakika unataka kufuta akaunti yako? Hatua hii haiwezi kutenguliwa na data zako zote zitafutwa kabisa.</string>
+    <string name="final_confirmation">Uthibitisho wa Mwisho</string>
+    <string name="final_delete_msg">Hii itafuta kabisa akaunti yako, data ya wasifu, miadi, na taarifa zote zinazohusiana. Je, una uhakika kabisa?</string>
+    <string name="yes_delete_all">Ndiyo, Futa Kila Kitu</string>
+    <string name="account_deleted">Akaunti Imefutwa</string>
+    <string name="account_deleted_msg">Akaunti yako imefutwa kwa mafanikio. Utatumwa kwenye skrini ya kuingia.</string>
+    <string name="deletion_failed">Ufutaji Umeshindwa</string>
+    <string name="share_profile">Shiriki Wasifu</string>
+    <string name="share_qr_code">Shiriki Msimbo wa QR</string>
+    <string name="copy_profile_link">Nakili Kiungo cha Wasifu</string>
+    <string name="share_profile_desc">Shiriki kiungo cha wasifu na wengine</string>
+    <string name="save_qr_code">Hifadhi Msimbo wa QR</string>
+    <string name="download_qr_desc">Pakua picha ya msimbo wa QR</string>
+    <string name="share_qr_desc">Shiriki kupitia programu nyingine</string>
+    <string name="done">Tayari</string>
+    <string name="error_identify_user">Imeshindwa kutambua akaunti ya mtumiaji</string>
+    <string name="deleting_account">Inafuta akaunti...!</string>
+    <string name="no_internet_title">Hakuna Muunganisho wa Mtandao</string>
+    <string name="no_internet_desc">Tafadhali angalia mipangilio yako ya mtandao na ujaribu tena.</string>
+    <string name="retry">Jaribu Tena</string>
+    <string name="or">AU</string>
+    <string name="updating">Inasasisha...</string>
+    <string name="password_updated">Nenosiri limesasishwa kwa mafanikio</string>
+<!--    <string name="update_failed">Usasishaji umeshindwa</string>-->
+    <string name="auth_failed">Uthibitisho umeshindwa</string>
+    <string name="profile_link_copied">Kiungo cha wasifu kimenakiliwa</string>
+    <string name="qr_code_saved">Msimbo wa QR umehifadhiwa kwenye kifaa</string>
+    <string name="qr_code_save_failed">Imeshindwa kuhifadhi msimbo wa QR</string>
+    <string name="qr_code_share_failed">Imeshindwa kushiriki msimbo wa QR</string>
+    <string name="share_qr_text">Angalia wasifu wangu kwenye Programu ya H-Care! Mimi ni %1$s naitwa %2$s</string>
+    <string name="user_label">Mtumiaji</string>
+    <string name="not_provided">Haijatolewa</string>
+    <string name="unknown">Haijulikani</string>
+    <string name="delete_user">Futa Mtumiaji</string>
+    <string name="delete_user_confirmation">Je, una uhakika unataka kumfuta %s? Hatua hii haiwezi kutenguliwa.</string>
+    <string name="doctor_approved">Daktari ameidhinishwa kwa mafanikio</string>
+    <string name="doctor_approval_failed">Imeshindwa kumwidhinisha daktari: %s</string>
+    <string name="doctor_rejected">Daktari amekataliwa kwa mafanikio</string>
+    <string name="doctor_rejection_failed">Imeshindwa kumkataa daktari: %s</string>
+    <string name="user_deleted_success">Mtumiaji amefutwa kwa mafanikio</string>
+    <string name="user_deletion_failed">Imeshindwa kumfuta mtumiaji: %s</string>
+    <string name="onboarding_title_1">Karibu!</string>
+    <string name="onboarding_desc_1">Weka miadi na madaktari mara moja na kwa urahisi.</string>
+    <string name="onboarding_title_2">Soga kwa Usalama</string>
+    <string name="onboarding_desc_2">Soga ya wakati halisi na ujumbe wa faragha.</string>
+    <string name="onboarding_title_3">HASET</string>
+    <string name="onboarding_desc_3">Fuatilia miadi na maelekezo ya dawa.</string>
+    <string name="get_started">Anza Sasa</string>
+    <string name="next">Inayofuata</string>
+    <string name="skip">Ruka</string>
+    <string name="general_physician">Tabibu Mkuu</string>
+    <string name="profile_updated">Wasifu umesasishwa kwa mafanikio</string>
+    <string name="uploading">Inapakia...</string>
+    <string name="good_morning">Habari ya Asubuhi,</string>
+    <string name="hello">Habari,</string>
+    <string name="quick_actions">Vitendo vya Haraka &amp; Huduma</string>
+    <string name="schedule">Ratiba</string>
+    <string name="patients">Wagonjwa</string>
+    <string name="recent_appointments">Miadi ya Hivi Karibuni</string>
+    <string name="view_all">Angalia Zote</string>
+    <string name="filter">Chuja</string>
+    <string name="no_pending_appointments">Hakuna Miadi Inayosubiri</string>
+    <string name="all_caught_up">Umekamilisha! Miadi mipya itaonekana hapa.</string>
+    <string name="today_date_format">Leo, %s</string>
+    <string name="dr_prefix">Dk. %s</string>
+    
+    <!-- Activity Strings -->
+    <string name="calling">Inapiga simu %s</string>
+    <string name="edit_user">Hariri Mtumiaji</string>
+    <string name="create_new_user">Unda Mtumiaji Mpya</string>
+    <string name="publish">Chapisha</string>
+    <string name="create_article">UNDA MAKALA</string>
+    <string name="no_results_found">Hakuna matokeo yaliyopatikana kwa \"%s\"\nJaribu kutafuta kwa maneno tofauti</string>
+<!--    <string name="try_different_keywords">Jaribu kutafuta kwa maneno tofauti</string>-->
+    <string name="all">Zote</string>
+    <string name="clear_filters_count">Futa Vichujio (%d)</string>
+    <string name="search_results_count">Tafuta (matokeo %d)</string>
+    <string name="search_all_doctors">Tafuta Madaktari Wote</string>
+    <string name="type_label">Aina: %s</string>
+    <string name="badge_label">Beji: %s</string>
+    <string name="payment_initiated">Malipo yameanzishwa. Tafadhali kamilisha muamala kwenye simu yako.</string>
+    <string name="check_phone_ussd">Tafadhali angalia simu yako kwa ujumbe wa USSD</string>
+    <string name="payment_confirmed">Malipo yamethibitishwa kwa mafanikio!</string>
+    <string name="insufficient_funds_msg">Mkoba wako hauna salio la kutosha kukamilisha muamala huu. Tafadhali ongeza salio na ujaribu tena.</string>
+    <string name="timeout_msg">Muunganisho umekatika. Tafadhali angalia mtandao wako na ujaribu tena.</string>
+    <string name="transaction_cancelled_msg">Muamala umeghairiwa. Ikiwa si wewe uliyefanya hivi, tafadhali jaribu tena.</string>
+    <string name="abort_session_title">Kusitisha Kipindi?</string>
+    <string name="abort_session_msg">Kipindi cha USSD kitasitishwa. Ikiwa hujaweka PIN yako, hakuna malipo yatakayofanyika.</string>
+    <string name="abort_session_warning">Kikokoteo cha USSD kinaweza bado kufika kwenye simu yako. USIWEKE PIN yako ikiwa unataka kughairi. Ikiwa tayari kimetumwa, ignore tu - hakuna malipo yatakayofanyika.</string>
+    <string name="wait_for_session">Subiri Kipindi</string>
+    <string name="abort_anyway">Sitisha Hata Hivyo</string>
+    <string name="select_payment_method">Tafadhali chagua njia ya malipo</string>
+    <string name="enter_wallet_number">Tafadhali weka namba yako ya mkoba/akaunti</string>
+    <string name="enter_mobile_number">Tafadhali weka namba yako ya simu</string>
+    <string name="enter_valid_mobile">Tafadhali weka namba ya simu sahihi</string>
+    <string name="enter_account_number">Tafadhali weka namba yako ya akaunti</string>
+    <string name="enter_valid_account">Tafadhali weka namba ya akaunti sahihi (angalau tarakimu 8)</string>
+    <string name="account_number_limit">Namba ya akaunti haiwezi kuzidi tarakimu 20</string>
+    <string name="min_payment_msg">Kiwango cha chini cha malipo ni TZS 50</string>
+    <string name="doctor_id_missing">Hitilafu: ID ya Daktari haipo</string>
+    <string name="doctor_info_missing">Hitilafu: Taarifa za daktari hazipo</string>
+    <string name="update_banner">Sasisha Tangazo</string>
+    <string name="select_method">Chagua Njia</string>
+    <string name="reschedule_appointment">Panga Upya Miadi</string>
+    <string name="book_instant_appointment">Weka Miadi ya Papo Hapo</string>
+    <string name="schedule_appointment">Panga Miadi</string>
+    <string name="book_appointment_type">Weka Miadi ya %s</string>
+    <string name="recording_duration_default">0:00</string>
+<!--    <string name="balance_default">0 TZS</string>-->
+    <string name="na">H/T</string>
+    <string name="close">Funga</string>
+    <string name="no_appointments_found">Hakuna miadi iliyopatikana</string>
+<!--    <string name="failed_to_load_appointments">Imeshindwa kupakia miadi</string>-->
+    <string name="no_appointments_to_export">Hakuna miadi iliyochaguliwa kusafirisha</string>
+    <string name="no_completed_appointments_to_export">Hakuna miadi iliyokamilika kusafirisha</string>
+    <string name="failed_to_access_storage">Imeshindwa kufikia uhifadhi</string>
+    <string name="export_as_csv">Hamisha miadi kama CSV</string>
+    <string name="export_failed">Uhamishaji umeshindwa: %s</string>
+    <string name="file_opened_pdf_msg">Faili imefunguliwa. Tumia Printa ya kivinjari > Hifadhi kama PDF ili kuunda PDF.</string>
+    <string name="share_report">Shiriki ripoti ya miadi</string>
+<!--    <string name="select_at_least_one">Chagua angalau miadi moja</string>-->
+    <string name="appointment_settings_clicked">Mipangilio ya Miadi imebonyezwa</string>
+    <string name="select_export_format">Chagua Muundo wa Hamisho</string>
+    <string name="refreshing_appointments">Inapakia upya miadi...</string>
+    <string name="export">Hamisha</string>
+    
+    <!-- Notification Strings -->
+    <string name="notification_appointment_reminder">Kikumbusho cha Miadi</string>
+    <string name="notification_new_message">Ujumbe Mpya</string>
+    <string name="notification_appointment_approved">Miadi Imeidhinishwa</string>
+    <string name="notification_appointment_cancelled">Miadi Imefutwa</string>
+    <string name="appointment_status_updated">Hali ya Miadi Imesasishwa</string>
+    <string name="appointment_reminder_message">Miadi inayokuja na %1$s saa %2$s</string>
+    <string name="appointment_approved_message">Miadi yako na %s imeidhinishwa</string>
+    <string name="appointment_cancelled_message">Miadi yako na %s imeghairiwa</string>
+    <string name="no_users_found">Hakuna watumiaji waliopatikana</string>
+<!--    <string name="failed_to_load_users">Imeshindwa kupakia watumiaji</string>-->
+    <string name="no_doctors_found">Hakuna madaktari waliopatikana</string>
+    <string name="no_patients_found">Hakuna wagonjwa waliopatikana</string>
+    <string name="failed_to_load_doctors">Imeshindwa kupakia madaktari</string>
+    <string name="failed_to_load_patients">Imeshindwa kupakia wagonjwa</string>
+    <string name="tab_description">Hii ni tabu ya %s.</string>
+    
+    <!-- Prescription Strings -->
+    <string name="prescriptions">Maelekezo ya Dawa</string>
+    <string name="my_prescriptions">Maelekezo Yangu ya Dawa</string>
+    <string name="add_prescription">Ongeza Maelekezo</string>
+    <string name="prescription_details">Maelezo ya Maelekezo</string>
+    <string name="issued_by">Imetolewa na</string>
+    <string name="issue_date">Tarehe ya Kutolewa</string>
+    <string name="medications">Dawa</string>
+    <string name="instructions">Maelekezo</string>
+    <string name="prescription_notes">Vidokezo</string>
+    <string name="upload_prescription">Pakia Maelekezo</string>
+    <string name="take">Chukua</string>
+    <string name="take_photo">Piga Picha</string>
+    <string name="choose_from_gallery">Chagua kutoka Picha</string>
+    <string name="no_prescriptions">Hakuna maelekezo bado</string>
+    <string name="no_prescriptions_message">Maelekezo yako yataonekana hapa</string>
+    <string name="view_prescription">Tazama Maelekezo</string>
+    <string name="delete_prescription">Futa Maelekezo</string>
+    <string name="confirm_delete_prescription">Una uhakika unataka kufuta maelekezo haya?</string>
+    <string name="prescription_uploaded">Maelekezo yamepakiwa</string>
+    <string name="prescription_deleted">Maelekezo yamefutwa</string>
+    <string name="uploading_prescription">Inapakia maelekezo...</string>
+    <string name="medicine_name">Jina la Dawa</string>
+    <string name="dosage">Kipimo</string>
+    <string name="frequency">Mara kwa Mara</string>
+    <string name="duration">Muda (siku)</string>
+    <string name="share_app">Sambaza Programu ya HASET</string>
+    <string name="recommend_app">Pendekeza programu hii kwa marafiki</string>
+    <string name="share_app_text">Pakua Programu ya H-Care - Mshirika wako unayeaminika kwa huduma ya afya inayopatikana: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
+    <string name="delete">Futa</string>
+    
+    <!-- Bottom Sheet Strings -->
+    <string name="no_bio_available">Hakuna maelezo ya wasifu.</string>
+    <string name="patients_treated_count">(Wagonjwa %d)</string>
+    <string name="patient_treated_count">(Mgonjwa %d)</string>
+    <string name="new_doctor_label">Daktari Mpya</string>
+    <string name="contact_for_availability">Wasiliana kwa upatikanaji</string>
+    <string name="added_to_favorites">%s imeongezwa kwenye vipendwa</string>
+    <string name="removed_from_favorites">%s imeondolewa kutoka kwa vipendwa</string>
+    
+    <!-- Rating Strings -->
+    <string name="tap_to_rate">Gusa ili ukadirie</string>
+    <string name="rating_poor">Mbaya</string>
+    <string name="rating_fair">Wastani</string>
+    <string name="rating_good">Nzuri</string>
+    <string name="rating_very_good">Nzuri sana</string>
+    <string name="rating_excellent">Bora</string>
+    <string name="please_select_rating">Tafadhali chagua ukadiriaji</string>
+    <string name="thank_you_rating">Asante kwa ukadiriaji wako!</string>
+    <string name="failed_to_submit_rating">Imeshindwa kutuma ukadiriaji: %s</string>
+    
+    <!-- Internet Strings -->
+    <string name="internet_restored">Muunganisho wa mtandao umerejeshwa!</string>
+    <string name="still_no_internet">Bado hakuna muunganisho wa mtandao.</string>
+    
+    <!-- File Selection Strings -->
+    <string name="select_document_picker">Chagua Hati</string>
+    <string name="select_audio_picker">Chagua Sauti</string>
+    <string name="select_video_picker">Chagua Video</string>
+    
+    <!-- Comment Strings -->
+    <string name="comment_sent_msg">Maoni yametumwa!</string>
+    <string name="comment_empty_error">Maoni hayawezi kuwa tupu</string>
+    <string name="some_time_ago">Muda mfupi uliopita</string>
+    
+    <!-- Chat Action Strings -->
+    <string name="delete_messages_action">Kufuta ujumbe kumechaguliwa!</string>
+    <string name="search_messages_action">Kutafuta ujumbe kumechaguliwa!</string>
+    <string name="delete_messages_soon">Kufuta Ujumbe Kunakuja Hivi Karibuni!</string>
+    <string name="search_messages_soon">Kutafuta Ujumbe Kunakuja Hivi Karibuni!</string>
+<!--    <string name="comment_posted">Maoni yametumwa!</string>-->
+    <string name="just_now">Hivi punde</string>
+    <string name="minute_ago">Dakika 1 iliyopita</string>
+    <string name="minutes_ago">Dakika %d zilizopita</string>
+    <string name="hour_ago">Saa 1 iliyopita</string>
+    <string name="hours_ago">Saa %d zilizopita</string>
+    <string name="day_ago">Siku 1 iliyopita</string>
+    <string name="days_ago">Siku %d zilizopita</string>
+    <string name="shared_from">Imeshirikiwa kutoka Programu ya H-Care</string>
+    <string name="haset_post">Chapisho la H-Care</string>
+<!--    <string name="share_post_via">Shiriki chapisho kupitia</string>-->
+<!--    <string name="sharing_post">Inashiriki chapisho...</string>-->
+<!--    <string name="feature_coming_soon">Kipengele cha %s kinakuja hivi karibuni!</string>-->
+    <string name="save_feature">Hifadhi</string>
+    <string name="account_info_feature">Taarifa za akaunti</string>
+    <string name="favorite_feature">Kipendwa</string>
+    <string name="access_denied_appointment">Ufikiaji Umekataliwa: Miadi yako haijaidhinishwa bado.</string>
+    <string name="video_call">Simu ya Video</string>
+    <string name="error_loading_contact">Haikuweza kupakia maelezo ya mawasiliano</string>
+    <string name="contact_info_unavailable">Taarifa hazipatikani kwa mwasiliani huyu</string>
+    <string name="failed_capture_image">Imeshindwa kupiga picha</string>
+    <string name="typing_indicator">%s anaandika...</string>
+    <string name="failed_start_recording">Imeshindwa kuanza kurekodi</string>
+    <string name="recording_too_short">Kurekodi ni kufupi mno</string>
+    <string name="recording_cancelled">Kurekodi kumeghairiwa</string>
+    <string name="voice_note">Ujumbe wa sauti</string>
+    <string name="fill_all_fields">Tafadhali jaza nyanja zote</string>
+    <string name="select_an_image">Tafadhali chagua picha</string>
+    <string name="no_balance_withdrawal">Hakuna salio la kutoa</string>
+    <string name="available_balance_format">Inapatikana: %,.0f TZS</string>
+    <string name="currency_format">%,.0f TZS</string>
+    <string name="enter_withdrawal_amount">Tafadhali ingiza kiasi cha kutoa</string>
+    <string name="enter_valid_amount_msg">Tafadhali ingiza kiasi halali</string>
+    <string name="amount_greater_than_zero">Kiasi lazima kiwe zaidi ya 0</string>
+    <string name="insufficient_balance">Salio halitoshi</string>
+    <string name="select_withdrawal_method">Tafadhali chagua njia ya kutoa</string>
+    <string name="processing">Inachakata...</string>
+    <string name="no_audit_logs_found">Hakuna kumbukumbu za ukaguzi zilizopatikana</string>
+    <string name="failed_load_audit_logs">Imeshindwa kupakia kumbukumbu za ukaguzi</string>
+    <string name="settings_title">Mipangilio</string>
+    <string name="account_preferences">Mapendeleo ya Akaunti</string>
+    <string name="account_desc">Faragha, usalama, taarifa</string>
+    <string name="log_detail_title">Maelezo ya Kumbukumbu</string>
+    <string name="log_id_label">Kitambulisho cha Kumbukumbu</string>
+    <string name="log_user_label">Mtumiaji</string>
+    <string name="action_label">Kitendo</string>
+    <string name="description_label">Maelezo</string>
+    <string name="entity_context_label">Muktadha wa Huluki</string>
+    <string name="date_time_label">Tarehe na Muda</string>
+    <string name="device_info_label">Maelezo ya Kifaa</string>
+    <string name="payment_mobile_money">Pesa ya Mtandaoni</string>
+<!--    <string name="more_options">Chaguzi Zaidi</string>-->
+    <string name="search_messages_option">Tafuta ujumbe</string>
+    <string name="view_contact_info">Tazama Taarifa za Mawasiliano</string>
+    <string name="current_user">Mtumiaji wa Sasa</string>
+    <string name="dummy_comment_1">Chapisho nzuri!</string>
+    <string name="dummy_comment_2">Inaelimisha sana.</string>
+    <string name="user_1">Mtumiaji 1</string>
+    <string name="user_2">Mtumiaji 2</string>
+    <string name="payment_card_payment">Malipo ya Kadi</string>
+    <string name="email_support_body">Habari Timu ya Msaada ya HASET,\n\nNahitaji msaada kuhusu...</string>
+    <string name="send_email_via">Tuma barua pepe kupitia</string>
+    <string name="whatsapp_support_msg">Habari Msaada wa HASET</string>
+    
+    <plurals name="patients_treated">
+        <item quantity="one">(Mgonjwa %d)</item>
+        <item quantity="other">(Wagonjwa %d)</item>
+    </plurals>
+    <!-- Doctor Edit Hints -->
+    <string name="hint_specialty">Utaalamu</string>
+    <string name="hint_specialty_example">mf., Kadiolojia, Pediatrician</string>
+    <string name="hint_consultation_fee">Ada ya Ushauri</string>
+    <string name="hint_fee_example">mf., 0</string>
+    <string name="hint_location">Mahali</string>
+    <string name="hint_location_example">mf., Barabara Kuu 123, Jiji</string>
+    <string name="hint_bio">Wasifu / Kuhusu</string>
+    <string name="hint_bio_description">Waambie wagonjwa kuhusu uzoefu na utaalamu wako</string>
+    <string name="available_time_range">Muda wa Upatikanaji</string>
+    <string name="select_working_hours">Chagua masaa yako ya kazi (kuanzia - hadi)</string>
+    <string name="from_time">Muda wa Kuanza</string>
+    <string name="select_start_time">Chagua muda wa kuanza</string>
+    <string name="to_time">Muda wa Kumaliza</string>
+    <string name="select_end_time">Chagua muda wa kumaliza</string>
+    <string name="save_changes">Hifadhi Mabadiliko</string>
+    <string name="saving">Inahifadhi...</string>
+    
+    <!-- Book Appointment Hints -->
+    <string name="hint_select_date">Chagua Tarehe</string>
+    <string name="hint_select_time">Chagua Muda</string>
+    <string name="hint_reason_for_visit">Sababu ya kutembelea</string>
+    
+    <!-- Create Banner -->
+    <string name="create_new_banner">Tengeneza Bango Jipya</string>
+    <string name="hint_title_line1">Mstari wa 1 wa Kichwa (mf. Hadi)</string>
+    <string name="hint_title_line2">Mstari wa 2 wa Kichwa (mf. 50% PUNGUZO)</string>
+    <string name="hint_badge_text">Nakala ya Baja (mf. Uuzaji wa Haraka)</string>
+    <string name="hint_button_text">Nakala ya Kitufe (mf. Nunua Sasa)</string>
+<!--    <string name="banner_type">Aina ya Bango</string>-->
+    <string name="pharmacy">Duka la Dawa</string>
+<!--    <string name="doctors">Madaktari</string>-->
+    <string name="select_image">Chagua Picha</string>
+    <string name="upload_banner">Pakia Bango</string>
+    
+    <!-- Payment Dialog -->
+    <string name="content_desc_success_icon">Ikoni ya Mafanikio</string>
+    <string name="payment_successful">Malipo Yamefaulu!</string>
+    <string name="payment_success_message">Malipo yako yamechakatwa na kuthibitishwa. Unaweza kuendelea na miadi yako sasa.</string>
+    <string name="continue_btn">Endelea</string>
+    
+    <!-- Article Center -->
+    <string name="no_posts_yet">Hakuna machapisho bado.</string>
+    <string name="no_posts_create_hint">Hakuna machapisho bado. Gusa kitufe cha + kutengeneza chapisho lako la kwanza!</string>
+    
+    <!-- Product -->
+<!--    <string name="product_image">Picha ya Bidhaa</string>-->
+
+    <!-- Doctor Edit -->
+    <string name="edit_professional_info">Hariri Taarifa za Kitaaluma</string>
+    <string name="professional_info">Taarifa za Kitaaluma</string>
+    <string name="banner_type">Aina ya Bango</string>
+<!--    <string name="chat">Mazungumzo</string>-->
+    
+    <!-- Share Post -->
+    <string name="share_post_via">Shiriki chapisho kupitia</string>
+    <string name="sharing_post">Inashiriki chapisho...</string>
+    <string name="mct_reg_no_label">Namba ya Usajili ya MCT: %s</string>
+    <string name="wallet_management">Usimamizi wa Waleti</string>
+    <string name="doctor_wallets">Waleti za Madaktari</string>
+    <string name="pending_withdrawals">Kutoa Pesa Kunakosubiri</string>
+    <string name="no_doctor_wallets">Hakuna waleti za madaktari bado</string>
+    <string name="no_pending_withdrawals">Hakuna kutoa pesa kunakosubiri</string>
+    <string name="withdrawal_request_submitted">Ombi la kutoa pesa limetumwa kwa mafanikio. Fedha zitahamishwa ndani ya saa 24-48.</string>
+    <string name="reject">Kataa</string>
+    <string name="approve_withdrawal_confirm">Je, una uhakika unataka kuidhinisha kutoa huku kwa %1$s kwenda kwa %2$s?</string>
+    <string name="rejection_reason_required">Tafadhali weka sababu ya kukataa</string>
+    <string name="withdrawal_approved">Kutoa pesa kumeidhinishwa</string>
+    <string name="withdrawal_rejected">Kutoa pesa kumekataliwa</string>
+    <string name="failed_deduct_wallet">Imeshindwa kukata kwenye waleti</string>
+    <string name="error_loading_wallets">Hitilafu katika kupakia waleti</string>
+    <string name="error_loading_requests">Hitilafu katika kupakia maombi</string>
+
+    <!-- DoctorsActivity -->
+    <string name="sorted_by_name">Imepangwa kwa Jina</string>
+    <string name="sorted_by_rating">Imepangwa kwa Ukadiriaji</string>
+    <string name="sorted_by_experience">Imepangwa kwa Uzoefu</string>
+    <string name="refreshing_doctors">Inapakia upya madaktari…</string>
+    <string name="filter_applied">Kichujio kimewekwa</string>
+    <string name="filter_cleared">Kichujio kimefutwa</string>
+    <string name="filter_by_specialty">Chuja kwa Utaalamu</string>
+    <string name="all_specialties">Utaalamu Wote</string>
+    <string name="apply">Weka</string>
+
+    <!-- NotificationActivity -->
+    <string name="appointment">Miadi</string>
+    <string name="payment">Malipo</string>
+    <string name="appointments_cleared">Miadi imefutwa</string>
+    <string name="failed_to_clear_appointments">Imeshindwa kufuta miadi</string>
+    <string name="clear_appointments">Futa Miadi</string>
+    <string name="clear_all">Futa Zote</string>
+    <string name="clear_pending_appointments">Futa Miadi Inayosubiri</string>
+    <string name="clear_system_notifications">Futa Arifa za Mfumo</string>
+
+    <!-- AdminProfileFragment -->
+    <string name="user_session_expired">Kipindi cha mtumiaji kimeisha</string>
+    <string name="verifying_credentials">Inathibitisha hati…</string>
+    <string name="current_password_incorrect">Nenosiri la sasa si sahihi</string>
+    <string name="starting_db_sync">Inaanza usawazishaji wa hifadhidata…</string>
+    <string name="db_cleared_syncing">Hifadhidata imefutwa na inasawazishwa…</string>
+    <string name="db_synced_success">Hifadhidata imesawazishwa kwa mafanikio!</string>
+    <string name="no_internet_cannot_sync">Hakuna muunganisho wa mtandao. Haiwezi kusawazisha.</string>
+    <string name="sync_failed">Usawazishaji umeshindwa: %s</string>
+
+    <!-- AdminUserEditActivity -->
+    <string name="user_updated_success">Mtumiaji amesasishwa kwa mafanikio!</string>
+    <string name="failed_to_update_user">Imeshindwa kusasisha mtumiaji: %s</string>
+    <string name="user_created_success">Mtumiaji ameundwa kwa mafanikio!</string>
+    <string name="failed_to_create_user">Imeshindwa kuunda mtumiaji: %s</string>
+    <string name="create_user">Unda Mtumiaji</string>
+    <string name="create_new">Unda Mpya</string>
+
+    <!-- AdminDemoDoctorActivity -->
+    <string name="create_demo_doctor">Unda Daktari wa Demo</string>
+    <string name="demo_doctor_notice">Madaktari wa demo ni bila malipo. Hakuna malipo yanahitajika.</string>
+    <string name="create_demo">Unda Demo</string>
+    <string name="doctor_information">Habari za Daktari</string>
+    <string name="creating">Inaunda…</string>
+    <string name="demo_doctor_created">Daktari wa demo ameundwa kwa mafanikio!</string>
+    <string name="error_creating_demo_doctor">Hitilafu ya kuunda daktari wa demo</string>
+    <string name="error_invalid_number">Nambari batili</string>
+    <string name="manage_demo_doctors">Dhibiti Madaktari wa Demo</string>
+    <string name="show_demo_doctors">Onyesha Madaktari wa Demo</string>
+    <string name="demo_doctors_visibility_desc">Geuza kuonyesha/ficha madaktari wote wa demo kwenye orodha ya mgonjwa</string>
+    <string name="demo_doctors_list">Madaktari wa Demo</string>
+    <string name="no_demo_doctors">Hakuna madaktari wa demo ameundwa bado</string>
+    <string name="demo_doctors_shown">Madaktari wa demo sasa wanaonekana</string>
+    <string name="demo_doctors_hidden">Madaktari wa demo sasa wamefichwa</string>
+    <string name="doctor_now_visible">Daktari sasa anaonekana</string>
+    <string name="doctor_now_hidden">Daktari sasa amefichwa</string>
+    <string name="error_saving">Hitilafu ya kuhifadhi mabadiliko</string>
+    <string name="error_loading">Hitilafu ya kupakia data</string>
+    <string name="demo_doctors">Madaktari wa Demo</string>
+
+    <!-- DoctorWalletActivity -->
+    <string name="operation_failed">Operesheni imeshindwa: %s</string>
+
+    <!-- ChatActivity -->
+    <string name="service_payment_sent">Ombi la malipo ya huduma limetumwa</string>
+    <string name="payment_successful_chat">Malipo yamefaulu!</string>
+    <string name="original_message_not_found">Ujumbe wa asili haujapatikana</string>
+    <string name="message_deleted">Ujumbe umefutwa</string>
+    <string name="downloading_file">Inapakua faili…</string>
+    <string name="microphone_permission_required">Ruhusa ya maikrofoni inahitajika kwa ujumbe wa sauti</string>
+    <string name="camera_permission_required">Ruhusa ya kamera inahitajika kupiga picha</string>
+    <string name="failed_create_image_file">Imeshindwa kuunda faili ya picha</string>
+    <string name="no_camera_app">Hakuna programu ya kamera</string>
+
+    <!-- CreatePostWizard -->
+    <string name="access_denied_admin_only">Ufikiaji umekataliwa. Wasimamizi tu wanaweza kuandika makala.</string>
+    <string name="draft_saved">Rasimu imehifadhiwa kwa mafanikio</string>
+    <string name="title_required">Kichwa cha habari kinahitajika</string>
+    <string name="description_required">Maelezo yanahitajika</string>
+    <string name="profile_name_required">Jina la wasifu linahitajika</string>
+    <string name="tags_required">Vitambulishi vinahitajika</string>
+    <string name="article_published">Makala imechapishwa kwa mafanikio!</string>
+
+<!--    <string name="feature_coming_soon">Inakuja hivi karibuni</string>-->
+<!--    <string name="password_updated">Nenosiri limesasishwa kwa mafanikio</string>-->
+    <string name="update_failed">Kusasisha kumeshindwa</string>
+<!--    <string name="insufficient_balance">Salio halitatosha</string>-->
+
+    <!-- Profile / Upload -->
+    <string name="uploading_profile_photo">Inapakia picha ya wasifu…</string>
+    <string name="profile_photo_updated">Picha ya wasifu imesasishwa!</string>
+    <string name="profile_photo_removed">Picha ya wasifu imeondolewa</string>
+    <string name="select_profile_photo">Chagua Picha ya Wasifu</string>
+    <string name="failed_to_send_reply">Imeshindwa kutuma jibu</string>
+
+    <!-- DoctorAdapter -->
+    <string name="dr_unknown">Dk. Hajulikani</string>
+    <string name="new_doctor">Mpya</string>
+    <string name="status_online">Mkondoni</string>
+    <string name="status_offline">Nje ya Mtandao</string>
+    <string name="not_available">Hapatikani</string>
+
+    <!-- ChatAdapter -->
+    <string name="voice_note_label">Ujumbe wa Sauti</string>
+    <string name="payment_paid">IMELIPWA</string>
+    <string name="payment_pending">INASUBIRI</string>
+
+    <!-- Pharmacy / Stock -->
+    <string name="in_stock">Ipo Dukani</string>
+    <string name="out_of_stock">Haipatikani Dukani</string>
+
+    <!-- Date -->
+    <string name="date_not_set">Tarehe haijawekwa</string>
+<!--    <string name="just_now">Sasa hivi</string>-->
+
+    <!-- UserAdapter -->
+    <string name="role_user">Mtumiaji</string>
+    <string name="role_user_badge">MTUMIAJI</string>
+
+    <!-- Appointments -->
+    <string name="no_app_to_open_file">Hakuna programu ya kufungua faili hili</string>
+    <string name="no_completed_appointments_export">Hakuna miadi iliyokamilika ya kuhamisha</string>
+    <string name="select_at_least_one">Chagua angalau miadi moja</string>
+
+    <!-- Article Center tabs -->
+    <string name="tab_all">Zote</string>
+    <string name="tab_posted">ZILIZOCHAPISHWA</string>
+    <string name="tab_drafted">RASIMU</string>
+    <string name="article_type_text">MAKALA YA MAANDISHI</string>
+    <string name="article_type_image">MAKALA YA PICHA</string>
+    <string name="ready_to_publish">Iko tayari kuchapishwa</string>
+    <string name="no_articles_yet">Hakuna makala bado.\nBonyeza kitufe cha + kuunda makala yako ya kwanza!</string>
+    <string name="no_drafts_yet">Hakuna rasimu bado.\nHifadhi makala kama rasimu kuiona hapa.</string>
+    <string name="no_published_articles">Hakuna makala iliyochapishwa bado.\nChapisha makala kuiona hapa.</string>
+
+    <!-- Article status labels -->
+    <string name="status_article">MAKALA</string>
+
+    <!-- CreatePostStep1Fragment -->
+    <string name="select_content">Chagua Maudhui</string>
+    <string name="text_only_selected">Makala ya Maandishi tu imechaguliwa.\nUnaweza kuongeza maelezo katika hatua inayofuata.</string>
+    <string name="please_select_image_or_text_only">Tafadhali chagua picha au \'Maandishi Pekee\'</string>
+    <string name="camera_permissions_required">Ruhusa za kamera zinahitajika</string>
+    <string name="failed_to_process_media">Imeshindwa kushughulikia faili ya media</string>
+    <string name="file_not_found">Faili haikupatikana</string>
+    <string name="file_size_exceeds_limit">Ukubwa wa faili unazidi kikomo cha 5MB</string>
+    <string name="please_select_image_or_use_text">Tafadhali chagua picha au tumia aina ya Maandishi Pekee</string>
+    <string name="media_file_not_found">Faili ya media haikupatikana</string>
+    <string name="no_media_selected">Hakuna media iliyochaguliwa</string>
+
+    <!-- ChatListFragment -->
+    <string name="chat_deleted">Mazungumzo yamefutwa</string>
+    <string name="delete_chat">Futa Mazungumzo</string>
+
+    <!-- ArticleCenterMyPostsFragment -->
+    <string name="article_deleted_success">Makala imefutwa kwa mafanikio</string>
+    <string name="delete_article">Futa Makala</string>
+    <string name="delete_article_confirm">Je, una uhakika unataka kufuta makala hii? Kitendo hiki hakiwezi kutenduliwa.</string>
+
+    <!-- AdminNotificationActivity -->
+    <string name="pending_appointments_cleared">Miadi inayosubiri imefutwa kutoka kwenye mtazamo</string>
+    <string name="system_notifications_cleared">Arifa za mfumo zimefutwa</string>
+
+    <!-- Call -->
+    <string name="call_declined">Simu imekataliwa</string>
+    <string name="error_user_info_missing">Hitilafu: Taarifa za mtumiaji hazipo</string>
+
+    <!-- SplashActivity -->
+    <string name="no_internet_still">Bado hakuna muunganisho wa mtandao.</string>
+
+    <!-- OnboardingActivity -->
+    <string name="please_complete_onboarding">Tafadhali kamilisha uanzishaji</string>
+
+    <!-- AdminReportActivity -->
+    <string name="please_select_report_type">Tafadhali chagua aina ya ripoti</string>
+    <string name="failed_to_load_users">Imeshindwa kupakia watumiaji</string>
+    <string name="failed_to_load_appointments">Imeshindwa kupakia miadi</string>
+    <string name="failed_to_load_audit_logs">Imeshindwa kupakia kumbukumbu za ukaguzi</string>
+
+    <!-- DoctorWalletActivity states -->
+    <string name="balance_default">0 TZS</string>
+    <string name="btn_withdraw">Toa Pesa</string>
+    <string name="btn_processing">Inashughulikia…</string>
+
+    <!-- RegisterActivity fee dialog -->
+    <string name="doctor_reg_fee_title">Ada ya Usajili wa Daktari</string>
+    <string name="doctor_reg_fee_message">Ada ya lazima ya uthibitishaji wa MCT na usajili wa TSH 200 inahitajika.\n\nBonyeza \'Lipa kupitia USSD\' kuiga malipo.</string>
+    <string name="pay_via_ussd">Lipa kupitia USSD (TSH 200)</string>
+    <string name="processing_payment">Inashughulikia malipo…</string>
+
+    <!-- DoctorEditActivity validation -->
+    <string name="error_specialty_required">Utaalamu unahitajika</string>
+    <string name="error_consultation_fee_required">Ada ya mshauri inahitajika</string>
+    <string name="error_fee_must_be_positive">Ada lazima iwe ya ziada ya sifuri</string>
+    <string name="error_valid_number">Tafadhali weka nambari sahihi</string>
+    <string name="error_location_required">Eneo linahitajika</string>
+    <string name="error_from_time_required">Wakati wa kuanza unahitajika</string>
+    <string name="error_to_time_required">Wakati wa kumaliza unahitajika</string>
+    <string name="error_invalid_time_format">Muundo wa wakati si sahihi. Tumia HH:mm</string>
+    <string name="error_end_time_after_start">Wakati wa kumaliza lazima uwe baada ya wa kuanza</string>
+
+    <!-- EditProfileActivity validation -->
+    <string name="error_full_name_required">Jina kamili linahitajika</string>
+    <string name="error_email_required">Barua pepe inahitajika</string>
+    <string name="error_valid_email">Tafadhali weka barua pepe sahihi</string>
+    <string name="error_phone_required">Nambari ya simu inahitajika</string>
+
+    <!-- AddServiceBottomSheet -->
+    <string name="error_service_name_required">Jina la huduma linahitajika</string>
+    <string name="error_fee_required">Ada ya miadi inahitajika</string>
+    <string name="error_invalid_fee">Kiasi cha ada si sahihi</string>
+    <string name="error_fee_greater_than_zero">Ada lazima iwe zaidi ya sifuri</string>
+
+    <!-- AdminProfileFragment password -->
+    <string name="error_current_password_required">Nenosiri la sasa linahitajika</string>
+    <string name="error_min_6_chars">Angalau herufi 6</string>
+    <string name="error_password_required_new_users">Nenosiri linahitajika kwa watumiaji wapya</string>
+    <string name="error_valid_role">Tafadhali weka jukumu sahihi (mgonjwa, daktari, au msimamizi)</string>
+
+    <!-- Prescription -->
+    <string name="issuing_prescription">Inatolea dawa…</string>
+    <string name="uploading_attachment">Inapakia kiambatisho…</string>
+    <string name="saving_data">Inahifadhi Data…</string>
+    <string name="downloading_prescription">Inapakua Dawa</string>
+    <string name="select_prescription_image">Chagua Picha ya Dawa</string>
+    <string name="consultant_physician">Daktari Mshauri</string>
+
+    <!-- Dialogs -->
+    <string name="delete_message">Futa Ujumbe</string>
+    <string name="delete_message_confirm">Je, una uhakika unataka kufuta ujumbe huu?</string>
+    <string name="exit_app">Toka Programu</string>
+    <string name="exit_app_confirm">Je, una uhakika unataka kutoka?</string>
+    <string name="notification_permission_title">Ruhusa ya Arifa Inahitajika</string>
+    <string name="notification_permission_message">HASET inahitaji ruhusa ya arifa kukutumia vikumbusho muhimu vya miadi na ujumbe wa karibu. Tafadhali wezesha arifa katika mipangilio.</string>
+    <string name="rate_haset_title">Kadiria HASET Health</string>
+    <string name="rate_haset_message">Je, unafurahia HASET Health? Tungependa kusikia maoni yako!</string>
+    <string name="verify_payment_title">Thibitisha Malipo</string>
+    <string name="leave_blank_password">Acha wazi kutunza nenosiri la sasa</string>
+    <string name="status_pending">Inasubiri</string>
+    <string name="status_approved">Imekubaliwa</string>
+    <string name="status_cancelled">Imefutwa</string>
+    <string name="passwords_do_not_match">Nywila hazilingani</string>
+    <string name="mct_reg_required">Namba ya Usajili ya MCT inahitajika</string>
+
+    <!-- SearchActivity -->
+    <string name="try_different_keywords">Jaribu kutafuta kwa maneno tofauti</string>
+
+    <!-- Settings / Article activity -->
+    <string name="settings_coming_soon">Mipangilio Inakuja Hivi Karibuni!</string>
+</resources>

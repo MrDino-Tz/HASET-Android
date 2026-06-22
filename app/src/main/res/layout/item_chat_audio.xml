@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
+
+    <!-- Date Separator -->
+    <TextView
+        android:id="@+id/tvDateSeparator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginVertical="12dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="6dp"
+        android:background="@drawable/rounded_date_separator_background"
+        android:elevation="1dp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp"
+        android:fontFamily="@font/poppins_medium"
+        tools:text="Today"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/messageWrapper"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/messageContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:minWidth="240dp"
+            android:maxWidth="300dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <include
+                android:id="@+id/replyPreview"
+                layout="@layout/layout_reply_preview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Audio Player Container -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="240dp"
+                android:layout_height="64dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp">
+
+                    <!-- Play/Pause Button -->
+                    <ImageView
+                        android:id="@+id/ivPlayPause"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/ic_play_arrow"
+                        android:padding="6dp"
+                        android:background="@drawable/bg_search_circle"
+                        android:foreground="@drawable/ripple_effect_circular"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        app:tint="?attr/colorPrimary" />
+
+                    <!-- Wave Visualization Container -->
+                    <FrameLayout
+                        android:id="@+id/waveContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="12dp">
+
+                        <!-- Static Wave Bars (shown when not playing) -->
+                        <LinearLayout
+                            android:id="@+id/layoutStaticWave"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:visibility="visible">
+
+                            <!-- Wave bars with different heights -->
+                            <View
+                                android:layout_width="3dp"
+                                android:layout_height="6dp"
+                                android:layout_marginEnd="2dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="12dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="18dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="16dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="14dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="18dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="10dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="16dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                            <View
+                                android:layout_width="2dp"
+                                android:layout_height="8dp"
+                                android:layout_marginEnd="1dp"
+                                android:background="@color/voice_wave_bar" />
+
+                        </LinearLayout>
+
+                        <!-- Animated Wave View (shown when playing) -->
+                        <com.haset.hasetapp.views.VoiceWaveView
+                            android:id="@+id/voiceWaveView"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
+
+                    <!-- Duration Text -->
+                    <TextView
+                        android:id="@+id/tvAudioDuration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0:12"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="11sp"
+                        android:fontFamily="@font/poppins_medium" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+        <!-- Message Footer -->
+        <LinearLayout
+            android:id="@+id/footerContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginHorizontal="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="10sp"
+                android:fontFamily="@font/poppins"
+                tools:text="10:30" />
+
+            <ImageView
+                android:id="@+id/ivMessageStatus"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_check_single"
+                android:visibility="gone" />
+        </LinearLayout>
+
+
+
+    </LinearLayout>
+</LinearLayout>

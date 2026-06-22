@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    
+    <!-- 
+        Modern Teal/Green Gradient Background
+        Used in: Doctor Home Header, Patient Home Header
+        Direction: Diagonal (135 degrees) from top-left to bottom-right
+    -->
+    <gradient
+        android:type="linear"
+        android:angle="135"
+        android:startColor="@color/green_light"
+        android:centerColor="@color/green_primary"
+        android:endColor="@color/green_dark" />
+    
+    <!-- 
+        Rounded Bottom Corners Only
+        Creates a modern curved header effect
+    -->
+    <corners
+        android:topLeftRadius="0dp"
+        android:topRightRadius="0dp"
+        android:bottomLeftRadius="45dp"
+        android:bottomRightRadius="45dp" />
+    
+</shape>

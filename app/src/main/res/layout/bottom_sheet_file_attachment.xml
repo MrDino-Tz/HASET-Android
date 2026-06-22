@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:background="?attr/colorSurface"
+    android:padding="17dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="5dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bottom_sheet_handle"
+        android:alpha="0.4" />
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="Select Attachment"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+        android:layout_gravity="center_horizontal" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPrescriptionOption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Add Prescription"
+        app:icon="@drawable/ic_prescription"
+        app:iconGravity="textStart"
+        android:padding="12dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:cornerRadius="12dp"
+        style="@style/Widget.MaterialComponents.Button" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnServiceOption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="Add Service Payment"
+        app:icon="@drawable/ic_money"
+        app:iconGravity="textStart"
+        android:padding="12dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:cornerRadius="12dp"
+        style="@style/Widget.MaterialComponents.Button"
+        app:backgroundTint="@color/green_primary" />
+
+    <!-- File Type Options -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingBottom="24dp">
+
+        <!-- Document Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/llDocumentOption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp"
+                android:stateListAnimator="@animator/press_scale">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_document"
+                    app:tint="@color/green_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Document"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Image Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/llImageOption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp"
+                android:stateListAnimator="@animator/press_scale">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_gallery"
+                    app:tint="@color/green_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Gallery"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Video Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/llVideoOption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp"
+                android:stateListAnimator="@animator/press_scale">
+
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_video_outlined"
+                    app:tint="@color/green_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Video"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+
+    </LinearLayout>
+
+
+</LinearLayout>

@@ -1,0 +1,131 @@
+package com.haset.hasetapp.viewmodels;
+
+import android.app.Application;
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
+import com.haset.hasetapp.database.entities.DoctorWalletEntity;
+import com.haset.hasetapp.models.Appointment;
+import com.haset.hasetapp.repositories.DoctorHomeRepository;
+import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.NotificationBadgeHelper;
+
+import java.util.List;
+
+public class DoctorHomeViewModel extends AndroidViewModel {
+    private final DoctorHomeRepository repository;
+    private NotificationBadgeHelper badgeHelper;
+    private LiveData<List<Appointment>> appointments;
+    private LiveData<DoctorWalletEntity> wallet;
+    private LiveData<Integer> ratingCount;
+    private MutableLiveData<Integer> notificationCount;
+    private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
+    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> withdrawSuccess = new MutableLiveData<>();
+
+    public DoctorHomeViewModel(@NonNull Application application) {
+        super(application);
+        this.repository = new DoctorHomeRepository();
+        this.badgeHelper = new NotificationBadgeHelper(application);
+        this.notificationCount = new MutableLiveData<>(0);
+        updateNotificationCount();
+    }
+
+    public LiveData<List<Appointment>> getAppointments(String doctorId) {
+        if (appointments == null) {
+            appointments = repository.getAppointments(doctorId);
+        }
+        return appointments;
+    }
+
+    public LiveData<DoctorWalletEntity> getWalletBalance(String doctorId) {
+        if (wallet == null) {
+            wallet = repository.getWalletBalance(doctorId);
+        }
+        return wallet;
+    }
+
+    public void updateAppointmentStatus(Appointment appointment, String status, FirebaseHelper.OnCompleteListener<Void> callback) {
+        repository.updateAppointmentStatus(appointment, status, callback);
+    }
+
+    public LiveData<Integer> getNotificationCount(String userId, String role) {
+        return notificationCount;
+    }
+    
+    public void updateNotificationCount() {
+        if (badgeHelper != null) {
+            int newCount = badgeHelper.getNewNotificationsSinceLastOpen();
+            notificationCount.postValue(newCount);
+        }
+    }
+    
+    public void incrementNotificationCount() {
+        if (badgeHelper != null) {
+            badgeHelper.incrementGeneralNotifications();
+            badgeHelper.incrementNewNotifications();
+            int newCount = badgeHelper.getNewNotificationsSinceLastOpen();
+            notificationCount.postValue(newCount);
+        }
+    }
+    
+    public void clearNotificationCount() {
+        if (badgeHelper != null) {
+            badgeHelper.markGeneralNotificationsAsRead();
+            notificationCount.postValue(0);
+        }
+    }
+
+    public LiveData<Integer> getRatingCount(String doctorId) {
+        if (ratingCount == null) {
+            ratingCount = repository.getRatingCount(getApplication(), doctorId);
+        }
+        return ratingCount;
+    }
+
+    public void withdrawFunds(String doctorId, double amount) {
+        loading.setValue(true);
+        repository.withdrawFunds(doctorId, amount, new FirebaseHelper.OnCompleteListener<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                loading.postValue(false);
+                withdrawSuccess.postValue(result);
+            }
+
+            @Override
+            public void onError(String err) {
+                loading.postValue(false);
+                error.postValue(err);
+            }
+        });
+    }
+
+    public void requestWithdrawal(String doctorId, String doctorName, double amount, String method, 
+                                  String accountNumber, String accountName, String bankName) {
+        loading.setValue(true);
+        repository.requestWithdrawal(doctorId, doctorName, amount, method, accountNumber, accountName, bankName, 
+            new FirebaseHelper.OnCompleteListener<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                loading.postValue(false);
+                withdrawSuccess.postValue(result);
+            }
+
+            @Override
+            public void onError(String err) {
+                loading.postValue(false);
+                error.postValue(err);
+            }
+        });
+    }
+
+    public LiveData<Boolean> getLoading() { return loading; }
+    public LiveData<String> getError() { return error; }
+    public LiveData<Boolean> getWithdrawSuccess() { return withdrawSuccess; }
+
+    public LiveData<List<com.haset.hasetapp.database.entities.WithdrawalRequest>> getWithdrawalRequests(String doctorId) {
+        return repository.getWithdrawalRequests(doctorId);
+    }
+}

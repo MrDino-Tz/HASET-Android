@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_primary">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_search_circle"
+                android:foreground="@drawable/ripple_effect_circular"
+                android:clickable="true"
+                android:focusable="true"
+                android:stateListAnimator="@animator/press_scale"
+                android:padding="10dp"
+                android:src="@drawable/ic_angle_left_solid"
+                app:tint="@color/green_primary"
+                android:elevation="24dp"
+                android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                android:outlineSpotShadowColor="@color/chat_shadow_color" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:fontFamily="@font/poppins_medium"
+                android:text="Manage Hospitals"
+                android:textColor="@color/green_primary"
+                android:textSize="20sp"
+                android:layout_marginStart="16dp" />
+
+            <ImageView
+                android:id="@+id/btnClearNotifications"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_search_circle"
+                android:foreground="@drawable/ripple_effect_circular"
+                android:padding="10dp"
+                android:src="@drawable/ic_more_vert"
+                app:tint="@color/green_primary" />
+        </LinearLayout>
+
+        <!-- Use your default empty state for now for the list -->
+        <include
+            android:id="@+id/layoutEmptyState"
+            layout="@layout/layout_empty_state_simple"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAdminHospitals"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:clipToPadding="false"
+            android:paddingBottom="80dp" />
+
+    </LinearLayout>
+
+    <!-- Tabs -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="@color/green_primary"
+        app:tabSelectedTextColor="@color/green_primary"
+        app:tabTextColor="?attr/colorPrimaryText">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/pending" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/system" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activity_logs" />
+
+    </com.google.android.material.tabs.TabLayout>
+
+    <!-- Content -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Pending Appointments Shimmer -->
+        <LinearLayout
+            android:id="@+id/shimmerContainerPending"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:visibility="gone" />
+
+        <!-- Pending Appointments -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPendingAppointments"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="visible"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+        <!-- System Shimmer -->
+        <LinearLayout
+            android:id="@+id/shimmerContainerSystem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:visibility="gone" />
+
+        <!-- System Notifications -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSystemNotifications"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+        <!-- Activity Logs Shimmer -->
+        <LinearLayout
+            android:id="@+id/shimmerContainerActivity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:visibility="gone" />
+
+        <!-- Activity Logs -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvActivityLogs"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+    </FrameLayout>
+
+</LinearLayout>

@@ -1,0 +1,66 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:padding="12dp"
+    android:orientation="horizontal"
+    android:background="@android:color/transparent">
+
+
+
+        <!-- Shimmer Profile Image (Left) -->
+        <View
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/shimmer_placeholder_rounded"
+            android:backgroundTint="@color/shimmer_placeholder"/>
+
+        <!-- Shimmer Lines (Right) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp">
+
+            <!-- Name Line (Matches 16sp bold) -->
+            <View
+                android:layout_width="140dp"
+                android:layout_height="20dp"
+                android:background="@drawable/shimmer_placeholder_rounded"
+                android:backgroundTint="@color/shimmer_placeholder"/>
+
+            <!-- Specialty Line (Matches 12sp + 4dp margin) -->
+            <View
+                android:layout_width="100dp"
+                android:layout_height="14dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/shimmer_placeholder_rounded"
+                android:backgroundTint="@color/shimmer_placeholder"/>
+
+            <!-- Rating/Reviews Line (Matches row height + 8dp margin) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical">
+
+                <View
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:background="@drawable/shimmer_placeholder_rounded"
+                    android:backgroundTint="@color/shimmer_placeholder"/>
+
+                <View
+                    android:layout_width="80dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/shimmer_placeholder_rounded"
+                    android:backgroundTint="@color/shimmer_placeholder"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+</LinearLayout>

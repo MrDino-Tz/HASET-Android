@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <!-- Fixed Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:elevation="4dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+            
+            <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_search_circle"
+            android:foreground="@drawable/ripple_effect_circular"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@animator/press_scale"
+            android:padding="10dp"
+            android:src="@drawable/ic_angle_left_solid"
+            app:tint="@color/green_primary"
+            android:elevation="24dp"
+            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Management"
+                android:textColor="@color/green_primary"
+                android:textSize="20sp"
+                android:fontFamily="@font/poppins_medium"
+                android:gravity="center"
+                android:layout_gravity="center_vertical" />
+            
+            <View
+                android:layout_width="34dp"
+                android:layout_height="34dp" />
+        </LinearLayout>
+        
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            app:tabMode="fixed" />
+    </LinearLayout>
+
+    <!-- Tab Content: ViewPager2 -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/vpAdminTabs"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="120dp" />
+
+    <!-- Floating Action Button to Create User -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCreateUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_add"
+        app:borderWidth="10dp"
+        app:tint="@color/white"
+        app:backgroundTint="@color/green_primary"
+        app:elevation="6dp"
+        app:shapeAppearanceOverlay="@style/CircleShape"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

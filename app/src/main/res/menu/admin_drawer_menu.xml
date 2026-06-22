@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <group android:id="@+id/group_main">
+        <item
+            android:id="@+id/nav_dashboard"
+            android:icon="@drawable/ic_home"
+            android:title="Dashboard" />
+        
+        <item
+            android:id="@+id/nav_audit_logs"
+            android:icon="@drawable/ic_info"
+            android:title="Audit Logs" />
+        
+        <item
+            android:id="@+id/nav_reports"
+            android:icon="@drawable/ic_edit"
+            android:title="Reports" />
+        
+        <item
+            android:id="@+id/nav_article_center"
+            android:icon="@drawable/ic_news"
+            android:title="Article Center" />
+            
+        <item
+            android:id="@+id/nav_promo_banners"
+            android:icon="@drawable/ic_edit"
+            android:title="Promo Banners" />
+
+        <item
+            android:id="@+id/nav_manage_hospitals"
+            android:icon="@drawable/ic_hospital_24"
+            android:title="Manage Hospitals" />
+
+        <item
+            android:id="@+id/nav_health_quotes"
+            android:icon="@drawable/ic_edit"
+            android:title="Health Quotes" />
+
+        <item
+            android:id="@+id/nav_demo_doctors"
+            android:icon="@drawable/ic_profile"
+            android:title="Demo Doctors" />
+
+        <item
+            android:id="@+id/nav_wallet_management"
+            android:icon="@drawable/ic_money"
+            android:title="Wallet Management" />
+
+        <item
+            android:id="@+id/nav_support_tickets"
+            android:icon="@drawable/ic_support"
+            android:title="Support Tickets" />
+    </group>
+    
+    <group android:id="@+id/group_settings">
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@drawable/ic_logout"
+            android:title="Logout" />
+    </group>
+    
+</menu>
+

@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:fitsSystemWindows="true">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background_primary"
+        app:elevation="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:contentInsetStartWithNavigation="0dp"
+            app:layout_scrollFlags="scroll|enterAlways"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingEnd="16dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_circular"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/press_scale"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_angle_left_solid"
+                    app:tint="@color/green_primary"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color" />>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Wallet Management"
+                    android:textColor="@color/green_primary"
+                    android:textSize="24sp"
+                    android:fontFamily="@font/poppins_medium"
+                    android:gravity="center"
+                    android:layout_gravity="center_vertical" />
+
+                <View
+                    android:layout_width="34dp"
+                    android:layout_height="34dp" />
+
+            </LinearLayout>
+        </com.google.android.material.appbar.MaterialToolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Summary Cards Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="4dp"
+                    android:layout_marginBottom="16dp">
+
+                    <!-- Platform Gateway Card (Company Zeno Balance) 
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="3dp"
+                        app:cardBackgroundColor="@color/green_primary"
+                        app:strokeWidth="0dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Company Profile (Zeno)"
+                                android:textColor="@color/white"
+                                android:alpha="0.8"
+                                android:textSize="13sp"
+                                android:fontFamily="@font/poppins_medium" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginTop="6dp">
+
+                                <TextView
+                                    android:id="@+id/tvCompanyBalance"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="•••••••• TZS"
+                                    android:textColor="@color/white"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/poppins_medium" />
+
+                                <ImageView
+                                    android:id="@+id/ivToggleCompanyBalance"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@drawable/ic_eye"
+                                    android:padding="2dp"
+                                    android:alpha="1.0"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    app:tint="@color/white" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                    -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:baselineAligned="false">
+
+                        <!-- Pending Total Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="6dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="@color/status_pending"
+                            app:strokeWidth="0dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tvPendingCount"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0 Requests"
+                                    android:textColor="@color/white"
+                                    android:alpha="0.8"
+                                    android:textSize="12sp"
+                                    android:fontFamily="@font/poppins_medium" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical"
+                                    android:layout_marginTop="4dp">
+
+                                    <TextView
+                                        android:id="@+id/tvTotalPending"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="•••••••• TZS"
+                                        android:textColor="@color/white"
+                                        android:textSize="14sp"
+                                        android:fontFamily="@font/poppins_regular" />
+
+                                    <ImageView
+                                        android:id="@+id/ivTogglePending"
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:src="@drawable/ic_eye"
+                                        android:padding="2dp"
+                                        android:alpha="0.8"
+                                        app:tint="@color/white" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Total Wallets Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="2dp"
+                            app:cardBackgroundColor="@color/green_dark"
+                            app:strokeWidth="0dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tvWalletCount"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0 Wallets"
+                                    android:textColor="@color/white"
+                                    android:alpha="0.8"
+                                    android:textSize="12sp"
+                                    android:fontFamily="@font/poppins_medium" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical"
+                                    android:layout_marginTop="4dp">
+
+                                    <TextView
+                                        android:id="@+id/tvTotalBalance"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="•••••••• TZS"
+                                        android:textColor="@color/white"
+                                        android:textSize="14sp"
+                                        android:fontFamily="@font/poppins_regular" />
+
+                                    <ImageView
+                                        android:id="@+id/ivToggleBalance"
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:src="@drawable/ic_eye"
+                                        android:padding="2dp"
+                                        android:alpha="0.8"
+                                        app:tint="@color/white" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Pending Withdrawals Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="12dp">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="20dp"
+                        android:background="@color/status_pending"
+                        android:backgroundTint="@color/status_pending" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="@string/pending_withdrawals"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    app:strokeWidth="0dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="120dp">
+
+                        <com.facebook.shimmer.ShimmerFrameLayout
+                            android:id="@+id/shimmerRequests"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:visibility="visible">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+                                <include layout="@layout/shimmer_layout_appointment_card" />
+                                <include layout="@layout/shimmer_layout_appointment_card" />
+                            </LinearLayout>
+                        </com.facebook.shimmer.ShimmerFrameLayout>
+
+                        <LinearLayout
+                            android:id="@+id/llNoRequests"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="40dp"
+                            android:visibility="gone">
+
+                            <ImageView
+                                android:layout_width="64dp"
+                                android:layout_height="64dp"
+                                android:alpha="0.3"
+                                android:src="@drawable/ic_check"
+                                app:tint="@color/green_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:fontFamily="@font/poppins_medium"
+                                android:text="@string/no_pending_withdrawals"
+                                android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvWithdrawalRequests"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            android:paddingVertical="8dp"
+                            android:visibility="gone" />
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Doctor Wallets Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="12dp">
+
+                    <View
+                        android:layout_width="4dp"
+                        android:layout_height="20dp"
+                        android:background="@color/green_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="@string/doctor_wallets"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp" />
+                </LinearLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:cardUseCompatPadding="true"
+                    app:strokeWidth="0dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="120dp">
+
+                        <com.facebook.shimmer.ShimmerFrameLayout
+                            android:id="@+id/shimmerWallets"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:visibility="visible">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+                                <include layout="@layout/shimmer_layout_appointment_card" />
+                                <include layout="@layout/shimmer_layout_appointment_card" />
+                            </LinearLayout>
+                        </com.facebook.shimmer.ShimmerFrameLayout>
+
+                        <LinearLayout
+                            android:id="@+id/llNoWallets"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="40dp"
+                            android:visibility="gone">
+
+                            <ImageView
+                                android:layout_width="64dp"
+                                android:layout_height="64dp"
+                                android:alpha="0.3"
+                                android:src="@drawable/ic_money"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:fontFamily="@font/poppins_medium"
+                                android:text="@string/no_doctor_wallets"
+                                android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvDoctorWallets"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            android:paddingVertical="8dp"
+                            android:visibility="gone" />
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

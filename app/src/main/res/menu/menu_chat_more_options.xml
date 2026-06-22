@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_mic"
+        android:icon="@drawable/ic_mic"
+        android:iconTint="@color/green_dark"
+        android:title=""
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_camera"
+        android:icon="@drawable/ic_camera_alt"
+        android:iconTint="@color/green_dark"
+        android:title=""
+        app:showAsAction="ifRoom" />
+</menu>

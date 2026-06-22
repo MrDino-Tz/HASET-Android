@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/popup_menu_background"
+    android:padding="6dp">
+
+    <TextView
+        android:id="@+id/tvAbout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="About HASET"
+        android:textSize="16sp"
+        android:textColor="?attr/colorPrimaryText"
+        android:fontFamily="@font/poppins_medium"
+        android:padding="14dp"
+        android:background="@drawable/popup_menu_item_selector"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <TextView
+        android:id="@+id/tvSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:textSize="16sp"
+        android:textColor="?attr/colorPrimaryText"
+        android:fontFamily="@font/poppins_medium"
+        android:padding="14dp"
+        android:background="@drawable/popup_menu_item_selector"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

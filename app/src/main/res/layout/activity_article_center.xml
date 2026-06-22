@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:fitsSystemWindows="true">
+
+    <!-- Dynamic Header -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background_primary"
+        app:elevation="0dp"
+        android:stateListAnimator="@null"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <androidx.appcompat.widget.Toolbar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:contentInsetStart="0dp"
+            app:contentInsetLeft="0dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_circular"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/press_scale"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_angle_left_solid"
+                    app:tint="@color/green_primary"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Article Center"
+                    android:textColor="@color/green_primary"
+                    android:textSize="20sp"
+                    android:fontFamily="@font/poppins_medium"
+                    android:gravity="center"
+                    android:layout_gravity="center_vertical" />
+
+                <ImageView
+                    android:id="@+id/btnAddPost"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_edit"
+                    android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_circular"
+                    app:tint="@color/green_primary"
+                    android:padding="7dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/press_scale"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color" />
+            </LinearLayout>
+        </androidx.appcompat.widget.Toolbar>
+
+        <!-- Tab Layout - Stays fixed or enters with header depending on flags -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/background_primary"
+            app:tabMode="fixed"
+            app:tabIndicatorColor="@color/green_primary"
+            app:tabSelectedTextColor="@color/green_primary"
+            app:tabTextColor="@color/text_secondary"
+            app:layout_scrollFlags="noScroll">
+        </com.google.android.material.tabs.TabLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- ViewPager for Tabs -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

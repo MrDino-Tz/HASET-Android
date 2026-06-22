@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- DEBUG OVERRIDES: Allow user certificates for ngrok SSL inspection -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+            <certificates src="system" />
+        </trust-anchors>
+    </debug-overrides>
+
+    <!-- BASE CONFIG: Block all cleartext (HTTP) by default - SECURE -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- DEVELOPMENT: Allow ngrok domains -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">ngrok-free.dev</domain>
+        <domain includeSubdomains="true">ngrok.io</domain>
+    </domain-config>
+
+    <!-- DEVELOPMENT: Allow local dev server (HTTP) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.1.126</domain>
+    </domain-config>
+
+    <!-- Firebase Storage -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">firebasestorage.googleapis.com</domain>
+        <domain includeSubdomains="true">storage.googleapis.com</domain>
+    </domain-config>
+
+    <!-- Production API Domain -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">hasethospital.or.tz</domain>
+    </domain-config>
+
+</network-security-config>

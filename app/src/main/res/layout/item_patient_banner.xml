@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bannerCard"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_banner_green_shadow"
+    android:clipToOutline="true"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <!-- Full Image Display -->
+    <ImageView
+        android:id="@+id/ivBannerImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/placeholder_image"
+        android:scaleType="centerCrop" />
+
+    <!-- Detailed Banner Overlay -->
+    <LinearLayout
+        android:id="@+id/layoutDetailedContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top Row: Badge aligned to end -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/tvDiscountBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50% OFF"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="5dp"
+                android:background="@drawable/bg_discount_badge"
+                android:letterSpacing="0.03" />
+
+        </LinearLayout>
+
+        <!-- Spacer to push content to bottom -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Bottom Content Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Text Content -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTitleLine1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Premium"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:alpha="0.9"
+                    android:fontFamily="@font/poppins_medium" />
+
+                <TextView
+                    android:id="@+id/tvTitleLine2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Healthcare"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_black" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuyNow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="Get Started"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_medium"
+                    android:backgroundTint="@color/banner_button_background"
+                    android:layout_marginTop="6dp"
+                    app:cornerRadius="8dp"
+                    app:rippleColor="@color/green_light"
+                    style="@style/Widget.Material3.Button"
+                    android:paddingHorizontal="14dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp" />
+
+            </LinearLayout>
+
+            <!-- Small Image for Detailed Banner -->
+            <ImageView
+                android:id="@+id/ivBannerImageSmall"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:scaleType="fitCenter"
+                android:layout_marginStart="8dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Gradient Overlay for Image Banners (at bottom) -->
+    <View
+        android:id="@+id/viewGradientOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_gradient_bottom"
+        android:visibility="gone" />
+
+</FrameLayout>

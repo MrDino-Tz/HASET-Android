@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Voice-specific colors - Add any voice-specific colors here that aren't in main colors.xml -->
+    <!-- Note: voice_wave_bar and voice_wave_background are now in colors.xml -->
+</resources>

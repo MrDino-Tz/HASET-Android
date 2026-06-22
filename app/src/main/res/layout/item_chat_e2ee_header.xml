@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:padding="8dp"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginBottom="12dp"
+    android:layout_marginTop="16dp"
+    android:background="@drawable/bg_e2ee_card">
+
+    <ImageView
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:src="@drawable/ic_lock"
+        app:tint="#FBC02D"
+        android:layout_marginEnd="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Messages are end-to-end encrypted. Only people in this chat read, listen to, or share them."
+        android:textColor="#F57F17"
+        android:textSize="11sp"
+        android:textAlignment="center"
+        android:fontFamily="@font/poppins_regular"/>
+
+</LinearLayout>

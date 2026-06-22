@@ -1,0 +1,243 @@
+# Android Studio and Gradle build files
+.gradle/
+.idea/
+*.iml
+*.hprof
+local.properties
+
+# Build output
+build/
+app/build/
+
+# Native libraries
+*.so
+*.lib
+
+# Generated files
+bin/
+*.keystore
+*.jks
+
+# IntelliJ IDEA files
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/jarRepositories.xml
+.idea/copyright.xml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/modules.xml
+.idea/compiler.xml
+.idea/platforms.xml
+.idea.dependencies
+.idea.downloads
+.idea/vcs.xml
+.idea/runConfigurations.xml
+.idea/androidTests.xml
+.idea/artifacts
+.idea/associations.xml
+
+# Android Studio specific
+*.apk
+*.apks
+*.aab
+*.aar
+*.zip
+*.rar
+*.tar.gz
+*.tar.bz2
+*.tgz
+
+# Temporary files
+*.tmp
+*.log
+*.cache
+*.swp
+*.swo
+
+# Node.js
+node_modules/
+
+# Python
+*.pyc
+__pycache__/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# IDE
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Other
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+
+# Generated files
+*.generated
+*.gen
+*.template
+
+# Documentation
+*.md
+*.txt
+*.rst
+*.markdown
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Gradle wrapper
+gradlew
+gradlew.bat
+gradle-wrapper.properties
+
+# Maven
+target/
+
+# Go
+vendor/
+
+# Rust
+Cargo.lock
+Cargo.toml
+
+# Java
+*.class
+
+# Java package files
+*.jar
+*.war
+*.ear
+
+# J2ME
+*.jad
+*.jar
+
+# Jython
+*.pyc
+
+# Scala
+*.class
+
+# Groovy
+*.class
+
+# Kotlin
+*.class
+
+# Assembly
+*.class
+
+# C
+*.class
+
+# C++
+*.class
+
+# Go
+*.class
+
+# Rust
+*.class
+
+# Python
+*.class
+
+# JavaScript
+*.class
+
+# TypeScript
+*.class
+
+# HTML
+*.class
+
+# CSS
+*.class
+
+# XML
+*.class
+
+# JSON
+*.class
+
+# YAML
+*.class
+
+# TOML
+*.class
+
+# INI
+*.class
+
+# Properties
+*.class
+
+# SQL
+*.class
+
+# Shell
+*.class
+
+# Batch
+*.class
+
+# PowerShell
+*.class
+
+# Perl
+*.class
+
+# Ruby
+*.class
+
+# PHP
+*.class
+
+# C#
+*.class
+
+# F#
+*.class
+
+# VB.NET
+*.class
+
+# JScript
+*.class
+
+# J# 
+*.class
+
+# C++/CLI
+*.class
+
+# Objective-C
+*.class
+
+# Swift
+*.class
+
+# Kotlin
+*.class
+
+# Scala
+*.class
+
+# Groovy
+*.class
+
+# Java
+*.class
+
+# All
+*.class

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base text style for Bottom Navigation -->
+    <style name="BottomNavText" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="fontFamily">@font/poppins_medium</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:includeFontPadding">true</item>
+    </style>
+    
+    <!-- Active text style (explicitly re-stating font) -->
+    <style name="BottomNavText.Active" parent="BottomNavText">
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="fontFamily">@font/poppins_medium</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    
+    <!-- Style to hide the active indicator/bubble -->
+    <style name="BottomNavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+    </style>
+
+    <style name="BottomNavIndicator.Premium" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/green_light_very</item>
+        <item name="android:width">44dp</item>
+        <item name="android:height">44dp</item>
+        <item name="marginHorizontal">12dp</item>
+    </style>
+</resources>

@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:background="@color/background_light"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Sticky header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:elevation="2dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+                <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_search_circle"
+            android:foreground="@drawable/ripple_effect_circular"
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@animator/press_scale"
+            android:padding="10dp"
+            android:src="@drawable/ic_angle_left_solid"
+            app:tint="@color/green_primary"
+            android:elevation="24dp"
+            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Book Appointment"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/green_primary"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:layout_gravity="center_vertical" />
+
+
+        <View
+            android:layout_width="34dp"
+            android:layout_height="34dp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:fitsSystemWindows="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Doctor Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:background="@android:color/white">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+                    <FrameLayout
+                        android:id="@+id/layoutDoctorImage"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp">
+
+                        <com.facebook.shimmer.ShimmerFrameLayout
+                            android:id="@+id/shimmerDoctorImage"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            app:shimmer_auto_start="true"
+                            app:shimmer_base_alpha="0.8"
+                            app:shimmer_highlight_alpha="1.0">
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/shimmer_circle" />
+
+                        </com.facebook.shimmer.ShimmerFrameLayout>
+
+                        <de.hdodenhof.circleimageview.CircleImageView
+                            android:id="@+id/ivDoctorImage"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/profile_photo" />
+
+                        <!-- Verified Badge -->
+                        <ImageView
+                            android:id="@+id/ivVerifiedBadge"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="bottom|end"
+                            android:background="@android:color/transparent"
+                            android:padding="2dp"
+                            android:src="@drawable/verified"
+                            android:visibility="gone" />
+                    </FrameLayout>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/tvDoctorName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dr. John Doe"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/poppins_medium"/>
+                        <TextView
+                            android:id="@+id/tvSpecialty"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Cardiologist"
+                            android:textColor="@color/green_primary"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins_medium"/>
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Fee: "
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp"
+                                android:fontFamily="@font/poppins_regular"/>
+                            <TextView
+                                android:id="@+id/tvConsultationFee"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0 TZS"
+                                android:textColor="@color/green_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:fontFamily="@font/poppins_medium"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Appointment Type Selection -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="Choose Appointment Type"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_medium"/>
+
+            <!-- Instant Appointment Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardInstantAppointment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:background="@android:color/white">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    
+                    <!-- Card Header (Always Visible) -->
+                    <LinearLayout
+                        android:id="@+id/headerInstantAppointment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_clock"
+                            app:tint="@color/green_primary"
+                            android:background="@drawable/circle_background"
+                            android:padding="12dp"/>
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Instant Appointment"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:fontFamily="@font/poppins_medium"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Connect immediately with the doctor"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/poppins_regular"/>
+                        </LinearLayout>
+                        <ImageView
+                            android:id="@+id/expandIconInstant"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_arrow_down"
+                            app:tint="@color/green_primary"/>
+                    </LinearLayout>
+
+                    <!-- Expandable Content (Initially Hidden) -->
+                    <LinearLayout
+                        android:id="@+id/contentInstantAppointment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginTop="12dp">
+                        
+                        <!-- Instant Appointment Options -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <!-- Online Chat Option -->
+                            <LinearLayout
+                                android:id="@+id/optionOnlineChat"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp"
+                                android:stateListAnimator="@animator/press_scale"
+                                android:background="@drawable/option_background"
+                                android:layout_marginEnd="8dp"
+                                android:clickable="true"
+                                android:focusable="true">
+                                <ImageView
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:src="@drawable/ic_chat"
+                                    app:tint="@color/green_primary"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Online Chat"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/poppins_medium"
+                                    android:gravity="center"/>
+                            </LinearLayout>
+
+                            <!-- Voice Call Option -->
+                            <LinearLayout
+                                android:id="@+id/optionVoiceCall"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="12dp"
+                                android:stateListAnimator="@animator/press_scale"
+                                android:background="@drawable/option_background"
+                                android:layout_marginStart="8dp"
+                                android:clickable="true"
+                                android:focusable="true">
+                                <ImageView
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:src="@drawable/ic_video_filled"
+                                    app:tint="@color/green_primary"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Video Call"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="@font/poppins_medium"
+                                    android:gravity="center"/>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Schedule Appointment Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardScheduleAppointment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:background="@android:color/white">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    
+                    <!-- Card Header (Always Visible) -->
+                    <LinearLayout
+                        android:id="@+id/headerScheduleAppointment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_calendar"
+                            app:tint="@color/green_primary"
+                            android:background="@drawable/circle_background"
+                            android:padding="12dp"/>
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Schedule Appointment"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:fontFamily="@font/poppins_medium"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Book for a future date and time"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                android:fontFamily="@font/poppins_regular"/>
+                        </LinearLayout>
+                        <ImageView
+                            android:id="@+id/expandIconSchedule"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_arrow_down"
+                            app:tint="@color/green_primary"/>
+                    </LinearLayout>
+
+                    <!-- Expandable Content (Initially Hidden) -->
+                    <LinearLayout
+                        android:id="@+id/contentScheduleAppointment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginTop="12dp">
+                        
+                        <!-- Schedule Appointment Options -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            
+                            <!-- Date Selection -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="16dp"
+                                style="@style/EditTextStyle"
+                                app:startIconDrawable="@drawable/ic_empty_calendar"
+                                app:startIconTint="@color/text_secondary"
+                                app:hintTextColor="@color/text_secondary"
+                                app:boxStrokeColor="@color/green_primary"
+                                app:boxStrokeWidth="1dp"
+                                app:boxCornerRadiusTopStart="20dp"
+                                app:boxCornerRadiusTopEnd="20dp"
+                                app:boxCornerRadiusBottomStart="20dp"
+                                app:boxCornerRadiusBottomEnd="20dp">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etDate"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:focusable="false"
+                                    android:hint="@string/hint_select_date"
+                                    android:inputType="none"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_regular"/>
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Time Selection -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="16dp"
+                                style="@style/EditTextStyle"
+                                app:startIconDrawable="@drawable/ic_clock"
+                                app:startIconTint="@color/text_secondary"
+                                app:hintTextColor="@color/text_secondary"
+                                app:boxStrokeColor="@color/green_primary"
+                                app:boxStrokeWidth="1dp"
+                                app:boxCornerRadiusTopStart="20dp"
+                                app:boxCornerRadiusTopEnd="20dp"
+                                app:boxCornerRadiusBottomStart="20dp"
+                                app:boxCornerRadiusBottomEnd="20dp">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etTime"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:focusable="false"
+                                    android:hint="@string/hint_select_time"
+                                    android:inputType="none"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_regular"/>
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Reason Input -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                style="@style/EditTextStyle"
+                                app:startIconDrawable="@drawable/ic_text_box_edit_24"
+                                app:startIconTint="@color/text_secondary"
+                                app:hintTextColor="@color/text_secondary"
+                                app:boxStrokeColor="@color/green_primary"
+                                app:boxStrokeWidth="1dp"
+                                app:boxCornerRadiusTopStart="20dp"
+                                app:boxCornerRadiusTopEnd="20dp"
+                                app:boxCornerRadiusBottomStart="20dp"
+                                app:boxCornerRadiusBottomEnd="20dp">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etReason"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="@string/hint_reason_for_visit"
+                                    android:inputType="textMultiLine"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_regular"
+                                    android:lines="2" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Confirm Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirmBooking"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="Book Appointment"
+                android:stateListAnimator="@animator/press_scale"
+                android:backgroundTint="@color/green_primary"
+                android:textColor="@color/white_primary"
+                app:cornerRadius="12dp"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_medium"/>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

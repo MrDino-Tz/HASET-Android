@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_background"
+    android:padding="24dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bottom_sheet_handle" />
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Payment Method"
+        android:textColor="@color/text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Payment Method Options -->
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="1"
+        android:rowCount="1"
+        android:alignmentMode="alignMargins"
+        android:columnOrderPreserved="false"
+        android:padding="4dp">
+
+        <!-- Mobile Money Option -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/llMobileMoney"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardElevation="0dp"
+            app:cardCornerRadius="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:strokeColor="@color/green_primary"
+            app:strokeWidth="1.5dp"
+            app:cardBackgroundColor="@color/green_light_very">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <FrameLayout
+                    android:layout_width="48dp"
+                    android:layout_height="48dp">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/circle_background_white"
+                        android:backgroundTint="@color/withdrawal_icon_bg" />
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/a_mobile_phones_toon" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mobile Money"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="M-Pesa, Tigo Pesa, Airtel Money"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/poppins_regular" />
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/ivMobileSelected"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_check"
+                    app:tint="@color/green_primary"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card Payment Option - COMMENTED OUT -->
+<!--        <androidx.cardview.widget.CardView
+            android:id="@+id/llCardPayment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1"
+            android:layout_margin="8dp"
+            app:cardElevation="4dp"
+            app:cardCornerRadius="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="@drawable/ripple_effect_rounded">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp">
+
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/a_credit_card_toon" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Card Payment"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_medium" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_marginTop="8dp"-->
+<!--                    android:text="Bank Payment"-->
+<!--                    android:textColor="@color/text_primary"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:fontFamily="@font/poppins_medium" />-->
+<!--            </LinearLayout>-->
+<!--        </androidx.cardview.widget.CardView>-->
+
+    </GridLayout>
+
+</LinearLayout>
+

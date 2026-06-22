@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="160dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="@drawable/ripple_effect_rounded">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Product Image -->
+        <ImageView
+            android:id="@+id/ivProductImage"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:src="@drawable/placeholder_image"
+            android:scaleType="centerInside"
+            android:background="@color/grey_light"
+            android:contentDescription="Product image"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Product Details -->
+        <TextView
+            android:id="@+id/tvProductName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Product Name"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_medium"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvProductType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="Supplements"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:fontFamily="@font/poppins_regular"
+            android:background="@drawable/bg_stock_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:layout_marginBottom="8dp" />
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal"-->
+<!--            android:gravity="center_vertical">-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="14dp"-->
+<!--                android:layout_height="14dp"-->
+<!--                android:src="@drawable/ic_star_filled"-->
+<!--                app:tint="#FFD700" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tvRating"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                tools:text="4.8 (2.2k)"-->
+<!--                android:textColor="@color/text_secondary"-->
+<!--                android:textSize="11sp"-->
+<!--                android:fontFamily="@font/poppins_regular"-->
+<!--                android:layout_marginStart="4dp" />-->
+
+<!--        </LinearLayout>-->
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
+

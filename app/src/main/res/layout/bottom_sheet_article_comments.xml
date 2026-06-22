@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true"
+    android:background="@drawable/dialog_background">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:minHeight="400dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bottom_sheet_handle" />
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_comment"
+            android:background="@android:color/transparent"
+            android:padding="12dp"
+            app:tint="@color/green_primary" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Comments"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_medium"
+            android:layout_marginStart="16dp" />
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvComments"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:paddingVertical="8dp"
+        android:clipToPadding="false"
+        android:nestedScrollingEnabled="false" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp">
+
+        <EditText
+            android:id="@+id/etCommentInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Add a comment..."
+            android:padding="12dp"
+            android:background="@drawable/bg_rounded_edittext"
+            android:foreground="@drawable/ripple_effect_rounded"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary" />
+
+        <ImageView
+            android:id="@+id/ivSendComment"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:stateListAnimator="@animator/press_scale"
+            android:src="@drawable/ic_share"
+            app:tint="@color/green_primary"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/ripple_effect_circular"
+            android:padding="4dp"
+            android:contentDescription="Send comment" />
+
+    </LinearLayout>
+
+</LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

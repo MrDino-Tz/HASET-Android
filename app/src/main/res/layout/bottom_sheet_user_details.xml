@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bottom_sheet_handle" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Header with Profile Image -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+
+                <FrameLayout
+                    android:layout_width="86dp"
+                    android:layout_height="86dp">
+
+                    <com.facebook.shimmer.ShimmerFrameLayout
+                        android:id="@+id/shimmerUserProfile"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:shimmer_auto_start="true"
+                        app:shimmer_base_alpha="0.8"
+                        app:shimmer_highlight_alpha="1.0">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/shimmer_circle" />
+
+                    </com.facebook.shimmer.ShimmerFrameLayout>
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/ivUserProfile"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="center"
+                        app:civ_border_width="2dp"
+                        app:civ_border_color="@color/green_light" />
+
+                    <ImageView
+                        android:id="@+id/ivVerified"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="4dp"
+                        android:src="@drawable/verified"
+                        app:tint="@color/green_primary"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="20dp">
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="John Doe"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_black" />
+
+                    <TextView
+                        android:id="@+id/tvUserRole"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Patient"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_medium"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:background="@drawable/bg_role_patient"
+                        android:layout_marginTop="6dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- User Details Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="24dp">
+
+                <!-- Email -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_email"
+                        app:tint="@color/green_primary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Email"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/poppins_regular" />
+
+                        <TextView
+                            android:id="@+id/tvEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="user@example.com"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/poppins_medium"
+                            android:layout_marginTop="4dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Phone -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/green_primary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Phone"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/poppins_regular" />
+
+                        <TextView
+                            android:id="@+id/tvPhone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="+255 123 456 789"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/poppins_medium"
+                            android:layout_marginTop="4dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- User ID -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_profile"
+                        app:tint="@color/green_primary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="User ID"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/poppins_regular" />
+
+                        <TextView
+                            android:id="@+id/tvUserId"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="user-id-123"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="4dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Created Date -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="@color/green_primary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Registered On"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/poppins_regular" />
+
+                        <TextView
+                            android:id="@+id/tvCreatedDate"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Jan 1, 2024"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:layout_marginTop="4dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Current Activity -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_info"
+                        app:tint="@color/green_primary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Current Activity"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:fontFamily="@font/poppins_regular" />
+
+                        <TextView
+                            android:id="@+id/tvCurrentActivity"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="All Users"
+                            android:textColor="@color/green_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_medium"
+                            android:layout_marginTop="4dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Doctor Info Section (Hidden by default) -->
+                <LinearLayout
+                    android:id="@+id/llDoctorInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="16dp">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#EEEEEE"
+                        android:layout_marginBottom="16dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Doctor Information"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Specialty -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Specialty:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:id="@+id/tvDoctorSpecialty"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="General Physician"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Fee -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Consultation Fee:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:id="@+id/tvDoctorFee"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="0 TZS"
+                            android:textColor="@color/green_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Experience -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Experience:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:id="@+id/tvDoctorExperience"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="0 Years"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Rating & Patients -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Stats:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                        <TextView
+                            android:id="@+id/tvDoctorStats"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="4.5⭐ | 0 Patients"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Bio/About -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="About:"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/tvDoctorAbout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No bio provided"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:lineSpacingExtra="2dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="24dp">
+
+        <!-- Doctor Approval Actions (High Priority for admins) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnApproveDoctor"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="8dp"
+            android:text="Approve Doctor"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/poppins_black"
+            app:backgroundTint="@color/green_primary"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_check"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRejectDoctor"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="8dp"
+            android:text="Reject Doctor"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_medium"
+            app:backgroundTint="@color/red_primary"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_close"
+            app:iconGravity="textStart"
+            app:iconPadding="10dp"
+            android:visibility="gone" />
+
+        <!-- User Management Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEdit"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:stateListAnimator="@animator/press_scale"
+                android:text="Modify"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:strokeColor="@color/divider"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_edit"
+                app:iconTint="@color/green_primary"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:stateListAnimator="@animator/press_scale"
+                android:text="Delete"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
+                app:backgroundTint="@color/red_primary"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_trash"
+                app:iconTint="@color/white"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+
+
+</LinearLayout>
+

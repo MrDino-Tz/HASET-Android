@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Theme Colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Color Attributes for Theme Support -->
+    <color name="colorPrimaryText">@color/text_primary</color>
+    <color name="colorSecondaryText">@color/text_secondary</color>
+    <color name="colorBackground">@color/background_primary</color>
+    <color name="colorCardBackground">@color/background_card</color>
+    
+    <!-- Green Theme Colors for Dark Mode -->
+    <color name="green_primary">#008800</color>
+    <color name="green_light">#11AA11</color>
+    <color name="green_dark">#006600</color>
+    <color name="green_forchat">#4b6043</color>
+    
+    <!-- Red Theme Colors for Dark Mode -->
+    <color name="red_primary">#DD0000</color>
+    <color name="red_light">#FF2222</color>
+    <color name="red_dark">#BB0000</color>
+    
+    <!-- Black Theme Colors for Dark Mode -->
+    <color name="black_primary">#000000</color>
+    <color name="black_light">#222222</color>
+    <color name="black_dark">#000000</color>
+    
+    <!-- White Theme Colors for Dark Mode -->
+    <color name="white_primary">#FFFFFF</color>
+    <color name="white_light">#FFFFFF</color>
+    <color name="white_dark">#DDDDDD</color>
+    
+    <!-- Background Colors for Dark Mode -->
+    <color name="background_primary">#000000</color>
+    <color name="background_card">#222222</color>
+    <color name="background_light">#000000</color>
+    
+    <!-- Text Colors for Dark Mode -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#DDDDDD</color>
+    <color name="text_hint">#BBBBBB</color>
+    
+    <!-- Additional Colors for Dark Mode -->
+    <color name="grey_light">#444444</color>
+    <color name="grey_medium">#666666</color>
+    <color name="grey_dark">#999999</color>
+    <color name="divider">#444444</color>
+    
+    <!-- Status Colors for Dark Mode -->
+    <color name="status_pending">#F59E0B</color>
+    <color name="status_approved">#10B981</color>
+    <color name="status_declined">#EF4444</color>
+    <color name="status_completed">#3B82F6</color>
+    
+    <!-- Badge Colors for Dark Mode -->
+    <color name="badge_teal">#065F46</color>
+    <color name="badge_teal_text">#D1FAE5</color>
+    
+    <!-- Shadow for Dark Mode -->
+    <color name="shadow">#1AFFFFFF</color>
+    <color name="colorError">#D32F2F</color>
+    <color name="chat_shadow_color">#00CC00</color>
+    
+    <!-- Dialog Colors for Dark Mode -->
+    <color name="warning_color">#FF9800</color>
+    <color name="success_color">#4CAF50</color>
+    <color name="info_color">#2196F3</color>
+    
+    <!-- Shimmer Colors for Dark Mode -->
+    <color name="shimmer_placeholder">#333333</color>
+    <color name="shimmer_color">#44FFFFFF</color>
+    
+    <!-- Navigation Colors - Adapted for Dark Mode -->
+    <color name="bottom_nav_unselected">#AAAAAA</color> <!-- Lighter Grey for visibility on dark -->
+    <color name="bottom_nav_selected">#4CAF50</color> <!-- Lighter Green (Material Green 500) for visibility -->
+    
+    <!-- Banner Colors for Dark Mode -->
+    <color name="banner_button_background">#333333</color>
+    
+    <!-- Deepened gradients for dark mode -->
+    <color name="banner_teal_start">#004D40</color>
+    <color name="banner_teal_center">#00695C</color>
+    <color name="banner_teal_end">#00251A</color>
+    
+    <color name="banner_purple_start">#311B92</color>
+    <color name="banner_purple_center">#4527A0</color>
+    <color name="banner_purple_end">#1A0033</color>
+    
+    <color name="banner_blue_start">#0D47A1</color>
+    <color name="banner_blue_center">#1565C0</color>
+    <color name="banner_blue_end">#002171</color>
+    
+    <!-- New Dark Mode Colors for Withdrawal UI -->
+    <color name="green_light_very">#1A2E1A</color>
+    <color name="alert_bg">#3E2723</color>
+    <color name="alert_stroke">#5D4037</color>
+    <color name="alert_icon">#FFB300</color>
+    <color name="alert_text">#FFE0B2</color>
+    
+    <color name="withdrawal_icon_bg">#2D442D</color>
+    <color name="surface">#222222</color>
+</resources>

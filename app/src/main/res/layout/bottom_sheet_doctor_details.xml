@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bottom_sheet_handle" />
+
+    <!-- Header -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarDoctorDetails"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIconTint="@color/text_primary"
+        app:titleCentered="true"
+        app:title="Doctor Details"
+        app:titleTextAppearance="@style/ToolbarTitleStyle"
+        app:titleTextColor="@color/text_primary" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="8dp">
+
+            <!-- Doctor Image and Basic Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="16dp">
+
+                <FrameLayout
+                    android:layout_width="80dp"
+                    android:layout_height="80dp">
+
+                    <com.facebook.shimmer.ShimmerFrameLayout
+                        android:id="@+id/shimmerDoctorImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:shimmer_auto_start="true"
+                        app:shimmer_base_alpha="0.8"
+                        app:shimmer_highlight_alpha="1.0">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/shimmer_circle" />
+
+                    </com.facebook.shimmer.ShimmerFrameLayout>
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/ivDoctorImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                    <TextView
+                        android:id="@+id/tvUserInitials"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_search_circle"
+                        android:fontFamily="@font/poppins"
+                        android:gravity="center"
+                        android:text=""
+                        android:textColor="@color/green_primary"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvDoctorName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Loading. . ."
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"
+                            android:fontFamily="@font/poppins_medium" />
+
+                        <ImageView
+                            android:id="@+id/ivVerified"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/verified"
+                            android:visibility="gone"
+                            android:contentDescription="Verified Doctor" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvSpecialty"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Loading..."
+                        android:textSize="16sp"
+                        android:textColor="@color/text_secondary"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginTop="4dp" />
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_badge_round"
+                        android:backgroundTint="@color/star_yellow"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:gravity="center_vertical">
+                        
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_star_filled"
+                            app:tint="@color/black"
+                            android:contentDescription="Rating" />
+
+                        <TextView
+                            android:id="@+id/tvDetailsRating"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.0"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_medium"
+                            android:layout_marginStart="4dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvDetailsReviewsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="(0 Reviews)"
+                        android:textSize="13sp"
+                        android:textColor="@color/green_primary"
+                        android:fontFamily="@font/poppins_medium"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="4dp"
+                        android:layout_marginTop="4dp" />
+
+                    <!-- Book Appointment Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBookAppointment"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:text="Book Appointment"
+                        android:textColor="@color/green_primary"
+                        app:strokeColor="@color/green_primary"
+                        app:strokeWidth="1dp"
+                        app:backgroundTint="@android:color/transparent"
+                        app:cornerRadius="12dp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textAllCaps="false"
+                        android:textSize="16sp"
+                        android:layout_marginTop="8dp" />
+
+                </LinearLayout>
+
+<!--                <ImageView-->
+<!--                    android:id="@+id/ivFavorite"-->
+<!--                    android:layout_width="36dp"-->
+<!--                    android:layout_height="36dp"-->
+<!--                    android:src="@drawable/ic_star_outline"-->
+<!--                    app:tint="@color/text_hint"-->
+<!--                    android:padding="6dp"-->
+<!--                    android:background="@drawable/ripple_effect_circular"-->
+<!--                    android:clickable="true"-->
+<!--                    android:focusable="true"-->
+<!--                    android:contentDescription="Favorite Doctor" />-->
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:layout_marginBottom="16dp" />
+
+            <!-- About Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvAboutTitle"
+                android:text="About"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvBio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_marginBottom="16dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Contact Info -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Contact Information"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/green_dark"
+                        android:contentDescription="@string/phone" />
+
+                    <TextView
+                        android:id="@+id/tvPhoneNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+255 712 345 678"
+                        android:textSize="15sp"
+                        android:textColor="@color/text_secondary"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginStart="12dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_email"
+                        app:tint="@color/green_dark"
+                        android:contentDescription="@string/email" />
+
+                    <TextView
+                        android:id="@+id/tvEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="dr.john.doe@example.com"
+                        android:textSize="15sp"
+                        android:textColor="@color/text_secondary"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginStart="12dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_doctor_location"
+                        app:tint="@color/green_dark"
+                        android:contentDescription="@string/location" />
+
+                    <TextView
+                        android:id="@+id/tvAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="123 Main Street, City"
+                        android:textSize="15sp"
+                        android:textColor="@color/text_secondary"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginStart="12dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Availability & Fee -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Availability &amp; Fees"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:fontFamily="@font/poppins_medium"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/green_dark"
+                        android:contentDescription="@string/available_time" />
+
+                    <TextView
+                        android:id="@+id/tvAvailableTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Loading..."
+                        android:textSize="15sp"
+                        android:textColor="@color/text_secondary"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginStart="12dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_money"
+                        app:tint="@color/green_dark"
+                        android:contentDescription="@string/consultation_fee" />
+
+                    <TextView
+                        android:id="@+id/tvConsultationFee"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 TZS"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/green_primary"
+                        android:fontFamily="@font/poppins_medium"
+                        android:layout_marginStart="12dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
+

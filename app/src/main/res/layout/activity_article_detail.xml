@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:fitsSystemWindows="true"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background_primary"
+        app:elevation="0dp"
+        android:stateListAnimator="@null"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:contentInsetStart="0dp"
+            app:contentInsetLeft="0dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingHorizontal="16dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_circular"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/press_scale"
+                    android:padding="11dp"
+                    android:src="@drawable/ic_angle_left_solid"
+                    app:tint="@color/green_primary"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvToolbarTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/article"
+                    android:textColor="@color/green_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/poppins_medium"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    app:layout_constraintStart_toEndOf="@+id/btnBack"
+                    app:layout_constraintEnd_toStartOf="@+id/btnShare"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:id="@+id/btnShare"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_circular"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:stateListAnimator="@animator/press_scale"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_share"
+                    app:tint="@color/green_primary"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.appcompat.widget.Toolbar>
+
+
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <!-- Author Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:gravity="center_vertical">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/ivAuthorProfile"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/profile_photo"
+                    app:civ_border_width="0dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:id="@+id/tvAuthorName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Author Name"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/poppins_medium" />
+
+                    <TextView
+                        android:id="@+id/tvPublishDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Published date"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/poppins" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Article Image (if exists) -->
+            <FrameLayout
+                android:id="@+id/containerImage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/ivArticleImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_news" />
+
+            </FrameLayout>
+
+            <!-- Article Title -->
+            <TextView
+                android:id="@+id/tvArticleTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="20dp"
+                android:text="Article Title"
+                android:textColor="@color/text_primary"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins"
+                android:lineSpacingExtra="4dp" />
+
+            <!-- Tags -->
+            <TextView
+                android:id="@+id/tvTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="12dp"
+                android:text="#health #tips"
+                android:textColor="@color/green_primary"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:background="@color/divider" />
+
+            <!-- Article Content -->
+            <TextView
+                android:id="@+id/tvArticleContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:text="Article content goes here..."
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins"
+                android:lineSpacingExtra="6dp"
+                android:justificationMode="inter_word" />
+
+            <!-- Engagement Stats (Clickable) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="24dp"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_eye"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/tvViewsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="0 views"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/poppins" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="24dp"
+                    android:layout_height="1dp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutLikes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivLikeIcon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_like"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/tvLikesCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="0 likes"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/poppins" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="24dp"
+                    android:layout_height="1dp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutComments"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_comment"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/tvCommentsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="0 comments"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/poppins" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

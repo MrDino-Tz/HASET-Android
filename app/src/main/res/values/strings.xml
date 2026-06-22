@@ -1,0 +1,927 @@
+<resources>
+    <string name="app_name">HASET</string>
+    <string name="tagline">Your Health, Our Priority</string>
+
+    <!-- Common -->
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="error_generic">Something went wrong</string>
+
+    <!-- Authentication -->
+    <string name="login">Login</string>
+    <string name="email_address">Email</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title1">Welcome!</string>
+    <string name="onboarding_desc1">Book doctors instantly and easily.</string>
+    <string name="onboarding_title2">Chat Securely</string>
+    <string name="onboarding_desc2">Real-time chat and private messaging.</string>
+    <string name="onboarding_title3">Health at Hand</string>
+    <string name="onboarding_desc3">Track appointments &amp; prescriptions.</string>
+    <string name="remember_me">Remember me</string>
+    <string name="sign_up_here">Sign Up here</string>
+    <string name="or_continue_with_account">Or Continue With Account</string>
+    <string name="google">Google</string>
+    <string name="login_with_google">Log in with Google</string>
+    <string name="forgot_password_description">Enter your email address and we\'ll send you a link to reset your password.</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="remember_password">Remember your password?</string>
+    <string name="sending_reset_email">Sending reset email...</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="phone">Phone Number</string>
+    <string name="full_name">Full Name</string>
+    <string name="age">Age</string>
+    <string name="gender">Gender</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string name="other">Other</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_in">Sign In</string>
+    <string name="demo_doctor_login">Login as Demo Doctor</string>
+
+    <!-- Roles -->
+    <string name="select_role">Select Your Role</string>
+    <string name="i_am_patient">I\'m a Patient</string>
+    <string name="i_am_doctor">I\'m a Doctor</string>
+    <string name="i_am_admin">I\'m an Administrator</string>
+    <string name="patient">Patient</string>
+    <string name="doctor">Doctor</string>
+    <string name="admin">Administrator</string>
+    <string name="administrator">Administrator</string>
+
+    <!-- Navigation -->
+    <string name="home">Home</string>
+    <string name="appointments">Appointments</string>
+    <string name="chat">Chat</string>
+    <string name="profile">Profile</string>
+
+    <!-- Patient Dashboard -->
+    <string name="find_doctors">Find Doctors</string>
+    <string name="search_specialty">Search by specialty</string>
+    <string name="book_appointment">Book Appointment</string>
+    <string name="my_appointments">My Appointments</string>
+<!--    <string name="prescriptions">Prescriptions</string>-->
+    <string name="upcoming_appointments">Upcoming Appointments</string>
+
+    <!-- Doctor Dashboard -->
+    <string name="pending_appointments">Pending Appointments</string>
+    <string name="approved_appointments">Approved Appointments</string>
+    <string name="manage_schedule">Manage Schedule</string>
+    <string name="my_patients">My Patients</string>
+
+    <!-- Appointment -->
+    <string name="select_date">Select Date</string>
+    <string name="select_time">Select Time</string>
+    <string name="appointment_details">Appointment Details</string>
+    <string name="approve">Approve</string>
+    <string name="decline">Decline</string>
+    <string name="reschedule">Reschedule</string>
+    <string name="status">Status</string>
+    <string name="pending">Pending</string>
+    <string name="approved">Approved</string>
+    <string name="declined">Declined</string>
+    <string name="completed">Completed</string>
+    <string name="canceled">Canceled</string>
+    <string name="system">System</string>
+    <string name="activity_logs">Activity Logs</string>
+    <string name="admin_notifications">Admin Notifications</string>
+
+    <!-- Doctor Profile -->
+    <string name="specialty">Specialty</string>
+    <string name="experience">Experience</string>
+    <string name="rating">Rating</string>
+    <string name="about">About</string>
+    <string name="available_times">Available Times</string>
+
+    <!-- Chat -->
+    <string name="type_message">Type a message...</string>
+    <string name="send">Send</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+    <string name="typing">typing...</string>
+
+    <!-- Prescription -->
+<!--    <string name="upload_prescription">Upload Prescription</string>-->
+<!--    <string name="view_prescription">View Prescription</string>-->
+<!--    <string name="prescription_details">Prescription Details</string>-->
+    <string name="medicines">Medicines</string>
+<!--    <string name="instructions">Instructions</string>-->
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="notifications">Notifications</string>
+    <string name="logout">Logout</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="saving">Saving...</string>
+
+    <!-- Messages -->
+    <string name="loading">Loading...</string>
+    <string name="switching_language">Switching Language...</string>
+<!--    <string name="no_data">No data available</string>-->
+    <string name="no_data">No data available</string>
+    <string name="error_occurred">An error occurred</string>
+    <string name="error_required">This field is required</string>
+    <string name="success">Success</string>
+    <string name="appointment_booked">Appointment booked successfully</string>
+<!--    <string name="appointment_cancelled">Appointment cancelled</string>-->
+    <string name="appointment_approved">Appointment Approved</string>
+    <string name="appointment_declined">Appointment declined</string>
+    <string name="appointment_cancelled">Appointment cancelled</string>
+    <string name="appointment_approved_success">Appointment approved successfully</string>
+    <string name="would_you_like_to_start_chat">Would you like to start a chat with the patient now?</string>
+    <string name="start_chat_now">Start Chat Now</string>
+    <string name="later">Later</string>
+    <string name="appointment_with_patient">Appointment with %s</string>
+    <string name="appointment_declined_success">Appointment declined successfully</string>
+    <string name="appointment_cancelled_success">Appointment cancelled successfully</string>
+    <string name="failed_to_approve_appointment">Failed to approve appointment: %s</string>
+    <string name="failed_to_decline_appointment">Failed to decline appointment: %s</string>
+    <string name="failed_to_cancel_appointment">Failed to cancel appointment: %s</string>
+    <string name="invalid_appointment">Invalid appointment</string>
+    <string name="reschedule_soon">Reschedule functionality coming soon</string>
+    <string name="no_pending_appointments_title">No Pending Appointments</string>
+    <string name="no_pending_appointments_desc">You don\'t have any pending appointments.</string>
+    <string name="no_completed_appointments_title">No Completed Appointments</string>
+    <string name="no_completed_appointments_desc">You don\'t have any completed appointments yet.</string>
+    <string name="no_canceled_appointments_title">No Canceled Appointments</string>
+    <string name="no_canceled_appointments_desc">You don\'t have any canceled appointments.</string>
+    <string name="filter_appointments">Filter Appointments</string>
+    <string name="network_lost">Network connection lost</string>
+    <string name="coming_soon">Coming Soon!</string>
+<!--    <string name="feature_coming_soon">%s Coming Soon!</string>-->
+    <string name="more_options_soon">More options coming soon!</string>
+
+    <!-- Validation -->
+    <string name="error_email">Please enter a valid email</string>
+    <string name="error_password">Password must be at least 6 characters</string>
+    <string name="error_phone">Please enter a valid phone number</string>
+    <string name="error_name">Please enter your name</string>
+    <string name="error_password_match">Passwords do not match</string>
+    <string name="error_fields">Please fill all fields</string>
+    <string name="age_label">Age: %d</string>
+    <string name="gender_label">Gender: %s</string>
+
+    <!-- New UI Strings -->
+    <string name="search">Search</string>
+    <string name="favorite">Favorite</string>
+    <string name="time">Time</string>
+    <string name="date">Date</string>
+    <string name="see_all">See All</string>
+    <string name="today_appointments">Today Appointments</string>
+    <string name="doctor_specialty">Doctor Specialty</string>
+    <string name="popular_doctors">Popular Doctors</string>
+    <string name="popular_articles">Popular Articles</string>
+    <string name="services">Services</string>
+    <string name="back">Back</string>
+    <string name="like">Like</string>
+    <string name="comment">Comment</string>
+    <string name="share">Share</string>
+    <string name="just_now">Just now</string>
+    <string name="minute_ago">1 minute ago</string>
+    <string name="minutes_ago">%d minutes ago</string>
+    <string name="hour_ago">1 hour ago</string>
+    <string name="hours_ago">%d hours ago</string>
+    <string name="day_ago">1 day ago</string>
+    <string name="days_ago">%d days ago</string>
+    <string name="all_articles">All Articles</string>
+    <string name="articles">Articles</string>
+    <string name="my_posts">My Posts</string>
+    <string name="all_users">All Users</string>
+<!--    <string name="doctors">Doctors</string>-->
+    <string name="haset_admin">HASET Admin</string>
+    <string name="article_liked">Article liked</string>
+    <string name="article_unliked">Article unliked</string>
+    <string name="comment_posted">Comment posted</string>
+    <string name="error_loading_article">Error loading article</string>
+    <string name="comments_feature_coming_soon">Comments feature coming soon</string>
+    <string name="login_required">Please login to continue</string>
+    <string name="liked">Liked</string>
+    <string name="likes">likes</string>
+    <string name="comments">comments</string>
+    <string name="views">views</string>
+    <string name="article">Article</string>
+    <string name="share_article">Share article</string>
+    <string name="welcome_text_about_us">Welcome to HASET, your trusted partner for accessible and personalized healthcare. Our expert doctors offer online consultations and specialized services, prioritizing your well-being. Join us on this journey towards a healthier you.</string>
+    <string name="title_activity_notification2">NotificationActivity2</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="doctor_image">Doctor image</string>
+    <string name="latest_update_image">Latest update image</string>
+    <string name="favorite_doctor">Favorite Doctor</string>
+    <string name="location">Location</string>
+    <string name="available_time">Available Time</string>
+    <string name="consultation_fee">Consultation Fee</string>
+    <string name="menstruation_tracker">Menstruation Tracker</string>
+    <string name="afya_class">Afya Class</string>
+    <string name="childrens">Children\'s Corner</string>
+    <string name="supplements">Supplements</string>
+    <string name="health_devices">Health Devices</string>
+    <string name="personal_care">Personal Care</string>
+    <string name="conversation">Conversation</string>
+    <string name="more_options">More options</string>
+    <string name="delete_messages">Delete messages</string>
+    <string name="search_messages">Search messages</string>
+    <string name="clear_chat">Clear Chat</string>
+    <string name="export_chat">Export Chat</string>
+    <string name="mute_notifications">Mute Notifications</string>
+    <string name="view_contact">View Contact Info</string>
+    <string name="report">Report</string>
+    <string name="general">General</string>
+    <string name="language">Language</string>
+    <string name="theme">Theme</string>
+    <string name="notification_label">Notification</string>
+    <string name="notification_desc">Customize your notification preferences</string>
+    <string name="select_language">Select Language</string>
+    <string name="english_variant">English (US)</string>
+    <string name="swahili_variant">Kiswahili</string>
+    <string name="change_profile_picture_desc">Change profile picture, number, E-mail</string>
+    <string name="change_password">Change Password</string>
+    <string name="change_password_desc">Update and strengthen account security</string>
+    <string name="location_permission">Location Access</string>
+    <string name="location_permission_desc">Allow app to access your location for nearby patients</string>
+    <string name="location_permission_denied">Location permission denied</string>
+    <string name="terms_of_use">Terms of Use</string>
+    <string name="terms_of_use_desc">Protect your account now</string>
+    <!-- Doctor Edit Hints -->
+
+    <string name="specialty_label">Specialty</string>
+    <string name="consultation_fee_label">Consultation Fee</string>
+    <string name="available_times_label">Available Times</string>
+    <string name="bio_label">Bio</string>
+    <string name="location_label">Location</string>
+    <string name="doctor_policy">Doctor Policy</string>
+    <string name="doctor_policy_desc">Information about Per service fee</string>
+<!--    <string name="edit_professional_info">Edit Professional Info</string>-->
+    <string name="edit_professional_info_desc">Change specialty, fee, etc.</string>
+    <string name="current_password_hint">Current Password</string>
+    <string name="new_password_hint">New Password</string>
+    <string name="confirm_new_password_hint">Confirm New Password</string>
+    <string name="update_btn">Update</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="select_theme">Select Theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System Default</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_msg">Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.</string>
+    <string name="final_confirmation">Final Confirmation</string>
+    <string name="final_delete_msg">This will permanently delete your account, profile data, appointments, and all associated information. Are you absolutely sure?</string>
+    <string name="yes_delete_all">Yes, Delete Everything</string>
+    <string name="account_deleted">Account Deleted</string>
+    <string name="account_deleted_msg">Your account has been successfully deleted. You will be redirected to the login screen.</string>
+    <string name="deletion_failed">Deletion Failed</string>
+    <string name="share_profile">Share Profile</string>
+    <string name="share_qr_code">Share QR Code</string>
+    <string name="copy_profile_link">Copy Profile Link</string>
+    <string name="share_profile_desc">Share profile link with others</string>
+    <string name="save_qr_code">Save QR Code</string>
+    <string name="download_qr_desc">Download QR code image</string>
+    <string name="share_qr_desc">Share via other apps</string>
+    <string name="done">Done</string>
+    <string name="error_identify_user">Unable to identify user account</string>
+    <string name="deleting_account">Deleting account...</string>
+    <string name="no_internet_title">No Internet Connection</string>
+    <string name="no_internet_desc">Please check your network settings and try again.</string>
+    <string name="retry">Retry</string>
+    <string name="or">OR</string>
+
+    <string name="updating">Updating...</string>
+    <string name="password_updated">Password updated successfully</string>
+    <string name="update_failed">Update failed</string>
+    <string name="auth_failed">Authentication failed</string>
+    <string name="profile_link_copied">Profile link copied to clipboard</string>
+    <string name="qr_code_saved">QR code saved to device</string>
+    <string name="qr_code_save_failed">Failed to save QR code</string>
+    <string name="qr_code_share_failed">Failed to share QR code</string>
+    <string name="share_qr_text">Check out my profile on HASET! I\'m a %1$s named %2$s. Download the app here: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
+    <string name="user_label">User</string>
+    <string name="not_provided">Not provided</string>
+    <string name="unknown">Unknown</string>
+    <string name="delete_user">Delete User</string>
+    <string name="delete_user_confirmation">Are you sure you want to delete %s? This action cannot be undone.</string>
+    <string name="doctor_approved">Doctor approved successfully</string>
+    <string name="doctor_approval_failed">Failed to approve doctor: %s</string>
+    <string name="doctor_rejected">Doctor rejected successfully</string>
+    <string name="doctor_rejection_failed">Failed to reject doctor: %s</string>
+    <string name="user_deleted_success">User deleted successfully</string>
+    <string name="user_deletion_failed">Failed to delete user: %s</string>
+    <string name="onboarding_title_1">Welcome!</string>
+    <string name="onboarding_desc_1">Book doctors instantly and easily.</string>
+    <string name="onboarding_title_2">Chat Securely</string>
+    <string name="onboarding_desc_2">Real-time chat and private messaging.</string>
+    <string name="onboarding_title_3">Health at Hand</string>
+    <string name="onboarding_desc_3">Track appointments &amp; prescriptions.</string>
+    <string name="get_started">Get Started</string>
+    <string name="next">Next</string>
+    <string name="skip">Skip</string>
+    <string name="general_physician">General Physician</string>
+    <string name="profile_updated">Profile updated successfully</string>
+    <string name="uploading">Uploading...</string>
+    <string name="good_morning">Good Morning,</string>
+    <string name="hello">Hello,</string>
+    <string name="quick_actions">Quick Actions &amp; Services</string>
+    <string name="schedule">Schedule</string>
+    <string name="patients">Patients</string>
+    <string name="recent_appointments">Recent Appointments</string>
+    <string name="view_all">View All</string>
+    <string name="filter">Filter</string>
+    <string name="no_pending_appointments">No Pending Appointments</string>
+    <string name="all_caught_up">You\'re all caught up! New appointments will appear here.</string>
+    <string name="today_date_format">Today, %s</string>
+    <string name="dr_prefix">Dr. %s</string>
+    
+    <!-- Activity Strings -->
+    <string name="calling">Calling %s</string>
+    <string name="edit_user">Edit User</string>
+    <string name="create_new_user">Create New User</string>
+    <string name="publish">Publish</string>
+    <string name="create_article">CREATE ARTICLE</string>
+    <string name="no_results_found">No results found for \"%s\"\nTry searching with different keywords</string>
+<!--    <string name="try_different_keywords">Try searching with different keywords</string>-->
+    <string name="all">All</string>
+    <string name="clear_filters_count">Clear Filters (%d)</string>
+    <string name="search_results_count">Search (%d results)</string>
+    <string name="search_all_doctors">Search All Doctors</string>
+    <string name="type_label">Type: %s</string>
+    <string name="badge_label">Badge: %s</string>
+    <string name="payment_initiated">Payment initiated. Please complete the transaction on your phone.</string>
+    <string name="check_phone_ussd">Please check your phone for the USSD prompt</string>
+    <string name="payment_confirmed">Payment confirmed successfully!</string>
+    <string name="insufficient_funds_msg">Your wallet has insufficient funds to complete this transaction. Please top up and try again.</string>
+    <string name="check_status">Check Status</string>
+    <string name="ive_paid">I\'ve Paid</string>
+    <string name="learn_more_title">End-to-End Encrypted</string>
+    <string name="learn_more_explanation">Messages and media shared in this chat are end-to-end encrypted. This means no one else, not even HASET, can read or listen to them. Only the people in this chat can see or hear what\'s shared.</string>
+    <string name="learn_more">Learn More</string>
+    <string name="timeout_msg">The connection timed out. Please check your internet and try again.</string>
+    <string name="transaction_cancelled_msg">The transaction was cancelled. If this wasn\'t you, please try again.</string>
+    <string name="abort_session_title">Abort Session?</string>
+    <string name="abort_session_msg">The USSD session will be aborted. If you haven\'t entered your PIN, no payment will be processed.</string>
+    <string name="abort_session_warning">The USSD push may still arrive on your phone. DO NOT enter your PIN if you want to cancel. If already sent, simply ignore it - no payment will be made.</string>
+    <string name="wait_for_session">Wait for Session</string>
+    <string name="abort_anyway">Abort Anyway</string>
+    <string name="select_payment_method">Please select a payment method</string>
+    <string name="enter_wallet_number">Please enter your wallet/account number</string>
+    <string name="enter_mobile_number">Please enter your mobile number</string>
+    <string name="enter_valid_mobile">Please enter a valid mobile number</string>
+    <string name="enter_account_number">Please enter your account number</string>
+    <string name="enter_valid_account">Please enter a valid account number (minimum 8 digits)</string>
+    <string name="account_number_limit">Account number cannot exceed 20 digits</string>
+    <string name="min_payment_msg">Minimum payment amount is 50 TZS</string>
+    <string name="doctor_id_missing">Error: Doctor ID missing</string>
+    <string name="doctor_info_missing">Error: Doctor information missing</string>
+    <string name="update_banner">Update Banner</string>
+    <string name="manage_health_quotes">Manage Health Quotes</string>
+    <string name="health_quotes">Health Quotes</string>
+    <string name="health_quote_author_default">HASET</string>
+    <string name="select_method">Select Method</string>
+    <string name="reschedule_appointment">Reschedule Appointment</string>
+    <string name="book_instant_appointment">Book Instant Appointment</string>
+    <string name="schedule_appointment">Schedule Appointment</string>
+    <string name="book_appointment_type">Book %s Appointment</string>
+    <string name="book_now">Book Now</string>
+    <string name="recording_duration_default">0:00</string>
+<!--    <string name="balance_default">0 TZS</string>-->
+    <string name="na">N/A</string>
+    <string name="close">Close</string>
+    <string name="no_appointments_found">No appointments found</string>
+<!--    <string name="failed_to_load_appointments">Failed to load appointments</string>-->
+    <string name="no_appointments_to_export">No appointments selected to export</string>
+    <string name="no_completed_appointments_to_export">No completed appointments to export</string>
+    <string name="failed_to_access_storage">Failed to access storage</string>
+    <string name="export_as_csv">Export appointments as CSV</string>
+    <string name="export_failed">Export failed: %s</string>
+    <string name="file_opened_pdf_msg">File opened. Use browser\'s Print > Save as PDF to create PDF.</string>
+    <string name="share_report">Share appointments report</string>
+<!--    <string name="select_at_least_one">Select at least one appointment</string>-->
+    <string name="appointment_settings_clicked">Appointment Settings clicked</string>
+    <string name="select_export_format">Select Export Format</string>
+    <string name="refreshing_appointments">Refreshing appointments...</string>
+    <string name="export">Export</string>
+    <string name="export_successful">Export Successful!</string>
+    <string name="file_saved_to">File saved to:</string>
+    <string name="open_location">Open Folder</string>
+<!--    <string name="share">Share</string>-->
+<!--    <string name="done">Done</string>-->
+    <string name="file_exported">File exported successfully</string>
+    
+    <!-- Notification Strings -->
+    <string name="notification_appointment_reminder">Appointment Reminder</string>
+    <string name="notification_new_message">New Message</string>
+    <string name="notification_appointment_approved">Appointment Approved</string>
+    <string name="notification_appointment_cancelled">Appointment Cancelled</string>
+    <string name="appointment_status_updated">Appointment Status Updated</string>
+    <string name="appointment_reminder_message">Upcoming appointment with %1$s at %2$s</string>
+    <string name="appointment_approved_message">Your appointment with %s has been approved</string>
+    <string name="appointment_cancelled_message">Your appointment with %s has been cancelled</string>
+    <string name="no_users_found">No users found</string>
+<!--    <string name="failed_to_load_users">Failed to load users</string>-->
+    <string name="no_doctors_found">No doctors found</string>
+    <string name="no_patients_found">No patients found</string>
+    <string name="failed_to_load_doctors">Failed to load doctors</string>
+    <string name="failed_to_load_patients">Failed to load patients</string>
+    <string name="tab_description">This is the %s tab.</string>
+    
+    <!-- Prescription Strings -->
+    <string name="prescriptions">Prescriptions</string>
+    <string name="my_prescriptions">My Prescriptions</string>
+    <string name="add_prescription">Add Prescription</string>
+    <string name="prescription_details">Prescription Details</string>
+    <string name="issued_by">Issued by</string>
+    <string name="issue_date">Issue Date</string>
+    <string name="medications">Medications</string>
+    <string name="instructions">Instructions</string>
+    <string name="prescription_notes">Notes</string>
+    <string name="upload_prescription">Upload Prescription</string>
+    <string name="take">Take</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="no_prescriptions">No prescriptions yet</string>
+    <string name="no_prescriptions_message">Your prescriptions will appear here</string>
+    <string name="view_prescription">View Prescription</string>
+    <string name="delete_prescription">Delete Prescription</string>
+    <string name="confirm_delete_prescription">Are you sure you want to delete this prescription?</string>
+    <string name="prescription_uploaded">Prescription uploaded successfully</string>
+    <string name="prescription_deleted">Prescription deleted</string>
+    <string name="uploading_prescription">Uploading prescription...</string>
+    <string name="medicine_name">Medicine Name</string>
+    <string name="dosage">Dosage</string>
+    <string name="frequency">Frequency</string>
+    <string name="duration">Duration (days)</string>
+
+    <!-- Cloudinary Configuration (for media uploads) -->
+    <string name="cloudinary_cloud_name">divky8yna</string>
+    <string name="cloudinary_api_key">672749596232422</string>
+    <string name="cloudinary_api_secret">Cx3sdwyEpZdRJHA4D9MgeKeoATo</string>
+    <string name="share_app">Share HASET</string>
+    <string name="recommend_app">Recommend this app to friends</string>
+    <string name="share_app_text">Download HASET - Your trusted partner for accessible healthcare: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
+    <string name="delete">Delete</string>
+    <string name="reply">Reply</string>
+    <string name="copy">Copy</string>
+    <string name="forward">Forward</string>
+    <string name="download">Download</string>
+    <string name="text_copied">Text copied to clipboard</string>
+    
+    <!-- Bottom Sheet Strings -->
+    <string name="no_bio_available">No bio available.</string>
+    <string name="patients_treated_count">(%d Patients)</string>
+    <string name="patient_treated_count">(%d Patient)</string>
+    <string name="new_doctor_label">New Doctor</string>
+    <string name="contact_for_availability">Contact for availability</string>
+    <string name="added_to_favorites">%s added to favorites</string>
+    <string name="removed_from_favorites">%s removed from favorites</string>
+    
+    <!-- Rating Strings -->
+    <string name="tap_to_rate">Tap to rate</string>
+    <string name="rating_poor">Poor</string>
+    <string name="rating_fair">Fair</string>
+    <string name="rating_good">Good</string>
+    <string name="rating_very_good">Very Good</string>
+    <string name="rating_excellent">Excellent</string>
+    <string name="please_select_rating">Please select a rating</string>
+    <string name="thank_you_rating">Thank you for your rating!</string>
+    <string name="failed_to_submit_rating">Failed to submit rating: %s</string>
+    
+    <!-- Internet Strings -->
+    <string name="internet_restored">Internet connection restored!</string>
+    <string name="still_no_internet">Still no internet connection.</string>
+    
+    <!-- File Selection Strings -->
+    <string name="select_document_picker">Select Document</string>
+    <string name="select_image_picker">Select Image</string>
+    <string name="select_audio_picker">Select Audio</string>
+    <string name="select_video_picker">Select Video</string>
+    
+    <!-- Comment Strings -->
+    <string name="comment_sent_msg">Comment sent!</string>
+    <string name="comment_empty_error">Comment cannot be empty</string>
+    <string name="some_time_ago">Some time ago</string>
+    
+    <!-- Chat Action Strings -->
+    <string name="delete_messages_action">Delete messages clicked!</string>
+    <string name="search_messages_action">Search messages clicked!</string>
+    <string name="delete_messages_soon">Delete Messages Coming Soon!</string>
+    <string name="search_messages_soon">Search Messages Coming Soon!</string>
+    <string name="shared_from">Shared from HASET</string>
+    <string name="haset_post">HASET Post</string>
+    <string name="content_desc_success_icon">Success Icon</string>
+    <string name="payment_successful">Payment Successful!</string>
+    <string name="payment_success_message">Your payment has been processed and confirmed. You can now proceed with your appointment.</string>
+    <string name="continue_btn">Continue</string>
+    
+    <!-- Article Center -->
+    <string name="no_posts_yet">No posts yet.</string>
+    <string name="no_posts_create_hint">No posts yet. Tap the + button to create your first post!</string>
+    
+    <!-- Product -->
+    <!-- Book Appointment Hints -->
+    <string name="hint_select_date">Select Date</string>
+    <string name="hint_select_time">Select Time</string>
+    <string name="hint_reason_for_visit">Reason for visit</string>
+    <!-- Create Banner -->
+    <string name="create_new_banner">Create New Banner</string>
+    <string name="hint_title_line1">Title Line 1 (e.g. Up to)</string>
+    <string name="hint_title_line2">Title Line 2 (e.g. 50% OFF)</string>
+    <string name="hint_badge_text">Badge Text (e.g. Flash Sale)</string>
+    <string name="hint_button_text">Button Text (e.g. Shop Now)</string>
+    <string name="pharmacy">Pharmacy</string>
+<!--    <string name="chat">Chat</string>-->
+    <string name="doctors">Doctors</string>
+    <string name="select_image">Select Image</string>
+    <string name="upload_banner">Upload Banner</string>
+    <string name="default_banner">Default</string>
+    <string name="save_feature">Save</string>
+    <string name="account_info_feature">Account information</string>
+    <string name="favorite_feature">Favorite</string>
+    <string name="access_denied_appointment">Access Denied: Your appointment is not approved yet.</string>
+    <string name="video_call">Video Call</string>
+    <string name="error_loading_contact">Could not load contact details</string>
+    <string name="contact_info_unavailable">Information not available for this contact</string>
+    <string name="failed_capture_image">Failed to capture image</string>
+    <string name="typing_indicator">%s is typing...</string>
+    <string name="failed_start_recording">Failed to start recording</string>
+    <string name="recording_too_short">Recording too short</string>
+    <string name="recording_cancelled">Recording cancelled</string>
+    <string name="voice_note">Voice note</string>
+    <string name="fill_all_fields">Please fill all fields</string>
+    <string name="select_an_image">Please select an image</string>
+    <string name="no_balance_withdrawal">No balance available for withdrawal</string>
+    <string name="available_balance_format">Available: %,.0f TZS</string>
+    <string name="currency_format">%,.0f TZS</string>
+    <string name="enter_withdrawal_amount">Please enter withdrawal amount</string>
+    <string name="enter_valid_amount_msg">Please enter a valid amount</string>
+    <string name="amount_greater_than_zero">Amount must be greater than 0</string>
+    <string name="insufficient_balance">Insufficient balance</string>
+    <string name="select_withdrawal_method">Please select a withdrawal method</string>
+    <string name="processing">Processing...</string>
+    <string name="audit_logs">Audit Logs</string>
+    <string name="no_audit_logs_found">No audit logs found</string>
+    <string name="failed_load_audit_logs">Failed to load audit logs</string>
+    <string name="settings_title">Settings</string>
+    <string name="account_preferences">Account Preferences</string>
+    <string name="account_desc">Privacy, security, notifications</string>
+    <string name="log_detail_title">Log Detail</string>
+    <string name="log_id_label">Log ID</string>
+    <string name="log_user_label">User</string>
+    <string name="action_label">Action</string>
+    <string name="description_label">Description</string>
+    <string name="entity_context_label">Entity Context</string>
+    <string name="date_time_label">Date &amp; Time</string>
+    <string name="device_info_label">Device Info</string>
+    <string name="payment_mobile_money">Mobile Money</string>
+    <string name="search_messages_option">Search messages</string>
+    <string name="view_contact_info">View Contact Info</string>
+    <string name="current_user">Current User</string>
+    <string name="dummy_comment_1">Great post!</string>
+    <string name="dummy_comment_2">Very informative.</string>
+    <string name="user_1">User 1</string>
+    <string name="user_2">User 2</string>
+    <string name="payment_card_payment">Card Payment</string>
+    <string name="email_support_body">Hello HASET Support Team,\n\nI need help with...</string>
+    <string name="send_email_via">Send email via</string>
+    <string name="whatsapp_support_msg">Hello HASET Support</string>
+    
+    <plurals name="patients_treated">
+        <item quantity="one">(%d Patient)</item>
+        <item quantity="other">(%d Patients)</item>
+    </plurals>
+    <!-- Doctor Edit -->
+    <string name="edit_professional_info">Edit Professional Info</string>
+    <string name="professional_info">Professional Information</string>
+    <string name="hint_specialty">Specialty</string>
+    <string name="hint_specialty_example">e.g., Cardiologist, Pediatrician</string>
+    <string name="hint_consultation_fee">Consultation Fee</string>
+    <string name="hint_fee_example">e.g., 0</string>
+    <string name="hint_location">Location</string>
+    <string name="hint_location_example">e.g., 123 Main Street, City</string>
+    <string name="hint_bio">Bio / About</string>
+    <string name="hint_bio_description">Tell patients about your experience and expertise</string>
+    <string name="available_time_range">Available Time Range</string>
+    <string name="select_working_hours">Select your working hours (from - to)</string>
+    <string name="from_time">From Time</string>
+    <string name="select_start_time">Select start time</string>
+    <string name="to_time">To Time</string>
+    <string name="select_end_time">Select end time</string>
+    <string name="online_status">Online Status</string>
+    <string name="online_status_hint">Turn on to appear available to patients</string>
+    
+    <!-- Product -->
+
+    <!-- Create Banner -->
+    <string name="choose_banner_type">Choose Banner Type</string>
+    <string name="detailed_banner">Detailed Banner\nAdd text and call-to-action</string>
+    <string name="image_banner">Image Banner\nUpload a full image banner</string>
+    <string name="detailed_banner_info">Add your banner text, badge, and button label.</string>
+    <string name="image_banner_info">Upload a full banner image. The image will be displayed as-is.</string>
+    <string name="banner_action_type">What should this banner do?</string>
+    <string name="upload_banner_image">Banner Image</string>
+    <string name="image_requirements">Supported: JPG, PNG, WebP | Max size: 5MB | Recommended: 1080x400px</string>
+    <string name="tap_to_select_image">Tap to Select Image</string>
+    <string name="image_too_large">Image is too large. Maximum size is 5MB.</string>
+    <string name="invalid_image_format">Invalid image format. Use JPG, PNG, or WebP.</string>
+    <string name="banner_type">Banner Type</string>
+<!--    <string name="chat">Chat</string>-->
+    
+    <!-- Share Post -->
+    <string name="share_post_via">Share post via</string>
+    <string name="sharing_post">Sharing post...</string>
+    <string name="creating_account">Creating Account</string>
+    <string name="mct_reg_no_label">MCT Reg No: %s</string>
+    <string name="wallet_management">Wallet Management</string>
+    <string name="doctor_wallets">Doctor Wallets</string>
+    <string name="pending_withdrawals">Pending Withdrawals</string>
+    <string name="no_doctor_wallets">No doctor wallets yet</string>
+    <string name="no_pending_withdrawals">No pending withdrawals</string>
+    <string name="withdrawal_request_submitted">Withdrawal request submitted successfully. Funds will be transferred within 24-48 hours.</string>
+    <string name="reject">Reject</string>
+    <string name="approve_withdrawal_confirm">Are you sure you want to approve this withdrawal of %1$s to %2$s?</string>
+    <string name="rejection_reason_required">Please enter a reason for rejection</string>
+    <string name="withdrawal_approved">Withdrawal approved</string>
+    <string name="withdrawal_rejected">Withdrawal rejected</string>
+    <string name="failed_deduct_wallet">Failed to deduct from wallet</string>
+    <string name="error_loading_wallets">Error loading wallets</string>
+    <string name="error_loading_requests">Error loading requests</string>
+
+    <!-- DoctorsActivity -->
+    <string name="sorted_by_name">Sorted by Name</string>
+    <string name="sorted_by_rating">Sorted by Rating</string>
+    <string name="sorted_by_experience">Sorted by Experience</string>
+    <string name="refreshing_doctors">Refreshing doctors…</string>
+    <string name="filter_applied">Filter applied</string>
+    <string name="filter_cleared">Filter cleared</string>
+    <string name="filter_by_specialty">Filter by Specialty</string>
+    <string name="all_specialties">All Specialties</string>
+    <string name="apply">Apply</string>
+
+    <!-- NotificationActivity -->
+    <string name="appointment">Appointment</string>
+    <string name="payment">Payment</string>
+    <string name="appointments_cleared">Appointments cleared</string>
+    <string name="failed_to_clear_appointments">Failed to clear appointments</string>
+    <string name="clear_appointments">Clear Appointments</string>
+    <string name="clear_all">Clear All</string>
+    <string name="clear_pending_appointments">Clear Pending Appointments</string>
+    <string name="clear_system_notifications">Clear System Notifications</string>
+
+    <!-- AdminProfileFragment -->
+    <string name="user_session_expired">User session expired</string>
+    <string name="verifying_credentials">Verifying credentials…</string>
+    <string name="current_password_incorrect">Current password incorrect</string>
+    <string name="starting_db_sync">Starting database synchronization…</string>
+    <string name="db_cleared_syncing">Database cleared and syncing…</string>
+    <string name="db_synced_success">Database synced successfully!</string>
+    <string name="no_internet_cannot_sync">No internet connection. Cannot sync.</string>
+    <string name="sync_failed">Sync failed: %s</string>
+
+    <!-- AdminUserEditActivity -->
+    <string name="user_updated_success">User updated successfully!</string>
+    <string name="failed_to_update_user">Failed to update user: %s</string>
+    <string name="user_created_success">User created successfully!</string>
+    <string name="failed_to_create_user">Failed to create user: %s</string>
+    <string name="create_user">Create User</string>
+    <string name="create_new">Create New</string>
+
+    <!-- AdminDemoDoctorActivity -->
+    <string name="create_demo_doctor">Create Demo Doctor</string>
+    <string name="demo_doctor_notice">Demo doctors are free to consult. No payment required.</string>
+    <string name="create_demo">Create Demo</string>
+    <string name="doctor_information">Doctor Information</string>
+    <string name="creating">Creating…</string>
+    <string name="demo_doctor_created">Demo doctor created successfully!</string>
+    <string name="error_creating_demo_doctor">Error creating demo doctor</string>
+    <string name="error_invalid_number">Invalid number</string>
+    <string name="manage_demo_doctors">Manage Demo Doctors</string>
+    <string name="show_demo_doctors">Show Demo Doctors</string>
+    <string name="demo_doctors_visibility_desc">Toggle to show/hide all demo doctors from patient list</string>
+    <string name="demo_doctors_list">Demo Doctors</string>
+    <string name="no_demo_doctors">No demo doctors created yet</string>
+    <string name="demo_doctors_shown">Demo doctors are now visible</string>
+    <string name="demo_doctors_hidden">Demo doctors are now hidden</string>
+    <string name="doctor_now_visible">Doctor is now visible</string>
+    <string name="doctor_now_hidden">Doctor is now hidden</string>
+    <string name="error_saving">Error saving changes</string>
+    <string name="error_loading">Error loading data</string>
+    <string name="demo_doctors">Demo Doctors</string>
+
+    <!-- DoctorWalletActivity -->
+    <string name="operation_failed">Operation failed: %s</string>
+
+    <!-- ChatActivity -->
+    <string name="service_payment_sent">Service payment request sent</string>
+    <string name="payment_successful_chat">Payment successful!</string>
+    <string name="original_message_not_found">Original message not found</string>
+    <string name="message_deleted">Message deleted</string>
+    <string name="downloading_file">Downloading file…</string>
+    <string name="microphone_permission_required">Microphone permission required for voice notes</string>
+    <string name="camera_permission_required">Camera permission required to take photos</string>
+    <string name="failed_create_image_file">Failed to create image file</string>
+    <string name="no_camera_app">No camera app found</string>
+
+    <!-- CreatePostWizard -->
+    <string name="access_denied_admin_only">Access denied. Only admins can create articles.</string>
+    <string name="draft_saved">Draft saved successfully</string>
+    <string name="title_required">Title is required</string>
+    <string name="description_required">Description is required</string>
+    <string name="profile_name_required">Profile name is required</string>
+    <string name="tags_required">Tags are required</string>
+    <string name="article_published">Article published successfully!</string>
+
+    <string name="feature_coming_soon">Coming soon</string>
+<!--    <string name="password_updated">Password updated successfully</string>-->
+<!--    <string name="update_failed">Update failed</string>-->
+<!--    <string name="insufficient_balance">Insufficient balance</string>-->
+
+    <!-- Profile / Upload -->
+    <string name="uploading_profile_photo">Uploading profile photo…</string>
+    <string name="profile_photo_updated">Profile photo updated!</string>
+    <string name="profile_photo_removed">Profile photo removed</string>
+    <string name="select_profile_photo">Select Profile Photo</string>
+    <string name="failed_to_send_reply">Failed to send reply</string>
+
+    <!-- DoctorAdapter -->
+    <string name="dr_unknown">Dr. Unknown</string>
+    <string name="new_doctor">New</string>
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="not_available">Not available</string>
+
+    <!-- ChatAdapter -->
+    <string name="voice_note_label">Voice Note</string>
+    <string name="payment_paid">PAID</string>
+    <string name="payment_pending">PENDING</string>
+
+    <!-- Pharmacy / Stock -->
+    <string name="in_stock">In Stock</string>
+    <string name="out_of_stock">Out of Stock</string>
+
+    <!-- Date -->
+    <string name="date_not_set">Date not set</string>
+<!--    <string name="just_now">Just now</string>-->
+
+    <!-- UserAdapter -->
+    <string name="role_user">User</string>
+    <string name="role_user_badge">USER</string>
+
+    <!-- Appointments -->
+    <string name="no_app_to_open_file">No app found to open this file</string>
+    <string name="no_completed_appointments_export">No completed appointments to export</string>
+    <string name="select_at_least_one">Select at least one appointment</string>
+
+    <!-- Article Center tabs -->
+    <string name="tab_all">All</string>
+    <string name="tab_posted">POSTED</string>
+    <string name="tab_drafted">DRAFTED</string>
+    <string name="article_type_text">TEXT ARTICLE</string>
+    <string name="article_type_image">IMAGE ARTICLE</string>
+    <string name="ready_to_publish">Ready to publish</string>
+    <string name="no_articles_yet">No articles yet.\nTap the + button to create your first image or text article!</string>
+    <string name="no_drafts_yet">No drafts yet.\nSave an article as draft to see it here.</string>
+    <string name="no_published_articles">No published articles yet.\nPost an article to see it here.</string>
+
+    <!-- Article status labels -->
+    <string name="status_article">ARTICLE</string>
+
+    <!-- CreatePostStep1Fragment -->
+    <string name="select_content">Select Content</string>
+    <string name="text_only_selected">Text Only Article selected.\nYou can add details in the next step.</string>
+    <string name="please_select_image_or_text_only">Please select an image or choose \'Text Only\'</string>
+    <string name="camera_permissions_required">Camera permissions required</string>
+    <string name="failed_to_process_media">Failed to process media file</string>
+    <string name="file_not_found">File not found</string>
+    <string name="file_size_exceeds_limit">File size exceeds 5MB limit</string>
+    <string name="please_select_image_or_use_text">Please select an image or use Text Only type</string>
+    <string name="media_file_not_found">Media file not found</string>
+    <string name="no_media_selected">No media selected</string>
+
+    <!-- ChatListFragment -->
+    <string name="chat_deleted">Chat deleted</string>
+    <string name="delete_chat">Delete Chat</string>
+
+    <!-- ArticleCenterMyPostsFragment -->
+    <string name="article_deleted_success">Article deleted successfully</string>
+    <string name="delete_article">Delete Article</string>
+    <string name="delete_article_confirm">Are you sure you want to delete this article? This action cannot be undone.</string>
+
+    <!-- AdminNotificationActivity -->
+    <string name="pending_appointments_cleared">Pending appointments cleared from view</string>
+    <string name="system_notifications_cleared">System notifications cleared</string>
+
+    <!-- Call -->
+    <string name="call_declined">Call declined</string>
+    <string name="error_user_info_missing">Error: User info missing</string>
+
+    <!-- SplashActivity -->
+    <string name="no_internet_still">Still no internet connection.</string>
+
+    <!-- OnboardingActivity -->
+    <string name="please_complete_onboarding">Please complete the onboarding</string>
+
+    <!-- AdminReportActivity -->
+    <string name="please_select_report_type">Please select a report type</string>
+    <string name="failed_to_load_users">Failed to load users</string>
+    <string name="failed_to_load_appointments">Failed to load appointments</string>
+    <string name="failed_to_load_audit_logs">Failed to load audit logs</string>
+
+    <!-- DoctorWalletActivity states -->
+    <string name="balance_default">0 TZS</string>
+    <string name="btn_withdraw">Withdraw</string>
+    <string name="btn_processing">Processing…</string>
+
+    <!-- RegisterActivity fee dialog -->
+    <string name="doctor_reg_fee_title">Doctor Registration Fee</string>
+    <string name="doctor_reg_fee_message">A mandatory MCT verification and registration fee of 200 TSH is required.\n\nClick \'Pay via USSD\' to simulate the payment.</string>
+    <string name="pay_via_ussd">Pay via USSD (200 TSH)</string>
+    <string name="processing_payment">Processing payment…</string>
+
+    <!-- DoctorEditActivity validation -->
+    <string name="error_specialty_required">Specialty is required</string>
+    <string name="error_consultation_fee_required">Consultation fee is required</string>
+    <string name="error_fee_must_be_positive">Fee must be positive</string>
+    <string name="error_valid_number">Please enter a valid number</string>
+    <string name="error_location_required">Location is required</string>
+    <string name="error_from_time_required">From time is required</string>
+    <string name="error_to_time_required">To time is required</string>
+    <string name="error_invalid_time_format">Invalid time format. Use HH:mm</string>
+    <string name="error_end_time_after_start">End time must be after start time</string>
+
+    <!-- EditProfileActivity validation -->
+    <string name="error_full_name_required">Full name is required</string>
+    <string name="error_email_required">Email is required</string>
+    <string name="error_valid_email">Please enter a valid email</string>
+    <string name="error_phone_required">Phone number is required</string>
+
+    <!-- AddServiceBottomSheet -->
+    <string name="error_service_name_required">Service name is required</string>
+    <string name="error_fee_required">Appointment fee is required</string>
+    <string name="error_invalid_fee">Invalid fee amount</string>
+    <string name="error_fee_greater_than_zero">Fee must be greater than 0</string>
+
+    <!-- AdminProfileFragment password -->
+    <string name="error_current_password_required">Current password required</string>
+    <string name="error_min_6_chars">Minimum 6 characters</string>
+    <string name="error_password_required_new_users">Password is required for new users</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_short">Password must be at least 6 characters</string>
+    <string name="error_passwords_not_match">Passwords do not match</string>
+    <string name="error_valid_role">Please enter a valid role (patient, doctor, or admin)</string>
+
+    <!-- Prescription -->
+    <string name="issuing_prescription">Issuing Prescription…</string>
+    <string name="uploading_attachment">Uploading Attachment…</string>
+    <string name="saving_data">Saving Data…</string>
+    <string name="downloading_prescription">Downloading Prescription</string>
+    <string name="select_prescription_image">Select Prescription Image</string>
+    <string name="consultant_physician">Consultant Physician</string>
+
+    <!-- Dialogs -->
+    <string name="delete_message">Delete Message</string>
+    <string name="delete_message_confirm">Are you sure you want to delete this message?</string>
+    <string name="exit_app">Exit App</string>
+    <string name="exit_app_confirm">Are you sure you want to exit?</string>
+    <string name="notification_permission_title">Notification Permission Required</string>
+    <string name="notification_permission_message">HASET needs notification permission to send you important appointment reminders and welcome messages. Please enable notifications in settings.</string>
+    <string name="rate_haset_title">Rate HASET Health</string>
+    <string name="rate_haset_message">Are you enjoying HASET Health? We\'d love to hear your feedback!</string>
+    <string name="verify_payment_title">Verify Payment</string>
+    <string name="leave_blank_password">Leave blank to keep current password</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_approved">Approved</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="mct_reg_required">MCT Registration Number is required</string>
+
+    <!-- SearchActivity -->
+    <string name="try_different_keywords">Try searching with different keywords</string>
+
+    <!-- Settings / Article activity -->
+    <string name="settings_coming_soon">Settings Coming Soon!</string>
+    <string name="admin_password">Admin Password</string>
+    <string name="password_required">Password Required</string>
+    <string name="help_and_support_desc">Help and Support</string>
+    <string name="help_and_support">Help and Support</string>
+    <string name="bug_report_hint">Describe the bug or issue you encountered…</string>
+    <string name="bug_report_description">Help us improve by describing the bug or issue you encountered.</string>
+    <string name="report_a_bug">Report a Bug</string>
+    <string name="submit">Submit</string>
+    <string name="bug_report_submitted">Bug Report Submitted</string>
+    <string name="contact_support">Contact Support</string>
+    <string name="support_description">Choose how you would like to get in touch with us.</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="call_support">Call Support</string>
+    <string name="health_tips">Health Tips</string>
+    <string name="saved_articles">Saved</string>
+    <string name="support_tickets">Support Tickets</string>
+    <string name="no_support_tickets">No support tickets</string>
+    <string name="ticket_resolved">Resolved</string>
+    <string name="ticket_open">Open</string>
+</resources>
