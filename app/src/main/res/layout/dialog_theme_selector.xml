@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/popup_menu_background"
+    android:padding="16dp">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/select_theme"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:fontFamily="@font/poppins_medium"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Light Theme -->
+    <LinearLayout
+        android:id="@+id/layoutLight"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:stateListAnimator="@animator/press_scale"
+        android:background="@drawable/ripple_effect_rounded"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_theme_light"
+            android:layout_marginEnd="16dp"
+            app:tint="@color/green_light" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/theme_light"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="@font/poppins_medium" />
+
+        <ImageView
+            android:id="@+id/ivLightCheck"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_success"
+            android:visibility="gone"
+            app:tint="@color/green_primary" />
+    </LinearLayout>
+
+    <!-- Dark Theme -->
+    <LinearLayout
+        android:id="@+id/layoutDark"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:stateListAnimator="@animator/press_scale"
+        android:background="@drawable/ripple_effect_rounded"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_theme_dark"
+            android:layout_marginEnd="16dp"
+            app:tint="@color/green_light" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/theme_dark"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="@font/poppins_medium" />
+
+        <ImageView
+            android:id="@+id/ivDarkCheck"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_success"
+            android:visibility="gone"
+            app:tint="@color/green_primary" />
+    </LinearLayout>
+
+    <!-- System Default Theme -->
+    <LinearLayout
+        android:id="@+id/layoutSystem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:stateListAnimator="@animator/press_scale"
+        android:background="@drawable/ripple_effect_rounded"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_theme_system"
+            android:layout_marginEnd="16dp"
+            app:tint="@color/green_light" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/theme_system"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="@font/poppins_medium" />
+
+        <ImageView
+            android:id="@+id/ivSystemCheck"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_success"
+            android:visibility="gone"
+            app:tint="@color/green_primary" />
+    </LinearLayout>
+
+</LinearLayout>
+

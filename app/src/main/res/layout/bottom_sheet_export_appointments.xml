@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bottom_sheet_handle" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Completed Appointments to Export"
+        android:textSize="18sp"
+        android:textColor="@color/green_primary"
+        android:gravity="center"
+        android:layout_marginBottom="12dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSelectAppointments"
+        android:layout_width="match_parent"
+        android:layout_height="240dp"
+        android:layout_marginBottom="12dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelExport"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:stateListAnimator="@animator/press_scale"
+            android:text="Cancel"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            app:cornerRadius="12dp"
+            android:fontFamily="@font/poppins_medium"
+            app:backgroundTint="@color/grey_light"
+            app:strokeColor="@color/grey_dark"
+            app:strokeWidth="1dp" />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExportSelected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:stateListAnimator="@animator/press_scale"
+            android:text="Export"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_medium"
+            app:cornerRadius="12dp"
+            style="@style/ButtonPrimary" />
+    </LinearLayout>
+
+</LinearLayout>

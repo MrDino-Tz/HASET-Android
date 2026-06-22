@@ -1,0 +1,696 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nestedScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="50dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Top Header Bar -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- Profile Photo/Initials Container -->
+                <FrameLayout
+                    android:id="@+id/profileImageContainer"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:elevation="24dp"
+                    android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                    android:outlineSpotShadowColor="@color/chat_shadow_color"
+                    android:background="@drawable/bg_search_circle">
+
+                    <com.facebook.shimmer.ShimmerFrameLayout
+                        android:id="@+id/shimmerProfileHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:shimmer_auto_start="true"
+                        app:shimmer_base_alpha="0.8"
+                        app:shimmer_highlight_alpha="1.0">
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_search_circle" />
+                    </com.facebook.shimmer.ShimmerFrameLayout>
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/ivProfileHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/profile_photo"
+                        android:visibility="gone"
+                        app:civ_border_width="1dp"
+                        app:civ_border_color="@color/divider" />
+
+                    <TextView
+                        android:id="@+id/tvUserInitials"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_search_circle"
+                        android:foreground="@drawable/ripple_effect_circular"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:fontFamily="@font/poppins"
+                        android:gravity="center"
+                        android:text="PF"
+                        android:textColor="@color/green_primary"
+                        android:textSize="18sp" />
+                </FrameLayout>
+
+                <!-- Greeting and Name -->
+                <LinearLayout
+                    android:id="@+id/greetingContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="12dp"
+                    android:layout_toEndOf="@id/profileImageContainer"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="@string/hello"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="-2dp"/>
+
+                    <TextView
+                        android:id="@+id/tvUserNameNew"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="Davis"
+                        android:textColor="@color/green_primary"
+                        android:textSize="15sp"
+                        android:layout_marginTop="-2dp"/>
+                </LinearLayout>
+
+                <!-- Action Buttons (Search & Notification) -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <ImageView
+                        android:id="@+id/ivSearchIconNew"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_search_circle"
+                        android:foreground="@drawable/ripple_effect_circular"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:padding="10dp"
+                        android:elevation="24dp"
+                        android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                        android:outlineSpotShadowColor="@color/chat_shadow_color"
+                        android:src="@drawable/ic_search"
+                        app:tint="@color/green_primary" />
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:id="@+id/ivNotificationNew"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:foreground="@drawable/ripple_effect_circular"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:stateListAnimator="@animator/press_scale"
+                            android:padding="10dp"
+                            android:elevation="24dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color"
+                            android:src="@drawable/ic_bell"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:id="@+id/tvNotificationBadge"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginEnd="2dp"
+                            android:background="@drawable/bg_notification_badge"
+                            android:gravity="center"
+                            android:textColor="@color/white"
+                            android:textSize="9sp"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            android:elevation="25dp" />
+                    </FrameLayout>
+
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Full Page Shimmer Loading -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerPageLoading"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:visibility="gone"
+                app:shimmer_auto_start="true"
+                app:shimmer_duration="1200">
+
+                <include layout="@layout/shimmer_patient_home" />
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Main Content Container (toggled with shimmer) -->
+            <LinearLayout
+                android:id="@+id/layoutHomeContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!--Promotional Banner -->
+                <FrameLayout
+                    android:id="@+id/bannerContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginBottom="16dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:elevation="8dp">
+
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/viewPagerBanner"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:clipChildren="false"
+                        android:overScrollMode="never" />
+
+                    <!-- Pagination Indicators -->
+                    <LinearLayout
+                        android:id="@+id/layoutPaginationIndicators"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginBottom="8dp"
+                        android:paddingTop="8dp" />
+
+                </FrameLayout>
+
+                <!-- Services Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="24dp"
+                    android:fontFamily="@font/poppins"
+                    android:text="Services"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:paddingTop="12dp"
+                    android:layout_marginHorizontal="8dp"
+                    android:orientation="horizontal"
+                    android:weightSum="4"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <!-- Chat with Doctor -->
+                    <LinearLayout
+                        android:id="@+id/llChatDoctor"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="14dp"
+                            android:elevation="16dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color"
+                            android:src="@drawable/user_md_24"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="Popular Doctors"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false"/>
+                    </LinearLayout>
+
+                    <!-- Chidren's Corner -->
+                    <LinearLayout
+                        android:id="@+id/llMenstruation"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="14dp"
+                            android:elevation="16dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color"
+                            android:src="@drawable/ic_smiling_baby_24"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="Children's Corner"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false"/>
+                    </LinearLayout>
+
+                    <!-- Articles -->
+                    <LinearLayout
+                        android:id="@+id/llArticlesAction"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="14dp"
+                            android:elevation="16dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color"
+                            android:src="@drawable/ic_news_paper"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="Articles"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false"/>
+                    </LinearLayout>
+
+                    <!-- Hospitals -->
+                    <LinearLayout
+                        android:id="@+id/llHospitals"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:stateListAnimator="@animator/press_scale"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
+
+                        <ImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_search_circle"
+                            android:padding="14dp"
+                            android:elevation="16dp"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color"
+                            android:src="@drawable/ic_hospital_24"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:text="Find Hospital"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Popular Articles Section -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:paddingHorizontal="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins"
+                        android:text="Popular Articles"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/tvViewAllArticles"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:padding="4dp"
+                        android:background="@drawable/ripple_effect_rounded"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="View All >"
+                        android:textColor="@color/green_primary"
+                        android:textSize="12sp" />
+                </RelativeLayout>
+
+                <!-- Shimmer Container for Popular Articles -->
+                <LinearLayout
+                    android:id="@+id/shimmerPopularArticles"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:visibility="gone" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvPopularArticles"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clipToPadding="false"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:visibility="visible" />
+
+                <!-- Quick Access Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="16dp"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <!-- Chat with Doctor -->
+                    <LinearLayout
+                        android:id="@+id/layoutChatDoctor"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="@drawable/ripple_effect_rounded"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/user_md_24"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="Chat Doctor"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- News/Articles -->
+                    <LinearLayout
+                        android:id="@+id/layoutNews"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="@drawable/ripple_effect_rounded"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/ic_news_paper"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="News"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- Children's -->
+                    <LinearLayout
+                        android:id="@+id/layoutChildren"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="@drawable/ripple_effect_rounded"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/ic_smiling_baby_24"
+                            app:tint="@color/green_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="Children's"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Health Quote -->
+                <LinearLayout
+                    android:id="@+id/layoutHealthQuote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/tvHealthQuote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="&quot;Afya ni mali yenye thamani kuliko fedha zote.&quot;"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="4dp" />
+
+                    <TextView
+                        android:id="@+id/tvHealthQuoteAuthor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="— HASET Hospital"
+                        android:textColor="@color/green_primary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Hidden/Old views for compatibility during transition -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerProfile"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/ivProfile"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/tvGreeting"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/tvUserName"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+            <ImageView
+                android:id="@+id/ivMessage"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/tvBadgeCount"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+            <ImageView
+                android:id="@+id/ivNotification"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+
+            <TextView
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Material 3 Search Bar (Hidden anchor for expansion) -->
+    <com.google.android.material.search.SearchBar
+        android:id="@+id/searchBarHome"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_anchor="@id/ivSearchIconNew" />
+
+    <!-- Material 3 Search View (Expanded state) -->
+    <com.google.android.material.search.SearchView
+        android:id="@+id/searchViewHome"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:backgroundTint="@color/background_primary"
+        android:hint="Search doctors, articles, or services..."
+        app:layout_anchor="@id/searchBarHome">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSearchResultsHome"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp" />
+
+    </com.google.android.material.search.SearchView>
+    <!-- Scroll to Top Button -->
+    <FrameLayout
+        android:id="@+id/fabScrollTop"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_search_circle"
+        android:foreground="@drawable/ripple_effect_circular"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_arrow_up"
+            app:tint="@color/green_primary" />
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:background="@drawable/ripple_effect_rounded"
+        android:gravity="center_vertical">
+
+        <!-- Banner Preview Image -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivBannerPreview"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:scaleType="centerCrop"
+            android:background="@color/grey_light"
+            app:shapeAppearanceOverlay="@style/RoundedSquareImage" />
+
+        <!-- Banner Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvAdminTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:fontFamily="@font/poppins_medium"
+                android:maxLines="2"
+                android:ellipsize="end"
+                tools:text="Banner Title" />
+
+            <TextView
+                android:id="@+id/tvAdminType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                tools:text="Type: Pharmacy" />
+
+            <TextView
+                android:id="@+id/tvAdminBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="12sp"
+                android:textColor="@color/green_primary"
+                tools:text="Badge: 50% OFF" />
+
+            <TextView
+                android:id="@+id/tvDefaultBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/default_banner"
+                android:textColor="@color/text_hint"
+                android:textSize="11sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Action Buttons -->
+        <ImageView
+            android:id="@+id/btnEditBanner"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_search_circle"
+            android:foreground="@drawable/ripple_effect_circular"
+            android:padding="8dp"
+            android:src="@drawable/ic_edit"
+            app:tint="@color/green_primary" />
+
+        <ImageView
+            android:id="@+id/btnDeleteBanner"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_search_circle"
+            android:foreground="@drawable/ripple_effect_circular"
+            android:padding="8dp"
+            android:src="@drawable/ic_delete"
+            app:tint="@color/red_primary" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="100dp"
+        android:background="@color/divider" />
+
+</LinearLayout>

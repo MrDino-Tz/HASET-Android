@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/text_primary"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <!-- Voice Wave Visualizer -->
+    <com.haset.hasetapp.views.VoiceWaveView
+        android:id="@+id/voiceWaveView"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/ripple_effect_rounded" />
+
+    <!-- Recording Text -->
+    <TextView
+        android:id="@+id/tvRecordingStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Recording..."
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Recording Duration -->
+    <TextView
+        android:id="@+id/tvRecordingDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0:00"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium" />
+
+    <!-- Buttons Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+    <!-- Cancel Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Cancel"
+        android:textColor="@color/text_secondary"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        app:backgroundTint="@android:color/transparent"
+        app:strokeColor="@color/divider"
+        app:strokeWidth="1dp"
+        app:cornerRadius="8dp" />
+
+    <!-- Stop Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnStop"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Stop"
+        android:textColor="@android:color/white"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="8dp"
+        app:backgroundTint="@color/red_primary"
+        app:cornerRadius="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
+

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    android:background="@drawable/ripple_effect_rounded">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:background="?attr/colorCardBackground">
+
+        <ImageView
+            android:id="@+id/ivBannerPreview"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            android:background="@color/grey_light"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Small" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/tvAdminTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Banner Title"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvAdminType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Type: Pharmacy"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvAdminBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Badge: 50% OFF"
+            android:textColor="@color/green_primary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvDefaultBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/default_banner"
+            android:textColor="@color/text_hint"
+            android:textSize="10sp"
+            android:fontFamily="@font/poppins_medium"
+            android:visibility="gone" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btnEditBanner"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ripple_effect_circular"
+            android:padding="4dp"
+            android:src="@drawable/ic_edit"
+            app:tint="@color/blue_primary" />
+
+        <ImageView
+            android:id="@+id/btnDeleteBanner"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/ripple_effect_circular"
+            android:padding="4dp"
+            android:src="@drawable/ic_delete"
+            app:tint="@color/red_primary" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
