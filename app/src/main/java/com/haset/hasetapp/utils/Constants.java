@@ -71,10 +71,10 @@ public class Constants {
     public static final boolean IS_DEBUG_MODE = true;
     
     // API Base URLs - Change to production URL for release
-    // Note: Include /api prefix for Laravel 11+
-    // PRODUCTION: public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/api/";
-    public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/api/";
-    // PRODUCTION: public static final String DEVELOPMENT_API_URL = "https://payments.hasethospital.or.tz/api/";
+    // Hosted payment backend is deployed under /public/api on Hostinger.
+    // PRODUCTION: public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
+    public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
+    // PRODUCTION: public static final String DEVELOPMENT_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String DEVELOPMENT_API_URL = "http://192.168.1.126:8000/api/";
     
     // Use production URL in release builds, development in debug
@@ -92,7 +92,7 @@ public class Constants {
     
     // Payment Webhook URL - Backend endpoint for payment status notifications
     // See: /from BACKEND/BACKEND_REQUIREMENTS.md
-    public static final String PAYMENT_WEBHOOK_URL = API_BASE_URL + "payment/callback";
+    public static final String PAYMENT_WEBHOOK_URL = PRODUCTION_API_URL + "payment/callback";
     
     // ========================
     // Security Settings

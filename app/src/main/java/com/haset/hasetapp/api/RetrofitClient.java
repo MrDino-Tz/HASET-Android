@@ -21,12 +21,19 @@ import java.util.Collections;
 public class RetrofitClient {
     private static RetrofitClient instance;
     private Retrofit retrofit;
+    private Retrofit paymentRetrofit;
     
     private RetrofitClient() {
         OkHttpClient client = buildSecureClient();
         
         retrofit = new Retrofit.Builder()
                 .baseUrl(Constants.API_BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        paymentRetrofit = new Retrofit.Builder()
+                .baseUrl(Constants.PRODUCTION_API_URL)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -88,6 +95,6 @@ public class RetrofitClient {
     }
     
     public PaymentApiService getPaymentApiService() {
-        return retrofit.create(PaymentApiService.class);
+        return paymentRetrofit.create(PaymentApiService.class);
     }
 }

@@ -8,19 +8,29 @@ import com.haset.hasetapp.models.PaymentStatusResponse;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface PaymentApiService {
     
-    @POST("payment/initiate")
-    Call<PaymentResponse> initiatePayment(@Body PaymentRequest request);
+    @POST("mobile/payment/initiate")
+    Call<PaymentResponse> initiatePayment(
+            @Header("Authorization") String authorization,
+            @Body PaymentRequest request
+    );
     
-    @GET("payment/status")
-    Call<PaymentStatusResponse> checkPaymentStatus(@Query("transaction_id") int transactionId);
+    @GET("mobile/payment/status")
+    Call<PaymentStatusResponse> checkPaymentStatus(
+            @Header("Authorization") String authorization,
+            @Query("transaction_id") int transactionId
+    );
     
-    @POST("payment/cancel")
-    Call<Void> cancelPayment(@Body CancelPaymentRequest request);
+    @POST("mobile/payment/cancel")
+    Call<Void> cancelPayment(
+            @Header("Authorization") String authorization,
+            @Body CancelPaymentRequest request
+    );
     
     @POST("payment/payout")
     Call<com.haset.hasetapp.models.PaymentResponse> disburseFunds(@Body com.haset.hasetapp.models.PayoutRequest request);

@@ -862,13 +862,8 @@ public class PaymentActivity extends AppCompatActivity {
     }
     
     private String getUserName() {
-        // Try to get name from doctor object or preference manager
-        if (doctor != null && doctor.getFullName() != null) {
-            return doctor.getFullName();
-        }
         com.haset.hasetapp.utils.PreferenceManager pref = new com.haset.hasetapp.utils.PreferenceManager(this);
         return pref.getUserName() != null ? pref.getUserName() : "";
     }
 }
-
 
