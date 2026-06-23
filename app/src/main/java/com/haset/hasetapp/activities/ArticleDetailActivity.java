@@ -157,7 +157,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
         tvArticleTitle.setText(article.getTitle() != null ? article.getTitle() : "");
         tvArticleContent.setText(article.getDescription() != null ? article.getDescription() : "");
 
-        tvAuthorName.setText(article.getProfileName() != null ? article.getProfileName() : getString(R.string.haset_admin));
+        tvAuthorName.setText(article.getProfileName() != null ? article.getProfileName() : getString(R.string.app_name));
 
         if (article.getCreatedAt() > 0) {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());

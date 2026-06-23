@@ -35,17 +35,6 @@ public class DatabaseSeeder {
                     return;
                 }
                 
-                // Create test admin
-                UserEntity admin = new UserEntity();
-                admin.setUserId("admin-001");
-                admin.setEmail("admin@hasetapp.com");
-                admin.setPassword(hashPassword("admin123"));
-                admin.setFullName("System Administrator");
-                admin.setPhone("+255766073163");
-                admin.setRole("admin");
-                admin.setCreatedAt(System.currentTimeMillis());
-                database.userDao().insert(admin);
-                
                 // Create test patient
 //                UserEntity patient = new UserEntity();
 //                patient.setUserId("patient-001");

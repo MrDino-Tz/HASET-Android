@@ -59,11 +59,6 @@ public class ArticleActivity extends AppCompatActivity {
         tabLayout = findViewById(R.id.tabsArticles);
         viewPager = findViewById(R.id.vpArticleTabs);
         
-        fabAddArticle.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(ArticleActivity.this, com.haset.hasetapp.activities.CreatePostWizardActivity.class);
-            intent.putExtra("post_type", "image");
-            startActivity(intent);
-        });
         
         viewPager.setAdapter(new ArticleTabAdapter(this, highlightArticleId));
         new TabLayoutMediator(tabLayout, viewPager, (tab, pos) -> {
@@ -160,13 +155,7 @@ public class ArticleActivity extends AppCompatActivity {
     }
 
     private void setupObservers(com.google.android.material.floatingactionbutton.FloatingActionButton fab) {
-        authViewModel.getCurrentUser().observe(this, user -> {
-            if (user != null && "admin".equalsIgnoreCase(user.getRole())) {
-                fab.setVisibility(android.view.View.VISIBLE);
-            } else {
-                fab.setVisibility(android.view.View.GONE);
-            }
-        });
+        fab.setVisibility(android.view.View.GONE);
 
         String uid = new com.haset.hasetapp.utils.PreferenceManager(this).getUserId();
         if (uid != null) {

@@ -298,18 +298,6 @@ public class ProfileFragment extends Fragment {
                     updateDoctorUI(doctor);
                 }
             });
-        } else if (Constants.ROLE_ADMIN.equals(role)) {
-            tvSpecialization.setText(R.string.administrator);
-            if (tvProfessionalInfoTitle != null) tvProfessionalInfoTitle.setVisibility(View.VISIBLE);
-            cardMedicalInfo.setVisibility(View.VISIBLE);
-            cardMedicalInfo2.setVisibility(View.VISIBLE);
-            if (layoutConsultationFee != null) layoutConsultationFee.setVisibility(View.GONE);
-            if (layoutAvailableTimes != null) layoutAvailableTimes.setVisibility(View.GONE);
-            if (dividerConsultationFee != null) dividerConsultationFee.setVisibility(View.GONE);
-            if (dividerAvailableTimes != null) dividerAvailableTimes.setVisibility(View.GONE);
-            
-            if (tvMedicalRecordsTitle != null) tvMedicalRecordsTitle.setVisibility(View.GONE);
-            if (cardMedicalRecords != null) cardMedicalRecords.setVisibility(View.GONE);
         } else {
             tvSpecialization.setText(R.string.patient);
             if (tvProfessionalInfoTitle != null) tvProfessionalInfoTitle.setVisibility(View.GONE);
@@ -420,31 +408,6 @@ public class ProfileFragment extends Fragment {
                 String userId = preferenceManager.getUserId();
                 if (userId != null) {
                     loadDoctorProfessionalInfo(userId);
-                }
-            } else if (Constants.ROLE_ADMIN.equals(userRole)) {
-                tvSpecialization.setText(R.string.administrator);
-                if (tvProfessionalInfoTitle != null) {
-                    tvProfessionalInfoTitle.setVisibility(View.VISIBLE);
-                }
-                cardMedicalInfo.setVisibility(View.VISIBLE);
-                cardMedicalInfo2.setVisibility(View.VISIBLE);
-                if (layoutConsultationFee != null) {
-                    layoutConsultationFee.setVisibility(View.GONE);
-                }
-                if (layoutAvailableTimes != null) {
-                    layoutAvailableTimes.setVisibility(View.GONE);
-                }
-                if (dividerConsultationFee != null) {
-                    dividerConsultationFee.setVisibility(View.GONE);
-                }
-                if (dividerAvailableTimes != null) {
-                    dividerAvailableTimes.setVisibility(View.GONE);
-                }
-                if (tvMedicalRecordsTitle != null) {
-                    tvMedicalRecordsTitle.setVisibility(View.GONE);
-                }
-                if (cardMedicalRecords != null) {
-                    cardMedicalRecords.setVisibility(View.GONE);
                 }
             } else { // Patient
                 tvSpecialization.setText(R.string.patient);
@@ -661,7 +624,6 @@ public class ProfileFragment extends Fragment {
             int roleResId;
             switch (userRole.toLowerCase()) {
                 case "doctor": roleResId = R.string.doctor; break;
-                case "admin": roleResId = R.string.admin; break;
                 default: roleResId = R.string.patient; break;
             }
             roleDisplay = getString(roleResId);
@@ -808,7 +770,6 @@ public class ProfileFragment extends Fragment {
                 int roleResId;
                 switch (userRole.toLowerCase()) {
                     case "doctor": roleResId = R.string.doctor; break;
-                    case "admin": roleResId = R.string.admin; break;
                     default: roleResId = R.string.patient; break;
                 }
                 roleText = getString(roleResId);

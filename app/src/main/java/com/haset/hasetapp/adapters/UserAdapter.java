@@ -106,10 +106,6 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
                         tvRoleBadge.setBackgroundResource(R.drawable.bg_badge_red);
                         tvRoleBadge.setTextColor(itemView.getContext().getResources().getColor(R.color.badge_red_text));
                         break;
-                    case "admin":
-                        tvRoleBadge.setBackgroundResource(R.drawable.bg_badge_black);
-                        tvRoleBadge.setTextColor(itemView.getContext().getResources().getColor(R.color.white_primary));
-                        break;
                     default:
                         tvRoleBadge.setBackgroundResource(R.drawable.bg_badge_teal);
                         tvRoleBadge.setTextColor(itemView.getContext().getResources().getColor(R.color.badge_teal_text));

@@ -35,7 +35,6 @@ import android.widget.CheckBox;
 // import com.google.firebase.auth.GoogleAuthProvider;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.DashboardActivity;
-import com.haset.hasetapp.activities.AdminDashboardActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.database.LocalStorageHelper;
@@ -463,18 +462,8 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void navigateToDashboard() {
-        // Check user role and navigate to appropriate dashboard
-        String role = preferenceManager.getUserRole();
-        Intent intent;
-        
-        if (Constants.ROLE_ADMIN.equals(role)) {
-            intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
-        } else {
-            intent = new Intent(LoginActivity.this, DashboardActivity.class);
-        }
-        
+        Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        
         startActivity(intent);
         overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
         finish();

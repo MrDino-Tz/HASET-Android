@@ -51,10 +51,8 @@
     <string name="select_role">Select Your Role</string>
     <string name="i_am_patient">I\'m a Patient</string>
     <string name="i_am_doctor">I\'m a Doctor</string>
-    <string name="i_am_admin">I\'m an Administrator</string>
     <string name="patient">Patient</string>
     <string name="doctor">Doctor</string>
-    <string name="admin">Administrator</string>
     <string name="administrator">Administrator</string>
 
     <!-- Navigation -->
@@ -92,7 +90,6 @@
     <string name="canceled">Canceled</string>
     <string name="system">System</string>
     <string name="activity_logs">Activity Logs</string>
-    <string name="admin_notifications">Admin Notifications</string>
 
     <!-- Doctor Profile -->
     <string name="specialty">Specialty</string>
@@ -197,7 +194,6 @@
     <string name="my_posts">My Posts</string>
     <string name="all_users">All Users</string>
 <!--    <string name="doctors">Doctors</string>-->
-    <string name="haset_admin">HASET Admin</string>
     <string name="article_liked">Article liked</string>
     <string name="article_unliked">Article unliked</string>
     <string name="comment_posted">Comment posted</string>
@@ -728,7 +724,6 @@
     <string name="no_camera_app">No camera app found</string>
 
     <!-- CreatePostWizard -->
-    <string name="access_denied_admin_only">Access denied. Only admins can create articles.</string>
     <string name="draft_saved">Draft saved successfully</string>
     <string name="title_required">Title is required</string>
     <string name="description_required">Description is required</string>
@@ -873,7 +868,7 @@
     <string name="error_password_required">Password is required</string>
     <string name="error_password_short">Password must be at least 6 characters</string>
     <string name="error_passwords_not_match">Passwords do not match</string>
-    <string name="error_valid_role">Please enter a valid role (patient, doctor, or admin)</string>
+    <string name="error_valid_role">Please enter a valid role (patient or doctor)</string>
 
     <!-- Prescription -->
     <string name="issuing_prescription">Issuing Prescription…</string>
@@ -905,7 +900,6 @@
 
     <!-- Settings / Article activity -->
     <string name="settings_coming_soon">Settings Coming Soon!</string>
-    <string name="admin_password">Admin Password</string>
     <string name="password_required">Password Required</string>
     <string name="help_and_support_desc">Help and Support</string>
     <string name="help_and_support">Help and Support</string>

@@ -76,13 +76,7 @@ public class SplashActivity extends BaseActivity {
         splashHandler = new Handler(Looper.getMainLooper());
         splashHandler.postDelayed(() -> {
             if (preferenceManager.isLoggedIn()) {
-                String role = preferenceManager.getUserRole();
-                Intent intent;
-                if (Constants.ROLE_ADMIN.equals(role)) {
-                    intent = new Intent(SplashActivity.this, AdminDashboardActivity.class);
-                } else {
-                    intent = new Intent(SplashActivity.this, DashboardActivity.class);
-                }
+                Intent intent = new Intent(SplashActivity.this, DashboardActivity.class);
                 startActivity(intent);
             } else {
                 Intent intent = new Intent(SplashActivity.this, LoginActivity.class);

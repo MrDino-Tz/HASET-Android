@@ -39,8 +39,6 @@
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
         <activity android:name=".activities.OnboardingActivity" />
-        <activity android:name=".activities.AdminManageHospitalsActivity"
-            android:enableOnBackInvokedCallback="true"/>
         <activity android:name=".activities.HospitalsActivity"
             android:enableOnBackInvokedCallback="true"/>
         <activity android:name=".activities.ArticleActivity"
@@ -90,50 +88,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize"
             android:enableOnBackInvokedCallback="true"/>
-                <activity
-            android:name=".activities.AdminDashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.AdminManagementActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AuditLogsActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminNotificationActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminReportActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.ArticleCenterActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.CreatePostWizardActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize"
-            android:parentActivityName=".activities.ArticleCenterActivity" />
-        <activity
-            android:name=".activities.AdminBannersActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminQuotesActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminWalletManagementActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminSupportTicketsActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
         <activity
             android:name=".activities.DashboardActivity"
             android:exported="false" /> <!-- Appointment Activities -->
@@ -163,18 +117,6 @@
             android:name=".activities.DoctorEditActivity"
             android:exported="false"
             android:parentActivityName=".activities.DashboardActivity" />
-        <activity
-            android:name=".activities.AdminUserEditActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminDemoDoctorActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
-        <activity
-            android:name=".activities.AdminManageDemoDoctorsActivity"
-            android:exported="false"
-            android:parentActivityName=".activities.AdminDashboardActivity" />
         <!-- Chat Activity -->
         <activity
             android:name=".activities.ChatActivity"

@@ -113,7 +113,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         if (post == null) return;
         
         // Profile name
-        holder.tvProfileName.setText(post.getProfileName() != null ? post.getProfileName() : context.getString(R.string.haset_admin));
+        holder.tvProfileName.setText(post.getProfileName() != null ? post.getProfileName() : context.getString(R.string.app_name));
         
         // Load author profile photo with shimmer
         if (post.getAuthorId() != null && !post.getAuthorId().isEmpty()) {

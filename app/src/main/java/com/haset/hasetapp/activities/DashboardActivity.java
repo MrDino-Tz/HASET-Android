@@ -19,7 +19,6 @@ import com.haset.hasetapp.fragments.ChatListFragment;
 import com.haset.hasetapp.fragments.DoctorHomeFragment;
 import com.haset.hasetapp.fragments.PatientHomeFragment;
 import com.haset.hasetapp.fragments.ProfileFragment;
-import com.haset.hasetapp.utils.AdminNotificationManager;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.DoctorNotificationManager;
 import com.haset.hasetapp.utils.NetworkUtils;
@@ -42,15 +41,6 @@ public class DashboardActivity extends BaseActivity {
         // Theme is initialized globally in HASETApplication
         
         preferenceManager = new PreferenceManager(this);
-        
-        // Redirect admin users to AdminDashboardActivity
-        if (Constants.ROLE_ADMIN.equals(preferenceManager.getUserRole())) {
-            Intent intent = new Intent(this, AdminDashboardActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-            return;
-        }
         
         setContentView(R.layout.activity_dashboard);
         
@@ -75,7 +65,6 @@ public class DashboardActivity extends BaseActivity {
         // Trigger role-specific notifications
         triggerPatientNotifications();
         triggerDoctorNotifications();
-        triggerAdminNotifications();
     }
     
     private void triggerPatientNotifications() {
@@ -110,19 +99,6 @@ public class DashboardActivity extends BaseActivity {
         }
     }
     
-    private void triggerAdminNotifications() {
-        if (Constants.ROLE_ADMIN.equals(preferenceManager.getUserRole())) {
-            // Get admin notification manager from application
-            AdminNotificationManager notificationManager = 
-                ((HASETApplication) getApplication()).getAdminNotificationManager();
-            
-            if (notificationManager != null) {
-                String userName = preferenceManager.getUserName();
-                notificationManager.onAdminLogin(userName);
-            }
-        }
-    }
-
     private void setupBottomNavigation() {
         bottomNavigation.setOnItemSelectedListener(item -> {
             Fragment fragment = null;

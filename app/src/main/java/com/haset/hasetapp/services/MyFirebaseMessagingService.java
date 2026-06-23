@@ -115,15 +115,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             case Constants.NOTIF_TYPE_CHAT_MESSAGE:
                 handleChatMessage(data);
                 break;
-            case Constants.NOTIF_TYPE_NEW_REGISTRATION:
-                handleNewRegistration(data);
-                break;
-            case Constants.NOTIF_TYPE_WITHDRAWAL_REQUEST:
-                handleWithdrawalRequest(data);
-                break;
-            case Constants.NOTIF_TYPE_SYSTEM_ALERT:
-                handleSystemAlert(data);
-                break;
             case Constants.NOTIF_TYPE_GENERAL:
                 handleGeneralNotification(data);
                 break;
@@ -133,40 +124,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             default:
                 Log.w(TAG, "Unknown notification type: " + type);
         }
-    }
-    
-    private void handleNewRegistration(Map<String, String> data) {
-        if (!Constants.ROLE_ADMIN.equals(new PreferenceManager(this).getUserRole())) return;
-        
-        com.haset.hasetapp.database.entities.UserEntity user = new com.haset.hasetapp.database.entities.UserEntity();
-        user.setFullName(data.get("fullName"));
-        user.setEmail(data.get("email"));
-        user.setRole(data.get("role"));
-        
-        ((com.haset.hasetapp.HASETApplication) getApplication())
-            .getAdminNotificationManager().onNewUserRegistration(user);
-    }
-    
-    private void handleWithdrawalRequest(Map<String, String> data) {
-        if (!Constants.ROLE_ADMIN.equals(new PreferenceManager(this).getUserRole())) return;
-        
-        String doctorName = data.get("doctorName");
-        String amountStr = data.get("amount");
-        double amount = 0;
-        try { amount = Double.parseDouble(amountStr); } catch (Exception ignored) {}
-        
-        ((com.haset.hasetapp.HASETApplication) getApplication())
-            .getAdminNotificationManager().onWithdrawalRequest(doctorName, amount);
-    }
-    
-    private void handleSystemAlert(Map<String, String> data) {
-        if (!Constants.ROLE_ADMIN.equals(new PreferenceManager(this).getUserRole())) return;
-        
-        String title = data.get("title");
-        String message = data.get("message");
-        
-        ((com.haset.hasetapp.HASETApplication) getApplication())
-            .getAdminNotificationManager().onSystemAlert(title, message);
     }
     
     /**

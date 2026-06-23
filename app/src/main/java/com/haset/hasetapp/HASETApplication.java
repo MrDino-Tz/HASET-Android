@@ -11,7 +11,6 @@ import android.view.WindowManager;
 
 import com.haset.hasetapp.database.DatabaseSeeder;
 import com.haset.hasetapp.database.LocalStorageHelper;
-import com.haset.hasetapp.utils.AdminNotificationManager;
 import com.haset.hasetapp.utils.CloudinaryUploadHelper;
 import com.haset.hasetapp.utils.DoctorNotificationManager;
 import com.haset.hasetapp.utils.MessageNotificationManager;
@@ -26,7 +25,6 @@ public class HASETApplication extends Application implements Application.Activit
     private static HASETApplication instance;
     private PatientNotificationManager patientNotificationManager;
     private DoctorNotificationManager doctorNotificationManager;
-    private AdminNotificationManager adminNotificationManager;
     private int activityCount = 0;
     private boolean isAppInForeground = false;
     
@@ -52,9 +50,6 @@ public class HASETApplication extends Application implements Application.Activit
         
         // Initialize Doctor Notification Manager
         doctorNotificationManager = new DoctorNotificationManager(this);
-        
-        // Initialize Admin Notification Manager
-        adminNotificationManager = new AdminNotificationManager(this);
         
         // Register activity lifecycle callbacks
         registerActivityLifecycleCallbacks(this);
@@ -116,10 +111,6 @@ public class HASETApplication extends Application implements Application.Activit
         return doctorNotificationManager;
     }
     
-    public AdminNotificationManager getAdminNotificationManager() {
-        return adminNotificationManager;
-    }
-    
     public static Context getAppContext() {
         return instance.getApplicationContext();
     }
@@ -150,9 +141,6 @@ public class HASETApplication extends Application implements Application.Activit
             }
             if (doctorNotificationManager != null) {
                 doctorNotificationManager.onAppForegrounded();
-            }
-            if (adminNotificationManager != null) {
-                adminNotificationManager.onAppForegrounded();
             }
         }
         Log.d(TAG, "Activity resumed: " + activity.getClass().getSimpleName());
@@ -189,9 +177,6 @@ public class HASETApplication extends Application implements Application.Activit
             if (doctorNotificationManager != null) {
                 doctorNotificationManager.onAppBackgrounded();
             }
-            if (adminNotificationManager != null) {
-                adminNotificationManager.onAppBackgrounded();
-            }
         }
     }
     
@@ -206,10 +191,6 @@ public class HASETApplication extends Application implements Application.Activit
         if (doctorNotificationManager != null) {
             doctorNotificationManager.cleanup();
         }
-        if (adminNotificationManager != null) {
-            adminNotificationManager.cleanup();
-        }
-        
         Log.d(TAG, "Application terminated");
     }
 }
