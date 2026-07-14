@@ -33,7 +33,7 @@ public class RetrofitClient {
                 .build();
 
         paymentRetrofit = new Retrofit.Builder()
-                .baseUrl(Constants.PRODUCTION_API_URL)
+                .baseUrl(Constants.PAYMENT_API_BASE_URL)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();

@@ -16,19 +16,19 @@ public interface PaymentApiService {
     
     @POST("mobile/payment/initiate")
     Call<PaymentResponse> initiatePayment(
-            @Header("Authorization") String authorization,
+            @Header("X-API-Key") String apiKey,
             @Body PaymentRequest request
     );
     
     @GET("mobile/payment/status")
     Call<PaymentStatusResponse> checkPaymentStatus(
-            @Header("Authorization") String authorization,
+            @Header("X-API-Key") String apiKey,
             @Query("transaction_id") int transactionId
     );
     
     @POST("mobile/payment/cancel")
     Call<Void> cancelPayment(
-            @Header("Authorization") String authorization,
+            @Header("X-API-Key") String apiKey,
             @Body CancelPaymentRequest request
     );
     

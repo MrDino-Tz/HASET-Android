@@ -74,11 +74,12 @@ public class Constants {
     // Hosted payment backend is deployed under /public/api on Hostinger.
     // PRODUCTION: public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
+    public static final String PAYMENT_API_BASE_URL = "https://payments.hasethospital.or.tz/public/api/";
     // PRODUCTION: public static final String DEVELOPMENT_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String DEVELOPMENT_API_URL = "http://192.168.1.126:8000/api/";
     
-    // Use production URL in release builds, development in debug
-    public static final String API_BASE_URL = IS_DEBUG_MODE ? DEVELOPMENT_API_URL : PRODUCTION_API_URL;
+    // Use the production backend for all API traffic.
+    public static final String API_BASE_URL = PRODUCTION_API_URL;
     
     // ========================
     // Payment Security
@@ -93,6 +94,7 @@ public class Constants {
     // Payment Webhook URL - Backend endpoint for payment status notifications
     // See: /from BACKEND/BACKEND_REQUIREMENTS.md
     public static final String PAYMENT_WEBHOOK_URL = PRODUCTION_API_URL + "payment/callback";
+    public static final String PAYMENT_CLIENT_API_KEY = "hsk_40e850e045de6d6636d68c45c4c814aa2be41e07522d64e1";
     
     // ========================
     // Security Settings

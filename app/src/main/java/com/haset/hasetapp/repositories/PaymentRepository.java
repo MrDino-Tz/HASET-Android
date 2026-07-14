@@ -4,8 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.api.PaymentApiService;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.models.PaymentRequest;
@@ -35,11 +33,6 @@ public class PaymentRepository {
     private String currentDoctorId;
     private double currentAmount;
     private FirebaseHelper.OnCompleteListener<Boolean> pendingFinalCallback;
-
-    private interface AuthHeaderCallback {
-        void onSuccess(String authHeader);
-        void onError(String error);
-    }
 
     public PaymentRepository() {
         apiService = RetrofitClient.getInstance().getPaymentApiService();
@@ -97,12 +90,6 @@ public class PaymentRepository {
         pendingFinalCallback = finalCallback;
 
         PaymentRequest request = new PaymentRequest(userId, doctorId, amount, provider, paymentAccount);
-        request.setWebhookUrl(Constants.PAYMENT_WEBHOOK_URL);
-        request.setOrderId("HASET-" + System.currentTimeMillis());
-
-        if (buyerEmail != null) request.setBuyerEmail(buyerEmail);
-        if (buyerName != null) request.setBuyerName(buyerName);
-        if (buyerPhone != null) request.setBuyerPhone(buyerPhone);
 
         Log.d(TAG, "=== PAYMENT REQUEST ===");
         Log.d(TAG, "Amount: " + amount + " TZS");
@@ -110,72 +97,54 @@ public class PaymentRepository {
         Log.d(TAG, "Payment Account: " + paymentAccount);
         Log.d(TAG, "Doctor ID: " + doctorId);
         Log.d(TAG, "User ID: " + userId);
-        Log.d(TAG, "Webhook URL: " + Constants.PAYMENT_WEBHOOK_URL);
-        Log.d(TAG, "Order ID: " + request.getOrderId());
-        Log.d(TAG, "Buyer Email: " + (buyerEmail != null ? buyerEmail : "N/A"));
-        Log.d(TAG, "Buyer Name: " + (buyerName != null ? buyerName : "N/A"));
-        Log.d(TAG, "Buyer Phone: " + (buyerPhone != null ? buyerPhone : "N/A"));
 
-        withAuthHeader(new AuthHeaderCallback() {
+        Call<PaymentResponse> call = apiService.initiatePayment(Constants.PAYMENT_CLIENT_API_KEY, request);
+        trackCall(call);
+
+        call.enqueue(new Callback<PaymentResponse>() {
             @Override
-            public void onSuccess(String authHeader) {
-                Call<PaymentResponse> call = apiService.initiatePayment(authHeader, request);
-                trackCall(call);
+            public void onResponse(Call<PaymentResponse> call, Response<PaymentResponse> response) {
+                untrackCall(call);
+                if (response.isSuccessful() && response.body() != null) {
+                    PaymentResponse paymentResponse = response.body();
+                    currentTransactionId = paymentResponse.getTransactionId();
 
-                call.enqueue(new Callback<PaymentResponse>() {
-                    @Override
-                    public void onResponse(Call<PaymentResponse> call, Response<PaymentResponse> response) {
-                        untrackCall(call);
-                        if (response.isSuccessful() && response.body() != null) {
-                            PaymentResponse paymentResponse = response.body();
-                            currentTransactionId = paymentResponse.getTransactionId();
+                    saveTransactionToFirebase(userId, doctorId, amount, paymentResponse);
 
-                            saveTransactionToFirebase(userId, doctorId, amount, paymentResponse);
-
-                            if (initiationCallback != null) {
-                                initiationCallback.onSuccess(paymentResponse);
-                            }
-
-                            if (paymentResponse.isSuccess()) {
-                                startStatusPolling(paymentResponse.getTransactionId(), doctorId, amount, finalCallback);
-                            } else {
-                                isProcessingPayment = false;
-                                if (finalCallback != null) {
-                                    finalCallback.onError("Payment initiation failed: " + paymentResponse.getMessage());
-                                }
-                            }
-                        } else {
-                            isProcessingPayment = false;
-                            String errorMsg = "Payment initiation failed";
-                            try {
-                                if (response.errorBody() != null) {
-                                    errorMsg = "Payment failed: " + response.errorBody().string();
-                                }
-                            } catch (Exception ignored) {
-                            }
-                            if (initiationCallback != null) {
-                                initiationCallback.onError(errorMsg);
-                            }
-                        }
+                    if (initiationCallback != null) {
+                        initiationCallback.onSuccess(paymentResponse);
                     }
 
-                    @Override
-                    public void onFailure(Call<PaymentResponse> call, Throwable t) {
-                        untrackCall(call);
+                    if (paymentResponse.isSuccess()) {
+                        startStatusPolling(paymentResponse.getTransactionId(), doctorId, amount, finalCallback);
+                    } else {
                         isProcessingPayment = false;
-                        if (call.isCanceled()) return;
-                        if (initiationCallback != null) {
-                            initiationCallback.onError("Network error: " + t.getMessage());
+                        if (finalCallback != null) {
+                            finalCallback.onError("Payment initiation failed: " + paymentResponse.getMessage());
                         }
                     }
-                });
+                } else {
+                    isProcessingPayment = false;
+                    String errorMsg = "Payment initiation failed";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorMsg = "Payment failed: " + response.errorBody().string();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    if (initiationCallback != null) {
+                        initiationCallback.onError(errorMsg);
+                    }
+                }
             }
 
             @Override
-            public void onError(String error) {
+            public void onFailure(Call<PaymentResponse> call, Throwable t) {
+                untrackCall(call);
                 isProcessingPayment = false;
+                if (call.isCanceled()) return;
                 if (initiationCallback != null) {
-                    initiationCallback.onError(error);
+                    initiationCallback.onError("Network error: " + t.getMessage());
                 }
             }
         });
@@ -326,44 +295,34 @@ public class PaymentRepository {
     public void checkPaymentStatus(int transactionId,
                                    FirebaseHelper.OnCompleteListener<PaymentStatusResponse> callback) {
         Log.d(TAG, "Checking payment status for transaction: " + transactionId);
-        withAuthHeader(new AuthHeaderCallback() {
+        Call<PaymentStatusResponse> call = apiService.checkPaymentStatus(Constants.PAYMENT_CLIENT_API_KEY, transactionId);
+        trackCall(call);
+
+        call.enqueue(new Callback<PaymentStatusResponse>() {
             @Override
-            public void onSuccess(String authHeader) {
-                Call<PaymentStatusResponse> call = apiService.checkPaymentStatus(authHeader, transactionId);
-                trackCall(call);
-
-                call.enqueue(new Callback<PaymentStatusResponse>() {
-                    @Override
-                    public void onResponse(Call<PaymentStatusResponse> call, Response<PaymentStatusResponse> response) {
-                        untrackCall(call);
-                        if (response.isSuccessful() && response.body() != null) {
-                            PaymentStatusResponse body = response.body();
-                            Log.d(TAG, "Response status: " + body.getStatus());
-                            Log.d(TAG, "Response message: " + body.getMessage());
-                            if (body.getTransaction() != null) {
-                                Log.d(TAG, "Transaction status: " + body.getTransaction().getStatus());
-                                Log.d(TAG, "Transaction amount: " + body.getTransaction().getAmount());
-                                Log.d(TAG, "Transaction provider: " + body.getTransaction().getProvider());
-                            }
-                            if (callback != null) callback.onSuccess(body);
-                        } else {
-                            String error = "Status check failed: " + response.code();
-                            if (callback != null) callback.onError(error);
-                        }
+            public void onResponse(Call<PaymentStatusResponse> call, Response<PaymentStatusResponse> response) {
+                untrackCall(call);
+                if (response.isSuccessful() && response.body() != null) {
+                    PaymentStatusResponse body = response.body();
+                    Log.d(TAG, "Response status: " + body.getStatus());
+                    Log.d(TAG, "Response message: " + body.getMessage());
+                    if (body.getTransaction() != null) {
+                        Log.d(TAG, "Transaction status: " + body.getTransaction().getStatus());
+                        Log.d(TAG, "Transaction amount: " + body.getTransaction().getAmount());
+                        Log.d(TAG, "Transaction provider: " + body.getTransaction().getProvider());
                     }
-
-                    @Override
-                    public void onFailure(Call<PaymentStatusResponse> call, Throwable t) {
-                        untrackCall(call);
-                        if (call.isCanceled()) return;
-                        if (callback != null) callback.onError(t.getMessage());
-                    }
-                });
+                    if (callback != null) callback.onSuccess(body);
+                } else {
+                    String error = "Status check failed: " + response.code();
+                    if (callback != null) callback.onError(error);
+                }
             }
 
             @Override
-            public void onError(String error) {
-                if (callback != null) callback.onError(error);
+            public void onFailure(Call<PaymentStatusResponse> call, Throwable t) {
+                untrackCall(call);
+                if (call.isCanceled()) return;
+                if (callback != null) callback.onError(t.getMessage());
             }
         });
     }
@@ -371,58 +330,28 @@ public class PaymentRepository {
     public void cancelPayment(int transactionId,
                               FirebaseHelper.OnCompleteListener<PaymentStatusResponse> callback) {
         CancelPaymentRequest request = new CancelPaymentRequest(transactionId);
-        withAuthHeader(new AuthHeaderCallback() {
+        Call<Void> call = apiService.cancelPayment(Constants.PAYMENT_CLIENT_API_KEY, request);
+        trackCall(call);
+
+        call.enqueue(new Callback<Void>() {
             @Override
-            public void onSuccess(String authHeader) {
-                Call<Void> call = apiService.cancelPayment(authHeader, request);
-                trackCall(call);
-
-                call.enqueue(new Callback<Void>() {
-                    @Override
-                    public void onResponse(Call<Void> call, Response<Void> response) {
-                        untrackCall(call);
-                        if (callback != null) {
-                            if (response.isSuccessful()) {
-                                callback.onSuccess(null);
-                            } else {
-                                callback.onError("Cancel failed: " + response.code());
-                            }
-                        }
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                untrackCall(call);
+                if (callback != null) {
+                    if (response.isSuccessful()) {
+                        callback.onSuccess(null);
+                    } else {
+                        callback.onError("Cancel failed: " + response.code());
                     }
-
-                    @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
-                        untrackCall(call);
-                        if (callback != null) callback.onError(t.getMessage());
-                    }
-                });
+                }
             }
 
             @Override
-            public void onError(String error) {
-                if (callback != null) callback.onError(error);
+            public void onFailure(Call<Void> call, Throwable t) {
+                untrackCall(call);
+                if (callback != null) callback.onError(t.getMessage());
             }
         });
-    }
-
-    private void withAuthHeader(AuthHeaderCallback callback) {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) {
-            callback.onError("No signed-in user found");
-            return;
-        }
-
-        currentUser.getIdToken(false)
-                .addOnSuccessListener(result -> {
-                    String token = result != null ? result.getToken() : null;
-                    if (token == null || token.trim().isEmpty()) {
-                        callback.onError("Unable to get payment session token");
-                        return;
-                    }
-                    callback.onSuccess("Bearer " + token);
-                })
-                .addOnFailureListener(error ->
-                        callback.onError("Unable to verify payment session: " + error.getMessage()));
     }
 
     public void disburseFunds(String requestId, String doctorId, double amount, String phoneNumber,
