@@ -1325,8 +1325,28 @@ public class FirebaseHelper {
     
     // Doctor edit methods
     public static void saveOrUpdateDoctor(com.haset.hasetapp.database.entities.DoctorEntity doctorEntity, OnCompleteListener<Boolean> listener) {
-        getDoctorsNodeRef().child(doctorEntity.getDoctorId()).setValue(doctorEntity)
-                .addOnSuccessListener(aVoid -> listener.onSuccess(true))
+        String doctorId = doctorEntity.getDoctorId();
+        if (doctorId == null || doctorId.trim().isEmpty()) {
+            listener.onError("Doctor ID is missing");
+            return;
+        }
+
+        getDoctorsNodeRef().child(doctorId).setValue(doctorEntity)
+                .addOnSuccessListener(aVoid -> {
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("specialty", doctorEntity.getSpecialty());
+                    updates.put("consultationFee", doctorEntity.getConsultationFee());
+                    updates.put("location", doctorEntity.getLocation());
+                    updates.put("regNo", doctorEntity.getRegNo());
+                    updates.put("about", doctorEntity.getAbout());
+                    updates.put("profileImage", doctorEntity.getProfileImage());
+                    updates.put("online", doctorEntity.isOnline());
+                    updates.put("onlineStatus", doctorEntity.getOnlineStatus());
+                    updates.put("lastUpdated", doctorEntity.getLastUpdated());
+                    getUsersRef().child(doctorId).updateChildren(updates)
+                            .addOnSuccessListener(v -> listener.onSuccess(true))
+                            .addOnFailureListener(e -> listener.onError(e.getMessage()));
+                })
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
     // Auth methods
