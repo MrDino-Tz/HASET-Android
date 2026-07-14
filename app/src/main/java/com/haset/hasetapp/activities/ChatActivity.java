@@ -238,6 +238,27 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         chatUserName = getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_NAME);
         currentUserId = preferenceManager.getUserId();
 
+        // Fallback for legacy "otherUserId" key (from old startChatWithPatient)
+        if (chatUserId == null) {
+            chatUserId = getIntent().getStringExtra("otherUserId");
+        }
+        if (chatUserName == null) {
+            chatUserName = getIntent().getStringExtra("otherUserName");
+        }
+
+        // Check 1-minute window if launched from appointment approval
+        long approvedAt = getIntent().getLongExtra(Constants.EXTRA_APPOINTMENT_APPROVED_AT, 0L);
+        boolean isFromAppointment = getIntent().getBooleanExtra(Constants.EXTRA_IS_FROM_APPOINTMENT, false)
+                || approvedAt > 0;
+        if (isFromAppointment && approvedAt > 0) {
+            long elapsed = System.currentTimeMillis() - approvedAt;
+            if (elapsed > 60000) {
+                Toast.makeText(this, R.string.session_expired, Toast.LENGTH_LONG).show();
+                finish();
+                return;
+            }
+        }
+
         tvChatName.setText(chatUserName);
         // Set up back button listener
         btnBack.setOnClickListener(v -> finish());

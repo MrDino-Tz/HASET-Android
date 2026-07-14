@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -545,7 +547,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     private void showApprovalDialog(Appointment appointment) {
         Dialog dialog = new Dialog(requireContext());
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_appointment_approved);
+        dialog.setContentView(R.layout.dialog_chat_start);
         
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -553,30 +555,56 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
 
         TextView tvPatientInfo = dialog.findViewById(R.id.tvPatientInfo);
         TextView tvAppointmentDetails = dialog.findViewById(R.id.tvAppointmentDetails);
+        TextView tvCountdown = dialog.findViewById(R.id.tvCountdown);
         MaterialButton btnStartChat = dialog.findViewById(R.id.btnStartChat);
+        TextView tvSessionExpired = dialog.findViewById(R.id.tvSessionExpired);
         MaterialButton btnClose = dialog.findViewById(R.id.btnClose);
 
         tvPatientInfo.setText(getString(R.string.appointment_with_patient, appointment.getPatientName()));
-        tvAppointmentDetails.setText(String.format("%s at %s", 
-                appointment.getDate() != null ? appointment.getDate() : "", 
+        tvAppointmentDetails.setText(String.format("%s at %s",
+                appointment.getDate() != null ? appointment.getDate() : "",
                 appointment.getTime() != null ? appointment.getTime() : ""));
+
+        long approvedAt = System.currentTimeMillis();
 
         btnStartChat.setOnClickListener(v -> {
             dialog.dismiss();
-            startChatWithPatient(appointment);
+            startChatWithPatient(appointment, approvedAt);
         });
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
+        // 60-second countdown
+        Handler handler = new Handler(Looper.getMainLooper());
+        final int[] secondsLeft = {60};
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (secondsLeft[0] <= 0) {
+                    tvCountdown.setText("00:00");
+                    btnStartChat.setVisibility(View.GONE);
+                    tvSessionExpired.setVisibility(View.VISIBLE);
+                    handler.postDelayed(() -> { if (dialog.isShowing()) dialog.dismiss(); }, 3000);
+                    return;
+                }
+                int min = secondsLeft[0] / 60;
+                int sec = secondsLeft[0] % 60;
+                tvCountdown.setText(String.format("%02d:%02d", min, sec));
+                secondsLeft[0]--;
+                handler.postDelayed(this, 1000);
+            }
+        });
+
         dialog.show();
     }
 
-    private void startChatWithPatient(Appointment appointment) {
+    private void startChatWithPatient(Appointment appointment, long approvedAt) {
         Intent intent = new Intent(requireContext(), com.haset.hasetapp.activities.ChatActivity.class);
-        intent.putExtra("otherUserId", appointment.getPatientId());
-        intent.putExtra("otherUserName", appointment.getPatientName());
-        intent.putExtra("appointmentId", appointment.getAppointmentId());
-        intent.putExtra("isFromAppointment", true);
+        intent.putExtra(Constants.EXTRA_CHAT_USER_ID, appointment.getPatientId());
+        intent.putExtra(Constants.EXTRA_CHAT_USER_NAME, appointment.getPatientName());
+        intent.putExtra(Constants.EXTRA_APPOINTMENT_ID, appointment.getAppointmentId());
+        intent.putExtra(Constants.EXTRA_IS_FROM_APPOINTMENT, true);
+        intent.putExtra(Constants.EXTRA_APPOINTMENT_APPROVED_AT, approvedAt);
         startActivity(intent);
     }
 

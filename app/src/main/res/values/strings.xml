@@ -138,6 +138,8 @@
     <string name="start_chat_now">Start Chat Now</string>
     <string name="later">Later</string>
     <string name="appointment_with_patient">Appointment with %s</string>
+    <string name="chat_session_available_for">Chat available for</string>
+    <string name="session_expired">Session expired</string>
     <string name="appointment_declined_success">Appointment declined successfully</string>
     <string name="appointment_cancelled_success">Appointment cancelled successfully</string>
     <string name="failed_to_approve_appointment">Failed to approve appointment: %s</string>

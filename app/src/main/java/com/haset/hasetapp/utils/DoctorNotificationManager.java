@@ -321,6 +321,7 @@ public class DoctorNotificationManager {
             intent = new Intent(context, ChatActivity.class);
             intent.putExtra(Constants.EXTRA_CHAT_USER_ID, appointment.getPatientId());
             intent.putExtra(Constants.EXTRA_CHAT_USER_NAME, appointment.getPatientName());
+            intent.putExtra(Constants.EXTRA_APPOINTMENT_APPROVED_AT, System.currentTimeMillis());
             notificationId = (int) System.currentTimeMillis();
         }
         

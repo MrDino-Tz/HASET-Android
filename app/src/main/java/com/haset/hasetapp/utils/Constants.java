@@ -61,6 +61,8 @@ public class Constants {
     public static final String EXTRA_CHAT_USER_NAME = "chatUserName";
     public static final String EXTRA_CHAT_USER_IMAGE = "chatUserImage";
     public static final String EXTRA_IS_CALLER = "isCaller";
+    public static final String EXTRA_APPOINTMENT_APPROVED_AT = "appointmentApprovedAt";
+    public static final String EXTRA_IS_FROM_APPOINTMENT = "isFromAppointment";
     public static final String ACTION_REPLY = "com.haset.hasetapp.ACTION_REPLY";
     public static final String KEY_TEXT_REPLY = "key_text_reply";
     

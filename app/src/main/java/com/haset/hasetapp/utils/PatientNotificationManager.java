@@ -613,6 +613,7 @@ public class PatientNotificationManager {
         Intent chatIntent = new Intent(context, com.haset.hasetapp.activities.ChatActivity.class);
         chatIntent.putExtra(Constants.EXTRA_CHAT_USER_ID, doctorId);
         chatIntent.putExtra(Constants.EXTRA_CHAT_USER_NAME, doctorName);
+        chatIntent.putExtra(Constants.EXTRA_APPOINTMENT_APPROVED_AT, System.currentTimeMillis());
         chatIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         
         PendingIntent chatPendingIntent = PendingIntent.getActivity(
