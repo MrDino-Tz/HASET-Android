@@ -4,7 +4,7 @@ public class Constants {
     // User Roles
     public static final String ROLE_PATIENT = "patient";
     public static final String ROLE_DOCTOR = "doctor";
-    public static final String ROLE_ADMIN = "admin";
+//    public static final String ROLE_ADMIN = "admin";
     
     // Appointment Status
     public static final String STATUS_PENDING = "pending";
