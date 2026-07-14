@@ -36,7 +36,7 @@ public class PaymentActivity extends AppCompatActivity {
     private double consultationFee;
     private String paymentMethod = ""; // Will be set when user selects
     private String paymentProvider = ""; // Specific provider (Mpesa, CRDB, etc.)
-    private String walletNumber = ""; // Mobile number or account number
+    private String paymentAccount = ""; // Mobile money number or account number
     private PaymentViewModel viewModel;
     private boolean paymentInitiated = false; // Guard against duplicate initiations
     private long lastClickTime = 0; // For debouncing clicks
@@ -376,7 +376,7 @@ public class PaymentActivity extends AppCompatActivity {
                     .show();
                 return;
             }
-            if (walletNumber.isEmpty()) {
+            if (paymentAccount.isEmpty()) {
                 com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
                     R.string.enter_wallet_number, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
@@ -588,17 +588,17 @@ public class PaymentActivity extends AppCompatActivity {
             
             // Prepend country code if not already present (without + sign)
             if (mobileNumber.startsWith("+255")) {
-                walletNumber = mobileNumber.replace("+", ""); // Remove + sign
+                paymentAccount = mobileNumber.replace("+", ""); // Remove + sign
             } else if (mobileNumber.startsWith("255")) {
-                walletNumber = mobileNumber; // Already has country code
+                paymentAccount = mobileNumber; // Already has country code
             } else if (mobileNumber.startsWith("0")) {
-                walletNumber = "255" + mobileNumber.substring(1); // Convert 0 to 255
+                paymentAccount = "255" + mobileNumber.substring(1); // Convert 0 to 255
             } else {
-                walletNumber = "255" + mobileNumber; // Add country code
+                paymentAccount = "255" + mobileNumber; // Add country code
             }
             
             // Format for display: +255 XXX XXX XXX
-            String displayNumber = formatMobileNumberForDisplay(walletNumber);
+            String displayNumber = formatMobileNumberForDisplay(paymentAccount);
             updatePaymentMethodDisplay(paymentMethod, paymentProvider, displayNumber);
             enablePayButton();
             bottomSheetDialog.dismiss();
@@ -718,9 +718,9 @@ public class PaymentActivity extends AppCompatActivity {
                 return;
             }
             
-            walletNumber = accountNumber;
+            paymentAccount = accountNumber;
             // Format for display: XXXX XXXX XXXX
-            String displayNumber = formatAccountNumberForDisplay(walletNumber);
+            String displayNumber = formatAccountNumberForDisplay(paymentAccount);
             updatePaymentMethodDisplay(paymentMethod, paymentProvider, displayNumber);
             enablePayButton();
             bottomSheetDialog.dismiss();
@@ -813,21 +813,13 @@ public class PaymentActivity extends AppCompatActivity {
                 paymentInitiated = true;
                 android.util.Log.d("PaymentActivity", "Calling viewModel.processPayment() - Amount: " + consultationFee + ", Provider: " + paymentProvider);
                 
-                // Get user data for ZenoPay buyer info
-                String buyerEmail = getUserEmail();
-                String buyerName = getUserName();
-                String buyerPhone = walletNumber;
-                
-                // Call backend API with payment details (ZenoPay format)
+                // Call backend API with the documented mobile payment payload
                 viewModel.processPayment(
                     userId,
                     doctorId,
                     consultationFee,
                     paymentProvider,  // Already set when user selects provider
-                    walletNumber,     // Already set when user enters number
-                    buyerEmail,
-                    buyerName,
-                    buyerPhone
+                    paymentAccount
                 );
             } else {
                 com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
@@ -855,15 +847,4 @@ public class PaymentActivity extends AppCompatActivity {
                com.google.firebase.auth.FirebaseAuth.getInstance()
                .getCurrentUser().getUid() : null;
     }
-    
-    private String getUserEmail() {
-        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-        return user != null && user.getEmail() != null ? user.getEmail() : "";
-    }
-    
-    private String getUserName() {
-        com.haset.hasetapp.utils.PreferenceManager pref = new com.haset.hasetapp.utils.PreferenceManager(this);
-        return pref.getUserName() != null ? pref.getUserName() : "";
-    }
 }
-

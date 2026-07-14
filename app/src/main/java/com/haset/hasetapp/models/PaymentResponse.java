@@ -23,7 +23,7 @@ public class PaymentResponse {
     // Setters
     public void setStatus(String status) { this.status = status; }
     public void setMessage(String message) { this.message = message; }
-    public void setTransactionId(int transactionId) { this.transaction_id = transaction_id; }
+    public void setTransactionId(int transactionId) { this.transaction_id = transactionId; }
     public void setOrderReference(String orderReference) { this.order_reference = orderReference; }
     public void setPaymentStatus(String paymentStatus) { this.payment_status = paymentStatus; }
     public void setPaymentChannel(String paymentChannel) { this.payment_channel = paymentChannel; }

@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Enter Account Number"
+        android:text="Enter Payment Account"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -41,7 +41,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Account Number"
+        android:hint="Payment Account"
         style="@style/EditTextStyle"
         app:startIconTint="@color/text_secondary"
         app:hintTextColor="@color/text_secondary"
@@ -101,4 +101,3 @@
     </LinearLayout>
 
 </LinearLayout>
-
