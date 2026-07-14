@@ -35,6 +35,7 @@ import com.haset.hasetapp.utils.ValidationUtils;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.ThemeHelper;
 import com.haset.hasetapp.viewmodels.AuthViewModel;
+import com.haset.hasetapp.models.Doctor;
 
 import android.util.Log;
 
@@ -52,6 +53,10 @@ public class RegisterActivity extends BaseActivity {
     // private ActivityResultLauncher<Intent> googleSignInLauncher;
 
     private AuthViewModel authViewModel;
+    private ActivityResultLauncher<Intent> doctorPaymentLauncher;
+    private UserEntity pendingDoctorUser;
+    private String pendingDoctorEmail;
+    private String pendingDoctorPassword;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +78,7 @@ public class RegisterActivity extends BaseActivity {
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         setupObservers();
+        setupPaymentLauncher();
 
         // Language Switcher Toggle logic
         com.haset.hasetapp.utils.LanguageToggleHelper.setup(this, findViewById(android.R.id.content), languageCode -> {
@@ -298,57 +304,36 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void showDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser) {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.CustomDialogTheme);
-        android.view.View dialogView = android.view.LayoutInflater.from(this).inflate(R.layout.dialog_payment_success, null);
-        builder.setView(dialogView);
-        builder.setCancelable(false);
-        
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
+        pendingDoctorUser = newUser;
+        pendingDoctorEmail = email;
+        pendingDoctorPassword = password;
 
-        android.widget.TextView tvTitle = dialogView.findViewById(R.id.tvTitle);
-        android.widget.TextView tvMessage = dialogView.findViewById(R.id.tvMessage);
-        MaterialButton btnDone = dialogView.findViewById(R.id.btnDone);
-        
-        if (tvTitle != null) tvTitle.setText(R.string.doctor_reg_fee_title);
-        if (tvMessage != null) tvMessage.setText(R.string.doctor_reg_fee_message);
-        if (btnDone != null) btnDone.setText(R.string.pay_via_ussd);
+        Doctor paymentDoctor = new Doctor("doctor_registration", "doctor_registration", newUser.getFullName(), "Doctor Registration");
+        paymentDoctor.setConsultationFee(200);
+        paymentDoctor.setVerified(false);
 
-        btnDone.setOnClickListener(v -> {
-            btnDone.setEnabled(false);
-            btnDone.setText("Processing payment...");
-            
-            // Simulate 3 seconds payment processing delay
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                dialog.dismiss();
-                // Proceed with registration after successful "payment"
-                CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
-                authViewModel.register(email, password, newUser);
-            }, 3000);
-        });
+        Intent paymentIntent = new Intent(this, PaymentActivity.class);
+        paymentIntent.putExtra("doctor", paymentDoctor);
+        paymentIntent.putExtra("consultation_fee", 200.0);
+        doctorPaymentLauncher.launch(paymentIntent);
+    }
 
-        // Add a cancel button dynamically to dialog_payment_success layout container
-        android.view.ViewGroup layout = dialogView.findViewById(R.id.btnDone).getParent() instanceof android.view.ViewGroup ? 
-                                        (android.view.ViewGroup) dialogView.findViewById(R.id.btnDone).getParent() : null;
-        if (layout != null) {
-            MaterialButton btnCancel = new MaterialButton(this);
-            btnCancel.setText(R.string.cancel);
-            btnCancel.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(android.R.color.darker_gray)));
-            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
-            params.setMargins(0, 16, 0, 0);
-            btnCancel.setLayoutParams(params);
-            btnCancel.setOnClickListener(v -> {
-                dialog.dismiss();
-                resetRegisterButton();
-            });
-            layout.addView(btnCancel);
-        }
+    private void setupPaymentLauncher() {
+        doctorPaymentLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
+                    CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
+                    authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
+                } else {
+                    resetRegisterButton();
+                }
 
-        dialog.show();
+                pendingDoctorUser = null;
+                pendingDoctorEmail = null;
+                pendingDoctorPassword = null;
+            }
+        );
     }
 
     private void resetRegisterButton() {
