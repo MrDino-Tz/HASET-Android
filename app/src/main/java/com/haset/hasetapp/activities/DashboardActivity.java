@@ -147,7 +147,7 @@ public class DashboardActivity extends BaseActivity {
 
     private Fragment getHomeFragment() {
         String role = preferenceManager.getUserRole();
-        if (role.equals(Constants.ROLE_DOCTOR)) {
+        if (Constants.ROLE_DOCTOR.equals(role)) {
             return new DoctorHomeFragment();
         } else {
             return new PatientHomeFragment();
