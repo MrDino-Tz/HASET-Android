@@ -52,19 +52,37 @@ enum HASETTheme {
 
 struct CardContainer<Content: View>: View {
     let content: Content
+    var fill: Color = HASETTheme.backgroundCard
+    var shadowColor: Color = HASETTheme.greenPrimary.opacity(0.08)
+    var cornerRadius: CGFloat = 20
+    var padding: CGFloat = 20
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
+    init(
+        fill: Color,
+        shadowColor: Color = HASETTheme.greenPrimary.opacity(0.08),
+        cornerRadius: CGFloat = 20,
+        padding: CGFloat = 20,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.content = content()
+        self.fill = fill
+        self.shadowColor = shadowColor
+        self.cornerRadius = cornerRadius
+        self.padding = padding
+    }
+
     var body: some View {
         content
-            .padding(20)
+            .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(HASETTheme.backgroundCard)
-                    .shadow(color: HASETTheme.greenPrimary.opacity(0.08), radius: 14, x: 0, y: 8)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(fill)
+                    .shadow(color: shadowColor, radius: 14, x: 0, y: 8)
             )
     }
 }

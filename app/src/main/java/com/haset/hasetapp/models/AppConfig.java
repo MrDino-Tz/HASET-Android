@@ -5,6 +5,7 @@ public class AppConfig {
     private int minVersionCode;
     private String updateUrl;
     private String maintenanceMessage;
+    private double doctorRegistrationFee = 500.0;
 
     public AppConfig() {
         // Required for Firebase
@@ -40,5 +41,13 @@ public class AppConfig {
 
     public void setMaintenanceMessage(String maintenanceMessage) {
         this.maintenanceMessage = maintenanceMessage;
+    }
+
+    public double getDoctorRegistrationFee() {
+        return doctorRegistrationFee;
+    }
+
+    public void setDoctorRegistrationFee(double doctorRegistrationFee) {
+        this.doctorRegistrationFee = doctorRegistrationFee;
     }
 }

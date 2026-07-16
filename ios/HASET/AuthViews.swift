@@ -37,17 +37,40 @@ struct LanguageToggle: View {
     }
 }
 
-private struct SocialBadge: View {
+private struct GoogleBadge: View {
     var body: some View {
-        Image("SplashLogo")
-            .resizable()
-            .scaledToFit()
+        GoogleIcon()
             .frame(width: 56, height: 56)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(HASETTheme.divider, lineWidth: 1)
-            )
+        .background(
+            Circle()
+                .fill(.white)
+                .shadow(color: HASETTheme.greenPrimary.opacity(0.08), radius: 10, x: 0, y: 6)
+        )
+    }
+}
+
+private struct GoogleIcon: View {
+    var body: some View {
+        ZStack {
+            Circle().fill(.white)
+            Text("G")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.91, green: 0.30, blue: 0.24),
+                            Color(red: 0.98, green: 0.73, blue: 0.06),
+                            Color(red: 0.20, green: 0.64, blue: 0.31),
+                            Color(red: 0.25, green: 0.50, blue: 0.95)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
+        .overlay(
+            Circle().stroke(Color(red: 0.91, green: 0.92, blue: 0.94), lineWidth: 1)
+        )
     }
 }
 
@@ -212,6 +235,7 @@ struct OnboardingView: View {
 
 struct LoginView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.openURL) private var openURL
     @State private var email = ""
     @State private var password = ""
     @State private var rememberMe = false
@@ -268,8 +292,15 @@ struct LoginView: View {
                         .foregroundStyle(HASETTheme.textSecondary)
                         .padding(.vertical, 8)
 
-                    SocialBadge()
-                        .padding(.bottom, 24)
+                    Button {
+                        if let url = URL(string: "https://accounts.google.com/") {
+                            openURL(url)
+                        }
+                    } label: {
+                        GoogleBadge()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 24)
 
                     HStack(spacing: 4) {
                         Text(appViewModel.tr("dont_have_account"))
@@ -371,6 +402,7 @@ struct RoleSelectionView: View {
 
 struct RegisterView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.openURL) private var openURL
     let role: UserRole
 
     @State private var fullName = ""
@@ -378,6 +410,7 @@ struct RegisterView: View {
     @State private var phone = ""
     @State private var regNo = ""
     @State private var password = ""
+    @State private var doctorSignupPayment: DoctorSignupPaymentRequest?
 
     var body: some View {
         ScrollView {
@@ -421,14 +454,42 @@ struct RegisterView: View {
                     RoundedInputField(title: appViewModel.tr("password"), systemImage: "lock", text: $password, isSecure: true)
 
                     Button(appViewModel.tr("sign_up")) {
-                        appViewModel.register(
-                            fullName: fullName,
-                            email: email,
-                            phoneDigits: phone,
-                            password: password,
-                            role: role,
-                            regNo: regNo
-                        )
+                        if role == .doctor {
+                            let fee = appViewModel.doctorRegistrationFee
+                            doctorSignupPayment = DoctorSignupPaymentRequest(
+                                doctor: DoctorSummary(
+                                    id: "doctor_registration",
+                                    name: fullName,
+                                    specialty: StaticContentService.specialties.first ?? "General Physician",
+                                    hospital: "HASET Hospital",
+                                    phoneNumber: phone.hasPrefix("+255") ? phone : "+255\(phone)",
+                                    email: email,
+                                    address: nil,
+                                    bio: nil,
+                                    rating: 5.0,
+                                    experienceYears: nil,
+                                    verified: false,
+                                    consultationFee: "TZS \(Int(fee))",
+                                    availableToday: true,
+                                    profileImage: nil,
+                                    availableTimes: nil
+                                ),
+                                fullName: fullName,
+                                email: email,
+                                phoneDigits: phone,
+                                password: password,
+                                regNo: regNo
+                            )
+                        } else {
+                            appViewModel.register(
+                                fullName: fullName,
+                                email: email,
+                                phoneDigits: phone,
+                                password: password,
+                                role: role,
+                                regNo: regNo
+                            )
+                        }
                     }
                     .buttonStyle(PrimaryButtonStyle())
 
@@ -437,8 +498,15 @@ struct RegisterView: View {
                         .foregroundStyle(HASETTheme.textSecondary)
                         .padding(.vertical, 8)
 
-                    SocialBadge()
-                        .padding(.bottom, 24)
+                    Button {
+                        if let url = URL(string: "https://accounts.google.com/") {
+                            openURL(url)
+                        }
+                    } label: {
+                        GoogleBadge()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 24)
 
                     HStack(spacing: 4) {
                         Text(appViewModel.tr("already_have_account"))
@@ -465,7 +533,36 @@ struct RegisterView: View {
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
+        .sheet(item: $doctorSignupPayment) { request in
+            let fee = appViewModel.doctorRegistrationFee
+            PaymentCheckoutView(
+                doctor: request.doctor,
+                amount: fee,
+                initialMethod: .mobileMoney,
+                onPaymentConfirmed: {
+                    doctorSignupPayment = nil
+                    appViewModel.register(
+                        fullName: request.fullName,
+                        email: request.email,
+                        phoneDigits: request.phoneDigits,
+                        password: request.password,
+                        role: .doctor,
+                        regNo: request.regNo
+                    )
+                }
+            )
+        }
     }
+}
+
+private struct DoctorSignupPaymentRequest: Identifiable {
+    let id = UUID()
+    let doctor: DoctorSummary
+    let fullName: String
+    let email: String
+    let phoneDigits: String
+    let password: String
+    let regNo: String
 }
 
 private struct CheckboxToggleStyle: ToggleStyle {
@@ -494,24 +591,11 @@ struct ForgotPasswordView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                HStack {
-                    Button {
-                        appViewModel.showLogin()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .foregroundStyle(HASETTheme.greenPrimary)
-                            .frame(width: 40, height: 40)
-                            .background(Circle().fill(Color.white))
-                    }
-
-                    Text(appViewModel.tr("forgot_password"))
-                        .font(HASETTheme.font(.medium, 20))
-                        .foregroundStyle(HASETTheme.greenPrimary)
-                        .frame(maxWidth: .infinity)
-
-                    Color.clear.frame(width: 34, height: 34)
-                }
-                .padding(.bottom, 16)
+                Text(appViewModel.tr("forgot_password"))
+                    .font(HASETTheme.font(.medium, 20))
+                    .foregroundStyle(HASETTheme.greenPrimary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 16)
 
                 Text(appViewModel.tr("forgot_password_description"))
                     .font(HASETTheme.font(.regular, 14))

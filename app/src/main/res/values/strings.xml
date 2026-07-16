@@ -834,7 +834,7 @@
 
     <!-- RegisterActivity fee dialog -->
     <string name="doctor_reg_fee_title">Doctor Registration Fee</string>
-    <string name="doctor_reg_fee_message">A mandatory MCT verification and registration fee of 200 TSH is required.\n\nComplete the payment to continue doctor registration.</string>
+    <string name="doctor_reg_fee_message">A mandatory MCT verification and registration fee is required.\n\nComplete the payment to continue doctor registration.</string>
     <string name="pay_via_ussd">Pay via USSD (200 TSH)</string>
     <string name="processing_payment">Processing payment…</string>
 

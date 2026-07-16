@@ -797,8 +797,8 @@
 
     <!-- RegisterActivity fee dialog -->
     <string name="doctor_reg_fee_title">Ada ya Usajili wa Daktari</string>
-    <string name="doctor_reg_fee_message">Ada ya lazima ya uthibitishaji wa MCT na usajili wa TSH 200 inahitajika.\n\nBonyeza \'Lipa kupitia USSD\' kuiga malipo.</string>
-    <string name="pay_via_ussd">Lipa kupitia USSD (TSH 200)</string>
+    <string name="doctor_reg_fee_message">Ada ya lazima ya uthibitishaji wa MCT na usajili inahitajika.\n\nBonyeza \'Lipa kupitia USSD\' kuiga malipo.</string>
+    <string name="pay_via_ussd">Lipa kupitia USSD</string>
     <string name="processing_payment">Inashughulikia malipo…</string>
 
     <!-- DoctorEditActivity validation -->

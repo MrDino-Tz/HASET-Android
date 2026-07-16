@@ -119,213 +119,35 @@ enum ValidationService {
 }
 
 enum StaticContentService {
-    static let specialties = [
-        "General Physician",
-        "Cardiologist",
-        "Dermatologist",
-        "Pediatrician",
-        "Orthopedic",
-        "Neurologist",
-        "Psychiatrist",
-        "Gynecologist",
-        "Dentist",
-        "ENT Specialist"
+    static let specialties: [String] = []
+    static let timeSlots: [String] = [
+        "06:00",
+        "07:00",
+        "08:00",
+        "09:00",
+        "10:00",
+        "11:00",
+        "12:00",
+        "13:00",
+        "14:00",
+        "15:00",
+        "16:00",
+        "17:00",
+        "18:00",
+        "19:00",
+        "20:00",
+        "21:00"
     ]
-
-    static let timeSlots = [
-        "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-        "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
-        "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
-        "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
-        "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM"
-    ]
-
-    static let doctors: [DoctorSummary] = [
-        DoctorSummary(id: "doc-1", name: "Dr. Asha Salim", specialty: "General Physician", hospital: "HASET Hospital", phoneNumber: "+255712345678", email: "asha.salim@hasetapp.com", address: "HASET Hospital", bio: "Experienced physician providing patient-centered general care.", rating: 4.9, experienceYears: 8, verified: true, consultationFee: "TZS 20,000", availableToday: true, profileImage: nil, availableTimes: Array(timeSlots.prefix(4))),
-        DoctorSummary(id: "doc-2", name: "Dr. Joseph Mrema", specialty: "Cardiologist", hospital: "Aga Khan Clinic", phoneNumber: "+255754987654", email: "joseph.mrema@hasetapp.com", address: "Aga Khan Clinic", bio: "Cardiology specialist focused on preventive heart health and ongoing treatment plans.", rating: 4.8, experienceYears: 11, verified: true, consultationFee: "TZS 35,000", availableToday: true, profileImage: nil, availableTimes: Array(timeSlots.prefix(4))),
-        DoctorSummary(id: "doc-3", name: "Dr. Neema Kweka", specialty: "Dermatologist", hospital: "Muhimbili", phoneNumber: "+255713333222", email: "neema.kweka@hasetapp.com", address: "Muhimbili", bio: "Dermatology expert helping patients manage skin, hair, and nail conditions.", rating: 4.7, experienceYears: 6, verified: false, consultationFee: "TZS 25,000", availableToday: false, profileImage: nil, availableTimes: Array(timeSlots.prefix(4)))
-    ]
-
-    static let homeHighlights: [HomeHighlight] = [
-        HomeHighlight(
-            id: "hero-1",
-            titleLine1: "Up to",
-            titleLine2: "50% OFF",
-            badge: "Flash Sale",
-            buttonText: "Shop Now",
-            imageName: "OnboardingOne",
-            imageURL: nil,
-            bannerType: "PHARMACY",
-            targetAction: nil
-        ),
-        HomeHighlight(
-            id: "hero-2",
-            titleLine1: "Online",
-            titleLine2: "Consultation",
-            badge: "Live Now",
-            buttonText: "Chat Now",
-            imageName: "OnboardingTwo",
-            imageURL: nil,
-            bannerType: "MESSAGING",
-            targetAction: nil
-        ),
-        HomeHighlight(
-            id: "hero-3",
-            titleLine1: "Book Expert",
-            titleLine2: "Care Today",
-            badge: "Verified",
-            buttonText: "Book Now",
-            imageName: "OnboardingThree",
-            imageURL: nil,
-            bannerType: "APPOINTMENT",
-            targetAction: nil
-        )
-    ]
-
-    static let articles: [ArticleSummary] = [
-        ArticleSummary(
-            id: "art-1",
-            title: "Understanding Blood Pressure",
-            author: "HASET Cardiac Team",
-            authorImage: nil,
-            category: "Heart Health",
-            excerpt: "Simple daily steps that help you monitor and improve your blood pressure before complications begin.",
-            imageName: "OnboardingOne",
-            imageURL: nil,
-            timestamp: 1_718_982_000_000,
-            readTime: "4 min",
-            content: [
-                "Blood pressure is one of the most important signs of your heart health. When it stays too high for a long time, it can quietly damage the heart, brain, and kidneys.",
-                "Adults should check their blood pressure regularly, especially if they have headaches, dizziness, chest discomfort, diabetes, or a family history of hypertension.",
-                "Small habits make a real difference. Reduce salt, avoid smoking, walk often, drink enough water, and take prescribed medicines consistently. If readings stay high, book a doctor review early."
-            ],
-            viewCount: 1250,
-            likeCount: 138,
-            commentCount: 22,
-            shareCount: 17,
-            type: "image"
-        ),
-        ArticleSummary(
-            id: "art-2",
-            title: "Healthy Nutrition for Families",
-            author: "Dr. Neema Kweka",
-            authorImage: nil,
-            category: "Nutrition",
-            excerpt: "A practical guide to affordable meals and balanced habits for every home, including children and older adults.",
-            imageName: "OnboardingTwo",
-            imageURL: nil,
-            timestamp: 1_718_881_000_000,
-            readTime: "5 min",
-            content: [
-                "Healthy nutrition does not need to be expensive. A strong family meal plan can be built from vegetables, fruits, beans, whole grains, eggs, fish, and other local foods.",
-                "Try to balance each plate with energy foods, body-building foods, and protective foods. Limit sugary drinks and processed snacks when possible.",
-                "Children, pregnant women, and older adults need special attention. Eating at regular times and choosing fresh ingredients can improve energy, immunity, and long-term health."
-            ],
-            viewCount: 980,
-            likeCount: 96,
-            commentCount: 15,
-            shareCount: 11,
-            type: "image"
-        ),
-        ArticleSummary(
-            id: "art-3",
-            title: "When to Book a Doctor Online",
-            author: "HASET Telehealth Desk",
-            authorImage: nil,
-            category: "Telehealth",
-            excerpt: "Recognize the right moment to move from self-care to a medical appointment instead of waiting too long.",
-            imageName: "OnboardingThree",
-            imageURL: nil,
-            timestamp: 1_718_780_000_000,
-            readTime: "3 min",
-            content: [
-                "Online doctor booking helps when symptoms are continuing, medicine is not helping, or you need professional guidance quickly without delays.",
-                "You should not wait if you have repeated fever, breathing problems, severe pain, persistent vomiting, worsening skin reactions, or uncontrolled blood sugar or pressure.",
-                "HASET makes it easier to review available doctors, schedule a visit, and keep follow-up care organized. Early action often prevents bigger medical problems later."
-            ],
-            viewCount: 820,
-            likeCount: 84,
-            commentCount: 12,
-            shareCount: 9,
-            type: "image"
-        ),
-        ArticleSummary(
-            id: "art-4",
-            title: "Daily Habits for Diabetes Prevention",
-            author: "Community Wellness Unit",
-            authorImage: nil,
-            category: "Prevention",
-            excerpt: "Simple lifestyle choices can lower diabetes risk and help families stay active, informed, and healthier over time.",
-            imageName: nil,
-            imageURL: nil,
-            timestamp: 1_718_650_000_000,
-            readTime: "4 min",
-            content: [
-                "Diabetes risk increases with inactivity, weight gain, unhealthy diet, and family history, but prevention usually starts with ordinary daily decisions.",
-                "Aim for consistent movement, smaller sugar portions, more vegetables, and regular health checks if you notice unusual thirst, frequent urination, or fatigue.",
-                "Preventive care works best when families do it together. Shared walks, healthier cooking, and routine screening can help catch problems early."
-            ],
-            viewCount: 640,
-            likeCount: 70,
-            commentCount: 8,
-            shareCount: 6,
-            type: "text"
-        )
-    ]
-
-    static let patientAppointments: [AppointmentSummary] = [
-        AppointmentSummary(id: "appt-1", title: "Dr. Asha Salim", subtitle: "General Physician", dateText: "Today, 10:30 AM", status: .approved),
-        AppointmentSummary(id: "appt-2", title: "Dr. Joseph Mrema", subtitle: "Cardiology Follow-up", dateText: "Wed, 12:00 PM", status: .pending),
-        AppointmentSummary(id: "appt-3", title: "Dr. Neema Kweka", subtitle: "Skin Consultation", dateText: "Fri, 3:00 PM", status: .cancelled)
-    ]
-
-    static let doctorAppointments: [AppointmentSummary] = [
-        AppointmentSummary(id: "d-appt-1", title: "Anna Mgosi", subtitle: "General checkup", dateText: "Today, 9:00 AM", status: .pending),
-        AppointmentSummary(id: "d-appt-2", title: "Thomas Peter", subtitle: "Follow-up review", dateText: "Today, 11:30 AM", status: .approved),
-        AppointmentSummary(id: "d-appt-3", title: "Fatma Suleiman", subtitle: "Prescription update", dateText: "Yesterday, 4:00 PM", status: .completed)
-    ]
-
-    static let adminMetrics: [AdminMetric] = [
-        AdminMetric(id: "m-1", title: "Users", value: "1,248"),
-        AdminMetric(id: "m-2", title: "Doctors", value: "86"),
-        AdminMetric(id: "m-3", title: "Pending", value: "14"),
-        AdminMetric(id: "m-4", title: "Reports", value: "7")
-    ]
-
-    static let conversations: [UserRole: [ConversationSummary]] = [
-        .patient: [
-            ConversationSummary(id: "c-1", name: "Dr. Asha Salim", lastMessage: "Please take the medicine after food.", lastMessageTimestamp: 1_718_982_000_000, unreadCount: 2, isOnline: true, archived: false, profileImage: nil),
-            ConversationSummary(id: "c-2", name: "HASET Admin", lastMessage: "Your account was updated successfully.", lastMessageTimestamp: 1_718_881_000_000, unreadCount: 0, isOnline: false, archived: true, profileImage: nil)
-        ],
-        .doctor: [
-            ConversationSummary(id: "c-3", name: "Anna Mgosi", lastMessage: "Can I reschedule for tomorrow?", lastMessageTimestamp: 1_718_982_000_000, unreadCount: 1, isOnline: true, archived: false, profileImage: nil),
-            ConversationSummary(id: "c-4", name: "Thomas Peter", lastMessage: "Thank you doctor.", lastMessageTimestamp: 1_718_881_000_000, unreadCount: 0, isOnline: false, archived: true, profileImage: nil)
-        ],
-        .admin: [
-            ConversationSummary(id: "c-5", name: "Support Ticket #148", lastMessage: "Waiting for admin review", lastMessageTimestamp: 1_718_982_000_000, unreadCount: 3, isOnline: true, archived: false, profileImage: nil),
-            ConversationSummary(id: "c-6", name: "Doctor Approval", lastMessage: "Registration documents uploaded", lastMessageTimestamp: 1_718_881_000_000, unreadCount: 1, isOnline: false, archived: true, profileImage: nil)
-        ]
-    ]
-
-    static let hospitals: [HospitalSummary] = [
-        HospitalSummary(id: "h-1", name: "HASET Hospital", location: "Dar es Salaam", distance: "1.2 km"),
-        HospitalSummary(id: "h-2", name: "Muhimbili National Hospital", location: "Upanga", distance: "4.6 km"),
-        HospitalSummary(id: "h-3", name: "Aga Khan Hospital", location: "Ocean Road", distance: "6.3 km")
-    ]
-
-    static let pharmacyCategories: [PharmacyCategory] = [
-        PharmacyCategory(id: "p-1", title: "Supplements", subtitle: "Vitamins and wellness"),
-        PharmacyCategory(id: "p-2", title: "Personal Care", subtitle: "Daily care essentials"),
-        PharmacyCategory(id: "p-3", title: "Children's Corner", subtitle: "Family health support"),
-        PharmacyCategory(id: "p-4", title: "Health Devices", subtitle: "Monitors and accessories")
-    ]
-
-    static let recentNotifications = [
-        "Appointment booked successfully",
-        "Registration successful!",
-        "Article liked",
-        "Your profile was updated"
-    ]
+    static let doctors: [DoctorSummary] = []
+    static let homeHighlights: [HomeHighlight] = []
+    static let articles: [ArticleSummary] = []
+    static let patientAppointments: [AppointmentSummary] = []
+    static let doctorAppointments: [AppointmentSummary] = []
+    static let adminMetrics: [AdminMetric] = []
+    static let conversations: [UserRole: [ConversationSummary]] = [:]
+    static let hospitals: [HospitalSummary] = []
+    static let pharmacyCategories: [PharmacyCategory] = []
+    static let recentNotifications: [String] = []
 
     static let supportPhone = "+255754501671"
     static let supportWhatsAppURL = "https://api.whatsapp.com/send?phone=255754501671"
@@ -373,6 +195,12 @@ final class PermissionService: NSObject, CLLocationManagerDelegate {
         @unknown default:
             return false
         }
+    }
+
+    @MainActor
+    func currentLocationEnabled() -> Bool {
+        let status = locationManager.authorizationStatus
+        return status == .authorizedAlways || status == .authorizedWhenInUse
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -491,8 +319,8 @@ final class AuthService {
             location: nil,
             bio: nil,
             specialization: role == .doctor ? StaticContentService.specialties.first : nil,
-            consultationFee: role == .doctor ? "TZS 20,000" : nil,
-            availableTimes: role == .doctor ? Array(StaticContentService.timeSlots.prefix(4)) : nil,
+            consultationFee: nil,
+            availableTimes: role == .doctor ? nil : nil,
             verified: role == .doctor ? false : nil
         )
 
@@ -561,6 +389,17 @@ final class AuthService {
 
     func updateUserProfile(_ profile: UserProfile, idToken: String) async throws {
         try await saveUserProfile(profile, idToken: idToken)
+    }
+
+    func deleteCurrentAccount(userId: String, role: UserRole, idToken: String?) async throws {
+        let userURL = try databaseURL(path: "users/\(userId)", authToken: idToken)
+        try await delete(url: userURL)
+        if role == .doctor {
+            let doctorURL = try databaseURL(path: "doctors/\(userId)", authToken: idToken)
+            try await delete(url: doctorURL)
+            let walletURL = try databaseURL(path: "doctor_wallets/\(userId)", authToken: idToken)
+            try await delete(url: walletURL)
+        }
     }
 
     func fetchPopularArticles(idToken: String?) async throws -> [ArticleSummary] {
@@ -879,10 +718,14 @@ final class AuthService {
 
             return AppointmentSummary(
                 id: stringValue(item["appointmentId"])?.nonEmpty ?? key,
+                patientId: stringValue(item["patientId"])?.nonEmpty,
+                doctorId: stringValue(item["doctorId"])?.nonEmpty,
                 title: role == .doctor ? patientName : doctorName,
                 subtitle: subtitle,
                 dateText: [date, time].filter { !$0.isEmpty }.joined(separator: ", "),
-                status: appointmentStatus(from: stringValue(item["status"]))
+                status: appointmentStatus(from: stringValue(item["status"])),
+                appointmentType: appointmentType,
+                createdAt: timeIntervalValue(item["createdAt"])
             )
         }
 
@@ -915,6 +758,33 @@ final class AuthService {
         ]
         let url = try databaseURL(path: "appointments/\(appointmentId)", authToken: idToken)
         try await put(payload, url: url)
+
+        let patientIndexURL = try databaseURL(path: "patient_appointments/\(patient.userId)/\(appointmentId)", authToken: idToken)
+        try await put(true, url: patientIndexURL)
+        let doctorIndexURL = try databaseURL(path: "doctor_appointments/\(doctor.id)/\(appointmentId)", authToken: idToken)
+        try await put(true, url: doctorIndexURL)
+
+        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+        let patientConversation: [String: Any] = [
+            "otherUserId": doctor.id,
+            "otherUserName": doctor.name,
+            "lastMessage": appointmentType == "Online Chat" ? "Chat appointment booked" : "Appointment booked",
+            "lastMessageTimestamp": timestamp,
+            "lastMessageSenderId": patient.userId,
+            "archived": false
+        ]
+        let doctorConversation: [String: Any] = [
+            "otherUserId": patient.userId,
+            "otherUserName": patient.fullName,
+            "lastMessage": appointmentType == "Online Chat" ? "Chat appointment booked" : "Appointment booked",
+            "lastMessageTimestamp": timestamp,
+            "lastMessageSenderId": patient.userId,
+            "archived": false
+        ]
+        let patientConvURL = try databaseURL(path: "user_conversations/\(patient.userId)/\(doctor.id)", authToken: idToken)
+        try await put(patientConversation, url: patientConvURL)
+        let doctorConvURL = try databaseURL(path: "user_conversations/\(doctor.id)/\(patient.userId)", authToken: idToken)
+        try await put(doctorConversation, url: doctorConvURL)
     }
 
     func initiatePayment(
@@ -969,6 +839,40 @@ final class AuthService {
         return try decoder.decode(PaymentStatusEnvelope.self, from: data)
     }
 
+    func fetchDoctorWallet(doctorId: String, idToken: String?) async throws -> DoctorWalletSummary? {
+        let path = "doctor_wallets/\(doctorId)"
+        let url = try databaseURL(path: path, authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return nil }
+        return try decoder.decode(DoctorWalletSummary.self, from: data)
+    }
+
+    func fetchDoctorPresence(doctorId: String, idToken: String?) async throws -> DoctorPresenceSummary? {
+        let path = "doctors/\(doctorId)"
+        let url = try databaseURL(path: path, authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return nil }
+        let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        return DoctorPresenceSummary(
+            doctorId: stringValue(json["doctorId"])?.nonEmpty ?? doctorId,
+            online: boolValue(json["online"]) ?? false,
+            lastUpdated: timeIntervalValue(json["lastUpdated"])
+        )
+    }
+
+    func updateDoctorPresence(doctorId: String, online: Bool, idToken: String?) async throws {
+        let path = "doctors/\(doctorId)"
+        let url = try databaseURL(path: path, authToken: idToken)
+        let payload: [String: Any] = [
+            "doctorId": doctorId,
+            "online": online,
+            "lastUpdated": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        try await patch(payload, url: url)
+    }
+
     func fetchConversations(userId: String, idToken: String?) async throws -> [ConversationSummary] {
         let url = try databaseURL(path: "user_conversations/\(userId)", authToken: idToken)
         let (data, response) = try await URLSession.shared.data(from: url)
@@ -999,6 +903,86 @@ final class AuthService {
         }
 
         return conversations.sorted { $0.lastMessageTimestamp > $1.lastMessageTimestamp }
+    }
+
+    func fetchChatMessages(chatRoomId: String, currentUserId: String, idToken: String?) async throws -> [ChatMessageSummary] {
+        let url = try databaseURL(path: "messages/\(chatRoomId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return [] }
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ServiceError.invalidResponse
+        }
+
+        let messages = json.compactMap { key, value -> ChatMessageSummary? in
+            guard let item = value as? [String: Any] else { return nil }
+            let senderId = stringValue(item["senderId"])?.nonEmpty ?? ""
+            let receiverId = stringValue(item["receiverId"])?.nonEmpty ?? ""
+            let text = stringValue(item["message"])?.nonEmpty ?? ""
+            return ChatMessageSummary(
+                id: stringValue(item["messageId"])?.nonEmpty ?? key,
+                senderId: senderId,
+                receiverId: receiverId,
+                message: text,
+                timestamp: timeIntervalValue(item["timestamp"]) ?? 0,
+                isRead: boolValue(item["isRead"]) ?? false,
+                isOutgoing: senderId == currentUserId
+            )
+        }
+
+        return messages.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    func sendChatMessage(chatRoomId: String, sender: UserProfile, receiverId: String, receiverName: String, message: String, idToken: String?) async throws {
+        let messageId = UUID().uuidString
+        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+        let payload: [String: Any] = [
+            "messageId": messageId,
+            "senderId": sender.userId,
+            "senderName": sender.fullName,
+            "receiverId": receiverId,
+            "receiverName": receiverName,
+            "message": message,
+            "timestamp": timestamp,
+            "isRead": false,
+            "messageType": "text",
+            "messageStatus": "sent"
+        ]
+        let url = try databaseURL(path: "messages/\(chatRoomId)/\(messageId)", authToken: idToken)
+        try await put(payload, url: url)
+
+        let conversationUpdate: [String: Any] = [
+            "otherUserId": receiverId,
+            "otherUserName": receiverName,
+            "lastMessage": message,
+            "lastMessageTimestamp": timestamp,
+            "lastMessageSenderId": sender.userId,
+            "archived": false
+        ]
+        let conversationsURL = try databaseURL(path: "user_conversations/\(sender.userId)/\(receiverId)", authToken: idToken)
+        try await patch(conversationUpdate, url: conversationsURL)
+        let reverseURL = try databaseURL(path: "user_conversations/\(receiverId)/\(sender.userId)", authToken: idToken)
+        try await patch(conversationUpdate, url: reverseURL)
+    }
+
+    func markChatMessagesRead(chatRoomId: String, currentUserId: String, idToken: String?) async throws {
+        let url = try databaseURL(path: "messages/\(chatRoomId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return }
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ServiceError.invalidResponse
+        }
+
+        for (messageId, value) in json {
+            guard let item = value as? [String: Any] else { continue }
+            let receiverId = stringValue(item["receiverId"])
+            let isRead = boolValue(item["isRead"]) ?? false
+            if receiverId == currentUserId && !isRead {
+                let messageURL = try databaseURL(path: "messages/\(chatRoomId)/\(messageId)", authToken: idToken)
+                try await patch(["isRead": true], url: messageURL)
+            }
+        }
     }
 
     func fetchNotifications(userId: String, idToken: String?) async throws -> [NotificationSummary] {
@@ -1060,6 +1044,15 @@ final class AuthService {
         ]
         let url = try databaseURL(path: "doctors/\(profile.userId)", authToken: idToken)
         try await put(payload, url: url)
+
+        let walletPayload: [String: Any] = [
+            "doctorId": profile.userId,
+            "balance": 0,
+            "totalEarnings": 0,
+            "lastUpdated": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        let walletURL = try databaseURL(path: "doctor_wallets/\(profile.userId)", authToken: idToken)
+        try await put(walletPayload, url: walletURL)
     }
 
     private func performIdentityRequest(path: String, payload: [String: Any]) async throws -> IdentityResponse {
@@ -1084,6 +1077,15 @@ final class AuthService {
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(value)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
+    }
+
+    private func patch(_ dictionary: [String: Any], url: URL) async throws {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: dictionary)
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
     }

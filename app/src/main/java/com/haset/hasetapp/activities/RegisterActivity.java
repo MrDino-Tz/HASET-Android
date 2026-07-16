@@ -36,6 +36,8 @@ import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.ThemeHelper;
 import com.haset.hasetapp.viewmodels.AuthViewModel;
 import com.haset.hasetapp.models.Doctor;
+import com.haset.hasetapp.models.AppConfig;
+import com.haset.hasetapp.utils.FirebaseHelper;
 
 import android.util.Log;
 
@@ -297,24 +299,41 @@ public class RegisterActivity extends BaseActivity {
         newUser.setCreatedAt(System.currentTimeMillis());
 
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
-            showDoctorRegistrationPaymentDialog(email, password, newUser);
+            fetchDoctorRegistrationFeeAndShowPaymentDialog(email, password, newUser);
         } else {
             authViewModel.register(email, password, newUser);
         }
     }
 
-    private void showDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser) {
+    private void fetchDoctorRegistrationFeeAndShowPaymentDialog(String email, String password, UserEntity newUser) {
+        FirebaseHelper.getAppConfig(new FirebaseHelper.OnCompleteListener<AppConfig>() {
+            @Override
+            public void onSuccess(AppConfig config) {
+                double fee = config != null && config.getDoctorRegistrationFee() > 0
+                    ? config.getDoctorRegistrationFee()
+                    : 500.0;
+                showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
+            }
+
+            @Override
+            public void onError(String error) {
+                showDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
+            }
+        });
+    }
+
+    private void showDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser, double fee) {
         pendingDoctorUser = newUser;
         pendingDoctorEmail = email;
         pendingDoctorPassword = password;
 
         Doctor paymentDoctor = new Doctor("doctor_registration", "doctor_registration", newUser.getFullName(), "Doctor Registration");
-        paymentDoctor.setConsultationFee(200);
+        paymentDoctor.setConsultationFee(fee);
         paymentDoctor.setVerified(false);
 
         Intent paymentIntent = new Intent(this, PaymentActivity.class);
         paymentIntent.putExtra("doctor", paymentDoctor);
-        paymentIntent.putExtra("consultation_fee", 200.0);
+        paymentIntent.putExtra("consultation_fee", fee);
         doctorPaymentLauncher.launch(paymentIntent);
     }
 

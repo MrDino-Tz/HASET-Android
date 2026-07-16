@@ -11,12 +11,15 @@ final class AppViewModel: ObservableObject {
     @Published var notificationEnabled: Bool
     @Published var themeMode: ThemeMode
     @Published var locationEnabled: Bool
-    @Published var patientHomeHighlights: [HomeHighlight] = StaticContentService.homeHighlights
+    @Published var patientHomeHighlights: [HomeHighlight] = []
     @Published var patientPopularArticles: [ArticleSummary] = []
     @Published var doctors: [DoctorSummary] = []
     @Published var appointments: [AppointmentSummary] = []
     @Published var conversations: [ConversationSummary] = []
     @Published var notifications: [NotificationSummary] = []
+    @Published var doctorWallet: DoctorWalletSummary?
+    @Published var doctorPresence: DoctorPresenceSummary?
+    @Published var doctorRegistrationFee: Double = 500
 
     private let sessionStore = SessionStore()
     private let authService = AuthService()
@@ -45,6 +48,10 @@ final class AppViewModel: ObservableObject {
         do {
             let config = try await authService.fetchAppConfig()
             try? await Task.sleep(for: .milliseconds(2500))
+
+            if let config {
+                doctorRegistrationFee = config.doctorRegistrationFee ?? doctorRegistrationFee
+            }
 
             if let config, config.maintenanceMode {
                 alertState = AlertState(
@@ -83,11 +90,15 @@ final class AppViewModel: ObservableObject {
                 }
                 if session.role == .patient {
                     await loadPatientHomeContent(force: false)
+                } else if session.role == .doctor {
+                    await loadDoctorWallet(force: false)
+                    await loadDoctorPresence(force: false)
                 }
                 await loadDoctors(force: false)
                 await loadAppointments(force: false)
                 await loadConversations(force: false)
                 await loadNotifications(force: false)
+                syncLocationPermission()
                 route = .dashboard(session.role)
             } else {
                 route = .login
@@ -96,6 +107,19 @@ final class AppViewModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(2500))
             route = sessionStore.onboardingSeen ? .login : .onboarding
         }
+    }
+
+    func refreshCurrentUser() async {
+        guard let session = sessionStore.loadSession() else { return }
+        do {
+            currentUser = try await authService.restoreProfile(session: session)
+        } catch {
+            // Keep the existing in-memory profile if the refresh fails.
+        }
+    }
+
+    func currentIdToken() -> String? {
+        sessionStore.loadSession()?.idToken
     }
 
     func completeOnboarding() {
@@ -143,6 +167,12 @@ final class AppViewModel: ObservableObject {
             locationEnabled = false
             sessionStore.locationEnabled = false
         }
+    }
+
+    func syncLocationPermission() {
+        let granted = permissionService.currentLocationEnabled()
+        locationEnabled = granted
+        sessionStore.locationEnabled = granted
     }
 
     func showRegister(role: UserRole) {
@@ -232,6 +262,9 @@ final class AppViewModel: ObservableObject {
                 currentUser = result.1
                 if role == .patient {
                     await loadPatientHomeContent(force: true)
+                } else if role == .doctor {
+                    await loadDoctorWallet(force: true)
+                    await loadDoctorPresence(force: true)
                 }
                 await loadDoctors(force: true)
                 await loadAppointments(force: true)
@@ -268,10 +301,10 @@ final class AppViewModel: ObservableObject {
         phone: String,
         age: String,
         gender: String,
-        location: String,
         bio: String,
         specialization: String,
         consultationFee: String,
+        availableTimes: [String],
         profileImage: String
     ) {
         guard var profile = currentUser else { return }
@@ -291,10 +324,10 @@ final class AppViewModel: ObservableObject {
         profile.phone = trimmedPhone
         profile.age = age.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : age
         profile.gender = gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : gender
-        profile.location = location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : location
         profile.bio = bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : bio
         profile.specialization = specialization.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : specialization
         profile.consultationFee = consultationFee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : consultationFee
+        profile.availableTimes = availableTimes.isEmpty ? nil : availableTimes
         profile.profileImage = profileImage
 
         isLoading = true
@@ -396,15 +429,51 @@ final class AppViewModel: ObservableObject {
             async let articlesTask = authService.fetchPopularArticles(idToken: idToken)
 
             let (banners, articles) = try await (bannersTask, articlesTask)
-            if !banners.isEmpty {
-                patientHomeHighlights = banners
-            } else {
-                patientHomeHighlights = StaticContentService.homeHighlights
-            }
+            patientHomeHighlights = banners
             patientPopularArticles = articles
         } catch {
-            patientHomeHighlights = StaticContentService.homeHighlights
+            patientHomeHighlights = []
             patientPopularArticles = []
+        }
+    }
+
+    func loadDoctorWallet(force: Bool) async {
+        guard currentUser?.role == .doctor else { return }
+        if doctorWallet != nil && !force { return }
+
+        let idToken = sessionStore.loadSession()?.idToken
+        do {
+            doctorWallet = try await authService.fetchDoctorWallet(doctorId: currentUser?.userId ?? "", idToken: idToken)
+        } catch {
+            doctorWallet = nil
+        }
+    }
+
+    func loadDoctorPresence(force: Bool) async {
+        guard currentUser?.role == .doctor else { return }
+        if doctorPresence != nil && !force { return }
+
+        let idToken = sessionStore.loadSession()?.idToken
+        do {
+            doctorPresence = try await authService.fetchDoctorPresence(doctorId: currentUser?.userId ?? "", idToken: idToken)
+        } catch {
+            doctorPresence = nil
+        }
+    }
+
+    func setDoctorPresence(online: Bool) async {
+        guard currentUser?.role == .doctor else { return }
+
+        let idToken = sessionStore.loadSession()?.idToken
+        do {
+            try await authService.updateDoctorPresence(doctorId: currentUser?.userId ?? "", online: online, idToken: idToken)
+            doctorPresence = DoctorPresenceSummary(
+                doctorId: currentUser?.userId ?? "",
+                online: online,
+                lastUpdated: Date().timeIntervalSince1970 * 1000
+            )
+        } catch {
+            alertState = AlertState(title: tr("error"), message: "Unable to update doctor status.")
         }
     }
 
@@ -446,6 +515,38 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func loadChatMessages(chatRoomId: String, currentUserId: String) async -> [ChatMessageSummary] {
+        let idToken = sessionStore.loadSession()?.idToken
+        do {
+            return try await authService.fetchChatMessages(chatRoomId: chatRoomId, currentUserId: currentUserId, idToken: idToken)
+        } catch {
+            return []
+        }
+    }
+
+    func sendChatMessage(chatRoomId: String, receiverId: String, receiverName: String, message: String) async throws {
+        guard let currentUser else { return }
+        let idToken = sessionStore.loadSession()?.idToken
+        try await authService.sendChatMessage(
+            chatRoomId: chatRoomId,
+            sender: currentUser,
+            receiverId: receiverId,
+            receiverName: receiverName,
+            message: message,
+            idToken: idToken
+        )
+    }
+
+    func markChatMessagesRead(chatRoomId: String) async {
+        guard let currentUser else { return }
+        let idToken = sessionStore.loadSession()?.idToken
+        do {
+            try await authService.markChatMessagesRead(chatRoomId: chatRoomId, currentUserId: currentUser.userId, idToken: idToken)
+        } catch {
+            // Ignore read-receipt sync failures.
+        }
+    }
+
     func loadNotifications(force: Bool) async {
         guard let currentUser else { return }
         if didLoadNotifications && !force { return }
@@ -454,16 +555,7 @@ final class AppViewModel: ObservableObject {
         do {
             notifications = try await authService.fetchNotifications(userId: currentUser.userId, idToken: idToken)
         } catch {
-            notifications = StaticContentService.recentNotifications.enumerated().map { index, item in
-                NotificationSummary(
-                    id: "fallback-\(index)",
-                    title: item,
-                    message: item,
-                    type: "general",
-                    isRead: false,
-                    timestamp: Date().timeIntervalSince1970 * 1000 - Double(index * 1000)
-                )
-            }
+            notifications = []
         }
     }
 
@@ -475,12 +567,25 @@ final class AppViewModel: ObservableObject {
         didLoadAppointments = false
         didLoadConversations = false
         didLoadNotifications = false
-        patientHomeHighlights = StaticContentService.homeHighlights
+        patientHomeHighlights = []
         patientPopularArticles = []
-        doctors = StaticContentService.doctors
+        doctors = []
         appointments = []
         conversations = []
         notifications = []
         route = .login
+    }
+
+    func deleteAccount() {
+        guard let user = currentUser else { return }
+        let idToken = sessionStore.loadSession()?.idToken
+        Task {
+            do {
+                try await authService.deleteCurrentAccount(userId: user.userId, role: user.role, idToken: idToken)
+            } catch {
+                alertState = AlertState(title: tr("error"), message: "Unable to delete account.")
+            }
+            logout()
+        }
     }
 }

@@ -40,6 +40,7 @@ struct RemoteAppConfig: Codable, Equatable {
     var minVersionCode: Int = 0
     var updateUrl: String?
     var maintenanceMessage: String?
+    var doctorRegistrationFee: Double?
 }
 
 enum AppRoute: Equatable {
@@ -73,6 +74,12 @@ struct AlertState: Identifiable {
     let id = UUID()
     let title: String
     let message: String
+}
+
+struct PendingDoctorRegistration: Identifiable {
+    let id = UUID()
+    let doctor: DoctorSummary
+    let completion: () -> Void
 }
 
 struct DoctorSummary: Identifiable, Hashable {
@@ -153,10 +160,14 @@ struct AppointmentSummary: Identifiable, Hashable {
     }
 
     let id: String
+    let patientId: String?
+    let doctorId: String?
     let title: String
     let subtitle: String
     let dateText: String
     let status: Status
+    let appointmentType: String?
+    let createdAt: TimeInterval?
 }
 
 struct ConversationSummary: Identifiable, Hashable {
@@ -170,6 +181,17 @@ struct ConversationSummary: Identifiable, Hashable {
     let profileImage: String?
 }
 
+struct ChatMessageSummary: Identifiable, Hashable {
+    let id: String
+    let senderId: String
+    let receiverId: String
+    let message: String
+    let timestamp: TimeInterval
+    let isRead: Bool
+
+    var isOutgoing: Bool = false
+}
+
 struct NotificationSummary: Identifiable, Hashable {
     let id: String
     let title: String
@@ -177,6 +199,19 @@ struct NotificationSummary: Identifiable, Hashable {
     let type: String
     let isRead: Bool
     let timestamp: TimeInterval
+}
+
+struct DoctorWalletSummary: Codable, Hashable {
+    let doctorId: String
+    let balance: Double
+    let totalEarnings: Double?
+    let lastUpdated: TimeInterval?
+}
+
+struct DoctorPresenceSummary: Codable, Hashable {
+    let doctorId: String
+    let online: Bool
+    let lastUpdated: TimeInterval?
 }
 
 struct HospitalSummary: Identifiable, Hashable {
