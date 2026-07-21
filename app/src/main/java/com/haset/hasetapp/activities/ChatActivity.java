@@ -138,7 +138,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     private Runnable chatDurationRunnable;
     private TextView tvChatDuration;
     private boolean isChatSessionActive = false;
-    private static final long CHAT_SESSION_DURATION = 12 * 60 * 60 * 1000L; // 12 hours
+    private static final long CHAT_SESSION_DURATION = 24 * 60 * 60 * 1000L; // 24 hours
     private static final long[] NOTIFICATION_TIMES = {30 * 60 * 1000L, 10 * 60 * 1000L, 5 * 60 * 1000L}; // 30min, 10min, 5min before end
     
     // Camera variables
