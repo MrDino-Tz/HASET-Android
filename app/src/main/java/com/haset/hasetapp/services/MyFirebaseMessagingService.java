@@ -98,8 +98,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         PreferenceManager pm = new PreferenceManager(this);
         String userRole = pm.getUserRole();
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
-            // Only allow appointment_reminder and chat_message for doctors
-            if (!"appointment_reminder".equals(type) && !"chat_message".equals(type)) {
+            if (!"appointment_reminder".equals(type) && !"chat_message".equals(type) && !"new_appointment".equals(type)) {
                 Log.d(TAG, "Doctor skipping notification type: " + type);
                 return;
             }
@@ -114,6 +113,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 break;
             case Constants.NOTIF_TYPE_CHAT_MESSAGE:
                 handleChatMessage(data);
+                break;
+            case Constants.NOTIF_TYPE_NEW_APPOINTMENT:
+                handleNewAppointment(data);
                 break;
             case Constants.NOTIF_TYPE_GENERAL:
                 handleGeneralNotification(data);
@@ -153,6 +155,30 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         showNotificationWithIntent(title, message, intent, CHANNEL_APPOINTMENTS, 1);
     }
     
+    /**
+     * Handle new appointment notifications (sent to doctor when patient books)
+     */
+    private void handleNewAppointment(Map<String, String> data) {
+        String patientName = data.get("patientName");
+        String appointmentDate = data.get("appointmentDate");
+        String appointmentTime = data.get("appointmentTime");
+        String appointmentId = data.get("appointmentId");
+
+        String title = getString(R.string.notification_new_appointment);
+        String message = String.format(getString(R.string.new_appointment_message),
+            patientName != null ? patientName : "A patient",
+            appointmentDate != null ? appointmentDate : "",
+            appointmentTime != null ? appointmentTime : "");
+
+        Intent intent = new Intent(this, DashboardActivity.class);
+        intent.putExtra("navigate_to", "appointments");
+        intent.putExtra("appointmentId", appointmentId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        int notificationId = appointmentId != null ? appointmentId.hashCode() : 10;
+        showNotificationWithIntent(title, message, intent, CHANNEL_APPOINTMENTS, notificationId);
+    }
+
     /**
      * Handle appointment status change notifications
      */
@@ -290,8 +316,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String userRole = pm.getUserRole();
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
             String type = data.get("type");
-            // If it's a doctor, we only allow chat and appointment reminders
-            if (type == null || (!"appointment_reminder".equals(type) && !"chat_message".equals(type))) {
+            if (type == null || (!"appointment_reminder".equals(type) && !"chat_message".equals(type) && !"new_appointment".equals(type))) {
                 Log.d(TAG, "Doctor skipping simple notification");
                 return;
             }
@@ -350,16 +375,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
      * Send FCM token to backend server
      */
     private void sendTokenToServer(String token) {
-        // TODO: Implement server API call to store FCM token
-        // This should associate the token with the current user's ID
         PreferenceManager preferenceManager = new PreferenceManager(this);
         String userId = preferenceManager.getUserId();
-        
+
         if (userId != null && !userId.isEmpty()) {
-            // TODO: Store token in Firebase Realtime Database
-            // You can add this to FirebaseHelper or store directly:
-            // FirebaseDatabase.getInstance().getReference("users").child(userId).child("fcmToken").setValue(token);
-            Log.d(TAG, "FCM token ready to be stored for user: " + userId);
+            com.google.firebase.database.FirebaseDatabase.getInstance()
+                .getReference("users").child(userId).child("fcmToken")
+                .setValue(token)
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "FCM token stored for user: " + userId))
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to store FCM token", e));
         }
     }
 }

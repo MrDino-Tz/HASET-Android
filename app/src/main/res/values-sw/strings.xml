@@ -389,6 +389,8 @@
     <string name="notification_appointment_cancelled">Miadi Imefutwa</string>
     <string name="appointment_status_updated">Hali ya Miadi Imesasishwa</string>
     <string name="appointment_reminder_message">Miadi inayokuja na %1$s saa %2$s</string>
+    <string name="notification_new_appointment">Miadi Mpya</string>
+    <string name="new_appointment_message">%1$s amejiandikisha miadi ya %2$s saa %3$s</string>
     <string name="appointment_approved_message">Miadi yako na %s imeidhinishwa</string>
     <string name="appointment_cancelled_message">Miadi yako na %s imeghairiwa</string>
     <string name="no_users_found">Hakuna watumiaji waliopatikana</string>

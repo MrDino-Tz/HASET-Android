@@ -146,6 +146,7 @@ public class Constants {
     // Notification Types
     public static final String NOTIF_TYPE_APPOINTMENT_REMINDER = "appointment_reminder";
     public static final String NOTIF_TYPE_APPOINTMENT_STATUS = "appointment_status";
+    public static final String NOTIF_TYPE_NEW_APPOINTMENT = "new_appointment";
     public static final String NOTIF_TYPE_CHAT_MESSAGE = "chat_message";
     public static final String NOTIF_TYPE_NEW_REGISTRATION = "new_registration";
     public static final String NOTIF_TYPE_WITHDRAWAL_REQUEST = "withdrawal_request";

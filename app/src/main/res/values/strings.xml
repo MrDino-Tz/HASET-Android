@@ -419,6 +419,8 @@
     <string name="notification_appointment_cancelled">Appointment Cancelled</string>
     <string name="appointment_status_updated">Appointment Status Updated</string>
     <string name="appointment_reminder_message">Upcoming appointment with %1$s at %2$s</string>
+    <string name="notification_new_appointment">New Appointment Booking</string>
+    <string name="new_appointment_message">%1$s booked an appointment for %2$s at %3$s</string>
     <string name="appointment_approved_message">Your appointment with %s has been approved</string>
     <string name="appointment_cancelled_message">Your appointment with %s has been cancelled</string>
     <string name="no_users_found">No users found</string>
