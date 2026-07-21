@@ -188,7 +188,6 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         TextView tvCountdown = dialog.findViewById(R.id.tvCountdown);
         MaterialButton btnStartChat = dialog.findViewById(R.id.btnStartChat);
         TextView tvSessionExpired = dialog.findViewById(R.id.tvSessionExpired);
-        MaterialButton btnClose = dialog.findViewById(R.id.btnClose);
 
         tvPatientInfo.setText(getString(R.string.appointment_with_patient, appointment.getPatientName()));
         tvAppointmentDetails.setText(String.format("%s at %s",
@@ -201,8 +200,6 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
             dialog.dismiss();
             startChatWithPatient(appointment, approvedAt);
         });
-
-        btnClose.setOnClickListener(v -> dialog.dismiss());
 
         // 60-second countdown
         Handler handler = new Handler(Looper.getMainLooper());
