@@ -59,6 +59,7 @@ public class RegisterActivity extends BaseActivity {
     private UserEntity pendingDoctorUser;
     private String pendingDoctorEmail;
     private String pendingDoctorPassword;
+    private boolean pendingDoctorPaymentRequiresAnonymousAuth = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -312,14 +313,38 @@ public class RegisterActivity extends BaseActivity {
                 double fee = config != null && config.getDoctorRegistrationFee() > 0
                     ? config.getDoctorRegistrationFee()
                     : 500.0;
-                showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
+                ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             }
 
             @Override
             public void onError(String error) {
-                showDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
+                ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
             }
         });
+    }
+
+    private void ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser, double fee) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            pendingDoctorPaymentRequiresAnonymousAuth = currentUser.isAnonymous();
+            showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
+            return;
+        }
+
+        FirebaseAuth.getInstance().signInAnonymously()
+            .addOnSuccessListener(result -> {
+                pendingDoctorPaymentRequiresAnonymousAuth = true;
+                showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
+            })
+            .addOnFailureListener(error -> {
+                resetRegisterButton();
+                CustomDialog.hideLoading();
+                com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                    error.getMessage() != null ? error.getMessage() : "Unable to prepare payment session",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                    .setBackgroundTint(getResources().getColor(R.color.colorError))
+                    .show();
+            });
     }
 
     private void showDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser, double fee) {
@@ -342,8 +367,17 @@ public class RegisterActivity extends BaseActivity {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
-                    CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
-                    authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
+                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (pendingDoctorPaymentRequiresAnonymousAuth && currentUser != null && currentUser.isAnonymous()) {
+                        pendingDoctorUser.setUserId(currentUser.getUid());
+                        authViewModel.saveUserAndLogin(pendingDoctorUser);
+                    } else {
+                        if (pendingDoctorPaymentRequiresAnonymousAuth && currentUser != null) {
+                            FirebaseAuth.getInstance().signOut();
+                        }
+                        CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
+                        authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
+                    }
                 } else {
                     resetRegisterButton();
                 }
@@ -351,6 +385,7 @@ public class RegisterActivity extends BaseActivity {
                 pendingDoctorUser = null;
                 pendingDoctorEmail = null;
                 pendingDoctorPassword = null;
+                pendingDoctorPaymentRequiresAnonymousAuth = false;
             }
         );
     }

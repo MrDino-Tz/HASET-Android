@@ -86,8 +86,8 @@ public class Constants {
     // ========================
     // Payment Security
     // ========================
-    // Minimum payment amount (in TZS) - API range: 50 - 5,000,000
-    public static final double MIN_PAYMENT_AMOUNT = 50.0;
+    // Minimum payment amount (in TZS) - API range: 500 - 5,000,000
+    public static final double MIN_PAYMENT_AMOUNT = 500.0;
     public static final double MAX_PAYMENT_AMOUNT = 5000000.0;
     
     // Payment timeout in milliseconds (5 minutes)
@@ -96,7 +96,6 @@ public class Constants {
     // Payment Webhook URL - Backend endpoint for payment status notifications
     // See: /from BACKEND/BACKEND_REQUIREMENTS.md
     public static final String PAYMENT_WEBHOOK_URL = PRODUCTION_API_URL + "payment/callback";
-    public static final String PAYMENT_CLIENT_API_KEY = "hsk_40e850e045de6d6636d68c45c4c814aa2be41e07522d64e1";
     
     // ========================
     // Security Settings

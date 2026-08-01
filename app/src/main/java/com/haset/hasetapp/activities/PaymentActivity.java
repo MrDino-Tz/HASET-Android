@@ -26,6 +26,7 @@ import com.haset.hasetapp.viewmodels.PaymentViewModel;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 public class PaymentActivity extends AppCompatActivity {
     private TextView tvDoctorName, tvSpecialty, tvAmount, tvPaymentMethod, tvSelectedPaymentDetails;
@@ -42,6 +43,9 @@ public class PaymentActivity extends AppCompatActivity {
     private long lastClickTime = 0; // For debouncing clicks
     private String serviceMessageId = null;
     private String chatRoomId = null;
+    private String consultationId;
+
+    private static final String STATE_CONSULTATION_ID = "payment_consultation_id";
 
 
     @Override
@@ -58,12 +62,26 @@ public class PaymentActivity extends AppCompatActivity {
         consultationFee = getIntent().getDoubleExtra("consultation_fee", 0.0);
         serviceMessageId = getIntent().getStringExtra("service_message_id");
         chatRoomId = getIntent().getStringExtra("chat_room_id");
+        consultationId = savedInstanceState != null
+            ? savedInstanceState.getString(STATE_CONSULTATION_ID)
+            : getIntent().getStringExtra("consultation_id");
+        if (TextUtils.isEmpty(consultationId)) {
+            consultationId = !TextUtils.isEmpty(serviceMessageId)
+                ? "service-" + serviceMessageId
+                : "consult-" + UUID.randomUUID().toString();
+        }
 
         initViews();
         viewModel = new ViewModelProvider(this).get(PaymentViewModel.class);
         setupObservers();
         setupViews();
         setupClickListeners();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_CONSULTATION_ID, consultationId);
     }
     
     @Override
@@ -586,15 +604,15 @@ public class PaymentActivity extends AppCompatActivity {
                 return;
             }
             
-            // Prepend country code if not already present (without + sign)
+            // The payment API accepts either 0XXXXXXXXX or +255XXXXXXXXX.
             if (mobileNumber.startsWith("+255")) {
-                paymentAccount = mobileNumber.replace("+", ""); // Remove + sign
+                paymentAccount = mobileNumber;
             } else if (mobileNumber.startsWith("255")) {
-                paymentAccount = mobileNumber; // Already has country code
+                paymentAccount = "+" + mobileNumber;
             } else if (mobileNumber.startsWith("0")) {
-                paymentAccount = "255" + mobileNumber.substring(1); // Convert 0 to 255
+                paymentAccount = "+255" + mobileNumber.substring(1);
             } else {
-                paymentAccount = "255" + mobileNumber; // Add country code
+                paymentAccount = "+255" + mobileNumber;
             }
             
             // Format for display: +255 XXX XXX XXX
@@ -817,6 +835,7 @@ public class PaymentActivity extends AppCompatActivity {
                 viewModel.processPayment(
                     userId,
                     doctorId,
+                    consultationId,
                     consultationFee,
                     paymentProvider,  // Already set when user selects provider
                     paymentAccount

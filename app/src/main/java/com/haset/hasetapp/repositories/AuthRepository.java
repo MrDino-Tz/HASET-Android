@@ -6,7 +6,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 // import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
 // import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.database.DataSnapshot;
@@ -34,7 +36,7 @@ public class AuthRepository {
                 if (task.isSuccessful()) {
                     callback.onSuccess(mAuth.getCurrentUser());
                 } else {
-                    callback.onError(task.getException() != null ? task.getException().getMessage() : "Login failed");
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Login failed"));
                 }
             });
     }
@@ -61,7 +63,7 @@ public class AuthRepository {
                         });
                     }
                 } else {
-                    callback.onError(task.getException() != null ? task.getException().getMessage() : "Registration failed");
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Registration failed"));
                 }
             });
     }
@@ -133,7 +135,7 @@ public class AuthRepository {
                 if (task.isSuccessful()) {
                     callback.onSuccess(null);
                 } else {
-                    callback.onError(task.getException() != null ? task.getException().getMessage() : "Failed to send reset email");
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Failed to send reset email"));
                 }
             });
     }
@@ -168,5 +170,25 @@ public class AuthRepository {
             return user;
         }
         return null;
+    }
+
+    private String mapFirebaseAuthError(Exception exception, String fallbackMessage) {
+        if (exception == null) {
+            return fallbackMessage;
+        }
+
+        String message = exception.getMessage();
+        if (exception instanceof FirebaseAuthException) {
+            String errorCode = ((FirebaseAuthException) exception).getErrorCode();
+            if ("ERROR_OPERATION_NOT_ALLOWED".equals(errorCode) || "operation-not-allowed".equalsIgnoreCase(errorCode)) {
+                return "Firebase Authentication is blocking sign-up. Enable Email/Password sign-in in the Firebase console.";
+            }
+        }
+
+        if (message != null && message.toLowerCase().contains("restricted to administrators only")) {
+            return "Firebase Authentication is blocking sign-up. Enable Email/Password sign-in in the Firebase console.";
+        }
+
+        return message != null && !message.trim().isEmpty() ? message : fallbackMessage;
     }
 }

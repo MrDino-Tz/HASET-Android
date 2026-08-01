@@ -790,6 +790,8 @@ final class AuthService {
     func initiatePayment(
         user: UserProfile,
         doctor: DoctorSummary,
+        consultationId: String,
+        idempotencyKey: String,
         amount: Double,
         provider: String,
         paymentAccount: String,
@@ -799,6 +801,8 @@ final class AuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
         if let idToken, !idToken.isEmpty {
             request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
         }
@@ -806,14 +810,11 @@ final class AuthService {
         let payload: [String: Any] = [
             "user_id": user.userId,
             "doctor_id": doctor.id,
-            "amount": amount,
+            "consultation_id": consultationId,
+            "amount": Int(amount.rounded()),
+            "payment_method": "mobile_money",
             "provider": provider,
-            "payment_account": paymentAccount,
-            "webhook_url": "\(HASETConstants.productionAPIURL)payment/callback",
-            "buyer_email": user.email,
-            "buyer_name": user.fullName,
-            "buyer_phone": user.phone,
-            "order_id": "HASET-\(Int(Date().timeIntervalSince1970 * 1000))"
+            "payment_account": paymentAccount
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
@@ -830,6 +831,7 @@ final class AuthService {
         }
 
         var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let idToken, !idToken.isEmpty {
             request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
         }

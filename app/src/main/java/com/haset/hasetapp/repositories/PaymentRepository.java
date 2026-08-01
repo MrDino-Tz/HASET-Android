@@ -16,6 +16,7 @@ import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import java.util.Locale;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -69,14 +70,14 @@ public class PaymentRepository {
         startStatusPolling(currentTransactionId, currentDoctorId, currentAmount, callback);
     }
 
-    public void processPayment(String userId, String doctorId, double amount,
+    public void processPayment(String userId, String doctorId, String consultationId, double amount,
                                String provider, String paymentAccount,
                                FirebaseHelper.OnCompleteListener<PaymentResponse> initiationCallback,
                                FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
-        processPayment(userId, doctorId, amount, provider, paymentAccount, null, null, null, initiationCallback, finalCallback);
+        processPayment(userId, doctorId, consultationId, amount, provider, paymentAccount, null, null, null, initiationCallback, finalCallback);
     }
 
-    public void processPayment(String userId, String doctorId, double amount,
+    public void processPayment(String userId, String doctorId, String consultationId, double amount,
                                String provider, String paymentAccount,
                                String buyerEmail, String buyerName, String buyerPhone,
                                FirebaseHelper.OnCompleteListener<PaymentResponse> initiationCallback,
@@ -96,7 +97,8 @@ public class PaymentRepository {
         currentAmount = amount;
         pendingFinalCallback = finalCallback;
 
-        PaymentRequest request = new PaymentRequest(userId, doctorId, amount, provider, paymentAccount);
+        PaymentRequest request = new PaymentRequest(userId, doctorId, consultationId, amount, provider, paymentAccount);
+        String idempotencyKey = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
         Log.d(TAG, "=== PAYMENT REQUEST ===");
         Log.d(TAG, "Amount: " + amount + " TZS");
@@ -104,11 +106,12 @@ public class PaymentRepository {
         Log.d(TAG, "Payment Account: " + paymentAccount);
         Log.d(TAG, "Doctor ID: " + doctorId);
         Log.d(TAG, "User ID: " + userId);
+        Log.d(TAG, "Consultation ID: " + consultationId);
 
         withFirebaseAuthHeader(new AuthHeaderCallback() {
             @Override
             public void onSuccess(String authHeader) {
-                Call<PaymentResponse> call = apiService.initiatePayment(authHeader, request);
+                Call<PaymentResponse> call = apiService.initiatePayment(authHeader, idempotencyKey, request);
                 trackCall(call);
 
                 call.enqueue(new Callback<PaymentResponse>() {

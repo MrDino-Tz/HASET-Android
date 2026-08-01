@@ -374,7 +374,7 @@
     <string name="enter_account_number">Please enter your account number</string>
     <string name="enter_valid_account">Please enter a valid account number (minimum 8 digits)</string>
     <string name="account_number_limit">Account number cannot exceed 20 digits</string>
-    <string name="min_payment_msg">Minimum payment amount is 50 TZS</string>
+    <string name="min_payment_msg">Minimum payment amount is 500 TZS</string>
     <string name="doctor_id_missing">Error: Doctor ID missing</string>
     <string name="doctor_info_missing">Error: Doctor information missing</string>
     <string name="update_banner">Update Banner</string>

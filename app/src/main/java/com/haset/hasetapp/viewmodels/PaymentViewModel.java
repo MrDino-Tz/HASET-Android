@@ -22,12 +22,12 @@ public class PaymentViewModel extends AndroidViewModel {
         this.repository = new PaymentRepository();
     }
 
-    public void processPayment(String userId, String doctorId, double amount,
+    public void processPayment(String userId, String doctorId, String consultationId, double amount,
                                String provider, String paymentAccount) {
-        processPayment(userId, doctorId, amount, provider, paymentAccount, null, null, null);
+        processPayment(userId, doctorId, consultationId, amount, provider, paymentAccount, null, null, null);
     }
 
-    public void processPayment(String userId, String doctorId, double amount,
+    public void processPayment(String userId, String doctorId, String consultationId, double amount,
                                String provider, String paymentAccount,
                                String buyerEmail, String buyerName, String buyerPhone) {
         if (Boolean.TRUE.equals(processing.getValue())) {
@@ -40,7 +40,7 @@ public class PaymentViewModel extends AndroidViewModel {
         error.setValue(null);
         canRetry.setValue(false);
 
-        repository.processPayment(userId, doctorId, amount, provider, paymentAccount,
+        repository.processPayment(userId, doctorId, consultationId, amount, provider, paymentAccount,
             buyerEmail, buyerName, buyerPhone,
             new FirebaseHelper.OnCompleteListener<com.haset.hasetapp.models.PaymentResponse>() {
                 @Override

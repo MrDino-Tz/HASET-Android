@@ -1686,6 +1686,8 @@ struct PaymentCheckoutView: View {
     @State private var canRetryStatus = false
     @State private var pollTask: Task<Void, Never>?
     @State private var processingPulse = false
+    @State private var consultationId: String
+    @State private var idempotencyKey: String
 
     private let paymentService = AuthService()
     private let sessionStore = SessionStore()
@@ -1709,6 +1711,8 @@ struct PaymentCheckoutView: View {
         self.initialMethod = initialMethod
         self.onPaymentConfirmed = onPaymentConfirmed
         _selectedMethod = State(initialValue: initialMethod)
+        _consultationId = State(initialValue: "consult-\(UUID().uuidString.lowercased())")
+        _idempotencyKey = State(initialValue: String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(30)).lowercased())
     }
 
     var body: some View {
@@ -1971,7 +1975,7 @@ struct PaymentCheckoutView: View {
             HStack {
                 Label(selectedProvider, systemImage: "iphone.gen3.radiowaves.left.and.right")
                 Spacer()
-                Text("+\(normalizedWalletNumber)")
+                Text(normalizedWalletNumber)
             }
             .font(HASETTheme.font(.regular, 12))
             .foregroundStyle(HASETTheme.textSecondary)
@@ -2004,13 +2008,13 @@ struct PaymentCheckoutView: View {
             return ""
         }
         if digits.hasPrefix("255") {
-            return digits
+            return "+" + digits
         }
         if digits.hasPrefix("0"), digits.count >= 10 {
-            return "255" + digits.dropFirst()
+            return "+255" + digits.dropFirst()
         }
         if digits.count == 9 {
-            return "255" + digits
+            return "+255" + digits
         }
         return digits
     }
@@ -2038,6 +2042,8 @@ struct PaymentCheckoutView: View {
             let response = try await paymentService.initiatePayment(
                 user: user,
                 doctor: doctor,
+                consultationId: consultationId,
+                idempotencyKey: idempotencyKey,
                 amount: amount,
                 provider: selectedProvider,
                 paymentAccount: normalizedWalletNumber,

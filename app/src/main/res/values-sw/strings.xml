@@ -354,7 +354,7 @@
     <string name="enter_account_number">Tafadhali weka namba yako ya akaunti</string>
     <string name="enter_valid_account">Tafadhali weka namba ya akaunti sahihi (angalau tarakimu 8)</string>
     <string name="account_number_limit">Namba ya akaunti haiwezi kuzidi tarakimu 20</string>
-    <string name="min_payment_msg">Kiwango cha chini cha malipo ni TZS 50</string>
+    <string name="min_payment_msg">Kiwango cha chini cha malipo ni TZS 500</string>
     <string name="doctor_id_missing">Hitilafu: ID ya Daktari haipo</string>
     <string name="doctor_info_missing">Hitilafu: Taarifa za daktari hazipo</string>
     <string name="update_banner">Sasisha Tangazo</string>
