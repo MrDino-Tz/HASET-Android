@@ -447,7 +447,10 @@ public class FirebaseHelper {
     }
 
     public static void updateAppointmentStatus(String appointmentId, String status, OnCompleteListener<Boolean> listener) {
-        getAppointmentsRef().child(appointmentId).child("status").setValue(status)
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", status);
+        updates.put("updatedAt", System.currentTimeMillis());
+        getAppointmentsRef().child(appointmentId).updateChildren(updates)
                 .addOnSuccessListener(aVoid -> listener.onSuccess(true))
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
@@ -575,9 +578,33 @@ public class FirebaseHelper {
             listener.onError("Appointment ID is required for update.");
             return;
         }
-        getAppointmentsRef().child(appointment.getAppointmentId()).setValue(appointment)
+        Map<String, Object> updates = new HashMap<>();
+        putIfNotNull(updates, "patientId", appointment.getPatientId());
+        putIfNotNull(updates, "doctorId", appointment.getDoctorId());
+        putIfNotNull(updates, "patientName", appointment.getPatientName());
+        putIfNotNull(updates, "doctorName", appointment.getDoctorName());
+        putIfNotNull(updates, "date", appointment.getDate());
+        putIfNotNull(updates, "time", appointment.getTime());
+        putIfNotNull(updates, "reason", appointment.getReason());
+        putIfNotNull(updates, "status", appointment.getStatus());
+        putIfNotNull(updates, "appointmentType", appointment.getAppointmentType());
+        putIfNotNull(updates, "createdAt", appointment.getCreatedAt());
+        putIfNotNull(updates, "updatedAt", System.currentTimeMillis());
+        if (appointment.getChatStartTime() > 0) {
+            putIfNotNull(updates, "chatStartTime", appointment.getChatStartTime());
+            putIfNotNull(updates, "chatEndTime", appointment.getChatEndTime());
+            putIfNotNull(updates, "chatDuration", appointment.getChatDuration());
+            putIfNotNull(updates, "isChatActive", appointment.isChatActive());
+        }
+        getAppointmentsRef().child(appointment.getAppointmentId()).updateChildren(updates)
                 .addOnSuccessListener(aVoid -> listener.onSuccess(null))
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
+    }
+
+    private static void putIfNotNull(Map<String, Object> map, String key, Object value) {
+        if (value != null) {
+            map.put(key, value);
+        }
     }
 
     // Doctor Wallet Operations

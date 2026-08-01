@@ -514,6 +514,9 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
             currentAppointment.setChatEndTime(chatEndTime);
             currentAppointment.setChatDuration(duration);
             currentAppointment.setChatActive(false);
+            if (forceEnd) {
+                currentAppointment.setStatus(com.haset.hasetapp.utils.Constants.STATUS_COMPLETED);
+            }
             
             com.haset.hasetapp.utils.FirebaseHelper.updateAppointment(currentAppointment, null);
         }

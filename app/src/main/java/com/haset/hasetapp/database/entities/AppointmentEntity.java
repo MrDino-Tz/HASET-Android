@@ -23,7 +23,6 @@ public class AppointmentEntity {
     private long chatEndTime; // When the chat session ended
     private long chatDuration; // Duration in milliseconds
     private boolean isChatActive; // Whether chat session is currently active
-    private static final long DEFAULT_CHAT_DURATION = 24 * 60 * 60 * 1000L; // 24 hours in milliseconds
 
     public AppointmentEntity() {
     }
@@ -108,6 +107,4 @@ public class AppointmentEntity {
 
     public boolean isChatActive() { return isChatActive; }
     public void setChatActive(boolean chatActive) { isChatActive = chatActive; }
-
-    public long getDefaultChatDuration() { return DEFAULT_CHAT_DURATION; }
 }
