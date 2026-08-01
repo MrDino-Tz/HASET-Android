@@ -185,7 +185,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
             @Override
             public void onRecordingStopped(String audioFilePath, long duration) {
-                android.util.Log.d("ChatActivity", "onRecordingStopped - file: " + audioFilePath + ", duration: " + duration);
+                android.util.Log.d("ChatActivity", "Voice recording stopped; duration=" + duration);
                 
                 isRecordingVoice = false;
                 // Reset mic button appearance
@@ -196,7 +196,6 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                 // Get recorded audio file - use callback params or fallback to bottom sheet
                 if (audioFilePath == null && voiceRecordingBottomSheet != null) {
                     audioFilePath = voiceRecordingBottomSheet.getLastRecordedFilePath();
-                    android.util.Log.d("ChatActivity", "Using fallback file path: " + audioFilePath);
                 }
                 
                 if (audioFilePath != null) {

@@ -110,7 +110,7 @@ public class PatientNotificationManager {
             appointmentsChannel.enableLights(true);
             appointmentsChannel.setLightColor(android.graphics.Color.GREEN);
             appointmentsChannel.enableVibration(true);
-            appointmentsChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            appointmentsChannel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
             notificationManager.createNotificationChannel(appointmentsChannel);
 
             // Trending Articles channel
@@ -631,7 +631,7 @@ public class PatientNotificationManager {
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setDefaults(Notification.DEFAULT_ALL)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setAutoCancel(true)
                 .setContentIntent(chatPendingIntent)
                 .addAction(R.drawable.messages_24, "Soga sasa", chatPendingIntent);
@@ -704,7 +704,7 @@ public class PatientNotificationManager {
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setDefaults(Notification.DEFAULT_ALL)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent);
 

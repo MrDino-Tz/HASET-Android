@@ -27,7 +27,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.database.LocalStorageHelper;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.PreferenceManager;
@@ -49,7 +48,6 @@ public class RegisterActivity extends BaseActivity {
     private TextView tvLogin, tvRole;
     private String userRole;
     private PreferenceManager preferenceManager;
-    private LocalStorageHelper storageHelper;
 
     // private GoogleSignInClient mGoogleSignInClient;
     // private ActivityResultLauncher<Intent> googleSignInLauncher;
@@ -77,7 +75,6 @@ public class RegisterActivity extends BaseActivity {
 
         initViews();
         preferenceManager = new PreferenceManager(this);
-        storageHelper = LocalStorageHelper.getInstance(this);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         setupObservers();
@@ -270,8 +267,8 @@ public class RegisterActivity extends BaseActivity {
             return;
         }
 
-        if (!ValidationUtils.isValidPassword(password)) {
-            etPassword.setError(getString(R.string.error_password));
+        if (!ValidationUtils.isStrongPassword(password)) {
+            etPassword.setError(getString(R.string.error_strong_password));
             return;
         }
 
@@ -368,16 +365,13 @@ public class RegisterActivity extends BaseActivity {
             result -> {
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
                     FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                    if (pendingDoctorPaymentRequiresAnonymousAuth && currentUser != null && currentUser.isAnonymous()) {
-                        pendingDoctorUser.setUserId(currentUser.getUid());
-                        authViewModel.saveUserAndLogin(pendingDoctorUser);
-                    } else {
-                        if (pendingDoctorPaymentRequiresAnonymousAuth && currentUser != null) {
-                            FirebaseAuth.getInstance().signOut();
-                        }
-                        CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
-                        authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
+                    if (pendingDoctorPaymentRequiresAnonymousAuth && currentUser != null) {
+                        FirebaseAuth.getInstance().signOut();
                     }
+                    // A successful payment must still result in a normal credential-backed
+                    // account. Never promote an anonymous Firebase session to a doctor.
+                    CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
+                    authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
                 } else {
                     resetRegisterButton();
                 }

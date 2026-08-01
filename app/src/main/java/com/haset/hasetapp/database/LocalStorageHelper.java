@@ -7,21 +7,17 @@ import android.os.Looper;
 import com.haset.hasetapp.database.dao.AuditLogDao;
 import com.haset.hasetapp.database.dao.DoctorDao;
 import com.haset.hasetapp.database.dao.DoctorRatingDao;
-import com.haset.hasetapp.database.dao.DoctorWalletDao;
 import com.haset.hasetapp.database.dao.ArticlePostDao;
 import com.haset.hasetapp.database.dao.UserDao;
 import com.haset.hasetapp.database.entities.AuditLogEntity;
 import com.haset.hasetapp.database.entities.DoctorEntity;
 import com.haset.hasetapp.database.entities.DoctorRatingEntity;
-import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.models.AuditLog;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.Constants;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -52,67 +48,8 @@ public class LocalStorageHelper {
         return instance;
     }
     
-    // User Operations
-    
-    public void registerUser(String email, String password, String fullName, String phone, 
-                            String role, OnCompleteListener<UserEntity> listener) {
-        executorService.execute(() -> {
-            try {
-                // Check if user already exists
-                UserEntity existing = database.userDao().getUserByEmail(email);
-                if (existing != null) {
-                    postError(listener, "User with this email already exists");
-                    return;
-                }
-                
-                // Create new user
-                String userId = UUID.randomUUID().toString();
-                String hashedPassword = hashPassword(password);
-                UserEntity user = new UserEntity(userId, email, hashedPassword, fullName, phone, role);
-                
-                database.userDao().insert(user);
-                postSuccess(listener, user);
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
-    
-    public void createUser(UserEntity user, OnCompleteListener<UserEntity> listener) {
-        executorService.execute(() -> {
-            try {
-                // Check if user already exists
-                UserEntity existing = database.userDao().getUserByEmail(user.getEmail());
-                if (existing != null) {
-                    postError(listener, "User with this email already exists");
-                    return;
-                }
-                
-                // Insert the user (password should already be hashed)
-                database.userDao().insert(user);
-                postSuccess(listener, user);
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
-    
-    public void loginUser(String email, String password, OnCompleteListener<UserEntity> listener) {
-        executorService.execute(() -> {
-            try {
-                String hashedPassword = hashPassword(password);
-                UserEntity user = database.userDao().login(email, hashedPassword);
-                
-                if (user != null) {
-                    postSuccess(listener, user);
-                } else {
-                    postError(listener, "Invalid email or password");
-                }
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
+    // Authentication is intentionally handled only by Firebase Auth. Passwords are
+    // never stored or verified in the local Room database.
     
     public void getUserById(String userId, OnCompleteListener<UserEntity> listener) {
         executorService.execute(() -> {
@@ -175,22 +112,6 @@ public class LocalStorageHelper {
     }
     
     // Utility Methods
-    
-    private String hashPassword(String password) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(password.getBytes());
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            return password; // Fallback (not secure, but prevents crash)
-        }
-    }
     
     private <T> void postSuccess(OnCompleteListener<T> listener, T result) {
         mainHandler.post(() -> {
@@ -680,78 +601,8 @@ public class LocalStorageHelper {
         });
     }
     
-    // Doctor Wallet Operations
-    
-    public void getDoctorWallet(String doctorId, OnCompleteListener<DoctorWalletEntity> listener) {
-        executorService.execute(() -> {
-            try {
-                DoctorWalletEntity wallet = database.doctorWalletDao().getWalletByDoctorId(doctorId);
-                postSuccess(listener, wallet);
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
-    
-    public void addToDoctorWallet(String doctorId, double amount, OnCompleteListener<Boolean> listener) {
-        executorService.execute(() -> {
-            try {
-                // Get or create wallet
-                DoctorWalletEntity wallet = database.doctorWalletDao().getWalletByDoctorId(doctorId);
-                if (wallet == null) {
-                    // Create new wallet
-                    wallet = new DoctorWalletEntity(doctorId, 0);
-                    database.doctorWalletDao().insertOrUpdate(wallet);
-                }
-                
-                // Add to balance
-                long timestamp = System.currentTimeMillis();
-                database.doctorWalletDao().addToBalance(doctorId, amount, timestamp);
-                postSuccess(listener, true);
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
-    
-    public void createOrUpdateWallet(String doctorId, double balance, OnCompleteListener<DoctorWalletEntity> listener) {
-        executorService.execute(() -> {
-            try {
-                DoctorWalletEntity wallet = new DoctorWalletEntity(doctorId, balance);
-                wallet.setLastUpdated(System.currentTimeMillis());
-                database.doctorWalletDao().insertOrUpdate(wallet);
-                postSuccess(listener, wallet);
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
-    
-    public void deductFromDoctorWallet(String doctorId, double amount, OnCompleteListener<Boolean> listener) {
-        executorService.execute(() -> {
-            try {
-                // Check if wallet exists and has sufficient balance
-                DoctorWalletEntity wallet = database.doctorWalletDao().getWalletByDoctorId(doctorId);
-                if (wallet == null || wallet.getBalance() < amount) {
-                    postSuccess(listener, false);
-                    return;
-                }
-                
-                // Deduct from balance
-                long timestamp = System.currentTimeMillis();
-                int rowsAffected = database.doctorWalletDao().deductFromBalance(doctorId, amount, timestamp);
-                
-                if (rowsAffected > 0) {
-                    postSuccess(listener, true);
-                } else {
-                    postSuccess(listener, false);
-                }
-            } catch (Exception e) {
-                postError(listener, e.getMessage());
-            }
-        });
-    }
-    
+    // Financial balances are server-owned and are never mutated in local storage.
+
     // Doctor Rating Operations
     
     public void createOrUpdateRating(DoctorRatingEntity rating, OnCompleteListener<DoctorRatingEntity> listener) {

@@ -48,8 +48,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
-        Log.d(TAG, "New FCM Token: " + token);
-        
         // Save token to preferences
         PreferenceManager preferenceManager = new PreferenceManager(this);
         preferenceManager.setFCMToken(token);
@@ -65,17 +63,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
         
-        Log.d(TAG, "Message received from: " + remoteMessage.getFrom());
-        
         // Check if message contains data payload
         if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
             handleDataMessage(remoteMessage.getData());
         }
         
         // Check if message contains notification payload
         if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
             showNotification(
                 remoteMessage.getNotification().getTitle(),
                 remoteMessage.getNotification().getBody(),
@@ -294,7 +288,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             .setSound(defaultSoundUri)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(message));
@@ -382,7 +376,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             com.google.firebase.database.FirebaseDatabase.getInstance()
                 .getReference("users").child(userId).child("fcmToken")
                 .setValue(token)
-                .addOnSuccessListener(aVoid -> Log.d(TAG, "FCM token stored for user: " + userId))
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "FCM token stored for signed-in user"))
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to store FCM token", e));
         }
     }

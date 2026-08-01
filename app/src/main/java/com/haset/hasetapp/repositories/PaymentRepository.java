@@ -12,10 +12,8 @@ import com.haset.hasetapp.models.PaymentRequest;
 import com.haset.hasetapp.models.PaymentResponse;
 import com.haset.hasetapp.models.PaymentStatusResponse;
 import com.haset.hasetapp.models.CancelPaymentRequest;
-import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
-import java.util.Locale;
 import java.util.UUID;
 
 import retrofit2.Call;
@@ -74,11 +72,21 @@ public class PaymentRepository {
                                String provider, String paymentAccount,
                                FirebaseHelper.OnCompleteListener<PaymentResponse> initiationCallback,
                                FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
-        processPayment(userId, doctorId, consultationId, amount, provider, paymentAccount, null, null, null, initiationCallback, finalCallback);
+        processPayment(userId, doctorId, consultationId, amount, "mobile_money", provider, paymentAccount,
+                null, null, null, initiationCallback, finalCallback);
     }
 
     public void processPayment(String userId, String doctorId, String consultationId, double amount,
                                String provider, String paymentAccount,
+                               String buyerEmail, String buyerName, String buyerPhone,
+                               FirebaseHelper.OnCompleteListener<PaymentResponse> initiationCallback,
+                               FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
+        processPayment(userId, doctorId, consultationId, amount, "mobile_money", provider, paymentAccount,
+                buyerEmail, buyerName, buyerPhone, initiationCallback, finalCallback);
+    }
+
+    public void processPayment(String userId, String doctorId, String consultationId, double amount,
+                               String paymentMethod, String provider, String paymentAccount,
                                String buyerEmail, String buyerName, String buyerPhone,
                                FirebaseHelper.OnCompleteListener<PaymentResponse> initiationCallback,
                                FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
@@ -97,16 +105,13 @@ public class PaymentRepository {
         currentAmount = amount;
         pendingFinalCallback = finalCallback;
 
-        PaymentRequest request = new PaymentRequest(userId, doctorId, consultationId, amount, provider, paymentAccount);
+        PaymentRequest request = new PaymentRequest(userId, doctorId, consultationId, amount, paymentMethod,
+                provider, paymentAccount, buyerEmail, buyerName, buyerPhone,
+                "https://hasethospital.or.tz/payment");
         String idempotencyKey = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
         Log.d(TAG, "=== PAYMENT REQUEST ===");
-        Log.d(TAG, "Amount: " + amount + " TZS");
-        Log.d(TAG, "Provider: " + provider);
-        Log.d(TAG, "Payment Account: " + paymentAccount);
-        Log.d(TAG, "Doctor ID: " + doctorId);
-        Log.d(TAG, "User ID: " + userId);
-        Log.d(TAG, "Consultation ID: " + consultationId);
+        Log.d(TAG, "Submitting mobile payment request");
 
         withFirebaseAuthHeader(new AuthHeaderCallback() {
             @Override
@@ -269,50 +274,13 @@ public class PaymentRepository {
         }, STATUS_CHECK_INTERVAL);
     }
 
-    public void confirmManualPayment(FirebaseHelper.OnCompleteListener<Boolean> callback) {
-        if (currentTransactionId <= 0 || currentDoctorId == null) {
-            if (callback != null) callback.onError("No active transaction to confirm");
-            return;
-        }
-        Log.d(TAG, "Manual payment confirmation for transaction: " + currentTransactionId +
-            ", doctor: " + currentDoctorId + ", amount: " + currentAmount);
-        handlePaymentSuccess(currentTransactionId, currentDoctorId, currentAmount, callback);
-    }
-
     private void handlePaymentSuccess(int transactionId, String doctorId, double amount,
                                       FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
-        double doctorShare = amount * Constants.DOCTOR_REVENUE_SHARE;
-        double platformShare = amount * Constants.HASET_REVENUE_SHARE;
-
-        Log.d(TAG, String.format(Locale.getDefault(),
-            "Payment success! Split: Total=%.2f, Doctor(60%%)=%.2f, HASET(40%%)=%.2f",
-            amount, doctorShare, platformShare));
-
+        // Settlement and doctor wallet credit are owned by the payment backend.
         updateTransactionStatus(transactionId, "success");
         currentTransactionId = -1;
-
-        FirebaseHelper.addToDoctorWallet(doctorId, doctorShare,
-            new FirebaseHelper.OnCompleteListener<Boolean>() {
-                @Override
-                public void onSuccess(Boolean walletResult) {
-                    isProcessingPayment = false;
-                    if (walletResult) {
-                        if (finalCallback != null) finalCallback.onSuccess(true);
-                    } else {
-                        if (finalCallback != null) {
-                            finalCallback.onError("Payment successful but failed to update wallet.");
-                        }
-                    }
-                }
-
-                @Override
-                public void onError(String error) {
-                    isProcessingPayment = false;
-                    if (finalCallback != null) {
-                        finalCallback.onError("Payment successful but wallet update error: " + error);
-                    }
-                }
-            });
+        isProcessingPayment = false;
+        if (finalCallback != null) finalCallback.onSuccess(true);
     }
 
     public void checkPaymentStatus(int transactionId,
@@ -397,78 +365,8 @@ public class PaymentRepository {
         });
     }
 
-    public void disburseFunds(String requestId, String doctorId, double amount, String phoneNumber,
-                              String provider, String adminId, String password,
-                              FirebaseHelper.OnCompleteListener<PaymentResponse> callback) {
-        com.haset.hasetapp.models.PayoutRequest payoutRequest =
-            new com.haset.hasetapp.models.PayoutRequest(requestId, doctorId, amount, phoneNumber, provider, adminId, password);
-        Call<PaymentResponse> call = apiService.disburseFunds(payoutRequest);
-        trackCall(call);
-
-        call.enqueue(new Callback<PaymentResponse>() {
-            @Override
-            public void onResponse(Call<PaymentResponse> call, Response<PaymentResponse> response) {
-                untrackCall(call);
-                if (response.isSuccessful() && response.body() != null) {
-                    if (callback != null) callback.onSuccess(response.body());
-                } else {
-                    if (callback != null) callback.onError("Disbursement failed: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<PaymentResponse> call, Throwable t) {
-                untrackCall(call);
-                if (callback != null) callback.onError(t.getMessage());
-            }
-        });
-    }
-
-    public void disburseFunds(com.haset.hasetapp.models.PayoutRequest payoutRequest,
-                              FirebaseHelper.OnCompleteListener<PaymentResponse> callback) {
-        Call<PaymentResponse> call = apiService.disburseFunds(payoutRequest);
-        trackCall(call);
-
-        call.enqueue(new Callback<PaymentResponse>() {
-            @Override
-            public void onResponse(Call<PaymentResponse> call, Response<PaymentResponse> response) {
-                untrackCall(call);
-                if (response.isSuccessful() && response.body() != null) {
-                    if (callback != null) callback.onSuccess(response.body());
-                } else {
-                    if (callback != null) callback.onError("Disbursement failed: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<PaymentResponse> call, Throwable t) {
-                untrackCall(call);
-                if (callback != null) callback.onError(t.getMessage());
-            }
-        });
-    }
-
-    public void getGatewayBalance(FirebaseHelper.OnCompleteListener<PaymentResponse> callback) {
-        Call<PaymentResponse> call = apiService.getGatewayBalance();
-        trackCall(call);
-
-        call.enqueue(new Callback<PaymentResponse>() {
-            @Override
-            public void onResponse(Call<PaymentResponse> call, Response<PaymentResponse> response) {
-                untrackCall(call);
-                if (response.isSuccessful() && response.body() != null) {
-                    if (callback != null) callback.onSuccess(response.body());
-                } else {
-                    if (callback != null) callback.onError("Balance check failed: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<PaymentResponse> call, Throwable t) {
-                untrackCall(call);
-                if (callback != null) callback.onError(t.getMessage());
-            }
-        });
+    public int getCurrentTransactionId() {
+        return currentTransactionId;
     }
 
     public void cleanup() {

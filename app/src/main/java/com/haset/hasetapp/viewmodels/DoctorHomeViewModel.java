@@ -85,23 +85,6 @@ public class DoctorHomeViewModel extends AndroidViewModel {
         return ratingCount;
     }
 
-    public void withdrawFunds(String doctorId, double amount) {
-        loading.setValue(true);
-        repository.withdrawFunds(doctorId, amount, new FirebaseHelper.OnCompleteListener<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                loading.postValue(false);
-                withdrawSuccess.postValue(result);
-            }
-
-            @Override
-            public void onError(String err) {
-                loading.postValue(false);
-                error.postValue(err);
-            }
-        });
-    }
-
     public void requestWithdrawal(String doctorId, String doctorName, double amount, String method, 
                                   String accountNumber, String accountName, String bankName) {
         loading.setValue(true);

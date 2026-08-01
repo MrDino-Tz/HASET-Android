@@ -4,7 +4,6 @@ import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.R;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -37,7 +36,6 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.CustomDialog;
-import com.haset.hasetapp.database.LocalStorageHelper;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.HealthTipsHelper;
@@ -68,7 +66,6 @@ public class LoginActivity extends BaseActivity {
     private TextView tvRegister, tvForgotPassword;
     private CheckBox cbRememberMe;
     private PreferenceManager preferenceManager;
-    private LocalStorageHelper storageHelper;
     private NotificationHelper notificationHelper;
     private HealthTipsHelper healthTipsHelper;
     private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
@@ -93,7 +90,6 @@ public class LoginActivity extends BaseActivity {
 
         initViews();
         preferenceManager = new PreferenceManager(this);
-        storageHelper = LocalStorageHelper.getInstance(this);
         notificationHelper = new NotificationHelper(this);
         healthTipsHelper = new HealthTipsHelper(this);
 
@@ -171,105 +167,6 @@ public class LoginActivity extends BaseActivity {
             com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
                 "Let's Retrieve Your Account", com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
         });
-    }
-
-    private void showDemoDoctorDialog() {
-        CustomDialog.showLoading(this, getString(R.string.loading));
-        
-        com.haset.hasetapp.utils.FirebaseHelper.getInstance().getDoctorsNodeRef()
-            .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                    CustomDialog.hideLoading();
-                    
-                    java.util.List<com.haset.hasetapp.database.entities.DoctorEntity> demoDoctors = new java.util.ArrayList<>();
-                    
-                    if (snapshot.exists()) {
-                        for (com.google.firebase.database.DataSnapshot ds : snapshot.getChildren()) {
-                            com.haset.hasetapp.database.entities.DoctorEntity doctor = ds.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
-                            if (doctor != null && doctor.isDemo()) {
-                                doctor.setDoctorId(ds.getKey());
-                                demoDoctors.add(doctor);
-                            }
-                        }
-                    }
-                    
-                    if (demoDoctors.isEmpty()) {
-                        com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                            R.string.no_demo_doctors, com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
-                        return;
-                    }
-                    
-                    showDemoDoctorSelectionDialog(demoDoctors);
-                }
-
-                @Override
-                public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
-                    CustomDialog.hideLoading();
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                        R.string.error_loading, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                }
-            });
-    }
-
-    private void showDemoDoctorSelectionDialog(java.util.List<com.haset.hasetapp.database.entities.DoctorEntity> doctors) {
-        String[] names = new String[doctors.size()];
-        for (int i = 0; i < doctors.size(); i++) {
-            com.haset.hasetapp.database.entities.DoctorEntity d = doctors.get(i);
-            String name = d.getAbout() != null ? d.getAbout() : "Demo Doctor";
-            String specialty = d.getSpecialty() != null ? d.getSpecialty() : "";
-            names[i] = name + " (" + specialty + ")";
-        }
-        
-        new AlertDialog.Builder(this)
-            .setTitle(R.string.demo_doctor_login)
-            .setItems(names, (dialog, which) -> loginAsDemoDoctor(doctors.get(which)))
-            .setNegativeButton(R.string.cancel, null)
-            .show();
-    }
-
-    private void loginAsDemoDoctor(com.haset.hasetapp.database.entities.DoctorEntity doctor) {
-        CustomDialog.showLoading(this, getString(R.string.loading));
-        
-        com.haset.hasetapp.utils.FirebaseHelper.getInstance().getUsersRef()
-            .child(doctor.getDoctorId())
-            .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                    CustomDialog.hideLoading();
-                    
-                    if (snapshot.exists()) {
-                        com.haset.hasetapp.database.entities.UserEntity user = snapshot.getValue(com.haset.hasetapp.database.entities.UserEntity.class);
-                        if (user != null) {
-                            user.setUserId(doctor.getDoctorId());
-                            
-                            preferenceManager.saveUserId(user.getUserId());
-                            preferenceManager.saveUserRole(user.getRole());
-                            preferenceManager.saveUserName(user.getFullName());
-                            preferenceManager.setLoggedIn(true);
-                            
-                            AuditLogger.getInstance(LoginActivity.this).logLogin();
-                            
-                            com.haset.hasetapp.utils.CustomDialog.showSuccess(LoginActivity.this, 
-                                getString(R.string.success), 
-                                "Logged in as " + user.getFullName(),
-                                getString(R.string.ok),
-                                v -> navigateToDashboard());
-                            return;
-                        }
-                    }
-                    
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                        R.string.error_loading, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                }
-
-                @Override
-                public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
-                    CustomDialog.hideLoading();
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                        R.string.error_loading, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                }
-            });
     }
 
     @Override

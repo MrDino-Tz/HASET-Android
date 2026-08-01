@@ -259,8 +259,6 @@ public class ProfilePhotoHelper {
                 @Override
                 public void onUploadSuccess(String downloadUrl, String uploadedFileName) {
                     Log.d(TAG, "=== PROFILE PHOTO UPLOAD SUCCESS ===");
-                    Log.d(TAG, "User ID: " + userId);
-                    Log.d(TAG, "Cloudinary URL: " + downloadUrl);
                     Log.d(TAG, "Uploaded File Name: " + uploadedFileName);
 
                     // Save Cloudinary URL to Firebase Realtime Database
@@ -294,7 +292,6 @@ public class ProfilePhotoHelper {
      */
     private void saveProfilePhotoUrlToDatabase(String userId, String downloadUrl) {
         Log.d(TAG, "=== SAVING PROFILE PHOTO URL TO FIREBASE ===");
-        Log.d(TAG, "User ID: " + userId);
         Log.d(TAG, "URL to save: " + downloadUrl);
         
         // 1. Save to users node (primary source)
@@ -395,7 +392,6 @@ public class ProfilePhotoHelper {
      */
     public static void loadProfilePhoto(Context context, String userId, ImageView imageView, ShimmerFrameLayout shimmerLayout, TextView tvInitials) {
         Log.d(TAG, "=== LOADING PROFILE PHOTO ===");
-        Log.d(TAG, "User ID: " + userId);
         Log.d(TAG, "Context: " + context.getClass().getSimpleName());
         
         if (userId == null || userId.isEmpty()) {

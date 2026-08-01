@@ -341,40 +341,6 @@ public class FirebaseHelper {
         }
     }
 
-    public static void createAdminUser(String email, String fullName, OnCompleteListener<Void> listener) {
-        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference("users");
-        
-        // Create admin user data
-        UserEntity admin = new UserEntity();
-        admin.setUserId("admin-001");
-        admin.setEmail(email);
-        admin.setFullName(fullName);
-        admin.setPhone("+255766073163");
-        admin.setRole("admin");
-        admin.setProfileImage("");
-        admin.setCreatedAt(System.currentTimeMillis());
-        
-        // Get the current authenticated user's UID
-        String uid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : "admin-001";
-        admin.setUserId(uid);
-        
-        // Save to Firebase Realtime Database
-        databaseRef.child(uid).setValue(admin)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("FirebaseHelper", "Admin user created successfully in Firebase");
-                    if (listener != null) {
-                        listener.onSuccess(null);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FirebaseHelper", "Failed to create admin user in Firebase", e);
-                    if (listener != null) {
-                        listener.onError(e.getMessage());
-                    }
-                });
-    }
-
     public static void getAppointmentsByUser(String userId, String role, OnCompleteListener<List<AppointmentEntity>> listener) {
         DatabaseReference userAppointmentsRef;
         if (Constants.ROLE_DOCTOR.equals(role)) {
@@ -617,66 +583,6 @@ public class FirebaseHelper {
     // Doctor Wallet Operations
     public static DatabaseReference getDoctorWalletsRef() {
         return getFirebaseDatabase().getReference("doctor_wallets");
-    }
-
-    public static void addToDoctorWallet(String doctorId, double amount, OnCompleteListener<Boolean> listener) {
-        DatabaseReference walletRef = getDoctorWalletsRef().child(doctorId);
-        walletRef.runTransaction(new com.google.firebase.database.Transaction.Handler() {
-            @NonNull
-            @Override
-            public com.google.firebase.database.Transaction.Result doTransaction(@NonNull com.google.firebase.database.MutableData mutableData) {
-                com.haset.hasetapp.database.entities.DoctorWalletEntity wallet = mutableData.getValue(com.haset.hasetapp.database.entities.DoctorWalletEntity.class);
-                if (wallet == null) {
-                    // Create new wallet if it doesn't exist
-                    wallet = new com.haset.hasetapp.database.entities.DoctorWalletEntity(doctorId, amount);
-                    wallet.setLastUpdated(System.currentTimeMillis());
-                } else {
-                    // Update balance and total earnings
-                    wallet.setBalance(wallet.getBalance() + amount);
-                    wallet.setTotalEarnings(wallet.getTotalEarnings() + amount);
-                    wallet.setLastUpdated(System.currentTimeMillis());
-                }
-                mutableData.setValue(wallet);
-                return com.google.firebase.database.Transaction.success(mutableData);
-            }
-
-            @Override
-            public void onComplete(@Nullable com.google.firebase.database.DatabaseError databaseError, boolean committed, @Nullable com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if (databaseError != null) {
-                    listener.onError(databaseError.getMessage());
-                } else {
-                    listener.onSuccess(committed);
-                }
-            }
-        });
-    }
-
-    public static void deductFromDoctorWallet(String doctorId, double amount, OnCompleteListener<Boolean> listener) {
-        DatabaseReference walletRef = getDoctorWalletsRef().child(doctorId);
-        walletRef.runTransaction(new com.google.firebase.database.Transaction.Handler() {
-            @NonNull
-            @Override
-            public com.google.firebase.database.Transaction.Result doTransaction(@NonNull com.google.firebase.database.MutableData mutableData) {
-                com.haset.hasetapp.database.entities.DoctorWalletEntity wallet = mutableData.getValue(com.haset.hasetapp.database.entities.DoctorWalletEntity.class);
-                if (wallet != null && wallet.getBalance() >= amount) {
-                    wallet.setBalance(wallet.getBalance() - amount);
-                    wallet.setLastUpdated(System.currentTimeMillis());
-                    mutableData.setValue(wallet);
-                    return com.google.firebase.database.Transaction.success(mutableData);
-                } else {
-                    return com.google.firebase.database.Transaction.abort(); // Abort if insufficient balance or wallet not found
-                }
-            }
-
-            @Override
-            public void onComplete(@Nullable com.google.firebase.database.DatabaseError databaseError, boolean committed, @Nullable com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if (databaseError != null) {
-                    listener.onError(databaseError.getMessage());
-                } else {
-                    listener.onSuccess(committed); // committed will be true if successful, false if aborted
-                }
-            }
-        });
     }
 
     // Withdrawal Request Operations
@@ -1185,47 +1091,6 @@ public class FirebaseHelper {
         });
     }
     
-    // Doctor approval methods
-    public static void approveDoctor(String doctorId, OnCompleteListener<Boolean> listener) {
-        getDoctorsNodeRef().child(doctorId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                com.haset.hasetapp.database.entities.DoctorEntity doctorEntity;
-                if (snapshot.exists()) {
-                    doctorEntity = snapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
-                } else {
-                    doctorEntity = new com.haset.hasetapp.database.entities.DoctorEntity();
-                    doctorEntity.setDoctorId(doctorId);
-                    doctorEntity.setSpecialty("Medical Doctor");
-                    doctorEntity.setConsultationFee(0.0);
-                    doctorEntity.setAvailableTimes("09:00-17:00");
-                }
-                
-                if (doctorEntity != null) {
-                    doctorEntity.setApproved(true);
-                    doctorEntity.setLastUpdated(System.currentTimeMillis());
-                    
-                    final com.haset.hasetapp.database.entities.DoctorEntity finalEntity = doctorEntity;
-                    
-                    // 1. Update doctor node
-                    getDoctorsNodeRef().child(doctorId).setValue(finalEntity)
-                            .addOnSuccessListener(aVoid -> {
-                                // 2. Ensure user role is set to 'doctor' in users node
-                                getUsersRef().child(doctorId).child("role").setValue(Constants.ROLE_DOCTOR)
-                                        .addOnSuccessListener(aVoid2 -> listener.onSuccess(true))
-                                        .addOnFailureListener(e -> listener.onError("Doctor approved but role update failed: " + e.getMessage()));
-                            })
-                            .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
-                listener.onError(error.getMessage());
-            }
-        });
-    }
-    
     public static void getDoctorDetails(String userId, OnCompleteListener<com.haset.hasetapp.database.entities.DoctorEntity> listener) {
         getDoctorsNodeRef().child(userId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
@@ -1245,30 +1110,6 @@ public class FirebaseHelper {
         });
     }
 
-    public static void rejectDoctor(String doctorId, OnCompleteListener<Boolean> listener) {
-        getDoctorsNodeRef().child(doctorId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = snapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
-                if (doctorEntity != null) {
-                    doctorEntity.setApproved(false);
-                    doctorEntity.setLastUpdated(System.currentTimeMillis());
-                    
-                    getDoctorsNodeRef().child(doctorId).setValue(doctorEntity)
-                            .addOnSuccessListener(aVoid -> listener.onSuccess(true))
-                            .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                } else {
-                    listener.onError("Doctor not found");
-                }
-            }
-            
-            @Override
-            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
-                listener.onError(error.getMessage());
-            }
-        });
-    }
-    
     public static void getDoctorApprovalStatus(String doctorId, OnCompleteListener<Boolean> listener) {
         getDoctorsNodeRef().child(doctorId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override

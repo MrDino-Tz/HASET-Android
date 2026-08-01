@@ -177,7 +177,11 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
 
     private void shareBitmapFallback(Bitmap bitmap) {
         try {
-            File cacheDir = getContext() != null ? getContext().getCacheDir() : requireActivity().getCacheDir();
+            File rootCacheDir = getContext() != null ? getContext().getCacheDir() : requireActivity().getCacheDir();
+            File cacheDir = new File(rootCacheDir, "prescription_previews");
+            if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                throw new java.io.IOException("Unable to create prescription preview directory");
+            }
             File file = new File(cacheDir, "prescription_" + (prescriptionId != null ? prescriptionId : "temp") + ".png");
             FileOutputStream fos = new FileOutputStream(file);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);

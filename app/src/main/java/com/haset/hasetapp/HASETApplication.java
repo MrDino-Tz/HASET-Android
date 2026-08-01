@@ -9,7 +9,6 @@ import android.util.Log;
 import androidx.appcompat.app.AppCompatDelegate;
 import android.view.WindowManager;
 
-import com.haset.hasetapp.database.DatabaseSeeder;
 import com.haset.hasetapp.database.LocalStorageHelper;
 import com.haset.hasetapp.utils.CloudinaryUploadHelper;
 import com.haset.hasetapp.utils.DoctorNotificationManager;
@@ -54,9 +53,6 @@ public class HASETApplication extends Application implements Application.Activit
         // Register activity lifecycle callbacks
         registerActivityLifecycleCallbacks(this);
         
-        // Seed test users for development/testing
-        seedTestUsers();
-        
         // Initialize Cloudinary (for media uploads)
         initializeCloudinary();
 
@@ -67,35 +63,24 @@ public class HASETApplication extends Application implements Application.Activit
     }
     
     /**
-     * Initialize Cloudinary with credentials (for chat attachments)
-     * TODO: Replace with your actual Cloudinary credentials from https://cloudinary.com/console
+     * Initialize Cloudinary for restricted unsigned uploads. No API secret may be
+     * shipped in a mobile application.
      */
     private void initializeCloudinary() {
         try {
-            // Get credentials from strings.xml or use environment variables
-            // For now, using placeholder - you need to replace these with your actual credentials
             String cloudName = getString(R.string.cloudinary_cloud_name);
-            String apiKey = getString(R.string.cloudinary_api_key);
-            String apiSecret = getString(R.string.cloudinary_api_secret);
+            String uploadPreset = getString(R.string.cloudinary_upload_preset);
             
-            if (cloudName != null && !cloudName.isEmpty() && 
-                apiKey != null && !apiKey.isEmpty() && 
-                apiSecret != null && !apiSecret.isEmpty()) {
-                CloudinaryUploadHelper.initialize(this, cloudName, apiKey, apiSecret);
+            if (cloudName != null && !cloudName.isEmpty()
+                    && uploadPreset != null && !uploadPreset.isEmpty()) {
+                CloudinaryUploadHelper.initialize(this, cloudName, uploadPreset);
                 Log.d(TAG, "Cloudinary initialized successfully");
             } else {
-                Log.w(TAG, "Cloudinary credentials not found. Please add them to strings.xml");
+                Log.w(TAG, "Cloudinary unsigned upload preset is not configured");
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to initialize Cloudinary: " + e.getMessage(), e);
         }
-    }
-    
-    private void seedTestUsers() {
-        DatabaseSeeder seeder = new DatabaseSeeder(this);
-        seeder.seedTestUsers(message -> {
-            Log.d(TAG, "Database Seeding: " + message);
-        });
     }
     
     // Public access methods

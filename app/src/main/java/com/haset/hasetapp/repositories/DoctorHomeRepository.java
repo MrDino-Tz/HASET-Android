@@ -181,11 +181,6 @@ public class DoctorHomeRepository {
         });
     }
 
-    public void withdrawFunds(String doctorId, double amount, FirebaseHelper.OnCompleteListener<Boolean> callback) {
-        // Deprecated - use requestWithdrawal instead
-        FirebaseHelper.deductFromDoctorWallet(doctorId, amount, callback);
-    }
-
     public LiveData<List<WithdrawalRequest>> getWithdrawalRequests(String doctorId) {
         MutableLiveData<List<WithdrawalRequest>> requestsLiveData = new MutableLiveData<>();
         FirebaseHelper.getWithdrawalRequestsByDoctor(doctorId, new FirebaseHelper.OnCompleteListener<List<WithdrawalRequest>>() {

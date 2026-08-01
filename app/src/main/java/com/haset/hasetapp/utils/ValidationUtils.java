@@ -11,6 +11,14 @@ public class ValidationUtils {
     public static boolean isValidPassword(String password) {
         return password != null && password.length() >= 6;
     }
+
+    public static boolean isStrongPassword(String password) {
+        return password != null
+                && password.length() >= 12
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*[0-9].*");
+    }
     
     public static boolean isValidPhone(String phone) {
         // Allow '+' at the beginning and then digits. Minimum length for a valid Tanzanian number with +255 prefix is 13 (e.g., +2557XXXXXXXX)

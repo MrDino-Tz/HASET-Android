@@ -69,17 +69,11 @@ public class Constants {
     // ========================
     // Environment Configuration
     // ========================
-    // Set to false for production to use production API
-    public static final boolean IS_DEBUG_MODE = true;
-    
-    // API Base URLs - Change to production URL for release
+    // API Base URLs
     // Hosted payment backend is deployed under /public/api on Hostinger.
     // PRODUCTION: public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String PAYMENT_API_BASE_URL = "https://payments.hasethospital.or.tz/public/api/";
-    // PRODUCTION: public static final String DEVELOPMENT_API_URL = "https://payments.hasethospital.or.tz/public/api/";
-    public static final String DEVELOPMENT_API_URL = "http://192.168.1.126:8000/api/";
-    
     // Use the production backend for all API traffic.
     public static final String API_BASE_URL = PRODUCTION_API_URL;
     

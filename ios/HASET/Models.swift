@@ -240,6 +240,7 @@ struct PaymentInitiationResponse: Decodable {
     let orderReference: String?
     let paymentStatus: String?
     let paymentChannel: String?
+    let paymentUrl: String?
     let reference: String?
 
     enum CodingKeys: String, CodingKey {
@@ -249,6 +250,7 @@ struct PaymentInitiationResponse: Decodable {
         case orderReference = "order_reference"
         case paymentStatus = "payment_status"
         case paymentChannel = "payment_channel"
+        case paymentUrl = "payment_url"
         case reference
     }
 

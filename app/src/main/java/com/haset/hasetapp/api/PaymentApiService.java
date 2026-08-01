@@ -37,9 +37,4 @@ public interface PaymentApiService {
             @Body CancelPaymentRequest request
     );
     
-    @POST("payment/payout")
-    Call<com.haset.hasetapp.models.PaymentResponse> disburseFunds(@Body com.haset.hasetapp.models.PayoutRequest request);
-
-    @GET("payment/balance")
-    Call<com.haset.hasetapp.models.PaymentResponse> getGatewayBalance();
 }

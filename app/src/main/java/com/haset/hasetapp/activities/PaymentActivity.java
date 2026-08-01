@@ -36,6 +36,7 @@ public class PaymentActivity extends AppCompatActivity {
     private Doctor doctor;
     private double consultationFee;
     private String paymentMethod = ""; // Will be set when user selects
+    private String paymentMethodCode = "";
     private String paymentProvider = ""; // Specific provider (Mpesa, CRDB, etc.)
     private String paymentAccount = ""; // Mobile money number or account number
     private PaymentViewModel viewModel;
@@ -44,6 +45,7 @@ public class PaymentActivity extends AppCompatActivity {
     private String serviceMessageId = null;
     private String chatRoomId = null;
     private String consultationId;
+    private boolean cardCheckoutOpened = false;
 
     private static final String STATE_CONSULTATION_ID = "payment_consultation_id";
 
@@ -88,7 +90,7 @@ public class PaymentActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         // Stop polling when app goes to background
-        if (viewModel != null && viewModel.getProcessing().getValue() != null && viewModel.getProcessing().getValue()) {
+        if (!cardCheckoutOpened && viewModel != null && viewModel.getProcessing().getValue() != null && viewModel.getProcessing().getValue()) {
             viewModel.cancelPayment();
         }
     }
@@ -127,6 +129,18 @@ public class PaymentActivity extends AppCompatActivity {
                     R.string.check_phone_ussd, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
                     .setBackgroundTint(getResources().getColor(android.R.color.holo_green_dark))
                     .show();
+            }
+        });
+
+        viewModel.getPaymentUrl().observe(this, paymentUrl -> {
+            if (paymentUrl == null || paymentUrl.trim().isEmpty()) return;
+            try {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(paymentUrl));
+                cardCheckoutOpened = true;
+                startActivity(browserIntent);
+                tvSelectedPaymentDetails.setText(R.string.card_checkout_opened);
+            } catch (Exception ignored) {
+                tvSelectedPaymentDetails.setText(R.string.card_checkout_unavailable);
             }
         });
 
@@ -232,12 +246,8 @@ public class PaymentActivity extends AppCompatActivity {
 
         if (isTimeout) {
             btnRetry.setVisibility(View.GONE);
-            btnConfirmPaid.setVisibility(View.VISIBLE);
-            btnConfirmPaid.setText(R.string.ive_paid);
-            btnConfirmPaid.setOnClickListener(v -> {
-                dialog.dismiss();
-                viewModel.confirmManualPayment();
-            });
+            // Payment success must only come from the authenticated backend status.
+            btnConfirmPaid.setVisibility(View.GONE);
             btnSecondary.setVisibility(View.VISIBLE);
             btnSecondary.setText(R.string.check_status);
             btnSecondary.setOnClickListener(v -> {
@@ -302,9 +312,17 @@ public class PaymentActivity extends AppCompatActivity {
         
         btnAbort.setText(R.string.abort_anyway);
         btnAbort.setOnClickListener(v -> {
-            viewModel.cancelPayment();
-            dialog.dismiss();
-            finish();
+            btnAbort.setEnabled(false);
+            viewModel.requestCancelPayment(new com.haset.hasetapp.utils.FirebaseHelper.OnCompleteListener<com.haset.hasetapp.models.PaymentStatusResponse>() {
+                @Override public void onSuccess(com.haset.hasetapp.models.PaymentStatusResponse ignored) {
+                    dialog.dismiss();
+                    finish();
+                }
+                @Override public void onError(String error) {
+                    btnAbort.setEnabled(true);
+                    Toast.makeText(PaymentActivity.this, error, Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         dialog.show();
@@ -387,14 +405,14 @@ public class PaymentActivity extends AppCompatActivity {
             }
             lastClickTime = currentTime;
             
-            if (paymentMethod.isEmpty() || paymentProvider.isEmpty()) {
+            if (paymentMethod.isEmpty() || ("mobile_money".equals(paymentMethodCode) && paymentProvider.isEmpty())) {
                 com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
                     R.string.select_payment_method, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
                     .show();
                 return;
             }
-            if (paymentAccount.isEmpty()) {
+            if ("mobile_money".equals(paymentMethodCode) && paymentAccount.isEmpty()) {
                 com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
                     R.string.enter_wallet_number, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
@@ -426,17 +444,22 @@ public class PaymentActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_payment_method, null);
         
         androidx.cardview.widget.CardView llMobileMoney = view.findViewById(R.id.llMobileMoney);
-//        androidx.cardview.widget.CardView llCardPayment = view.findViewById(R.id.llCardPayment);
+        androidx.cardview.widget.CardView llCardPayment = view.findViewById(R.id.llCardPayment);
         
         llMobileMoney.setOnClickListener(v -> {
             bottomSheetDialog.dismiss();
             showMobileMoneyProvidersBottomSheet();
         });
         
-//        llCardPayment.setOnClickListener(v -> {
-//            bottomSheetDialog.dismiss();
-//            showCardPaymentProvidersBottomSheet();
-//        });
+        llCardPayment.setOnClickListener(v -> {
+            bottomSheetDialog.dismiss();
+            paymentMethodCode = "card";
+            paymentMethod = getString(R.string.payment_card_payment);
+            paymentProvider = "";
+            paymentAccount = "";
+            updatePaymentMethodDisplay(paymentMethod, "", getString(R.string.hosted_card_checkout));
+            enablePayButton();
+        });
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
@@ -481,6 +504,7 @@ public class PaymentActivity extends AppCompatActivity {
             }
             
             paymentMethod = getString(R.string.payment_mobile_money);
+            paymentMethodCode = "mobile_money";
             paymentProvider = provider;
             bottomSheetDialog.dismiss();
             showMobileNumberInputBottomSheet(provider, imageResId);
@@ -518,9 +542,11 @@ public class PaymentActivity extends AppCompatActivity {
             }
             
             paymentMethod = getString(R.string.payment_card_payment);
-            paymentProvider = provider;
+            paymentMethodCode = "card";
+            paymentProvider = "";
             bottomSheetDialog.dismiss();
-            showAccountNumberInputBottomSheet(provider);
+            updatePaymentMethodDisplay(paymentMethod, provider, getString(R.string.hosted_card_checkout));
+            enablePayButton();
         };
         
         llAkiba.setOnClickListener(providerClickListener);
@@ -832,13 +858,21 @@ public class PaymentActivity extends AppCompatActivity {
                 android.util.Log.d("PaymentActivity", "Calling viewModel.processPayment() - Amount: " + consultationFee + ", Provider: " + paymentProvider);
                 
                 // Call backend API with the documented mobile payment payload
+                com.google.firebase.auth.FirebaseUser firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                String buyerEmail = firebaseUser != null ? firebaseUser.getEmail() : null;
+                String buyerName = firebaseUser != null ? firebaseUser.getDisplayName() : null;
+                String buyerPhone = firebaseUser != null ? firebaseUser.getPhoneNumber() : null;
                 viewModel.processPayment(
                     userId,
                     doctorId,
                     consultationId,
                     consultationFee,
+                    paymentMethodCode,
                     paymentProvider,  // Already set when user selects provider
-                    paymentAccount
+                    paymentAccount,
+                    buyerEmail,
+                    buyerName,
+                    buyerPhone
                 );
             } else {
                 com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 

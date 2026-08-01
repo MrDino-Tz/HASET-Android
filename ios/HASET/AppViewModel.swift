@@ -237,8 +237,8 @@ final class AppViewModel: ObservableObject {
             alertState = AlertState(title: tr("error"), message: tr("valid_phone_required"))
             return
         }
-        guard ValidationService.isValidPassword(password) else {
-            alertState = AlertState(title: tr("error"), message: tr("password_too_short"))
+        guard ValidationService.isStrongPassword(password) else {
+            alertState = AlertState(title: tr("error"), message: tr("strong_password_required"))
             return
         }
         if role == .doctor && regNo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

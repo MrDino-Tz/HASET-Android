@@ -10,6 +10,7 @@ import com.cloudinary.android.callback.UploadCallback;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -22,16 +23,17 @@ import java.util.Map;
  * 
  * Setup Instructions:
  * 1. Sign up at https://cloudinary.com (free account)
- * 2. Get your Cloud Name, API Key, and API Secret from Dashboard
+ * 2. Create a restricted unsigned upload preset in the Cloudinary dashboard.
  * 3. Initialize in your Application class or MainActivity:
  *    Map config = new HashMap();
  *    config.put("cloud_name", "your_cloud_name");
- *    config.put("api_key", "your_api_key");
- *    config.put("api_secret", "your_api_secret");
  *    MediaManager.init(context, config);
  */
 public class CloudinaryUploadHelper {
     private static final String TAG = "CloudinaryUpload";
+    private static final long MAX_STANDARD_UPLOAD_BYTES = 25L * 1024L * 1024L;
+    private static final long MAX_VIDEO_UPLOAD_BYTES = 100L * 1024L * 1024L;
+    private static String uploadPreset;
     
     public interface OnFileUploadListener {
         void onUploadStart();
@@ -89,10 +91,9 @@ public class CloudinaryUploadHelper {
                 options.put("format", "mp4");
             }
             
-            Log.d(TAG, "Starting upload for file: " + uniqueFileName + " to folder: " + folder);
-            
             // Convert URI to File if needed
-            File file = uriToFile(context, fileUri);
+            long maxUploadBytes = getMaxUploadBytes(fileType);
+            File file = uriToFile(context, fileUri, maxUploadBytes);
             if (file == null) {
                 Log.e(TAG, "Failed to convert URI to File");
                 if (listener != null) {
@@ -101,15 +102,11 @@ public class CloudinaryUploadHelper {
                 return;
             }
             
-            Log.d(TAG, "=== STARTING CLOUDINARY UPLOAD ===");
-            Log.d(TAG, "File path: " + file.getAbsolutePath());
-            Log.d(TAG, "File exists: " + file.exists());
-            Log.d(TAG, "File size: " + (file.exists() ? file.length() + " bytes" : "N/A"));
-            Log.d(TAG, "Upload options: " + options.toString());
-            
             // Start upload
             String requestId = MediaManager.get().upload(file.getAbsolutePath())
                     .options(options)
+                    .unsigned(uploadPreset)
+                    .maxFileSize(maxUploadBytes)
                     .callback(new UploadCallback() {
                         @Override
                         public void onStart(String requestId) {
@@ -127,40 +124,26 @@ public class CloudinaryUploadHelper {
                         
                         @Override
                         public void onSuccess(String requestId, Map resultData) {
-                            Log.d(TAG, "=== CLOUDINARY UPLOAD SUCCESS ===");
-                            Log.d(TAG, "Request ID: " + requestId);
-                            Log.d(TAG, "Result Data: " + (resultData != null ? resultData.toString() : "null"));
-                            
                             // Extract secure URL from result map
                             String secureUrl = null;
                             if (resultData != null) {
                                 Object urlObj = resultData.get("secure_url");
-                                Log.d(TAG, "secure_url from result: " + (urlObj != null ? urlObj.toString() : "null"));
-                                
                                 if (urlObj == null) {
                                     urlObj = resultData.get("url");
-                                    Log.d(TAG, "url from result: " + (urlObj != null ? urlObj.toString() : "null"));
                                 }
                                 if (urlObj != null) {
                                     secureUrl = urlObj.toString();
                                 }
                                 
-                                // Log all keys in result for debugging
-                                Log.d(TAG, "All result keys: " + resultData.keySet());
                             }
                             
                             if (secureUrl == null || secureUrl.isEmpty()) {
                                 Log.e(TAG, "❌ ERROR: Upload succeeded but no URL in result");
-                                Log.e(TAG, "Result data was: " + (resultData != null ? resultData.toString() : "null"));
                                 if (listener != null) {
                                     listener.onUploadError("Upload succeeded but failed to get URL");
                                 }
                                 return;
                             }
-                            
-                            Log.d(TAG, "✅ Upload successful!");
-                            Log.d(TAG, "✅ Cloudinary URL: " + secureUrl);
-                            Log.d(TAG, "✅ File name: " + uniqueFileName);
                             
                             if (listener != null) {
                                 listener.onUploadSuccess(secureUrl, uniqueFileName);
@@ -177,8 +160,7 @@ public class CloudinaryUploadHelper {
                             
                             String errorMessage = "Upload failed: " + error.getDescription();
                             if (error.getCode() == 401) {
-                                errorMessage = "Authentication failed. Please check Cloudinary credentials.";
-                                Log.e(TAG, "❌ AUTHENTICATION ERROR: Check cloud_name, api_key, and api_secret in strings.xml");
+                                errorMessage = "Upload authorization failed. Check the restricted upload preset.";
                             } else if (error.getCode() == 400) {
                                 errorMessage = "Invalid request. Please check file format.";
                                 Log.e(TAG, "❌ INVALID REQUEST: Check file format and size");
@@ -194,9 +176,7 @@ public class CloudinaryUploadHelper {
                             Log.w(TAG, "Upload rescheduled: " + error.getDescription());
                         }
                     })
-                    .dispatch();
-            
-            Log.d(TAG, "Upload request ID: " + requestId);
+                    .dispatch(context);
             
         } catch (Exception e) {
             Log.e(TAG, "Error preparing file upload: " + e.getMessage(), e);
@@ -209,30 +189,34 @@ public class CloudinaryUploadHelper {
     /**
      * Convert URI to File
      */
-    private static File uriToFile(Context context, Uri uri) {
+    private static File uriToFile(Context context, Uri uri, long maxBytes) {
         try {
             String scheme = uri.getScheme();
             if (scheme == null || scheme.equals("file")) {
                 return new File(uri.getPath());
             } else if (scheme.equals("content")) {
                 // Copy content URI to temp file
-                InputStream inputStream = context.getContentResolver().openInputStream(uri);
-                if (inputStream == null) {
-                    return null;
-                }
-                
                 File tempFile = File.createTempFile("upload_", ".tmp", context.getCacheDir());
-                FileOutputStream outputStream = new FileOutputStream(tempFile);
-                
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+                try (InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                     FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+                    if (inputStream == null) {
+                        return null;
+                    }
+                    byte[] buffer = new byte[8192];
+                    long totalBytes = 0;
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        totalBytes += bytesRead;
+                        if (totalBytes > maxBytes) {
+                            throw new IOException("Selected file exceeds the upload size limit");
+                        }
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                } catch (Exception error) {
+                    //noinspection ResultOfMethodCallIgnored
+                    tempFile.delete();
+                    throw error;
                 }
-                
-                inputStream.close();
-                outputStream.close();
-                
                 return tempFile;
             }
         } catch (Exception e) {
@@ -256,21 +240,26 @@ public class CloudinaryUploadHelper {
                 return "auto";
         }
     }
+
+    private static long getMaxUploadBytes(String fileType) {
+        return "video".equalsIgnoreCase(fileType)
+                ? MAX_VIDEO_UPLOAD_BYTES
+                : MAX_STANDARD_UPLOAD_BYTES;
+    }
     
     /**
      * Initialize Cloudinary (call this in Application class)
      * @param context Application context
      * @param cloudName Your Cloudinary cloud name
-     * @param apiKey Your Cloudinary API key
-     * @param apiSecret Your Cloudinary API secret
+     * @param preset Restricted unsigned upload preset configured in Cloudinary
      */
-    public static void initialize(Context context, String cloudName, String apiKey, String apiSecret) {
+    public static void initialize(Context context, String cloudName, String preset) {
+        if (preset == null || preset.trim().isEmpty()) {
+            throw new IllegalArgumentException("Cloudinary upload preset is required");
+        }
         Map<String, Object> config = new HashMap<>();
         config.put("cloud_name", cloudName);
-        config.put("api_key", apiKey);
-        config.put("api_secret", apiSecret);
+        uploadPreset = preset;
         MediaManager.init(context, config);
-        Log.d(TAG, "Cloudinary initialized with cloud name: " + cloudName);
     }
 }
-

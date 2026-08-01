@@ -744,7 +744,11 @@ public class ProfileFragment extends Fragment {
             String safeName = (userName != null ? userName : "user").replaceAll("[^a-zA-Z0-9]", "_");
             
             // Create a file in the app's cache directory
-            File fileName = new File(requireContext().getCacheDir(), "qr_code_" + safeName + ".png");
+            File qrDirectory = new File(requireContext().getCacheDir(), "qr_codes");
+            if (!qrDirectory.exists() && !qrDirectory.mkdirs()) {
+                throw new java.io.IOException("Unable to create QR code directory");
+            }
+            File fileName = new File(qrDirectory, "qr_code_" + safeName + ".png");
             FileOutputStream outputStream = new FileOutputStream(fileName);
             
             // Add some padding to the QR code

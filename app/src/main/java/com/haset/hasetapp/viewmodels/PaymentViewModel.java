@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.haset.hasetapp.repositories.PaymentRepository;
+import com.haset.hasetapp.models.PaymentStatusResponse;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 public class PaymentViewModel extends AndroidViewModel {
@@ -16,6 +17,7 @@ public class PaymentViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> success = new MutableLiveData<>();
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<Boolean> canRetry = new MutableLiveData<>(false);
+    private final MutableLiveData<String> paymentUrl = new MutableLiveData<>();
 
     public PaymentViewModel(@NonNull Application application) {
         super(application);
@@ -30,6 +32,13 @@ public class PaymentViewModel extends AndroidViewModel {
     public void processPayment(String userId, String doctorId, String consultationId, double amount,
                                String provider, String paymentAccount,
                                String buyerEmail, String buyerName, String buyerPhone) {
+        processPayment(userId, doctorId, consultationId, amount, "mobile_money", provider, paymentAccount,
+                buyerEmail, buyerName, buyerPhone);
+    }
+
+    public void processPayment(String userId, String doctorId, String consultationId, double amount,
+                               String paymentMethod, String provider, String paymentAccount,
+                               String buyerEmail, String buyerName, String buyerPhone) {
         if (Boolean.TRUE.equals(processing.getValue())) {
             return;
         }
@@ -40,12 +49,13 @@ public class PaymentViewModel extends AndroidViewModel {
         error.setValue(null);
         canRetry.setValue(false);
 
-        repository.processPayment(userId, doctorId, consultationId, amount, provider, paymentAccount,
+        repository.processPayment(userId, doctorId, consultationId, amount, paymentMethod, provider, paymentAccount,
             buyerEmail, buyerName, buyerPhone,
             new FirebaseHelper.OnCompleteListener<com.haset.hasetapp.models.PaymentResponse>() {
                 @Override
                 public void onSuccess(com.haset.hasetapp.models.PaymentResponse result) {
                     if (result != null && result.isSuccess()) {
+                        paymentUrl.postValue(result.getPaymentUrl());
                         initiated.postValue(true);
                     } else {
                         processing.postValue(false);
@@ -99,33 +109,6 @@ public class PaymentViewModel extends AndroidViewModel {
         });
     }
 
-    public void confirmManualPayment() {
-        if (Boolean.TRUE.equals(processing.getValue())) return;
-
-        processing.setValue(true);
-        error.setValue(null);
-
-        com.haset.hasetapp.utils.AuditLogger.getInstance(getApplication())
-            .logAppointmentUpdated("", "MANUAL_PAYMENT_CONFIRMATION",
-                "User manually confirmed payment (transaction may have expired on ZenoPay)");
-
-        repository.confirmManualPayment(new FirebaseHelper.OnCompleteListener<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                processing.postValue(false);
-                canRetry.postValue(false);
-                success.postValue(result);
-            }
-
-            @Override
-            public void onError(String err) {
-                processing.postValue(false);
-                canRetry.postValue(false);
-                error.postValue(err);
-            }
-        });
-    }
-
     @Override
     protected void onCleared() {
         super.onCleared();
@@ -137,9 +120,28 @@ public class PaymentViewModel extends AndroidViewModel {
         repository.cleanup();
     }
 
+    public void requestCancelPayment(FirebaseHelper.OnCompleteListener<PaymentStatusResponse> callback) {
+        int transactionId = repository.getCurrentTransactionId();
+        if (transactionId <= 0) {
+            cancelPayment();
+            if (callback != null) callback.onSuccess(null);
+            return;
+        }
+        repository.cancelPayment(transactionId, new FirebaseHelper.OnCompleteListener<PaymentStatusResponse>() {
+            @Override public void onSuccess(PaymentStatusResponse result) {
+                cancelPayment();
+                if (callback != null) callback.onSuccess(result);
+            }
+            @Override public void onError(String error) {
+                if (callback != null) callback.onError(error);
+            }
+        });
+    }
+
     public LiveData<Boolean> getProcessing() { return processing; }
     public LiveData<Boolean> getInitiated() { return initiated; }
     public LiveData<Boolean> getSuccess() { return success; }
     public LiveData<String> getError() { return error; }
+    public LiveData<String> getPaymentUrl() { return paymentUrl; }
     public LiveData<Boolean> getCanRetry() { return canRetry; }
 }

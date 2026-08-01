@@ -1820,7 +1820,7 @@ struct PaymentCheckoutView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(selectedMethod == .mobileMoney ? appViewModel.tr("payment_number") : appViewModel.tr("account_card_number"))
+                                Text(selectedMethod == .mobileMoney ? appViewModel.tr("payment_number") : appViewModel.tr("hosted_card_checkout"))
                                     .font(HASETTheme.font(.medium, 13))
                                 if selectedMethod == .mobileMoney {
                                     HStack(spacing: 10) {
@@ -1850,21 +1850,12 @@ struct PaymentCheckoutView: View {
                                             .fill(HASETTheme.backgroundPrimary)
                                     )
                                 } else {
-                                    TextField("XXXX XXXX XXXX XXXX", text: $walletNumber)
-                                        .keyboardType(.numberPad)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                        .font(HASETTheme.font(.regular, 14))
-                                        .onChange(of: walletNumber) { newValue in
-                                            walletNumber = newValue.filter(\.isNumber)
-                                        }
+                                    Text(appViewModel.tr("card_checkout_description"))
+                                        .font(HASETTheme.font(.regular, 13))
+                                        .foregroundStyle(HASETTheme.textSecondary)
                                         .padding(.horizontal, 16)
-                                        .frame(height: 56)
-                                        .disabled(isProcessing)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                                .fill(HASETTheme.backgroundPrimary)
-                                        )
+                                        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                                        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(HASETTheme.backgroundPrimary))
                                 }
                             }
 
@@ -1895,7 +1886,7 @@ struct PaymentCheckoutView: View {
                                     Task { await startPayment() }
                                 }
                                 .buttonStyle(PrimaryButtonStyle())
-                                .disabled(isProcessing || normalizedWalletNumber.isEmpty)
+                                .disabled(isProcessing || (selectedMethod == .mobileMoney && normalizedWalletNumber.isEmpty))
                             }
 
                         }
@@ -2001,9 +1992,6 @@ struct PaymentCheckoutView: View {
 
     private var normalizedWalletNumber: String {
         let digits = walletNumber.filter(\.isNumber)
-        if selectedMethod == .cardPayment {
-            return digits
-        }
         if digits.isEmpty {
             return ""
         }
@@ -2031,7 +2019,7 @@ struct PaymentCheckoutView: View {
 
     private func startPayment() async {
         guard let user = appViewModel.currentUser else { return }
-        guard !normalizedWalletNumber.isEmpty else { return }
+        guard selectedMethod == .cardPayment || !normalizedWalletNumber.isEmpty else { return }
 
         isProcessing = true
         canRetryStatus = false
@@ -2045,15 +2033,23 @@ struct PaymentCheckoutView: View {
                 consultationId: consultationId,
                 idempotencyKey: idempotencyKey,
                 amount: amount,
+                paymentMethod: selectedMethod == .cardPayment ? "card" : "mobile_money",
                 provider: selectedProvider,
-                paymentAccount: normalizedWalletNumber,
+                paymentAccount: selectedMethod == .mobileMoney ? normalizedWalletNumber : "",
                 idToken: idToken
             )
             transactionId = response.transactionId
             statusMessage = appViewModel.tr("payment_initiated")
             if response.isSuccess {
-                await MainActor.run {
-                    statusMessage = appViewModel.tr("check_phone_complete_payment")
+                if selectedMethod == .cardPayment, let paymentUrl = response.paymentUrl, let url = URL(string: paymentUrl) {
+                    await MainActor.run {
+                        openURL(url)
+                        statusMessage = appViewModel.tr("card_checkout_opened")
+                    }
+                } else {
+                    await MainActor.run {
+                        statusMessage = appViewModel.tr("check_phone_complete_payment")
+                    }
                 }
                 startPolling()
             } else {
@@ -2138,6 +2134,12 @@ struct PaymentCheckoutView: View {
         isProcessing = false
         canRetryStatus = transactionId != nil
         statusMessage = appViewModel.tr("payment_terminated")
+        if let transactionId {
+            Task {
+                let token = try? await refreshedPaymentToken()
+                try? await paymentService.cancelPayment(transactionId: transactionId, idToken: token)
+            }
+        }
         dismiss()
     }
 

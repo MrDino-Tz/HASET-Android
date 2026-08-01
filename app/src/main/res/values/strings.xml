@@ -162,6 +162,7 @@
     <!-- Validation -->
     <string name="error_email">Please enter a valid email</string>
     <string name="error_password">Password must be at least 6 characters</string>
+    <string name="error_strong_password">Use at least 12 characters with uppercase, lowercase, and a number</string>
     <string name="error_phone">Please enter a valid phone number</string>
     <string name="error_name">Please enter your name</string>
     <string name="error_password_match">Passwords do not match</string>
@@ -460,8 +461,7 @@
 
     <!-- Cloudinary Configuration (for media uploads) -->
     <string name="cloudinary_cloud_name">divky8yna</string>
-    <string name="cloudinary_api_key">672749596232422</string>
-    <string name="cloudinary_api_secret">Cx3sdwyEpZdRJHA4D9MgeKeoATo</string>
+    <string name="cloudinary_upload_preset">haset_mobile_unsigned</string>
     <string name="share_app">Share HASET</string>
     <string name="recommend_app">Recommend this app to friends</string>
     <string name="share_app_text">Download HASET - Your trusted partner for accessible healthcare: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
@@ -587,6 +587,9 @@
     <string name="user_1">User 1</string>
     <string name="user_2">User 2</string>
     <string name="payment_card_payment">Card Payment</string>
+    <string name="hosted_card_checkout">Secure hosted checkout</string>
+    <string name="card_checkout_opened">Secure card checkout opened</string>
+    <string name="card_checkout_unavailable">Unable to open secure card checkout</string>
     <string name="email_support_body">Hello HASET Support Team,\n\nI need help with...</string>
     <string name="send_email_via">Send email via</string>
     <string name="whatsapp_support_msg">Hello HASET Support</string>

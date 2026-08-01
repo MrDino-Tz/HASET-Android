@@ -160,6 +160,7 @@
     <!-- Validation -->
     <string name="error_email">Tafadhali weka barua pepe sahihi</string>
     <string name="error_password">Nenosiri lazima liwe na angalau herufi 6</string>
+    <string name="error_strong_password">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba</string>
     <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
     <string name="error_name">Tafadhali weka jina lako</string>
     <string name="error_password_match">Manenosiri hayafanani</string>

@@ -108,9 +108,6 @@
 -keep interface okhttp3.** { *; }
 -keep class okio.** { *; }
 
-# OkHttp Logging Interceptor
--keep class okhttp3.logging.** { *; }
-
 # ===========================
 # Gson
 # ===========================

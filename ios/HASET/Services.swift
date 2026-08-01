@@ -7,7 +7,6 @@ enum HASETConstants {
     static let firebaseAPIKey = "AIzaSyB6XncMhXdlT0fScdU6Fq7Nw_toPmf-tRU"
     static let firebaseDatabaseURL = "https://hasetapp-4eeba-default-rtdb.europe-west1.firebasedatabase.app"
     static let productionAPIURL = "https://payments.hasethospital.or.tz/public/api/"
-    static let developmentAPIURL = "http://192.168.1.126:8000/api/"
     static let privacyPolicyURL = "https://hasethospital.or.tz/legal/privacy-policy"
     static let termsURL = "https://hasethospital.or.tz/legal/terms"
     static let supportURL = "https://hasethospital.or.tz/contact"
@@ -94,7 +93,8 @@ private final class KeychainSessionStore {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "com.haset.hasetapp.session",
-            kSecAttrAccount as String: key
+            kSecAttrAccount as String: key,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
     }
 }
@@ -107,6 +107,13 @@ enum ValidationService {
 
     static func isValidPassword(_ password: String) -> Bool {
         password.count >= 6
+    }
+
+    static func isStrongPassword(_ password: String) -> Bool {
+        password.count >= 12
+            && password.rangeOfCharacter(from: .lowercaseLetters) != nil
+            && password.rangeOfCharacter(from: .uppercaseLetters) != nil
+            && password.rangeOfCharacter(from: .decimalDigits) != nil
     }
 
     static func isValidPhone(_ phone: String) -> Bool {
@@ -793,6 +800,7 @@ final class AuthService {
         consultationId: String,
         idempotencyKey: String,
         amount: Double,
+        paymentMethod: String,
         provider: String,
         paymentAccount: String,
         idToken: String?
@@ -807,15 +815,32 @@ final class AuthService {
             request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
         }
 
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "user_id": user.userId,
             "doctor_id": doctor.id,
             "consultation_id": consultationId,
             "amount": Int(amount.rounded()),
-            "payment_method": "mobile_money",
-            "provider": provider,
-            "payment_account": paymentAccount
+            "payment_method": paymentMethod
         ]
+        if paymentMethod == "mobile_money" {
+            payload["provider"] = provider
+            payload["payment_account"] = paymentAccount
+        } else {
+            let nameParts = user.fullName.split(separator: " ").map(String.init)
+            payload["redirect_url"] = "https://hasethospital.or.tz/payment/success"
+            payload["cancel_url"] = "https://hasethospital.or.tz/payment/cancel"
+            payload["customer"] = [
+                "firstname": nameParts.first ?? "HASET",
+                "lastname": nameParts.dropFirst().joined(separator: " ").isEmpty ? "Customer" : nameParts.dropFirst().joined(separator: " "),
+                "email": user.email,
+                "address": "HASET Hospital",
+                "city": "Dar es Salaam",
+                "state": "Dar es Salaam",
+                "postcode": "14101",
+                "country": "TZ",
+                "phone": user.phone
+            ]
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -839,6 +864,20 @@ final class AuthService {
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
         return try decoder.decode(PaymentStatusEnvelope.self, from: data)
+    }
+
+    func cancelPayment(transactionId: Int, idToken: String?) async throws {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/payment/cancel")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let idToken, !idToken.isEmpty {
+            request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["transaction_id": transactionId])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
     }
 
     func fetchDoctorWallet(doctorId: String, idToken: String?) async throws -> DoctorWalletSummary? {
@@ -1047,14 +1086,6 @@ final class AuthService {
         let url = try databaseURL(path: "doctors/\(profile.userId)", authToken: idToken)
         try await put(payload, url: url)
 
-        let walletPayload: [String: Any] = [
-            "doctorId": profile.userId,
-            "balance": 0,
-            "totalEarnings": 0,
-            "lastUpdated": Int(Date().timeIntervalSince1970 * 1000)
-        ]
-        let walletURL = try databaseURL(path: "doctor_wallets/\(profile.userId)", authToken: idToken)
-        try await put(walletPayload, url: walletURL)
     }
 
     private func performIdentityRequest(path: String, payload: [String: Any]) async throws -> IdentityResponse {

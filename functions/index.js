@@ -31,7 +31,7 @@ exports.onNewAppointment = functions.database
     const dedupRef = DB.ref(`appointment_notifications/${appointmentId}`);
     const dedupSnap = await dedupRef.once('value');
     if (dedupSnap.exists()) {
-      functions.logger.info(`Duplicate notification skipped for appointment ${appointmentId}`);
+      functions.logger.info('Duplicate appointment notification skipped');
       return null;
     }
 
@@ -45,7 +45,7 @@ exports.onNewAppointment = functions.database
     const fcmToken = tokenSnap.val();
 
     if (!fcmToken) {
-      functions.logger.warn(`No FCM token found for doctor ${doctorId}`);
+      functions.logger.warn('No FCM token found for appointment recipient');
       // Write dedup marker anyway so we don't retry on every trigger
       await dedupRef.set({ sentAt: Date.now(), reason: 'no_token' });
       return null;
@@ -82,15 +82,17 @@ exports.onNewAppointment = functions.database
 
     try {
       await admin.messaging().send(message);
-      functions.logger.info(`Notification sent to doctor ${doctorId} for appointment ${appointmentId}`);
+      functions.logger.info('Appointment notification sent');
 
       // Write dedup marker on success
       await dedupRef.set({ sentAt: Date.now(), success: true });
     } catch (error) {
-      functions.logger.error(`Failed to send notification for appointment ${appointmentId}:`, error);
+      functions.logger.error('Appointment notification delivery failed', {
+        code: error && error.code ? error.code : 'unknown',
+      });
 
       // Write dedup marker even on failure to avoid retry storms
-      await dedupRef.set({ sentAt: Date.now(), error: error.message });
+      await dedupRef.set({ sentAt: Date.now(), error: 'delivery_failed' });
     }
 
     return null;
