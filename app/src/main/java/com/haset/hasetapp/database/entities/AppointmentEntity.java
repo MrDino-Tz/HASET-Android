@@ -23,6 +23,7 @@ public class AppointmentEntity {
     private long chatEndTime; // When the chat session ended
     private long chatDuration; // Duration in milliseconds
     private boolean isChatActive; // Whether chat session is currently active
+    private double amount; // Consultation fee for this appointment (used by admin revenue reports)
 
     public AppointmentEntity() {
     }
@@ -107,4 +108,7 @@ public class AppointmentEntity {
 
     public boolean isChatActive() { return isChatActive; }
     public void setChatActive(boolean chatActive) { isChatActive = chatActive; }
+
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
 }

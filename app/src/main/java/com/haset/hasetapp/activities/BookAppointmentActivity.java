@@ -351,6 +351,8 @@ public class BookAppointmentActivity extends BaseActivity {
         appointmentEntity.setTime(selectedTime);
         appointmentEntity.setReason(etReason.getText().toString().trim());
         appointmentEntity.setAppointmentType(appointmentType);
+        // Persist the consultation fee so admin revenue reports can read it
+        appointmentEntity.setAmount(doctor != null && doctor.getConsultationFee() > 0 ? doctor.getConsultationFee() : 0.0);
         
         // All appointments start as pending and require doctor approval
         appointmentEntity.setStatus(Constants.STATUS_PENDING);

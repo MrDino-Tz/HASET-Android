@@ -589,6 +589,7 @@ public class FirebaseHelper {
         putIfNotNull(updates, "status", appointment.getStatus());
         putIfNotNull(updates, "appointmentType", appointment.getAppointmentType());
         putIfNotNull(updates, "createdAt", appointment.getCreatedAt());
+        putIfNotNull(updates, "amount", appointment.getAmount());
         putIfNotNull(updates, "updatedAt", System.currentTimeMillis());
         if (appointment.getChatStartTime() > 0) {
             putIfNotNull(updates, "chatStartTime", appointment.getChatStartTime());

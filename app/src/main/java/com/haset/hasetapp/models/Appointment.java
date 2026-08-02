@@ -16,6 +16,7 @@ public class Appointment {
     private String appointmentType; // "Visit" or "Online Chat"
     private long createdAt;
     private long updatedAt;
+    private double amount;
 
     public Appointment() {
         this.status = "pending";
@@ -50,6 +51,7 @@ public class Appointment {
         this.appointmentType = entity.getAppointmentType();
         this.createdAt = entity.getCreatedAt();
         this.updatedAt = System.currentTimeMillis(); // Assuming update time should be current
+        this.amount = entity.getAmount();
     }
 
     // Getters and Setters
@@ -94,6 +96,9 @@ public class Appointment {
 
     public long getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
+
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
 
     // Utility methods for tab filtering
     public boolean isUpcoming() {
