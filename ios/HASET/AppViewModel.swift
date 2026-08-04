@@ -4,6 +4,7 @@ import Foundation
 final class AppViewModel: ObservableObject {
     @Published var route: AppRoute = .splash
     @Published var currentUser: UserProfile?
+    @Published var activeSession: StoredSession?
     @Published var isLoading = false
     @Published var alertState: AlertState?
     @Published var selectedLanguage: String
@@ -20,6 +21,10 @@ final class AppViewModel: ObservableObject {
     @Published var doctorWallet: DoctorWalletSummary?
     @Published var doctorPresence: DoctorPresenceSummary?
     @Published var doctorRegistrationFee: Double = 500
+    @Published var doctorWithdrawals: [DoctorWithdrawalSummary] = []
+    @Published var doctorWalletLoading = false
+    @Published var doctorWalletError: String?
+    @Published var mfaError: String?
 
     private let sessionStore = SessionStore()
     private let authService = AuthService()
@@ -45,6 +50,12 @@ final class AppViewModel: ObservableObject {
     }
 
     func bootstrap() async {
+        // Match Android: first launch goes straight to onboarding instead of
+        // waiting on remote configuration behind the splash screen.
+        if !sessionStore.onboardingSeen {
+            route = .onboarding
+            return
+        }
         do {
             let config = try await authService.fetchAppConfig()
             try? await Task.sleep(for: .milliseconds(2500))
@@ -58,11 +69,6 @@ final class AppViewModel: ObservableObject {
                     title: "Maintenance Mode",
                     message: config.maintenanceMessage ?? "HASET App is undergoing maintenance. Please try again later."
                 )
-                return
-            }
-
-            if !sessionStore.onboardingSeen {
-                route = .onboarding
                 return
             }
 
@@ -206,20 +212,54 @@ final class AppViewModel: ObservableObject {
             defer { isLoading = false }
             do {
                 let result = try await authService.signIn(email: email, password: password)
+                // Keep the freshly authenticated Firebase session available to
+                // the MFA route even if SwiftUI recreates the enrollment view.
+                activeSession = result.0
+                let mfaEnabled = try await authService.mobileMFAStatus(idToken: result.0.idToken)
                 sessionStore.saveSession(result.0)
-                currentUser = result.1
-                if result.1.role == .patient {
-                    await loadPatientHomeContent(force: true)
-                }
-                await loadDoctors(force: true)
-                await loadAppointments(force: true)
-                await loadConversations(force: true)
-                await loadNotifications(force: true)
-                route = .dashboard(result.1.role)
+                activeSession = result.0
+                if mfaEnabled { pendingMFASession = result.0; pendingMFAProfile = result.1; route = .mfaChallenge; return }
+                pendingMFASession = result.0; pendingMFAProfile = result.1; route = .mfaEnrollment; return
             } catch {
                 alertState = AlertState(title: tr("login_failed"), message: error.localizedDescription)
             }
         }
+    }
+
+    @Published var pendingMFASession: StoredSession?
+    @Published var pendingMFAProfile: UserProfile?
+    func verifyLoginMFA(code: String) {
+        guard let session = pendingMFASession, let profile = pendingMFAProfile else { route = .login; return }
+        guard code.count == 6 || code.count >= 8 else { mfaError = "Enter a valid authenticator or recovery code."; return }
+        isLoading = true
+        Task { defer { isLoading = false }; do { _ = try await authService.verifyMobileMFA(code: code, idToken: session.idToken); currentUser = profile; pendingMFASession = nil; pendingMFAProfile = nil; route = .dashboard(profile.role) } catch { mfaError = error.localizedDescription } }
+    }
+
+    func completeMFAEnrollment() async {
+        guard let session = pendingMFASession, let profile = pendingMFAProfile else { route = .login; return }
+        do {
+            guard try await authService.mobileMFAStatus(idToken: session.idToken) else { throw ServiceError.message("MFA enrollment was not confirmed.") }
+            currentUser = profile
+            if profile.role == .patient { await loadPatientHomeContent(force: true) }
+            await loadDoctors(force: true); await loadAppointments(force: true); await loadConversations(force: true); await loadNotifications(force: true)
+            pendingMFASession = nil; pendingMFAProfile = nil; route = .dashboard(profile.role)
+        } catch { alertState = AlertState(title: "MFA enrollment", message: error.localizedDescription) }
+    }
+
+    func loadDoctorWithdrawals() async {
+        guard let session = sessionStore.loadSession() else { return }
+        doctorWalletLoading = true; doctorWalletError = nil
+        do {
+            let rows = try await authService.fetchDoctorWithdrawals(idToken: session.idToken)
+            doctorWithdrawals = rows.compactMap { row in
+                guard let id = row["request_id"] as? String, let amount = (row["amount"] as? NSNumber)?.doubleValue ?? (row["amount"] as? Double) else { return nil }
+                let status = row["status"] as? String ?? "unknown"
+                let date = (row["created_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }
+                return DoctorWithdrawalSummary(id: id, amount: amount, status: status, createdAt: date, failureReason: row["failure_reason"] as? String)
+            }
+            await loadDoctorWallet(force: true)
+        } catch { doctorWalletError = error.localizedDescription }
+        doctorWalletLoading = false
     }
 
     func register(fullName: String, email: String, phoneDigits: String, password: String, role: UserRole, regNo: String) {
@@ -561,6 +601,9 @@ final class AppViewModel: ObservableObject {
 
     func logout() {
         sessionStore.clearSession()
+        activeSession = nil
+        pendingMFASession = nil
+        pendingMFAProfile = nil
         currentUser = nil
         didLoadPatientHomeContent = false
         didLoadDoctors = false

@@ -618,10 +618,12 @@ public class FirebaseHelper {
     }
 
     public static void createWithdrawalRequest(com.haset.hasetapp.database.entities.WithdrawalRequest request, OnCompleteListener<Boolean> listener) {
-        DatabaseReference requestsRef = getWithdrawalRequestsRef();
-        requestsRef.child(request.getRequestId()).setValue(request)
-            .addOnSuccessListener(aVoid -> listener.onSuccess(true))
-            .addOnFailureListener(e -> listener.onError(e.getMessage()));
+        // Payout requests must be created by the payment backend so identity,
+        // MFA, limits, reservation, and audit rules are enforced server-side.
+        // Never write a withdrawal directly from the client to Realtime Database.
+        if (listener != null) {
+            listener.onError("Payout service is unavailable until the secure backend payout endpoint is configured.");
+        }
     }
 
     public static void getAllWithdrawalRequests(OnCompleteListener<List<com.haset.hasetapp.database.entities.WithdrawalRequest>> listener) {
@@ -689,51 +691,6 @@ public class FirebaseHelper {
                 listener.onError(databaseError.getMessage());
             }
         });
-    }
-
-    public static void updateWithdrawalRequestStatus(String requestId, String doctorId, double amount, String status, String processedBy, String rejectionReason, OnCompleteListener<Boolean> listener) {
-        DatabaseReference requestRef = getWithdrawalRequestsRef().child(requestId);
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", status);
-        updates.put("processedAt", System.currentTimeMillis());
-        updates.put("processedBy", processedBy);
-        if (rejectionReason != null) {
-            updates.put("rejectionReason", rejectionReason);
-        }
-        
-        requestRef.updateChildren(updates)
-            .addOnSuccessListener(aVoid -> {
-                // Save In-App Notification
-                String title, message;
-                if ("approved".equals(status)) {
-                    title = "Withdrawal Approved 💰";
-                    message = String.format("Requested amount of %,.0f TZS has been approved.", amount);
-                } else if ("rejected".equals(status)) {
-                    title = "Withdrawal Rejected ❌";
-                    message = String.format("Requested amount of %,.0f TZS was rejected. Reason: %s", amount, rejectionReason);
-                } else {
-                    title = "Withdrawal Updated";
-                    message = String.format("Your withdrawal request status is now: %s", status);
-                }
-                
-                NotificationEntity notification = new NotificationEntity(null, doctorId, title, message, "withdrawal", requestId);
-                addNotification(notification, null);
-                
-                listener.onSuccess(true);
-            })
-            .addOnFailureListener(e -> listener.onError(e.getMessage()));
-    }
-
-    public static void approveWithdrawal(String requestId, String doctorId, double amount, String processedBy, OnCompleteListener<Boolean> listener) {
-        updateWithdrawalRequestStatus(requestId, doctorId, amount, "approved", processedBy, null, listener);
-    }
-
-    public static void rejectWithdrawal(String requestId, String doctorId, double amount, String processedBy, String reason, OnCompleteListener<Boolean> listener) {
-        updateWithdrawalRequestStatus(requestId, doctorId, amount, "rejected", processedBy, reason, listener);
-    }
-
-    public static void completeWithdrawal(String requestId, String doctorId, double amount, String processedBy, OnCompleteListener<Boolean> listener) {
-        updateWithdrawalRequestStatus(requestId, doctorId, amount, "completed", processedBy, null, listener);
     }
 
     // Method to get a list of Doctor objects for patients (approved doctors)

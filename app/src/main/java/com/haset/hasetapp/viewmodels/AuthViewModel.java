@@ -11,12 +11,19 @@ import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.repositories.AuthRepository;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.api.MobileMfaApiService;
+import com.haset.hasetapp.api.RetrofitClient;
+import com.google.gson.JsonObject;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AuthViewModel extends AndroidViewModel {
     private final AuthRepository repository;
     
     private final MutableLiveData<AuthState> authState = new MutableLiveData<>(AuthState.idle());
     private final MutableLiveData<UserEntity> currentUser = new MutableLiveData<>();
+    private FirebaseUser pendingFirebaseUser;
 
     public AuthViewModel(@NonNull Application application) {
         super(application);
@@ -36,7 +43,8 @@ public class AuthViewModel extends AndroidViewModel {
         repository.signInWithEmail(email, password, new FirebaseHelper.OnCompleteListener<FirebaseUser>() {
             @Override
             public void onSuccess(FirebaseUser result) {
-                fetchUserData(result.getUid());
+                pendingFirebaseUser = result;
+                checkMfaThenFetch(result);
             }
 
             @Override
@@ -44,6 +52,37 @@ public class AuthViewModel extends AndroidViewModel {
                 authState.setValue(AuthState.error(error));
             }
         });
+    }
+
+    private void checkMfaThenFetch(FirebaseUser user) {
+        user.getIdToken(true).addOnSuccessListener(token -> {
+            MobileMfaApiService api = RetrofitClient.getInstance().getMobileMfaApiService();
+            api.status("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    if (!response.isSuccessful() || response.body() == null) { authState.postValue(AuthState.error("Unable to verify MFA status.")); return; }
+                    boolean enabled = response.body().has("two_factor_enabled") && response.body().get("two_factor_enabled").getAsBoolean();
+                    if (enabled) authState.postValue(AuthState.mfaRequired()); else authState.postValue(AuthState.mfaSetupRequired());
+                }
+                public void onFailure(Call<JsonObject> call, Throwable t) { authState.postValue(AuthState.error("MFA service unavailable.")); }
+            });
+        }).addOnFailureListener(e -> authState.postValue(AuthState.error("Unable to refresh authentication.")));
+    }
+
+    public void verifyMfa(String code) {
+        if (pendingFirebaseUser == null) { authState.setValue(AuthState.error("Login session expired.")); return; }
+        authState.setValue(AuthState.loading("Verifying code..."));
+        pendingFirebaseUser.getIdToken(true).addOnSuccessListener(token -> {
+            JsonObject body = new JsonObject(); body.addProperty("code", code);
+            RetrofitClient.getInstance().getMobileMfaApiService().verify("Bearer " + token.getToken(), body).enqueue(new Callback<JsonObject>() {
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) { if (response.isSuccessful()) fetchUserData(pendingFirebaseUser.getUid()); else authState.postValue(AuthState.mfaError("Invalid or expired MFA code.")); }
+                public void onFailure(Call<JsonObject> call, Throwable t) { authState.postValue(AuthState.mfaError("MFA verification failed. Try again.")); }
+            });
+        }).addOnFailureListener(e -> authState.setValue(AuthState.mfaError("Login session expired.")));
+    }
+
+    public void resumeAfterMfaSetup() {
+        FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) checkMfaThenFetch(user); else authState.setValue(AuthState.error("Authentication expired."));
     }
 
     public void register(String email, String password, UserEntity userData) {
@@ -136,7 +175,7 @@ public class AuthViewModel extends AndroidViewModel {
 
     // Helper class for Auth state
     public static class AuthState {
-        public enum Status { IDLE, LOADING, SUCCESS, ERROR, AUTHENTICATED, UNREGISTERED }
+        public enum Status { IDLE, LOADING, SUCCESS, ERROR, AUTHENTICATED, UNREGISTERED, MFA_REQUIRED, MFA_SETUP_REQUIRED, MFA_ERROR }
         
         public final Status status;
         public final String message;
@@ -154,5 +193,8 @@ public class AuthViewModel extends AndroidViewModel {
         public static AuthState error(String message) { return new AuthState(Status.ERROR, message, null); }
         public static AuthState authenticated(UserEntity user) { return new AuthState(Status.AUTHENTICATED, null, user); }
         public static AuthState unregistered(String uid) { return new AuthState(Status.UNREGISTERED, null, uid); }
+        public static AuthState mfaRequired() { return new AuthState(Status.MFA_REQUIRED, "MFA verification required", null); }
+        public static AuthState mfaSetupRequired() { return new AuthState(Status.MFA_SETUP_REQUIRED, "MFA enrollment required", null); }
+        public static AuthState mfaError(String message) { return new AuthState(Status.MFA_ERROR, message, null); }
     }
 }

@@ -58,6 +58,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.NetworkUtils;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
+import com.haset.hasetapp.ui.MfaCodeInputView;
 
 public class LoginActivity extends BaseActivity {
     private TextInputEditText etEmail, etPassword;
@@ -233,6 +234,19 @@ public class LoginActivity extends BaseActivity {
                     UserEntity user = (UserEntity) state.data;
                     onAuthSuccess(user);
                     break;
+                case MFA_REQUIRED:
+                    CustomDialog.hideLoading();
+                    showMfaDialog(false);
+                    break;
+                case MFA_SETUP_REQUIRED:
+                    CustomDialog.hideLoading();
+                    startActivityForResult(new Intent(this, MfaEnrollmentActivity.class), 701);
+                    break;
+                case MFA_ERROR:
+                    CustomDialog.hideLoading();
+                    resetLoginButton();
+                    showMfaDialog(true);
+                    break;
                 /*
                 case UNREGISTERED:
                     CustomDialog.hideLoading();
@@ -245,6 +259,24 @@ public class LoginActivity extends BaseActivity {
                     break;
             }
         });
+    }
+
+    private void showMfaDialog(boolean invalid) {
+        final MfaCodeInputView input = new MfaCodeInputView(this);
+        if (invalid) input.setErrorState(true);
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Verification code").setMessage(invalid ? "The code was invalid or expired. Try again." : "Enter the six-digit code from your authenticator app.")
+                .setView(input).setNegativeButton("Cancel", (d, w) -> authViewModel.logout()).setPositiveButton("Verify", null).create();
+        dialog.setOnShowListener(x -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (!input.isComplete()) { input.setErrorState(true); return; }
+            dialog.dismiss(); authViewModel.verifyMfa(input.getCode());
+        }));
+        dialog.show(); input.focusFirst();
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 701 && resultCode == RESULT_OK) authViewModel.resumeAfterMfaSetup();
     }
 
     private void onAuthSuccess(UserEntity user) {

@@ -12,6 +12,10 @@ struct RootView: View {
                 OnboardingView()
             case .login:
                 LoginView()
+            case .mfaChallenge:
+                MFAChallengeView()
+            case .mfaEnrollment:
+                MFAEnrollmentView()
             case .forgotPassword:
                 ForgotPasswordView()
             case .roleSelection:

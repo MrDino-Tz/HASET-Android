@@ -16,6 +16,15 @@ import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import android.content.Context;
+import com.google.gson.JsonObject;
+import com.google.firebase.auth.FirebaseUser;
+import com.haset.hasetapp.api.DoctorPayoutApiService;
+import com.haset.hasetapp.api.MobileMfaApiService;
+import com.haset.hasetapp.api.RetrofitClient;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import java.util.UUID;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,45 +164,51 @@ public class DoctorHomeRepository {
         return ratingCountLiveData;
     }
 
-    public void requestWithdrawal(String doctorId, String doctorName, double amount, String method, 
-                                 String accountNumber, String accountName, String bankName,
-                                 FirebaseHelper.OnCompleteListener<Boolean> callback) {
-        // Create a withdrawal request instead of directly deducting
-        String requestId = "WR_" + System.currentTimeMillis();
-        WithdrawalRequest request = new WithdrawalRequest(requestId, doctorId, doctorName, amount, method, accountNumber);
-        request.setAccountName(accountName);
-        request.setBankName(bankName);
-        
-        FirebaseHelper.createWithdrawalRequest(request, new FirebaseHelper.OnCompleteListener<Boolean>() {
-            @Override
-            public void onSuccess(Boolean success) {
-                if (success) {
-                    callback.onSuccess(true);
-                } else {
-                    callback.onError("Failed to create withdrawal request");
+    public void requestWithdrawalSecure(double amount, String reason, String mfaCode, FirebaseHelper.OnCompleteListener<Boolean> callback) {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) { callback.onError("Authentication expired. Please sign in again."); return; }
+        user.getIdToken(true).addOnSuccessListener(result -> {
+            String bearer = "Bearer " + result.getToken();
+            JsonObject codeBody = new JsonObject(); codeBody.addProperty("code", mfaCode);
+            RetrofitClient.getInstance().getMobileMfaApiService().verify(bearer, codeBody).enqueue(new Callback<JsonObject>() {
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) { callback.onError(response.code() == 429 ? "Too many MFA attempts. Please wait and retry." : "Invalid or expired MFA code."); return; }
+                    String actionToken = response.body().get("mfa_action_token").getAsString();
+                    JsonObject body = new JsonObject(); body.addProperty("request_id", "WR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24)); body.addProperty("amount", Math.round(amount)); body.addProperty("reason", reason);
+                    RetrofitClient.getInstance().getDoctorPayoutApiService().requestWithdrawal(bearer, actionToken, body).enqueue(new Callback<JsonObject>() {
+                        public void onResponse(Call<JsonObject> c, Response<JsonObject> r) { if (r.isSuccessful()) callback.onSuccess(true); else callback.onError(r.code() == 429 ? "Too many requests. Please retry later." : "Payout request failed."); }
+                        public void onFailure(Call<JsonObject> c, Throwable t) { callback.onError("Network error while submitting payout request."); }
+                    });
                 }
-            }
-
-            @Override
-            public void onError(String error) {
-                callback.onError(error);
-            }
-        });
+                public void onFailure(Call<JsonObject> call, Throwable t) { callback.onError("Network error while verifying MFA."); }
+            });
+        }).addOnFailureListener(e -> callback.onError("Authentication expired. Please sign in again."));
     }
 
     public LiveData<List<WithdrawalRequest>> getWithdrawalRequests(String doctorId) {
         MutableLiveData<List<WithdrawalRequest>> requestsLiveData = new MutableLiveData<>();
-        FirebaseHelper.getWithdrawalRequestsByDoctor(doctorId, new FirebaseHelper.OnCompleteListener<List<WithdrawalRequest>>() {
-            @Override
-            public void onSuccess(List<WithdrawalRequest> requests) {
-                requestsLiveData.postValue(requests);
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) { requestsLiveData.postValue(null); return requestsLiveData; }
+        user.getIdToken(true).addOnSuccessListener(token -> RetrofitClient.getInstance().getDoctorPayoutApiService().listWithdrawals("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (!response.isSuccessful() || response.body() == null) { requestsLiveData.postValue(null); return; }
+                List<WithdrawalRequest> list = new ArrayList<>();
+                if (response.body().has("withdrawals") && response.body().get("withdrawals").isJsonArray()) {
+                    for (com.google.gson.JsonElement element : response.body().getAsJsonArray("withdrawals")) {
+                        JsonObject w = element.getAsJsonObject();
+                        WithdrawalRequest item = new WithdrawalRequest();
+                        item.setRequestId(w.has("request_id") ? w.get("request_id").getAsString() : "");
+                        item.setDoctorId(doctorId); item.setAmount(w.has("amount") ? w.get("amount").getAsDouble() : 0);
+                        item.setStatus(w.has("status") ? w.get("status").getAsString() : "pending");
+                        item.setMethod("mobile"); item.setRequestedAt(w.has("created_at") ? 0 : System.currentTimeMillis());
+                        item.setRejectionReason(w.has("failure_reason") && !w.get("failure_reason").isJsonNull() ? w.get("failure_reason").getAsString() : null);
+                        list.add(item);
+                    }
+                }
+                requestsLiveData.postValue(list);
             }
-
-            @Override
-            public void onError(String error) {
-                requestsLiveData.postValue(null);
-            }
-        });
+            public void onFailure(Call<JsonObject> call, Throwable t) { requestsLiveData.postValue(null); }
+        })).addOnFailureListener(e -> requestsLiveData.postValue(null));
         return requestsLiveData;
     }
 }

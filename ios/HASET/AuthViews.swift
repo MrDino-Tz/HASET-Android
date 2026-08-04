@@ -1,4 +1,44 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
+import UIKit
+
+struct SixDigitMFAInput: View {
+    @Binding var code: String
+    let isInvalid: Bool
+    let isVerified: Bool
+    let onComplete: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        ZStack {
+            HStack(spacing: 8) {
+                ForEach(0..<6, id: \.self) { index in
+                    Text(digit(at: index))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .frame(width: 42, height: 52)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(isInvalid ? Color.red : (isVerified ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.35)), lineWidth: 2))
+                }
+            }
+            TextField("", text: $code)
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($focused)
+                .opacity(0.05)
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .onChange(of: code) { value in
+                    let sanitized = String(value.filter(\.isNumber).prefix(6))
+                    if sanitized != value { code = sanitized }
+                    if sanitized.count == 6 { onComplete() }
+                }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { focused = true }
+        .accessibilityLabel("Six digit verification code")
+    }
+
+    private func digit(at index: Int) -> String { guard index < code.count else { return "" }; return String(code[code.index(code.startIndex, offsetBy: index)]) }
+}
 
 struct LanguageToggle: View {
     @EnvironmentObject private var appViewModel: AppViewModel
@@ -133,7 +173,7 @@ struct SplashView: View {
                     Image("SplashLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 180, height: 180)
+                        .frame(width: 140, height: 140)
 
                     Text(typedTitle)
                         .font(HASETTheme.font(.black, 37))
@@ -327,6 +367,101 @@ struct LoginView: View {
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+}
+
+struct MFAChallengeView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var code = ""
+    @State private var invalid = false
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Verify your identity").font(.title2.bold())
+            Text("Enter your six-digit TOTP code or recovery code.").multilineTextAlignment(.center)
+            SixDigitMFAInput(code: $code, isInvalid: invalid, isVerified: false) { if code.count == 6 { appViewModel.verifyLoginMFA(code: code) } }
+            Button("Verify") { appViewModel.verifyLoginMFA(code: code) }.buttonStyle(PrimaryButtonStyle()).disabled(code.count < 6)
+            Button("Cancel") { appViewModel.logout() }
+        }.padding(24).onChange(of: appViewModel.mfaError) { _ in invalid = true }
+    }
+}
+
+struct MFAEnrollmentView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var setup: MobileMFASetupResponse?
+    @State private var code = ""
+    @State private var acknowledged = false
+    @State private var loading = false
+    @State private var error: String?
+    @State private var didRequest = false
+    @State private var privacyCovered = false
+    @State private var screenCaptured = false
+
+    var body: some View {
+        ScrollView {
+                VStack(spacing: 16) {
+                Text("Set up two-factor authentication").font(.title2.bold())
+                Text("Scan this QR code with an authenticator app, or use the manual setup key.").multilineTextAlignment(.center)
+                if let setup {
+                    if let image = qrImage(from: setup.otpauthURI) { image.resizable().interpolation(.none).scaledToFit().frame(width: 220, height: 220).padding(16).background(Color.white) }
+                    Text(setup.secret).font(.system(.body, design: .monospaced)).textSelection(.enabled)
+                    Button("Copy setup key") { UIPasteboard.general.string = setup.secret }.buttonStyle(.bordered)
+                    SixDigitMFAInput(code: $code, isInvalid: error != nil, isVerified: false) { confirm() }
+                    Button(loading ? "Confirming…" : "Confirm authenticator") { confirm() }.buttonStyle(PrimaryButtonStyle()).disabled(loading || code.count != 6)
+                    if !setup.recoveryCodes.isEmpty { Text("Recovery codes will be shown after confirmation.").font(.caption) }
+                } else if loading { ProgressView("Preparing setup…") } else { Button("Retry setup") { requestSetup() }.buttonStyle(PrimaryButtonStyle()) }
+                if let error { Text(error).foregroundStyle(.red).multilineTextAlignment(.center) }
+                Button("Log out") { appViewModel.logout() }
+            }.padding(24)
+        }
+        .privacySensitive()
+        .overlay { if privacyCovered || screenCaptured { Color.black.ignoresSafeArea().overlay(Text("Sensitive MFA information hidden").foregroundStyle(.white)) } }
+        .task { requestSetup() }
+        .onChange(of: scenePhase) { phase in privacyCovered = phase != .active; if phase != .active { code = "" } }
+        .onReceive(NotificationCenter.default.publisher(for: UIScreen.capturedDidChangeNotification)) { _ in screenCaptured = UIScreen.main.isCaptured }
+        .sheet(isPresented: Binding(get: { setup != nil && acknowledged }, set: { _ in })) { EmptyView() }
+        .alert("Recovery codes", isPresented: Binding(get: { setup != nil && acknowledged }, set: { _ in })) {
+            Button("Copy all") { if let codes = setup?.recoveryCodes { UIPasteboard.general.string = codes.joined(separator: "\n") } }
+            Button("I saved them") { Task { await appViewModel.completeMFAEnrollment() } }
+        } message: { Text(setup?.recoveryCodes.joined(separator: "\n") ?? "") }
+    }
+
+    private func requestSetup() {
+        guard !didRequest, setup == nil else { return }; didRequest = true; loading = true
+        guard let session = appViewModel.pendingMFASession ?? appViewModel.activeSession ?? SessionStore().loadSession() else {
+            error = "Authentication expired. Please log in again."
+            loading = false
+            didRequest = false
+            return
+        }
+        Task {
+            do {
+                let service = AuthService()
+                let freshSession = try await service.refreshSessionIfNeeded(session)
+                if freshSession.idToken != session.idToken || freshSession.refreshToken != session.refreshToken {
+                    SessionStore().saveSession(freshSession)
+                }
+                setup = try await service.setupMobileMFA(idToken: freshSession.idToken)
+                loading = false
+            } catch let setupError {
+                loading = false
+                error = setupError.localizedDescription
+                didRequest = false
+            }
+        }
+    }
+    private func confirm() {
+        guard code.count == 6 else { error = "Enter all six digits from your authenticator app."; return }
+        guard let session = appViewModel.pendingMFASession ?? appViewModel.activeSession ?? SessionStore().loadSession(), code.count == 6, !loading else { return }
+        loading = true; error = nil
+        Task { do { try await AuthService().confirmMobileMFA(code: code, idToken: session.idToken); loading = false; acknowledged = true; code = "" } catch let confirmationError { loading = false; error = confirmationError.localizedDescription; code = "" } }
+    }
+    private func qrImage(from value: String) -> Image? {
+        let filter = CIFilter.qrCodeGenerator(); filter.message = Data(value.utf8); filter.correctionLevel = "M"
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+        let context = CIContext(); guard let cg = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return Image(uiImage: UIImage(cgImage: cg))
     }
 }
 

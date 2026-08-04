@@ -28,6 +28,7 @@ import com.haset.hasetapp.adapters.WithdrawalHistoryAdapter;
 import com.haset.hasetapp.database.entities.WithdrawalRequest;
 import java.util.List;
 import java.util.Locale;
+import com.haset.hasetapp.ui.MfaCodeInputView;
 
 public class DoctorWalletActivity extends BaseActivity {
     private TextView tvBalance, tvTotalEarnings;
@@ -222,6 +223,7 @@ public class DoctorWalletActivity extends BaseActivity {
         TextInputEditText etMobileNumber = view.findViewById(R.id.etMobileNumber);
         MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
         MaterialButton btnConfirmWithdraw = view.findViewById(R.id.btnConfirmWithdraw);
+        MfaCodeInputView mfaCodeInput = view.findViewById(R.id.mfaCodeInput);
 
         // Set available balance
         String availableBalance = String.format(Locale.getDefault(), getString(R.string.available_balance_format), currentWallet.getBalance());
@@ -410,7 +412,8 @@ public class DoctorWalletActivity extends BaseActivity {
             }
 
             // Process withdrawal
-            processWithdrawal(amount, selectedMethod[0], btnConfirmWithdraw);
+            if (!mfaCodeInput.isComplete()) { mfaCodeInput.setErrorState(true); Toast.makeText(this, "Enter the six-digit MFA code", Toast.LENGTH_SHORT).show(); return; }
+            processWithdrawal(amount, selectedMethod[0], btnConfirmWithdraw, mfaCodeInput.getCode());
         });
 
         withdrawDialog.setContentView(view);
@@ -420,7 +423,7 @@ public class DoctorWalletActivity extends BaseActivity {
         withdrawDialog.show();
     }
 
-    private void processWithdrawal(double amount, String method, MaterialButton confirmBtn) {
+    private void processWithdrawal(double amount, String method, MaterialButton confirmBtn, String mfaCode) {
         String doctorId = preferenceManager.getUserId();
         String doctorName = preferenceManager.getUserName();
         confirmBtn.setEnabled(false);
@@ -432,8 +435,8 @@ public class DoctorWalletActivity extends BaseActivity {
         String accountNumber = etMobileNumber.getText() != null ? 
             etMobileNumber.getText().toString().replaceAll("\\s", "").trim() : "";
         
-        // Request withdrawal instead of instant deduction
-        viewModel.requestWithdrawal(doctorId, doctorName, amount, method, accountNumber, null, null);
+        // The repository verifies MFA server-side and submits the payout request.
+        viewModel.requestWithdrawalSecure(amount, "Doctor payout request", mfaCode);
     }
 
     @Override
@@ -443,4 +446,3 @@ public class DoctorWalletActivity extends BaseActivity {
         loadWalletData();
     }
 }
-

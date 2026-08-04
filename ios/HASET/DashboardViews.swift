@@ -90,7 +90,7 @@ struct RoleHomeView: View {
                     .shadow(color: HASETTheme.greenPrimary.opacity(0.10), radius: 10, x: 0, y: 6)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appViewModel.tr("good_morning"))
+                        Text(timeGreeting)
                             .font(HASETTheme.font(.regular, 12))
                             .foregroundStyle(HASETTheme.textSecondary)
                         Text(displayName(for: appViewModel.currentUser, fallback: "Dr"))
@@ -157,6 +157,13 @@ struct RoleHomeView: View {
             .buttonStyle(.plain)
         }
         .padding(.top, 2)
+    }
+
+    private var timeGreeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 { return appViewModel.tr("good_morning") }
+        if hour < 18 { return appViewModel.selectedLanguage == "sw" ? "Habari za mchana" : "Good afternoon" }
+        return appViewModel.selectedLanguage == "sw" ? "Habari za jioni" : "Good evening"
     }
 
     private var doctorHeroCard: some View {
@@ -1076,6 +1083,11 @@ private struct SectionTitle: View {
 private struct DoctorWalletView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     let isHidden: Bool
+    @State private var showWithdraw = false
+    @State private var amount = ""
+    @State private var mfaCode = ""
+    @State private var submitting = false
+    @State private var message: String?
 
     private var balanceText: String {
         if isHidden { return "•••••• TZS" }
@@ -1155,13 +1167,44 @@ private struct DoctorWalletView: View {
                         }
                     }
                 }
+                Button("Withdraw") { showWithdraw = true }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled((appViewModel.doctorWallet?.balance ?? 0) <= 0)
+                SectionTitle("Withdrawal history")
+                if appViewModel.doctorWalletLoading && appViewModel.doctorWithdrawals.isEmpty { ProgressView() }
+                else if let error = appViewModel.doctorWalletError { VStack { Text(error); Button("Retry") { Task { await appViewModel.loadDoctorWithdrawals() } } } }
+                else if appViewModel.doctorWithdrawals.isEmpty { Text("No withdrawals yet.").foregroundStyle(HASETTheme.textSecondary) }
+                else { ForEach(appViewModel.doctorWithdrawals) { item in
+                    CardContainer { HStack { VStack(alignment: .leading) { Text(item.id).font(.caption); Text(String(format: "%,.0f TZS", item.amount)).font(.headline) }; Spacer(); Text(item.status.capitalized).foregroundStyle(item.status.lowercased() == "paid" || item.status.lowercased() == "completed" ? HASETTheme.greenPrimary : .orange) } }
+                } }
             }
             .padding(20)
         }
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle("Wallet")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await appViewModel.loadDoctorWithdrawals() }
+        .refreshable { await appViewModel.loadDoctorWithdrawals() }
+        .sheet(isPresented: $showWithdraw) {
+            VStack(spacing: 16) {
+                Text("Request withdrawal").font(.title3.bold())
+                TextField("Amount", text: $amount).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                SixDigitMFAInput(code: $mfaCode, isInvalid: false, isVerified: false) {}
+                if let message { Text(message).foregroundStyle(.red) }
+                Button(submitting ? "Submitting…" : "Submit") { submitWithdrawal() }.buttonStyle(PrimaryButtonStyle()).disabled(submitting)
+                Button("Cancel") { clearPayoutState(); showWithdraw = false }
+            }.padding(24).interactiveDismissDisabled(submitting)
+        }
     }
+
+    private func submitWithdrawal() {
+        guard let value = Int(amount), value >= 5000, Double(value) <= (appViewModel.doctorWallet?.balance ?? 0) else { message = "Enter a valid amount within your available balance."; return }
+        guard mfaCode.count == 6 else { message = "Enter the six-digit MFA code."; return }
+        guard let session = SessionStore().loadSession() else { message = "Authentication expired."; return }
+        submitting = true; message = nil
+        Task { do { let token = try await AuthService().verifyMobileMFA(code: mfaCode, idToken: session.idToken); try await AuthService().requestDoctorWithdrawal(amount: value, reason: "Doctor payout request", idToken: session.idToken, mfaActionToken: token); await appViewModel.loadDoctorWithdrawals(); await MainActor.run { clearPayoutState(); showWithdraw = false } } catch { await MainActor.run { submitting = false; message = error.localizedDescription; mfaCode = "" } } }
+    }
+    private func clearPayoutState() { amount = ""; mfaCode = ""; submitting = false; message = nil }
 }
 
 private struct FeatureStackCard: View {
@@ -1676,6 +1719,7 @@ struct PaymentCheckoutView: View {
 
     @EnvironmentObject private var appViewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var selectedMethod: PaymentMethod
     @State private var selectedProvider = "Vodacom"
@@ -1688,6 +1732,7 @@ struct PaymentCheckoutView: View {
     @State private var processingPulse = false
     @State private var consultationId: String
     @State private var idempotencyKey: String
+    @State private var paymentSessionReady = false
 
     private let paymentService = AuthService()
     private let sessionStore = SessionStore()
@@ -1905,6 +1950,36 @@ struct PaymentCheckoutView: View {
                 }
             }
             .interactiveDismissDisabled(isProcessing)
+            .task {
+                await preparePaymentSession()
+            }
+        }
+    }
+
+    private func preparePaymentSession() async {
+        await MainActor.run {
+            statusMessage = appViewModel.tr("preparing_payment")
+            canRetryStatus = false
+        }
+        if sessionStore.loadSession() != nil {
+            await MainActor.run {
+                paymentSessionReady = true
+                statusMessage = ""
+            }
+            return
+        }
+        do {
+            let anonymousSession = try await paymentService.signInAnonymously()
+            sessionStore.saveSession(anonymousSession)
+            await MainActor.run {
+                paymentSessionReady = true
+                statusMessage = ""
+            }
+        } catch {
+            await MainActor.run {
+                paymentSessionReady = false
+                statusMessage = error.localizedDescription
+            }
         }
     }
 
@@ -2017,8 +2092,41 @@ struct PaymentCheckoutView: View {
         return String(digits.prefix(9))
     }
 
+    private var backendPaymentAccount: String {
+        let digits = walletNumber.filter(\.isNumber)
+        if digits.hasPrefix("255"), digits.count == 12 { return "0" + String(digits.dropFirst(3)) }
+        if digits.hasPrefix("0"), digits.count == 10 { return digits }
+        if digits.count == 9 { return "0" + digits }
+        return normalizedWalletNumber
+    }
+
     private func startPayment() async {
-        guard let user = appViewModel.currentUser else { return }
+        guard paymentSessionReady else {
+            await MainActor.run {
+                statusMessage = appViewModel.tr("payment_session_unavailable")
+                canRetryStatus = true
+            }
+            await preparePaymentSession()
+            return
+        }
+        let user = appViewModel.currentUser ?? UserProfile(
+            userId: sessionStore.loadSession()?.userId ?? "",
+            email: "",
+            fullName: doctor.name,
+            phone: doctor.phoneNumber ?? "",
+            role: .patient,
+            profileImage: "",
+            createdAt: Date().timeIntervalSince1970 * 1000,
+            regNo: nil,
+            gender: nil,
+            age: nil,
+            location: nil,
+            bio: nil,
+            specialization: doctor.specialty,
+            consultationFee: nil,
+            availableTimes: nil,
+            verified: false
+        )
         guard selectedMethod == .cardPayment || !normalizedWalletNumber.isEmpty else { return }
 
         isProcessing = true
@@ -2035,13 +2143,21 @@ struct PaymentCheckoutView: View {
                 amount: amount,
                 paymentMethod: selectedMethod == .cardPayment ? "card" : "mobile_money",
                 provider: selectedProvider,
-                paymentAccount: selectedMethod == .mobileMoney ? normalizedWalletNumber : "",
+                paymentAccount: selectedMethod == .mobileMoney ? backendPaymentAccount : "",
                 idToken: idToken
             )
             transactionId = response.transactionId
             statusMessage = appViewModel.tr("payment_initiated")
             if response.isSuccess {
-                if selectedMethod == .cardPayment, let paymentUrl = response.paymentUrl, let url = URL(string: paymentUrl) {
+                if selectedMethod == .cardPayment {
+                    guard let paymentUrl = response.paymentUrl,
+                          let url = URL(string: paymentUrl),
+                          url.scheme == "https" else {
+                        isProcessing = false
+                        canRetryStatus = true
+                        statusMessage = "The card checkout link was not returned. Please retry or use mobile money."
+                        return
+                    }
                     await MainActor.run {
                         openURL(url)
                         statusMessage = appViewModel.tr("card_checkout_opened")
@@ -2067,7 +2183,10 @@ struct PaymentCheckoutView: View {
     private func startPolling() {
         pollTask?.cancel()
         pollTask = Task {
-            for _ in 0 ..< 10 {
+            // Match Android's six-minute payment confirmation window (60 × 6s).
+            // Mobile-money prompts can take longer than a single minute, and the
+            // backend remains the source of truth for the transaction state.
+            for _ in 0 ..< 60 {
                 try? await Task.sleep(nanoseconds: 6_000_000_000)
                 if Task.isCancelled { return }
                 let success = await checkStatus(silentUntilFailure: true)
@@ -2306,23 +2425,8 @@ struct AppointmentsOverviewView: View {
         .task {
             await appViewModel.loadAppointments(force: false)
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button("Pending") { selectedStatus = .pending }
-                    Button("Approved") { selectedStatus = .approved }
-                    Button("Completed") { selectedStatus = .completed }
-                    Button("Cancelled") { selectedStatus = .cancelled }
-                    Divider()
-                    Button("Refresh") {
-                        Task { await appViewModel.loadAppointments(force: true) }
-                    }
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.system(size: 24, weight: .regular))
-                        .foregroundStyle(HASETTheme.textPrimary)
-                }
-            }
+        .refreshable {
+            await appViewModel.loadAppointments(force: true)
         }
     }
 

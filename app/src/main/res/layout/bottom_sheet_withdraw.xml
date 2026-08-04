@@ -242,6 +242,20 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Action Buttons -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter your six-digit authenticator code"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <com.haset.hasetapp.ui.MfaCodeInputView
+                android:id="@+id/mfaCodeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

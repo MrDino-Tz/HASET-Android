@@ -306,6 +306,26 @@ final class AuthService {
         return (session, profile)
     }
 
+    /// Creates the same short-lived Firebase anonymous payment session used by
+    /// Android for doctor registration before a credentialed account exists.
+    /// The session is only used to authenticate the hosted payment request; the
+    /// real doctor account is created after payment confirmation.
+    func signInAnonymously() async throws -> StoredSession {
+        let identity = try await performIdentityRequest(
+            path: "accounts:signUp",
+            payload: ["returnSecureToken": true]
+        )
+        return StoredSession(
+            userId: identity.localId,
+            idToken: identity.idToken,
+            refreshToken: identity.refreshToken,
+            role: .patient,
+            userName: "",
+            email: "",
+            phone: ""
+        )
+    }
+
     func register(email: String, password: String, fullName: String, phone: String, role: UserRole, regNo: String?) async throws -> (StoredSession, UserProfile) {
         let identity = try await performIdentityRequest(
             path: "accounts:signUp",
@@ -880,13 +900,82 @@ final class AuthService {
         try validate(response: response, data: data)
     }
 
-    func fetchDoctorWallet(doctorId: String, idToken: String?) async throws -> DoctorWalletSummary? {
-        let path = "doctor_wallets/\(doctorId)"
-        let url = try databaseURL(path: path, authToken: idToken)
-        let (data, response) = try await URLSession.shared.data(from: url)
+    func mobileMFAStatus(idToken: String) async throws -> Bool {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/status")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 15
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return object?["two_factor_enabled"] as? Bool ?? false
+    }
+
+    func setupMobileMFA(idToken: String) async throws -> MobileMFASetupResponse {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/setup")!
+        var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+        return try decoder.decode(MobileMFASetupResponse.self, from: data)
+    }
+
+    func confirmMobileMFA(code: String, idToken: String) async throws {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/confirm")!
+        var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type"); request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code])
+        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+    }
+
+    func verifyMobileMFA(code: String, idToken: String) async throws -> String {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/verify")!
+        var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type"); request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code])
+        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any], let token = object["mfa_action_token"] as? String else { throw ServiceError.invalidResponse }
+        return token
+    }
+
+    func requestDoctorWithdrawal(amount: Int, reason: String, idToken: String, mfaActionToken: String) async throws {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/doctor/withdrawals")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(mfaActionToken, forHTTPHeaderField: "X-MFA-Action-Token")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "request_id": "WR-\(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(24))",
+            "amount": amount,
+            "reason": reason
+        ])
+        let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
-        guard data != Data("null".utf8) else { return nil }
-        return try decoder.decode(DoctorWalletSummary.self, from: data)
+    }
+
+    func fetchDoctorWithdrawals(idToken: String) async throws -> [[String: Any]] {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/doctor/withdrawals")!
+        var request = URLRequest(url: url); request.httpMethod = "GET"; request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return object?["withdrawals"] as? [[String: Any]] ?? []
+    }
+
+    func fetchDoctorWallet(doctorId: String, idToken: String?) async throws -> DoctorWalletSummary? {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/doctor/wallet")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let idToken, !idToken.isEmpty {
+            request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
+        guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let wallet = envelope["wallet"] as? [String: Any] else { return nil }
+        return DoctorWalletSummary(
+            doctorId: stringValue(wallet["doctor_id"])?.nonEmpty ?? doctorId,
+            balance: doubleValue(wallet["available_balance"]) ?? 0,
+            totalEarnings: doubleValue(wallet["paid_out_balance"]),
+            lastUpdated: timeIntervalValue(wallet["updated_at"])
+        )
     }
 
     func fetchDoctorPresence(doctorId: String, idToken: String?) async throws -> DoctorPresenceSummary? {
