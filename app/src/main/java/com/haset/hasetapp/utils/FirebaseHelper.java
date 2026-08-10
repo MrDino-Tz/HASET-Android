@@ -384,6 +384,32 @@ public class FirebaseHelper {
         });
     }
 
+    private static void getAppointmentsByIndex(String userId, String role,
+                                               OnCompleteListener<List<AppointmentEntity>> listener) {
+        DatabaseReference index = Constants.ROLE_DOCTOR.equals(role)
+                ? getDoctorAppointmentsRef(userId) : getPatientAppointmentsRef(userId);
+        index.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<AppointmentEntity> result = new ArrayList<>();
+                List<String> ids = new ArrayList<>();
+                for (DataSnapshot child : snapshot.getChildren()) if (child.getKey() != null) ids.add(child.getKey());
+                if (ids.isEmpty()) { listener.onSuccess(result); return; }
+                final int[] remaining = {ids.size()};
+                for (String id : ids) {
+                    getAppointmentsRef().child(id).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                        @Override public void onDataChange(@NonNull DataSnapshot item) {
+                            AppointmentEntity value = item.getValue(AppointmentEntity.class);
+                            if (value != null) result.add(value);
+                            if (--remaining[0] == 0) listener.onSuccess(result);
+                        }
+                        @Override public void onCancelled(@NonNull DatabaseError error) { listener.onError(error.getMessage()); }
+                    });
+                }
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { listener.onError(error.getMessage()); }
+        });
+    }
+
     // Callback Interface
     public interface OnCompleteListener<T> {
         void onSuccess(T result);
@@ -428,12 +454,16 @@ public class FirebaseHelper {
                     AppointmentEntity appointment = snapshot.getValue(AppointmentEntity.class);
                     if (appointment != null) appointments.add(appointment);
                 }
-                listener.onSuccess(appointments);
+                if (appointments.isEmpty()) {
+                    getAppointmentsByIndex(userId, role, listener);
+                } else {
+                    listener.onSuccess(appointments);
+                }
             }
 
             @Override
             public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
-                listener.onError(databaseError.getMessage());
+                getAppointmentsByIndex(userId, role, listener);
             }
         });
     }
