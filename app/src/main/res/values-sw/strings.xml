@@ -84,6 +84,7 @@
     <string name="reschedule">Panga Upya</string>
     <string name="status">Hali</string>
     <string name="pending">Inasubiri</string>
+    <string name="upcoming_tab">Inayokuja</string>
     <string name="approved">Imeidhinishwa</string>
     <string name="declined">Imekataliwa</string>
     <string name="completed">Imekamilika</string>
@@ -145,6 +146,8 @@
     <string name="failed_to_cancel_appointment">Imeshindwa kughairi miadi: %s</string>
     <string name="invalid_appointment">Miadi isiyo sahihi</string>
     <string name="reschedule_soon">Utendaji wa kupanga upya unakuja hivi karibuni</string>
+    <string name="no_upcoming_appointments_title">Hakuna Miadi Inayokuja</string>
+    <string name="no_upcoming_appointments_desc">Huna miadi yoyote inayokuja.</string>
     <string name="no_pending_appointments_title">Hakuna Miadi Inayongoja</string>
     <string name="no_pending_appointments_desc">Huna miadi yoyote inayongoja.</string>
     <string name="no_completed_appointments_title">Hakuna Miadi Iliyokamilika</string>

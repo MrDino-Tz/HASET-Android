@@ -66,7 +66,7 @@ public class AppointmentsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         
         TAB_TITLES = new String[]{
-                getString(R.string.pending),
+                getString(R.string.upcoming_tab),
                 getString(R.string.completed),
                 getString(R.string.canceled)
         };

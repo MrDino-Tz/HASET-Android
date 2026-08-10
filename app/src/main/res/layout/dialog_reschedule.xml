@@ -91,6 +91,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:enabled="false"
             android:text="Confirm Reschedule"
             android:backgroundTint="@color/green_primary"
             app:cornerRadius="12dp" />

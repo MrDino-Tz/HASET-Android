@@ -50,6 +50,7 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
     private TextView tvEmptyStateSubtitle;
     private ImageView ivEmptyStateIcon;
     private AppointmentsViewModel viewModel;
+    private com.haset.hasetapp.utils.AppointmentReminderHelper reminderHelper;
 
     @Nullable
     @Override
@@ -69,6 +70,7 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         ivEmptyStateIcon = emptyStateCard.findViewById(R.id.ivEmptyStateIcon);
 
         preferenceManager = new PreferenceManager(requireContext());
+        reminderHelper = new com.haset.hasetapp.utils.AppointmentReminderHelper(requireContext());
         setupRecyclerView();
         
         viewModel = new ViewModelProvider(requireActivity()).get(AppointmentsViewModel.class);
@@ -96,7 +98,7 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         String role = preferenceManager.getUserRole();
 
         viewModel.setUserInfo(userId, role);
-        viewModel.getPendingAppointments().observe(getViewLifecycleOwner(), appointments -> {
+        viewModel.getUpcomingAppointments().observe(getViewLifecycleOwner(), appointments -> {
             if (isAdded() && rootView != null) {
                 hideShimmerLoading();
                 if (appointmentAdapter != null) {
@@ -104,8 +106,8 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
                 }
 
                 if (appointments == null || appointments.isEmpty()) {
-                    showEmptyState(getString(R.string.no_pending_appointments_title),
-                        getString(R.string.no_pending_appointments_desc),
+                    showEmptyState(getString(R.string.no_upcoming_appointments_title),
+                        getString(R.string.no_upcoming_appointments_desc),
                         R.drawable.ic_no_data);
                 } else {
                     hideEmptyState();
@@ -344,9 +346,8 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
             timePicker.addOnPositiveButtonClickListener(selection -> {
                 int hour = timePicker.getHour();
                 int minute = timePicker.getMinute();
-                String amPm = hour >= 12 ? "PM" : "AM";
-                int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-                selectedTime[0] = String.format(java.util.Locale.getDefault(), "%d:%02d %s", displayHour, minute, amPm);
+                // 24-hour format to stay consistent with BookAppointmentActivity
+                selectedTime[0] = String.format(java.util.Locale.getDefault(), "%02d:%02d", hour, minute);
                 btnSelectTime.setText(selectedTime[0]);
                 btnSelectTime.setIconTintResource(android.R.color.transparent);
                 checkRescheduleReady(btnConfirm, selectedDate[0], selectedTime[0]);
@@ -372,6 +373,16 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
     private void rescheduleAppointment(Appointment appointment, String newDate, String newTime, String currentUserId) {
         String appointmentId = appointment.getAppointmentId();
         if (appointmentId == null) return;
+        if (newDate == null || newTime == null) {
+            showSnackbar("Please select a new date and time");
+            return;
+        }
+
+        long newDateTimeMillis = parseDateTimeToMillis(newDate, newTime);
+        if (newDateTimeMillis <= System.currentTimeMillis()) {
+            showSnackbar("Please select a future date and time");
+            return;
+        }
         
         com.haset.hasetapp.utils.CustomDialog.showLoading(requireContext(), "Rescheduling...");
         
@@ -388,7 +399,18 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
                 .addOnSuccessListener(aVoid -> {
                     com.haset.hasetapp.utils.CustomDialog.hideLoading();
                     showSnackbar("Appointment rescheduled successfully");
-                    
+
+                    // Cancel old reminders and schedule new ones for the new date/time
+                    reminderHelper.cancelRemindersByAppointmentId(appointmentId);
+                    appointment.setDate(newDate);
+                    appointment.setTime(newTime);
+                    reminderHelper.scheduleReminders(appointment);
+
+                    // Refresh list so the new date/time is shown immediately
+                    if (viewModel != null) {
+                        viewModel.refresh();
+                    }
+
                     // Send notification to other party
                     sendRescheduleNotification(appointment, newDate, newTime, currentUserId);
                 })
@@ -396,6 +418,15 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
                     com.haset.hasetapp.utils.CustomDialog.hideLoading();
                     showSnackbar("Failed to reschedule: " + e.getMessage());
                 });
+    }
+
+    private long parseDateTimeToMillis(String date, String time) {
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM yyyy HH:mm", java.util.Locale.getDefault());
+            return sdf.parse(date + " " + time).getTime();
+        } catch (java.text.ParseException e) {
+            return 0;
+        }
     }
     
     private void sendRescheduleNotification(Appointment appointment, String newDate, String newTime, String currentUserId) {

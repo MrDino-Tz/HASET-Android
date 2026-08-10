@@ -84,6 +84,7 @@
     <string name="reschedule">Reschedule</string>
     <string name="status">Status</string>
     <string name="pending">Pending</string>
+    <string name="upcoming_tab">Upcoming</string>
     <string name="approved">Approved</string>
     <string name="declined">Declined</string>
     <string name="completed">Completed</string>
@@ -147,6 +148,8 @@
     <string name="failed_to_cancel_appointment">Failed to cancel appointment: %s</string>
     <string name="invalid_appointment">Invalid appointment</string>
     <string name="reschedule_soon">Reschedule functionality coming soon</string>
+    <string name="no_upcoming_appointments_title">No Upcoming Appointments</string>
+    <string name="no_upcoming_appointments_desc">You don\'t have any upcoming appointments.</string>
     <string name="no_pending_appointments_title">No Pending Appointments</string>
     <string name="no_pending_appointments_desc">You don\'t have any pending appointments.</string>
     <string name="no_completed_appointments_title">No Completed Appointments</string>

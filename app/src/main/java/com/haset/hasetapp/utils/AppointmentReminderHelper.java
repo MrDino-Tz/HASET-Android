@@ -75,11 +75,10 @@ public class AppointmentReminderHelper {
         }
         
         try {
-            // Parse appointment date and time
-            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy hh:mm a", Locale.getDefault());
+            // Parse appointment date and time (supports both 24-hour "HH:mm" and 12-hour "hh:mm a")
             String dateTimeString = appointment.getDate() + " " + appointment.getTime();
-            Date appointmentDate = sdf.parse(dateTimeString);
-            
+            Date appointmentDate = parseAppointmentDateTime(dateTimeString);
+
             if (appointmentDate != null) {
                 Calendar appointmentCalendar = Calendar.getInstance();
                 appointmentCalendar.setTime(appointmentDate);
@@ -96,6 +95,25 @@ public class AppointmentReminderHelper {
         } catch (ParseException e) {
             e.printStackTrace();
         }
+    }
+
+    private Date parseAppointmentDateTime(String dateTimeString) throws ParseException {
+        String[] patterns = {
+                "dd MMM yyyy HH:mm",
+                "dd MMM yyyy hh:mm a",
+                "dd/MM/yyyy HH:mm",
+                "yyyy-MM-dd HH:mm"
+        };
+        for (String pattern : patterns) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.getDefault());
+                sdf.setLenient(false);
+                return sdf.parse(dateTimeString);
+            } catch (ParseException ignored) {
+                // try next pattern
+            }
+        }
+        throw new ParseException("Unparseable date: " + dateTimeString, 0);
     }
     
     private void scheduleReminder(Appointment appointment, Calendar appointmentCalendar, int hoursBefore, long millisBefore) {
