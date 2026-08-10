@@ -164,6 +164,11 @@ public class ChatRepository {
             }
             updateConversation(senderId, receiverId, receiverName, message.getMessage(), message.getTimestamp(), senderId);
             updateConversation(receiverId, senderId, senderName, message.getMessage(), message.getTimestamp(), senderId);
+            com.haset.hasetapp.database.entities.NotificationEntity notification =
+                    new com.haset.hasetapp.database.entities.NotificationEntity(
+                            null, receiverId, senderName, message.getMessage(),
+                            "chat_message", chatRoomId);
+            com.haset.hasetapp.utils.FirebaseHelper.addNotification(notification, null);
         });
         return messageId;
     }

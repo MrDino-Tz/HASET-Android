@@ -176,7 +176,8 @@
         ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".indexOn": ["read", "timestamp"],
         "$notificationId": {
-          ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+          ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".validate": "!newData.exists() || (newData.child('notificationId').val() === $notificationId && newData.child('userId').val() === $uid && newData.child('title').isString() && newData.child('message').isString() && newData.child('type').isString() && newData.child('timestamp').isNumber() && newData.child('isRead').isBoolean())"
         }
       }
     },

@@ -246,6 +246,8 @@ enum ServiceError: LocalizedError {
 }
 
 final class AuthService {
+    private var chatMessageCache: [String: [ChatMessageSummary]] = [:]
+
     private struct IdentityResponse: Decodable {
         let localId: String
         let idToken: String
@@ -1244,11 +1246,17 @@ final class AuthService {
     }
 
     func fetchChatMessages(chatRoomId: String, currentUserId: String, idToken: String?) async throws -> [ChatMessageSummary] {
-        let json = try await fetchParticipantChatMessages(
-            chatRoomId: chatRoomId,
-            currentUserId: currentUserId,
-            idToken: idToken
-        )
+        let json: [String: Any]
+        do {
+            json = try await fetchParticipantChatMessages(
+                chatRoomId: chatRoomId,
+                currentUserId: currentUserId,
+                idToken: idToken
+            )
+        } catch {
+            if let cached = chatMessageCache[chatRoomId] { return cached }
+            throw error
+        }
 
         let messages = json.compactMap { key, value -> ChatMessageSummary? in
             guard let item = value as? [String: Any] else { return nil }
@@ -1266,7 +1274,9 @@ final class AuthService {
             )
         }
 
-        return messages.sorted { $0.timestamp < $1.timestamp }
+        let sorted = messages.sorted { $0.timestamp < $1.timestamp }
+        chatMessageCache[chatRoomId] = sorted
+        return sorted
     }
 
     func sendChatMessage(chatRoomId: String, sender: UserProfile, receiverId: String, receiverName: String, message: String, idToken: String?) async throws {
@@ -1299,6 +1309,21 @@ final class AuthService {
         try await patch(conversationUpdate, url: conversationsURL)
         let reverseURL = try databaseURL(path: "user_conversations/\(receiverId)/\(sender.userId)", authToken: idToken)
         try await patch(conversationUpdate, url: reverseURL)
+
+        // Persist a recipient-scoped notification as the durable fallback for
+        // devices that are backgrounded or do not have push configured.
+        let notificationId = UUID().uuidString
+        let notificationURL = try databaseURL(path: "notifications/\(receiverId)/\(notificationId)", authToken: idToken)
+        try await put([
+            "notificationId": notificationId,
+            "userId": receiverId,
+            "title": sender.fullName,
+            "message": message,
+            "type": "chat_message",
+            "timestamp": timestamp,
+            "isRead": false,
+            "relatedId": chatRoomId
+        ], url: notificationURL)
     }
 
     func markChatMessagesRead(chatRoomId: String, currentUserId: String, idToken: String?) async throws {

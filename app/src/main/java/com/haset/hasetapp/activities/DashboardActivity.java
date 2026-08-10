@@ -55,6 +55,11 @@ public class DashboardActivity extends BaseActivity {
 
         setupBottomNavigation();
         loadInitialFragment();
+
+        // The application process can start before authentication is restored;
+        // start the conversation listener again after the logged-in user is
+        // available so chat notifications are not silently missed.
+        com.haset.hasetapp.utils.MessageNotificationManager.getInstance(this).startListening();
         
         // Handle navigation intents
         handleIntent(getIntent());

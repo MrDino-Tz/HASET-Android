@@ -37,16 +37,18 @@ public class MessageNotificationManager {
     }
 
     public void startListening() {
-        currentUserId = preferenceManager.getUserId();
-        if (currentUserId == null || currentUserId.isEmpty()) {
+        String signedInUserId = preferenceManager.getUserId();
+        if (signedInUserId == null || signedInUserId.isEmpty()) {
             Log.d(TAG, "No user logged in, cannot listen for messages.");
             return;
         }
 
-        if (conversationListener != null) {
+        if (conversationListener != null && signedInUserId.equals(currentUserId)) {
             // Already listening
             return;
         }
+        if (conversationListener != null) stopListening();
+        currentUserId = signedInUserId;
 
         Log.d(TAG, "Starting to listen for message notifications for user: " + currentUserId);
 
@@ -116,11 +118,11 @@ public class MessageNotificationManager {
                 return; // Don't notify if chat is open
             }
 
-            // 10 second threshold for "new" messages to avoid notifying on stale data 
-            // especially during initial load (ChildAdded)
+            // Allow for offline/background reconnects. A short threshold caused
+            // legitimate messages to be discarded before the listener resumed.
             long timeDiff = System.currentTimeMillis() - conversation.getLastMessageTimestamp();
-            if (timeDiff > 10000) { // older than 10 seconds
-               return; 
+            if (timeDiff > 5 * 60 * 1000L) { // older than five minutes
+               return;
             }
 
             // Trigger Notification

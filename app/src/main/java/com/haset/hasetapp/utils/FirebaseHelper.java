@@ -24,6 +24,7 @@ import java.util.Map;
 import android.util.Log;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.ValueEventListener;
 
 public class FirebaseHelper {
@@ -76,6 +77,13 @@ public class FirebaseHelper {
     public static FirebaseDatabase getFirebaseDatabase() {
         if (mDatabase == null) {
             mDatabase = FirebaseDatabase.getInstance();
+            // Keep recent conversations/messages available during brief
+            // connectivity drops and allow listeners to catch up on resume.
+            try {
+                mDatabase.setPersistenceEnabled(true);
+            } catch (DatabaseException ignored) {
+                // Persistence may already be configured by the host process.
+            }
         }
         return mDatabase;
     }
@@ -159,6 +167,72 @@ public class FirebaseHelper {
                     if (listener != null) listener.onError(e.getMessage());
                 });
         }
+    }
+
+    /**
+     * Sends an in-app notification to an admin-selected audience. The admin
+     * client only writes under each recipient's own notification node; the
+     * database rules still verify that the caller is an admin.
+     *
+     * @param audience "all", "patients", "doctors", or "selected"
+     * @param selectedUserIds used only when audience is "selected"
+     */
+    public static void sendAdminNotification(
+            String title,
+            String message,
+            String audience,
+            List<String> selectedUserIds,
+            OnCompleteListener<Integer> listener) {
+        if (title == null || title.trim().isEmpty() || message == null || message.trim().isEmpty()) {
+            if (listener != null) listener.onError("Title and message are required");
+            return;
+        }
+        String target = audience == null ? "" : audience.trim().toLowerCase();
+        if (!("all".equals(target) || "patients".equals(target)
+                || "doctors".equals(target) || "selected".equals(target))) {
+            if (listener != null) listener.onError("Invalid notification audience");
+            return;
+        }
+
+        getUsersRef().addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<String, Object> updates = new HashMap<>();
+                for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+                    String userId = userSnapshot.getKey();
+                    String role = userSnapshot.child("role").getValue(String.class);
+                    boolean selected = "selected".equals(target)
+                            && selectedUserIds != null && selectedUserIds.contains(userId);
+                    boolean matches = "all".equals(target)
+                            || ("patients".equals(target) && "patient".equals(role))
+                            || ("doctors".equals(target) && "doctor".equals(role))
+                            || selected;
+                    if (!matches || userId == null || userId.trim().isEmpty()) continue;
+
+                    String notificationId = getNotificationsRef(userId).push().getKey();
+                    if (notificationId == null) continue;
+                    Map<String, Object> notification = new HashMap<>();
+                    notification.put("notificationId", notificationId);
+                    notification.put("userId", userId);
+                    notification.put("title", title.trim());
+                    notification.put("message", message.trim());
+                    notification.put("type", "admin_broadcast");
+                    notification.put("timestamp", System.currentTimeMillis());
+                    notification.put("isRead", false);
+                    updates.put("notifications/" + userId + "/" + notificationId, notification);
+                }
+                if (updates.isEmpty()) {
+                    if (listener != null) listener.onSuccess(0);
+                    return;
+                }
+                getFirebaseDatabase().getReference().updateChildren(updates)
+                        .addOnSuccessListener(v -> { if (listener != null) listener.onSuccess(updates.size()); })
+                        .addOnFailureListener(e -> { if (listener != null) listener.onError(e.getMessage()); });
+            }
+
+            @Override public void onCancelled(@NonNull DatabaseError error) {
+                if (listener != null) listener.onError(error.getMessage());
+            }
+        });
     }
 
     public static DatabaseReference getDoctorAppointmentsRef(String doctorId) {
