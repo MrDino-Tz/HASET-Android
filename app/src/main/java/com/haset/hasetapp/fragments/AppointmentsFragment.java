@@ -46,6 +46,7 @@ import android.widget.TextView;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.AppointmentsViewModel;
 import com.haset.hasetapp.utils.PreferenceManager;
+import com.haset.hasetapp.utils.Constants;
 
 public class AppointmentsFragment extends Fragment {
     private TabLayout tabLayout;
@@ -64,9 +65,16 @@ public class AppointmentsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        
+        preferenceManager = new PreferenceManager(requireContext());
+
+        String normalizedRole = preferenceManager.getUserRole() == null
+                ? "" : preferenceManager.getUserRole().trim().toLowerCase();
+        boolean doctorDashboard = normalizedRole.equals(Constants.ROLE_DOCTOR)
+                || normalizedRole.contains("doctor");
         TAB_TITLES = new String[]{
-                getString(R.string.upcoming_tab),
+                doctorDashboard
+                        ? getString(R.string.pending)
+                        : getString(R.string.upcoming_tab),
                 getString(R.string.completed),
                 getString(R.string.canceled)
         };
@@ -74,7 +82,6 @@ public class AppointmentsFragment extends Fragment {
         viewPager = view.findViewById(R.id.vpAppointmentTabs);
         btnMoreOptions = view.findViewById(R.id.btnMoreOptions);
 
-        preferenceManager = new PreferenceManager(requireContext());
         viewModel = new ViewModelProvider(requireActivity()).get(AppointmentsViewModel.class);
         
         // Initialize user info so fragments can start loading immediately if they share the same info

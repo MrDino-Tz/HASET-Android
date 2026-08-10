@@ -386,7 +386,7 @@ public class FirebaseHelper {
 
     private static void getAppointmentsByIndex(String userId, String role,
                                                OnCompleteListener<List<AppointmentEntity>> listener) {
-        DatabaseReference index = Constants.ROLE_DOCTOR.equals(role)
+        DatabaseReference index = Constants.ROLE_DOCTOR.equalsIgnoreCase(role)
                 ? getDoctorAppointmentsRef(userId) : getPatientAppointmentsRef(userId);
         index.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -444,7 +444,7 @@ public class FirebaseHelper {
     public static void getAppointmentsByUser(String userId, String role, OnCompleteListener<List<AppointmentEntity>> listener) {
         // Read the indexed main collection in one request instead of fetching
         // the index and then issuing one network request per appointment.
-        String participantField = Constants.ROLE_DOCTOR.equals(role) ? "doctorId" : "patientId";
+        String participantField = Constants.ROLE_DOCTOR.equalsIgnoreCase(role) ? "doctorId" : "patientId";
         getAppointmentsRef().orderByChild(participantField).equalTo(userId)
                 .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
