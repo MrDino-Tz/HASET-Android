@@ -13,18 +13,22 @@ struct SixDigitMFAInput: View {
         ZStack {
             HStack(spacing: 8) {
                 ForEach(0..<6, id: \.self) { index in
-                    Text(digit(at: index))
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
-                        .frame(width: 42, height: 52)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(isInvalid ? Color.red : (isVerified ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.35)), lineWidth: 2))
+                    Text(maskedDigit(at: index))
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundStyle(HASETTheme.textPrimary)
+                        .frame(width: 40, height: 50)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(borderColor(at: index), lineWidth: isActive(index) ? 2 : 1)
+                        }
                 }
             }
             TextField("", text: $code)
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
                 .focused($focused)
-                .opacity(0.05)
+                .foregroundStyle(Color.clear)
+                .tint(Color.clear)
                 .frame(maxWidth: .infinity, minHeight: 56)
                 .onChange(of: code) { value in
                     let sanitized = String(value.filter(\.isNumber).prefix(6))
@@ -37,7 +41,17 @@ struct SixDigitMFAInput: View {
         .accessibilityLabel("Six digit verification code")
     }
 
-    private func digit(at index: Int) -> String { guard index < code.count else { return "" }; return String(code[code.index(code.startIndex, offsetBy: index)]) }
+    private func maskedDigit(at index: Int) -> String { index < code.count ? "•" : "" }
+
+    private func isActive(_ index: Int) -> Bool {
+        focused && code.count < 6 && index == code.count
+    }
+
+    private func borderColor(at index: Int) -> Color {
+        if isInvalid { return .red }
+        if isVerified || isActive(index) { return HASETTheme.greenPrimary }
+        return HASETTheme.textSecondary.opacity(0.3)
+    }
 }
 
 struct LanguageToggle: View {
@@ -388,6 +402,8 @@ struct MFAChallengeView: View {
 struct MFAEnrollmentView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     @Environment(\.scenePhase) private var scenePhase
+    var onComplete: (() -> Void)?
+    var onCancel: (() -> Void)?
     @State private var setup: MobileMFASetupResponse?
     @State private var code = ""
     @State private var acknowledged = false
@@ -396,6 +412,11 @@ struct MFAEnrollmentView: View {
     @State private var didRequest = false
     @State private var privacyCovered = false
     @State private var screenCaptured = false
+
+    init(onComplete: (() -> Void)? = nil, onCancel: (() -> Void)? = nil) {
+        self.onComplete = onComplete
+        self.onCancel = onCancel
+    }
 
     var body: some View {
         ScrollView {
@@ -411,7 +432,11 @@ struct MFAEnrollmentView: View {
                     if !setup.recoveryCodes.isEmpty { Text("Recovery codes will be shown after confirmation.").font(.caption) }
                 } else if loading { ProgressView("Preparing setup…") } else { Button("Retry setup") { requestSetup() }.buttonStyle(PrimaryButtonStyle()) }
                 if let error { Text(error).foregroundStyle(.red).multilineTextAlignment(.center) }
-                Button("Log out") { appViewModel.logout() }
+                if let onCancel {
+                    Button("Cancel", action: onCancel)
+                } else {
+                    Button("Log out") { appViewModel.logout() }
+                }
             }.padding(24)
         }
         .privacySensitive()
@@ -422,7 +447,10 @@ struct MFAEnrollmentView: View {
         .sheet(isPresented: Binding(get: { setup != nil && acknowledged }, set: { _ in })) { EmptyView() }
         .alert("Recovery codes", isPresented: Binding(get: { setup != nil && acknowledged }, set: { _ in })) {
             Button("Copy all") { if let codes = setup?.recoveryCodes { UIPasteboard.general.string = codes.joined(separator: "\n") } }
-            Button("I saved them") { Task { await appViewModel.completeMFAEnrollment() } }
+            Button("I saved them") {
+                if let onComplete { onComplete() }
+                else { Task { await appViewModel.completeMFAEnrollment() } }
+            }
         } message: { Text(setup?.recoveryCodes.joined(separator: "\n") ?? "") }
     }
 
@@ -441,6 +469,7 @@ struct MFAEnrollmentView: View {
                 if freshSession.idToken != session.idToken || freshSession.refreshToken != session.refreshToken {
                     SessionStore().saveSession(freshSession)
                 }
+                appViewModel.activeSession = freshSession
                 setup = try await service.setupMobileMFA(idToken: freshSession.idToken)
                 loading = false
             } catch let setupError {

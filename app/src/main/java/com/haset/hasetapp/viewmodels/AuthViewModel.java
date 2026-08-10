@@ -61,7 +61,7 @@ public class AuthViewModel extends AndroidViewModel {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!response.isSuccessful() || response.body() == null) { authState.postValue(AuthState.error("Unable to verify MFA status.")); return; }
                     boolean enabled = response.body().has("two_factor_enabled") && response.body().get("two_factor_enabled").getAsBoolean();
-                    if (enabled) authState.postValue(AuthState.mfaRequired()); else authState.postValue(AuthState.mfaSetupRequired());
+                    if (enabled) authState.postValue(AuthState.mfaRequired()); else fetchUserData(user.getUid());
                 }
                 public void onFailure(Call<JsonObject> call, Throwable t) { authState.postValue(AuthState.error("MFA service unavailable.")); }
             });

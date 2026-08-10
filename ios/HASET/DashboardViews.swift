@@ -2344,6 +2344,10 @@ struct AppointmentsOverviewView: View {
     let role: UserRole
     @EnvironmentObject private var appViewModel: AppViewModel
     @State private var selectedStatus: AppointmentSummary.Status?
+    @State private var pendingConfirmation: AppointmentConfirmation?
+    @State private var appointmentToReschedule: AppointmentSummary?
+    @State private var actionInProgressId: String?
+    @State private var selectedConversation: ConversationSummary?
 
     private var appointments: [AppointmentSummary] {
         appViewModel.appointments
@@ -2397,6 +2401,8 @@ struct AppointmentsOverviewView: View {
                                     .font(HASETTheme.font(.regular, 13))
                                     .foregroundStyle(HASETTheme.greenPrimary)
 
+                                appointmentActions(for: appointment)
+
                                 if let chatConversation = chatConversation(for: appointment) {
                                     NavigationLink {
                                         ChatThreadView(conversation: chatConversation, role: role)
@@ -2428,6 +2434,123 @@ struct AppointmentsOverviewView: View {
         .refreshable {
             await appViewModel.loadAppointments(force: true)
         }
+        .navigationDestination(
+            isPresented: Binding(
+                get: { selectedConversation != nil },
+                set: { if !$0 { selectedConversation = nil } }
+            )
+        ) {
+            if let conversation = selectedConversation {
+                ChatThreadView(conversation: conversation, role: role)
+            }
+        }
+        .alert(item: $pendingConfirmation) { confirmation in
+            let primaryButton: Alert.Button = confirmation.action == .approve
+                ? .default(Text(actionLabel(confirmation.action))) {
+                    perform(confirmation.action, on: confirmation.appointment)
+                }
+                : .destructive(Text(actionLabel(confirmation.action))) {
+                    perform(confirmation.action, on: confirmation.appointment)
+                }
+            return Alert(
+                title: Text(actionLabel(confirmation.action)),
+                message: Text(appViewModel.tr("confirm_appointment_action")),
+                primaryButton: primaryButton,
+                secondaryButton: .cancel(Text(appViewModel.tr("cancel")))
+            )
+        }
+        .sheet(item: $appointmentToReschedule) { appointment in
+            AppointmentRescheduleSheet(appointment: appointment) { date, time in
+                await appViewModel.rescheduleAppointment(
+                    appointmentId: appointment.id,
+                    date: date,
+                    time: time
+                )
+            }
+            .environmentObject(appViewModel)
+        }
+    }
+
+    @ViewBuilder
+    private func appointmentActions(for appointment: AppointmentSummary) -> some View {
+        if role == .doctor && appointment.status == .pending {
+            HStack(spacing: 10) {
+                appointmentActionButton(
+                    title: appViewModel.tr("decline"),
+                    color: HASETTheme.redPrimary,
+                    appointment: appointment
+                ) {
+                    pendingConfirmation = AppointmentConfirmation(appointment: appointment, action: .decline)
+                }
+                appointmentActionButton(
+                    title: appViewModel.tr("approve"),
+                    color: HASETTheme.greenPrimary,
+                    appointment: appointment
+                ) {
+                    pendingConfirmation = AppointmentConfirmation(appointment: appointment, action: .approve)
+                }
+            }
+        } else if role == .patient && (appointment.status == .pending || appointment.status == .approved) {
+            HStack(spacing: 10) {
+                appointmentActionButton(
+                    title: appViewModel.tr("cancel"),
+                    color: HASETTheme.redPrimary,
+                    appointment: appointment
+                ) {
+                    pendingConfirmation = AppointmentConfirmation(appointment: appointment, action: .cancel)
+                }
+                appointmentActionButton(
+                    title: appViewModel.tr("reschedule"),
+                    color: HASETTheme.greenPrimary,
+                    appointment: appointment
+                ) {
+                    appointmentToReschedule = appointment
+                }
+            }
+        }
+    }
+
+    private func appointmentActionButton(
+        title: String,
+        color: Color,
+        appointment: AppointmentSummary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Group {
+                if actionInProgressId == appointment.id {
+                    ProgressView().tint(.white)
+                } else {
+                    Text(title).font(HASETTheme.font(.medium, 13))
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(color))
+        }
+        .buttonStyle(.plain)
+        .disabled(actionInProgressId != nil)
+    }
+
+    private func perform(_ action: AppointmentAction, on appointment: AppointmentSummary) {
+        actionInProgressId = appointment.id
+        Task {
+            let succeeded = await appViewModel.updateAppointmentStatus(
+                appointmentId: appointment.id,
+                status: action.firebaseStatus
+            )
+            actionInProgressId = nil
+            if succeeded,
+               action == .approve,
+               appointment.appointmentType?.lowercased() == "online chat" {
+                selectedConversation = conversation(for: appointment)
+            }
+        }
+    }
+
+    private func actionLabel(_ action: AppointmentAction) -> String {
+        appViewModel.tr(action.localizationKey)
     }
 
     private func statusColor(_ status: AppointmentSummary.Status) -> Color {
@@ -2443,7 +2566,11 @@ struct AppointmentsOverviewView: View {
 
     private func chatConversation(for appointment: AppointmentSummary) -> ConversationSummary? {
         guard appointment.appointmentType?.lowercased() == "online chat" else { return nil }
-        guard isChatWindowOpen(for: appointment) else { return nil }
+        guard appointment.status == .approved else { return nil }
+        return conversation(for: appointment)
+    }
+
+    private func conversation(for appointment: AppointmentSummary) -> ConversationSummary? {
         guard let currentUser = appViewModel.currentUser else { return nil }
 
         let otherUserId: String
@@ -2472,22 +2599,133 @@ struct AppointmentsOverviewView: View {
 
     private func chatButtonTitle(for appointment: AppointmentSummary) -> String {
         if role == .doctor && appointment.status == .approved {
-            return "Start Chat"
+            return appViewModel.tr("start_chat")
         }
-        if appointment.status == .completed {
-            return "Return to Doctor"
-        }
-        return "Open Chat"
-    }
-
-    private func isChatWindowOpen(for appointment: AppointmentSummary) -> Bool {
-        guard let createdAt = appointment.createdAt else { return false }
-        let age = Date().timeIntervalSince1970 * 1000 - createdAt
-        return age <= 24 * 60 * 60 * 1000
+        return appViewModel.tr("open_chat")
     }
 
     private func sortedChatRoomId(_ userId1: String, _ userId2: String) -> String {
         userId1 < userId2 ? "\(userId1)_\(userId2)" : "\(userId2)_\(userId1)"
+    }
+}
+
+private enum AppointmentAction: Equatable {
+    case approve
+    case decline
+    case cancel
+
+    var firebaseStatus: String {
+        switch self {
+        case .approve: return "approved"
+        case .decline: return "declined"
+        case .cancel: return "cancelled"
+        }
+    }
+
+    var localizationKey: String {
+        switch self {
+        case .approve: return "approve"
+        case .decline: return "decline"
+        case .cancel: return "cancel_appointment"
+        }
+    }
+}
+
+private struct AppointmentConfirmation: Identifiable {
+    let appointment: AppointmentSummary
+    let action: AppointmentAction
+    var id: String { "\(appointment.id)-\(action.firebaseStatus)" }
+}
+
+private struct AppointmentRescheduleSheet: View {
+    let appointment: AppointmentSummary
+    let onSave: (String, String) async -> Bool
+
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var selectedDate: Date
+    @State private var selectedTime: Date
+    @State private var isSaving = false
+
+    init(appointment: AppointmentSummary, onSave: @escaping (String, String) async -> Bool) {
+        self.appointment = appointment
+        self.onSave = onSave
+        _selectedDate = State(initialValue: Self.parseDate(appointment.date) ?? Date())
+        _selectedTime = State(initialValue: Self.parseTime(appointment.time) ?? Date())
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker(
+                        appViewModel.tr("select_date"),
+                        selection: $selectedDate,
+                        in: Calendar.current.startOfDay(for: Date())...,
+                        displayedComponents: .date
+                    )
+                    DatePicker(
+                        appViewModel.tr("select_time"),
+                        selection: $selectedTime,
+                        displayedComponents: .hourAndMinute
+                    )
+                }
+            }
+            .navigationTitle(appViewModel.tr("reschedule_appointment"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(appViewModel.tr("cancel")) { dismiss() }
+                        .disabled(isSaving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(appViewModel.tr("save")) {
+                        save()
+                    }
+                    .disabled(isSaving)
+                }
+            }
+            .overlay {
+                if isSaving {
+                    ProgressView()
+                        .padding(18)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .interactiveDismissDisabled(isSaving)
+    }
+
+    private func save() {
+        isSaving = true
+        Task {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "dd MMM yyyy"
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            let succeeded = await onSave(
+                dateFormatter.string(from: selectedDate),
+                timeFormatter.string(from: selectedTime)
+            )
+            isSaving = false
+            if succeeded { dismiss() }
+        }
+    }
+
+    private static func parseDate(_ value: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd MMM yyyy"
+        return formatter.date(from: value)
+    }
+
+    private static func parseTime(_ value: String) -> Date? {
+        for format in ["HH:mm", "h:mm a"] {
+            let formatter = DateFormatter()
+            formatter.dateFormat = format
+            if let date = formatter.date(from: value) { return date }
+        }
+        return nil
     }
 }
 
@@ -3107,18 +3345,10 @@ struct DoctorsCatalogView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(HASETTheme.textPrimary)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            Circle()
-                                .fill(Color.white)
-                                .overlay(
-                                    Circle()
-                                        .stroke(HASETTheme.divider, lineWidth: 1)
-                                )
-                        )
                 }
+                .accessibilityLabel("Back")
             }
             ToolbarItem(placement: .principal) {
                 Text(appViewModel.tr("find_doctors"))
@@ -3150,10 +3380,11 @@ struct DoctorsCatalogView: View {
                         Task { await appViewModel.loadDoctors(force: true) }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 24, weight: .regular))
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(HASETTheme.textPrimary)
                 }
+                .accessibilityLabel("Doctor list options")
             }
         }
     }
@@ -3804,6 +4035,10 @@ struct SettingsView: View {
     @State private var supportPresented = false
     @State private var languagePickerPresented = false
     @State private var themePickerPresented = false
+    @State private var mfaEnabled = false
+    @State private var mfaBusy = true
+    @State private var mfaEnrollmentPresented = false
+    @State private var mfaDisablePresented = false
 
     var body: some View {
         ScrollView {
@@ -3853,6 +4088,22 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.plain)
                         SettingsDivider()
+                        SettingsRow(
+                            icon: "lock.shield",
+                            title: appViewModel.tr("multi_factor_authentication"),
+                            subtitle: appViewModel.tr(mfaEnabled ? "mfa_enabled_desc" : "mfa_disabled_desc")
+                        ) {
+                            Toggle("", isOn: Binding(
+                                get: { mfaEnabled },
+                                set: { requestedValue in
+                                    if requestedValue { mfaEnrollmentPresented = true }
+                                    else { mfaDisablePresented = true }
+                                }
+                            ))
+                            .labelsHidden()
+                            .disabled(mfaBusy)
+                        }
+                        SettingsDivider()
                         NavigationLink {
                             ForgotPasswordView()
                         } label: {
@@ -3874,8 +4125,31 @@ struct SettingsView: View {
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await refreshMFAStatus() }
         .sheet(isPresented: $supportPresented) {
             SupportSheet()
+        }
+        .sheet(isPresented: $mfaEnrollmentPresented, onDismiss: {
+            Task { await refreshMFAStatus() }
+        }) {
+            MFAEnrollmentView(
+                onComplete: {
+                    mfaEnabled = true
+                    mfaEnrollmentPresented = false
+                },
+                onCancel: { mfaEnrollmentPresented = false }
+            )
+            .environmentObject(appViewModel)
+        }
+        .sheet(isPresented: $mfaDisablePresented) {
+            MFADisableView(
+                onDisabled: {
+                    mfaEnabled = false
+                    mfaDisablePresented = false
+                },
+                onCancel: { mfaDisablePresented = false }
+            )
+            .environmentObject(appViewModel)
         }
         .confirmationDialog(appViewModel.tr("language"), isPresented: $languagePickerPresented, titleVisibility: .visible) {
             Button(appViewModel.tr("english")) { appViewModel.changeLanguage("en") }
@@ -3887,6 +4161,90 @@ struct SettingsView: View {
             Button(ThemeMode.dark.localizedLabel(languageCode: appViewModel.selectedLanguage)) { appViewModel.setThemeMode(.dark) }
             Button(ThemeMode.system.localizedLabel(languageCode: appViewModel.selectedLanguage)) { appViewModel.setThemeMode(.system) }
             Button(appViewModel.tr("close"), role: .cancel) {}
+        }
+    }
+
+    private func refreshMFAStatus() async {
+        mfaBusy = true
+        defer { mfaBusy = false }
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else { return }
+        do {
+            let service = AuthService()
+            let freshSession = try await service.refreshSessionIfNeeded(session)
+            SessionStore().saveSession(freshSession)
+            appViewModel.activeSession = freshSession
+            mfaEnabled = try await service.mobileMFAStatus(idToken: freshSession.idToken)
+        } catch {
+            appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
+        }
+    }
+}
+
+private struct MFADisableView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    let onDisabled: () -> Void
+    let onCancel: () -> Void
+    @State private var code = ""
+    @State private var loading = false
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "lock.slash")
+                    .font(.system(size: 38, weight: .medium))
+                    .foregroundStyle(HASETTheme.redPrimary)
+                Text("Disable multi-factor authentication?")
+                    .font(HASETTheme.font(.medium, 20))
+                    .multilineTextAlignment(.center)
+                Text("Enter the current six-digit code from your authenticator app to confirm.")
+                    .font(HASETTheme.font(.regular, 14))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                SixDigitMFAInput(code: $code, isInvalid: error != nil, isVerified: false) {}
+                if let error {
+                    Text(error)
+                        .font(HASETTheme.font(.regular, 13))
+                        .foregroundStyle(HASETTheme.redPrimary)
+                        .multilineTextAlignment(.center)
+                }
+                Button(loading ? "Disabling…" : "Disable MFA") { disableMFA() }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(loading || code.count != 6)
+                Button(appViewModel.tr("cancel"), action: onCancel)
+                    .foregroundStyle(HASETTheme.greenPrimary)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(HASETTheme.backgroundPrimary.ignoresSafeArea())
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func disableMFA() {
+        guard code.count == 6, !loading else { return }
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            error = "Authentication expired. Please sign in again."
+            return
+        }
+        loading = true
+        error = nil
+        Task {
+            do {
+                let service = AuthService()
+                let freshSession = try await service.refreshSessionIfNeeded(session)
+                SessionStore().saveSession(freshSession)
+                appViewModel.activeSession = freshSession
+                try await service.disableMobileMFA(code: code, idToken: freshSession.idToken)
+                loading = false
+                code = ""
+                onDisabled()
+            } catch {
+                loading = false
+                code = ""
+                self.error = error.localizedDescription
+            }
         }
     }
 }
@@ -4131,6 +4489,7 @@ struct EditProfileView: View {
 
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var profileImageData: Data?
+    @State private var hasSelectedNewPhoto = false
     @State private var fullName = ""
     @State private var phone = ""
     @State private var age = ""
@@ -4219,20 +4578,23 @@ struct EditProfileView: View {
             }
 
             Button(appViewModel.tr("save_changes")) {
-                appViewModel.saveProfile(
-                    fullName: fullName,
-                    phone: phone,
-                    age: age,
-                    gender: gender,
-                    bio: bio,
-                    specialization: specialization,
-                    consultationFee: consultationFee,
-                    availableTimes: Array(selectedAvailableTimes).sorted { lhs, rhs in lhs < rhs },
-                    profileImage: encodedProfileImage
-                )
-                dismiss()
+                Task {
+                    let saved = await appViewModel.saveProfile(
+                        fullName: fullName,
+                        phone: phone,
+                        age: age,
+                        gender: gender,
+                        bio: bio,
+                        specialization: specialization,
+                        consultationFee: consultationFee,
+                        availableTimes: Array(selectedAvailableTimes).sorted { lhs, rhs in lhs < rhs },
+                        profileImageData: hasSelectedNewPhoto ? profileImageData : nil
+                    )
+                    if saved { dismiss() }
+                }
             }
             .buttonStyle(PrimaryButtonStyle())
+            .disabled(appViewModel.isLoading)
             .listRowInsets(EdgeInsets())
             .padding(.top, 8)
         }
@@ -4252,7 +4614,10 @@ struct EditProfileView: View {
         .onChange(of: selectedPhotoItem) { newItem in
             guard let newItem else { return }
             Task {
-                profileImageData = try? await newItem.loadTransferable(type: Data.self)
+                guard let data = try? await newItem.loadTransferable(type: Data.self),
+                      let prepared = prepareProfileImage(data) else { return }
+                profileImageData = prepared
+                hasSelectedNewPhoto = true
             }
         }
     }
@@ -4275,13 +4640,6 @@ struct EditProfileView: View {
         return UIImage(data: profileImageData)
     }
 
-    private var encodedProfileImage: String {
-        guard let profileImageData else {
-            return appViewModel.currentUser?.profileImage ?? ""
-        }
-        return profileImageData.base64EncodedString()
-    }
-
     private func decodeProfileImage(from value: String) -> Data? {
         guard !value.isEmpty else { return nil }
         if let data = Data(base64Encoded: value) {
@@ -4291,6 +4649,18 @@ struct EditProfileView: View {
             return data
         }
         return nil
+    }
+
+    private func prepareProfileImage(_ data: Data) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let longestSide = max(image.size.width, image.size.height)
+        let scale = min(1, 1024 / longestSide)
+        let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return resized.jpegData(compressionQuality: 0.82)
     }
 }
 

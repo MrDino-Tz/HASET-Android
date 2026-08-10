@@ -72,7 +72,10 @@ final class AppViewModel: ObservableObject {
                 return
             }
 
-            if let session = sessionStore.loadSession() {
+            if let storedSession = sessionStore.loadSession() {
+                let session = (try? await authService.refreshSessionIfNeeded(storedSession)) ?? storedSession
+                sessionStore.saveSession(session)
+                activeSession = session
                 currentUser = try? await authService.restoreProfile(session: session)
                 if currentUser == nil {
                     currentUser = UserProfile(
@@ -219,7 +222,10 @@ final class AppViewModel: ObservableObject {
                 sessionStore.saveSession(result.0)
                 activeSession = result.0
                 if mfaEnabled { pendingMFASession = result.0; pendingMFAProfile = result.1; route = .mfaChallenge; return }
-                pendingMFASession = result.0; pendingMFAProfile = result.1; route = .mfaEnrollment; return
+                currentUser = result.1
+                if result.1.role == .patient { await loadPatientHomeContent(force: true) }
+                await loadDoctors(force: true); await loadAppointments(force: true); await loadConversations(force: true); await loadNotifications(force: true)
+                route = .dashboard(result.1.role)
             } catch {
                 alertState = AlertState(title: tr("login_failed"), message: error.localizedDescription)
             }
@@ -345,19 +351,19 @@ final class AppViewModel: ObservableObject {
         specialization: String,
         consultationFee: String,
         availableTimes: [String],
-        profileImage: String
-    ) {
-        guard var profile = currentUser else { return }
+        profileImageData: Data?
+    ) async -> Bool {
+        guard var profile = currentUser else { return false }
         let trimmedName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard ValidationService.isValidName(trimmedName) else {
             alertState = AlertState(title: tr("error"), message: tr("name_required"))
-            return
+            return false
         }
         guard ValidationService.isValidPhone(trimmedPhone) else {
             alertState = AlertState(title: tr("error"), message: tr("valid_phone_required"))
-            return
+            return false
         }
 
         profile.fullName = trimmedName
@@ -368,35 +374,42 @@ final class AppViewModel: ObservableObject {
         profile.specialization = specialization.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : specialization
         profile.consultationFee = consultationFee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : consultationFee
         profile.availableTimes = availableTimes.isEmpty ? nil : availableTimes
-        profile.profileImage = profileImage
 
         isLoading = true
-        Task {
-            defer { isLoading = false }
-            guard let session = sessionStore.loadSession() else {
-                currentUser = profile
-                alertState = AlertState(title: tr("success"), message: tr("profile_updated_successfully"))
-                return
-            }
+        defer { isLoading = false }
+        guard let storedSession = sessionStore.loadSession() else {
+            alertState = AlertState(title: tr("update_failed"), message: "Authentication expired. Please sign in again.")
+            return false
+        }
 
-            do {
-                try await authService.updateUserProfile(profile, idToken: session.idToken)
-                currentUser = profile
-                sessionStore.saveSession(
-                    StoredSession(
-                        userId: session.userId,
-                        idToken: session.idToken,
-                        refreshToken: session.refreshToken,
-                        role: session.role,
-                        userName: profile.fullName,
-                        email: session.email,
-                        phone: profile.phone
-                    )
+        do {
+            let session = try await authService.refreshSessionIfNeeded(storedSession)
+            sessionStore.saveSession(session)
+            activeSession = session
+            if let profileImageData {
+                profile.profileImage = try await authService.uploadProfileImage(
+                    profileImageData,
+                    userId: profile.userId
                 )
-                alertState = AlertState(title: tr("success"), message: tr("profile_updated_successfully"))
-            } catch {
-                alertState = AlertState(title: tr("update_failed"), message: error.localizedDescription)
             }
+            try await authService.updateUserProfile(profile, idToken: session.idToken)
+            currentUser = profile
+            sessionStore.saveSession(
+                StoredSession(
+                    userId: session.userId,
+                    idToken: session.idToken,
+                    refreshToken: session.refreshToken,
+                    role: session.role,
+                    userName: profile.fullName,
+                    email: session.email,
+                    phone: profile.phone
+                )
+            )
+            alertState = AlertState(title: tr("success"), message: tr("profile_updated_successfully"))
+            return true
+        } catch {
+            alertState = AlertState(title: tr("update_failed"), message: error.localizedDescription)
+            return false
         }
     }
 
@@ -504,9 +517,15 @@ final class AppViewModel: ObservableObject {
     func setDoctorPresence(online: Bool) async {
         guard currentUser?.role == .doctor else { return }
 
-        let idToken = sessionStore.loadSession()?.idToken
+        guard let storedSession = sessionStore.loadSession() else {
+            alertState = AlertState(title: tr("error"), message: "Authentication expired. Please sign in again.")
+            return
+        }
         do {
-            try await authService.updateDoctorPresence(doctorId: currentUser?.userId ?? "", online: online, idToken: idToken)
+            let session = try await authService.refreshSessionIfNeeded(storedSession)
+            sessionStore.saveSession(session)
+            activeSession = session
+            try await authService.updateDoctorPresence(doctorId: currentUser?.userId ?? "", online: online, idToken: session.idToken)
             doctorPresence = DoctorPresenceSummary(
                 doctorId: currentUser?.userId ?? "",
                 online: online,
@@ -520,12 +539,21 @@ final class AppViewModel: ObservableObject {
     func loadDoctors(force: Bool) async {
         if didLoadDoctors && !force { return }
         didLoadDoctors = true
-        let idToken = sessionStore.loadSession()?.idToken
         do {
+            let idToken: String?
+            if let storedSession = sessionStore.loadSession() {
+                let session = try await authService.refreshSessionIfNeeded(storedSession)
+                sessionStore.saveSession(session)
+                activeSession = session
+                idToken = session.idToken
+            } else {
+                idToken = nil
+            }
             let result = try await authService.fetchDoctors(idToken: idToken)
             doctors = result
         } catch {
             doctors = []
+            didLoadDoctors = false
         }
     }
 
@@ -533,12 +561,71 @@ final class AppViewModel: ObservableObject {
         guard let currentUser else { return }
         if didLoadAppointments && !force { return }
         didLoadAppointments = true
-        let idToken = sessionStore.loadSession()?.idToken
         do {
-            let result = try await authService.fetchAppointments(userId: currentUser.userId, role: currentUser.role, idToken: idToken)
+            let idToken: String?
+            if let storedSession = sessionStore.loadSession() {
+                let session = try await authService.refreshSessionIfNeeded(storedSession)
+                sessionStore.saveSession(session)
+                activeSession = session
+                idToken = session.idToken
+            } else {
+                idToken = nil
+            }
+            let result = try await authService.fetchAppointments(
+                userId: currentUser.userId,
+                role: currentUser.role,
+                idToken: idToken
+            )
             appointments = result
         } catch {
             appointments = []
+            didLoadAppointments = false
+            alertState = AlertState(title: tr("error"), message: "Unable to load appointments: \(error.localizedDescription)")
+        }
+    }
+
+    func updateAppointmentStatus(appointmentId: String, status: String) async -> Bool {
+        do {
+            guard let storedSession = sessionStore.loadSession() else {
+                throw ServiceError.message("Authentication expired. Please sign in again.")
+            }
+            let session = try await authService.refreshSessionIfNeeded(storedSession)
+            sessionStore.saveSession(session)
+            activeSession = session
+            try await authService.updateAppointmentStatus(
+                appointmentId: appointmentId,
+                status: status,
+                idToken: session.idToken
+            )
+            await loadAppointments(force: true)
+            return true
+        } catch {
+            alertState = AlertState(title: tr("update_failed"), message: error.localizedDescription)
+            return false
+        }
+    }
+
+    func rescheduleAppointment(appointmentId: String, date: String, time: String) async -> Bool {
+        guard let currentUser else { return false }
+        do {
+            guard let storedSession = sessionStore.loadSession() else {
+                throw ServiceError.message("Authentication expired. Please sign in again.")
+            }
+            let session = try await authService.refreshSessionIfNeeded(storedSession)
+            sessionStore.saveSession(session)
+            activeSession = session
+            try await authService.rescheduleAppointment(
+                appointmentId: appointmentId,
+                date: date,
+                time: time,
+                rescheduledBy: currentUser.userId,
+                idToken: session.idToken
+            )
+            await loadAppointments(force: true)
+            return true
+        } catch {
+            alertState = AlertState(title: tr("update_failed"), message: error.localizedDescription)
+            return false
         }
     }
 

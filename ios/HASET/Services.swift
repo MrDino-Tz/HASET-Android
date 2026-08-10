@@ -11,6 +11,8 @@ enum HASETConstants {
     static let termsURL = "https://hasethospital.or.tz/legal/terms"
     static let supportURL = "https://hasethospital.or.tz/contact"
     static let appConfigPath = "app_config"
+    static let cloudinaryCloudName = "divky8yna"
+    static let cloudinaryUploadPreset = "haset_mobile_unsigned"
 }
 
 final class SessionStore {
@@ -416,6 +418,63 @@ final class AuthService {
 
     func updateUserProfile(_ profile: UserProfile, idToken: String) async throws {
         try await saveUserProfile(profile, idToken: idToken)
+        if profile.role == .doctor {
+            let doctorURL = try databaseURL(path: "doctors/\(profile.userId)", authToken: idToken)
+            var doctorUpdates: [String: Any] = [
+                "doctorId": profile.userId,
+                "profileImage": profile.profileImage,
+                "lastUpdated": Int(Date().timeIntervalSince1970 * 1000)
+            ]
+            if let specialization = profile.specialization { doctorUpdates["specialty"] = specialization }
+            if let consultationFee = profile.consultationFee { doctorUpdates["consultationFee"] = consultationFee }
+            if let availableTimes = profile.availableTimes { doctorUpdates["availableTimes"] = availableTimes }
+            try await patch(doctorUpdates, url: doctorURL)
+        }
+    }
+
+    func uploadProfileImage(_ imageData: Data, userId: String) async throws -> String {
+        guard !imageData.isEmpty else {
+            throw ServiceError.message("The selected profile photo is empty.")
+        }
+
+        let endpoint = "https://api.cloudinary.com/v1_1/\(HASETConstants.cloudinaryCloudName)/image/upload"
+        guard let url = URL(string: endpoint) else { throw ServiceError.invalidResponse }
+
+        let boundary = "HASET-\(UUID().uuidString)"
+        var body = Data()
+        func appendField(name: String, value: String) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
+        }
+
+        appendField(name: "upload_preset", value: HASETConstants.cloudinaryUploadPreset)
+        appendField(name: "folder", value: "profile_photos")
+        appendField(name: "public_id", value: "\(userId)_profile_\(UUID().uuidString)")
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"profile.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200 ... 299).contains(httpResponse.statusCode),
+              let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let secureURL = stringValue(json["secure_url"])?.nonEmpty else {
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = json["error"] as? [String: Any],
+               let message = stringValue(error["message"])?.nonEmpty {
+                throw ServiceError.message("Photo upload failed: \(message)")
+            }
+            throw ServiceError.message("Photo upload failed. Please try again.")
+        }
+        return secureURL
     }
 
     func deleteCurrentAccount(userId: String, role: UserRole, idToken: String?) async throws {
@@ -631,37 +690,59 @@ final class AuthService {
     }
 
     func fetchDoctors(idToken: String?) async throws -> [DoctorSummary] {
-        let usersURL = try databaseURL(path: "users", authToken: idToken)
         let doctorsURL = try databaseURL(path: "doctors", authToken: idToken)
-
-        async let usersResponse = URLSession.shared.data(from: usersURL)
-        async let doctorsResponse = URLSession.shared.data(from: doctorsURL)
-        let ((usersData, usersRawResponse), (doctorsData, doctorsRawResponse)) = try await (usersResponse, doctorsResponse)
-
-        try validate(response: usersRawResponse, data: usersData)
+        let (doctorsData, doctorsRawResponse) = try await URLSession.shared.data(from: doctorsURL)
         try validate(response: doctorsRawResponse, data: doctorsData)
-
-        let usersJSON = (try? JSONSerialization.jsonObject(with: usersData) as? [String: Any]) ?? [:]
         let doctorsJSON = (try? JSONSerialization.jsonObject(with: doctorsData) as? [String: Any]) ?? [:]
 
         let approvedDoctorIDs = Set(doctorsJSON.compactMap { key, value -> String? in
-            guard let item = value as? [String: Any] else { return nil }
-            let isApproved = boolValue(item["approved"]) ?? false
-            let doctorId = stringValue(item["doctorId"])?.nonEmpty ?? key
-            return isApproved ? doctorId : nil
+            guard let item = value as? [String: Any], boolValue(item["approved"]) == true else { return nil }
+            return stringValue(item["doctorId"])?.nonEmpty ?? key
         })
 
-        let useApprovedOnly = !approvedDoctorIDs.isEmpty
+        let usersURL = try databaseURL(
+            path: "users",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"role\""),
+                URLQueryItem(name: "equalTo", value: "\"doctor\"")
+            ]
+        )
+        var usersJSON: [String: Any] = [:]
+        if let (usersData, usersRawResponse) = try? await URLSession.shared.data(from: usersURL),
+           let response = usersRawResponse as? HTTPURLResponse,
+           (200 ... 299).contains(response.statusCode) {
+            usersJSON = (try? JSONSerialization.jsonObject(with: usersData) as? [String: Any]) ?? [:]
+        }
 
-        let doctors = usersJSON.compactMap { key, value -> DoctorSummary? in
-            guard let user = value as? [String: Any] else { return nil }
-            let role = stringValue(user["role"])?.lowercased()
-            guard role == "doctor" else { return nil }
-
-            let userId = stringValue(user["userId"])?.nonEmpty ?? key
-            if useApprovedOnly, !approvedDoctorIDs.contains(userId) {
-                return nil
+        if usersJSON.isEmpty, !approvedDoctorIDs.isEmpty {
+            let requests = try approvedDoctorIDs.map { doctorId in
+                (doctorId, try databaseURL(path: "users/\(doctorId)", authToken: idToken))
             }
+            let profileResponses = await withTaskGroup(of: (String, Data?).self) { group in
+                for (doctorId, url) in requests {
+                    group.addTask {
+                        guard let (data, response) = try? await URLSession.shared.data(from: url),
+                              let httpResponse = response as? HTTPURLResponse,
+                              (200 ... 299).contains(httpResponse.statusCode),
+                              data != Data("null".utf8) else { return (doctorId, nil) }
+                        return (doctorId, data)
+                    }
+                }
+
+                var responses: [(String, Data?)] = []
+                for await response in group { responses.append(response) }
+                return responses
+            }
+            for (doctorId, data) in profileResponses {
+                guard let data,
+                      let profile = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+                usersJSON[doctorId] = profile
+            }
+        }
+
+        let doctors = approvedDoctorIDs.compactMap { userId -> DoctorSummary? in
+            let user = usersJSON[userId] as? [String: Any] ?? [:]
 
             let doctorNode = doctorsJSON[userId] as? [String: Any]
             let approved = boolValue(doctorNode?["approved"])
@@ -674,6 +755,7 @@ final class AuthService {
                     "Doctor",
                 specialty: stringValue(doctorNode?["specialty"])?.nonEmpty ??
                     stringValue(user["specialty"])?.nonEmpty ??
+                    stringValue(user["specialization"])?.nonEmpty ??
                     "Medical Doctor",
                 hospital: stringValue(doctorNode?["hospital"])?.nonEmpty ??
                     stringValue(user["hospital"])?.nonEmpty ??
@@ -721,19 +803,75 @@ final class AuthService {
     }
 
     func fetchAppointments(userId: String, role: UserRole, idToken: String?) async throws -> [AppointmentSummary] {
-        let url = try databaseURL(path: "appointments", authToken: idToken)
-        let (data, response) = try await URLSession.shared.data(from: url)
-        try validate(response: response, data: data)
-        guard data != Data("null".utf8) else { return [] }
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ServiceError.invalidResponse
+        let appointmentRecords: [(String, [String: Any])]
+
+        if role == .admin {
+            appointmentRecords = try await fetchAppointmentRecordsFromMainNode(
+                userId: userId,
+                role: role,
+                idToken: idToken
+            )
+        } else {
+            do {
+                let indexPath = role == .doctor ? "doctor_appointments/\(userId)" : "patient_appointments/\(userId)"
+                let indexURL = try databaseURL(path: indexPath, authToken: idToken)
+                let (indexData, indexResponse) = try await URLSession.shared.data(from: indexURL)
+                try validate(response: indexResponse, data: indexData)
+
+                if indexData == Data("null".utf8) {
+                    appointmentRecords = try await fetchAppointmentRecordsFromMainNode(
+                        userId: userId,
+                        role: role,
+                        idToken: idToken
+                    )
+                } else {
+                    guard let index = try JSONSerialization.jsonObject(with: indexData) as? [String: Any] else {
+                        throw ServiceError.invalidResponse
+                    }
+
+                    let requests = try index.keys.map { appointmentId in
+                        (appointmentId, try databaseURL(path: "appointments/\(appointmentId)", authToken: idToken))
+                    }
+                    let responses = await withTaskGroup(of: (String, Data?).self) { group in
+                        for (appointmentId, url) in requests {
+                            group.addTask {
+                                guard let (data, response) = try? await URLSession.shared.data(from: url),
+                                      let httpResponse = response as? HTTPURLResponse,
+                                      (200 ... 299).contains(httpResponse.statusCode),
+                                      data != Data("null".utf8) else { return (appointmentId, nil) }
+                                return (appointmentId, data)
+                            }
+                        }
+
+                        var fetched: [(String, Data?)] = []
+                        for await response in group { fetched.append(response) }
+                        return fetched
+                    }
+                    let indexedRecords = responses.compactMap { appointmentId, data -> (String, [String: Any])? in
+                        guard let data,
+                              let item = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+                        return (appointmentId, item)
+                    }
+                    if indexedRecords.isEmpty {
+                        appointmentRecords = try await fetchAppointmentRecordsFromMainNode(
+                            userId: userId,
+                            role: role,
+                            idToken: idToken
+                        )
+                    } else {
+                        appointmentRecords = indexedRecords
+                    }
+                }
+            } catch {
+                appointmentRecords = try await fetchAppointmentRecordsFromMainNode(
+                    userId: userId,
+                    role: role,
+                    idToken: idToken
+                )
+            }
         }
 
-        let appointments = json.compactMap { key, value -> AppointmentSummary? in
-            guard let item = value as? [String: Any] else { return nil }
-            let ownerId = role == .doctor ? stringValue(item["doctorId"]) : stringValue(item["patientId"])
-            guard ownerId == userId else { return nil }
-
+        let appointments = appointmentRecords.compactMap { key, item -> AppointmentSummary? in
             let doctorName = stringValue(item["doctorName"])?.nonEmpty ?? "Doctor"
             let patientName = stringValue(item["patientName"])?.nonEmpty ?? "Patient"
             let specialty = stringValue(item["doctorSpecialty"])?.nonEmpty
@@ -749,6 +887,8 @@ final class AuthService {
                 doctorId: stringValue(item["doctorId"])?.nonEmpty,
                 title: role == .doctor ? patientName : doctorName,
                 subtitle: subtitle,
+                date: date,
+                time: time,
                 dateText: [date, time].filter { !$0.isEmpty }.joined(separator: ", "),
                 status: appointmentStatus(from: stringValue(item["status"])),
                 appointmentType: appointmentType,
@@ -756,7 +896,33 @@ final class AuthService {
             )
         }
 
-        return appointments.sorted { $0.id > $1.id }
+        return appointments.sorted {
+            if ($0.createdAt ?? 0) == ($1.createdAt ?? 0) { return $0.id > $1.id }
+            return ($0.createdAt ?? 0) > ($1.createdAt ?? 0)
+        }
+    }
+
+    private func fetchAppointmentRecordsFromMainNode(
+        userId: String,
+        role: UserRole,
+        idToken: String?
+    ) async throws -> [(String, [String: Any])] {
+        let url = try databaseURL(path: "appointments", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return [] }
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ServiceError.invalidResponse
+        }
+        let records: [(String, [String: Any])] = json.compactMap { key, value in
+            guard let item = value as? [String: Any] else { return nil }
+            return (key, item)
+        }
+        guard role != .admin else { return records }
+        return records.filter { _, item in
+            let ownerId = role == .doctor ? stringValue(item["doctorId"]) : stringValue(item["patientId"])
+            return ownerId == userId
+        }
     }
 
     func createAppointment(
@@ -812,6 +978,35 @@ final class AuthService {
         try await put(patientConversation, url: patientConvURL)
         let doctorConvURL = try databaseURL(path: "user_conversations/\(doctor.id)/\(patient.userId)", authToken: idToken)
         try await put(doctorConversation, url: doctorConvURL)
+    }
+
+    func updateAppointmentStatus(
+        appointmentId: String,
+        status: String,
+        idToken: String
+    ) async throws {
+        let url = try databaseURL(path: "appointments/\(appointmentId)", authToken: idToken)
+        try await patch([
+            "status": status,
+            "updatedAt": Int(Date().timeIntervalSince1970 * 1000)
+        ], url: url)
+    }
+
+    func rescheduleAppointment(
+        appointmentId: String,
+        date: String,
+        time: String,
+        rescheduledBy userId: String,
+        idToken: String
+    ) async throws {
+        let url = try databaseURL(path: "appointments/\(appointmentId)", authToken: idToken)
+        try await patch([
+            "date": date,
+            "time": time,
+            "status": "pending",
+            "lastUpdated": Int(Date().timeIntervalSince1970 * 1000),
+            "rescheduledBy": userId
+        ], url: url)
     }
 
     func initiatePayment(
@@ -934,6 +1129,13 @@ final class AuthService {
         return token
     }
 
+    func disableMobileMFA(code: String, idToken: String) async throws {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/disable")!
+        var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type"); request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code])
+        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+    }
+
     func requestDoctorWithdrawal(amount: Int, reason: String, idToken: String, mfaActionToken: String) async throws {
         let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/doctor/withdrawals")!
         var request = URLRequest(url: url)
@@ -998,6 +1200,7 @@ final class AuthService {
         let payload: [String: Any] = [
             "doctorId": doctorId,
             "online": online,
+            "onlineStatus": online ? "online" : "offline",
             "lastUpdated": Int(Date().timeIntervalSince1970 * 1000)
         ]
         try await patch(payload, url: url)
@@ -1162,7 +1365,11 @@ final class AuthService {
 
     private func saveUserProfile(_ profile: UserProfile, idToken: String) async throws {
         let url = try databaseURL(path: "users/\(profile.userId)", authToken: idToken)
-        try await put(profile, url: url)
+        let encoded = try JSONEncoder().encode(profile)
+        guard let fields = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+            throw ServiceError.invalidResponse
+        }
+        try await patch(fields, url: url)
     }
 
     private func saveDoctorBootstrap(profile: UserProfile, idToken: String) async throws {
@@ -1442,11 +1649,17 @@ final class AuthService {
         }
     }
 
-    private func databaseURL(path: String, authToken: String?) throws -> URL {
+    private func databaseURL(
+        path: String,
+        authToken: String?,
+        queryItems: [URLQueryItem] = []
+    ) throws -> URL {
         var components = URLComponents(string: "\(HASETConstants.firebaseDatabaseURL)/\(path).json")
+        var items = queryItems
         if let authToken {
-            components?.queryItems = [URLQueryItem(name: "auth", value: authToken)]
+            items.append(URLQueryItem(name: "auth", value: authToken))
         }
+        if !items.isEmpty { components?.queryItems = items }
         guard let url = components?.url else {
             throw ServiceError.invalidResponse
         }

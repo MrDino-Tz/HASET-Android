@@ -232,6 +232,13 @@
     <string name="change_profile_picture_desc">Badilisha picha ya wasifu, namba, Barua pepe</string>
     <string name="change_password">Badilisha Nenosiri</string>
     <string name="change_password_desc">Sasisha na uimarishe usalama wa akaunti</string>
+    <string name="mfa_settings_title">Uthibitishaji wa hatua mbili</string>
+    <string name="mfa_enabled_desc">Ulinzi wa ziada wa kuingia umewashwa</string>
+    <string name="mfa_disabled_desc">Linda kuingia kwa programu ya uthibitishaji</string>
+    <string name="mfa_disable_title">Zima uthibitishaji wa hatua mbili?</string>
+    <string name="mfa_disable_message">Weka msimbo wa sasa wa tarakimu sita kutoka programu yako ya uthibitishaji.</string>
+    <string name="mfa_disable_action">Zima MFA</string>
+    <string name="mfa_disabled_success">Uthibitishaji wa hatua mbili umezimwa</string>
     <string name="location_permission">Ufikiaji wa Mahali</string>
     <string name="location_permission_desc">Ruhusu programu kufikia mahali popote kwa wagonjwa wa karibu</string>
     <string name="location_permission_denied">Ruhusa ya mahali imkanwa</string>

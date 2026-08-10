@@ -166,6 +166,8 @@ struct AppointmentSummary: Identifiable, Hashable {
     let doctorId: String?
     let title: String
     let subtitle: String
+    let date: String
+    let time: String
     let dateText: String
     let status: Status
     let appointmentType: String?

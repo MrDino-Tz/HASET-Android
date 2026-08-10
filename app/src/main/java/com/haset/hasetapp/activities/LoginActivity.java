@@ -71,6 +71,7 @@ public class LoginActivity extends BaseActivity {
     private HealthTipsHelper healthTipsHelper;
     private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
     private UserEntity loggedInUser; // Store user for notification after permission
+    private android.app.Dialog mfaDialog;
 
     // private GoogleSignInClient mGoogleSignInClient;
     // private ActivityResultLauncher<Intent> googleSignInLauncher;
@@ -262,16 +263,37 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void showMfaDialog(boolean invalid) {
-        final MfaCodeInputView input = new MfaCodeInputView(this);
+        if (mfaDialog != null && mfaDialog.isShowing()) mfaDialog.dismiss();
+
+        mfaDialog = new android.app.Dialog(this, R.style.Theme_HASETApp);
+        mfaDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        mfaDialog.setCancelable(false);
+        mfaDialog.setContentView(R.layout.dialog_mfa_challenge);
+
+        final MfaCodeInputView input = mfaDialog.findViewById(R.id.mfaCodeInput);
+        TextView message = mfaDialog.findViewById(R.id.mfaMessage);
         if (invalid) input.setErrorState(true);
-        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Verification code").setMessage(invalid ? "The code was invalid or expired. Try again." : "Enter the six-digit code from your authenticator app.")
-                .setView(input).setNegativeButton("Cancel", (d, w) -> authViewModel.logout()).setPositiveButton("Verify", null).create();
-        dialog.setOnShowListener(x -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+        if (invalid) message.setText("The code was invalid or expired. Try again.");
+
+        mfaDialog.findViewById(R.id.mfaVerify).setOnClickListener(v -> {
             if (!input.isComplete()) { input.setErrorState(true); return; }
-            dialog.dismiss(); authViewModel.verifyMfa(input.getCode());
-        }));
-        dialog.show(); input.focusFirst();
+            mfaDialog.dismiss();
+            authViewModel.verifyMfa(input.getCode());
+        });
+        mfaDialog.findViewById(R.id.mfaCancel).setOnClickListener(v -> {
+            mfaDialog.dismiss();
+            authViewModel.logout();
+        });
+
+        mfaDialog.show();
+        if (mfaDialog.getWindow() != null) {
+            mfaDialog.getWindow().setLayout(
+                    android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                    android.view.WindowManager.LayoutParams.MATCH_PARENT);
+            mfaDialog.getWindow().setBackgroundDrawableResource(R.color.background_primary);
+            mfaDialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        input.focusFirst();
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
