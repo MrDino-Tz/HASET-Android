@@ -101,7 +101,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             if (appointment == null) return;
             
             // Display information based on user role
-            if (Constants.ROLE_DOCTOR.equals(userRole)) {
+            if (Constants.ROLE_DOCTOR.equalsIgnoreCase(userRole)) {
                 tvName.setText(appointment.getPatientName() != null ? 
                         appointment.getPatientName() : "Unknown Patient");
                 tvSpecialty.setText(appointment.getDoctorSpecialty() != null ? 
@@ -124,7 +124,8 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             tvStatus.setBackgroundColor(statusColor);
 
             // Show/hide action buttons
-            if (showActions && appointment.getStatus().equals(Constants.STATUS_PENDING) && !appointment.isPast()) {
+            String status = appointment.getStatus() == null ? "" : appointment.getStatus().trim().toLowerCase();
+            if (showActions && Constants.STATUS_PENDING.equals(status) && !appointment.isPast()) {
                 layoutActions.setVisibility(View.VISIBLE);
                 layoutPatientActions.setVisibility(View.GONE);
             } else if (!showActions && (appointment.getStatus().equals(Constants.STATUS_APPROVED) || appointment.getStatus().equals(Constants.STATUS_PENDING))) {

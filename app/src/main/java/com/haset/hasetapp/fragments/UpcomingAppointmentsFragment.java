@@ -86,7 +86,7 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
 
     private void setupRecyclerView() {
         String userRole = preferenceManager.getUserRole();
-        boolean showActions = Constants.ROLE_DOCTOR.equals(userRole);
+        boolean showActions = Constants.ROLE_DOCTOR.equalsIgnoreCase(userRole);
         appointmentAdapter = new AppointmentAdapter(this, showActions, userRole);
         rvAppointments.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvAppointments.setAdapter(appointmentAdapter);
