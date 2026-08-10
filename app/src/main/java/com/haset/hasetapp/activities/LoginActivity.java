@@ -58,6 +58,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.NetworkUtils;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
+import com.haset.hasetapp.ui.MfaCodeInputView;
 
 public class LoginActivity extends BaseActivity {
     private TextInputEditText etEmail, etPassword;
@@ -70,6 +71,7 @@ public class LoginActivity extends BaseActivity {
     private HealthTipsHelper healthTipsHelper;
     private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
     private UserEntity loggedInUser; // Store user for notification after permission
+    private android.app.Dialog mfaDialog;
 
     // private GoogleSignInClient mGoogleSignInClient;
     // private ActivityResultLauncher<Intent> googleSignInLauncher;
@@ -233,6 +235,19 @@ public class LoginActivity extends BaseActivity {
                     UserEntity user = (UserEntity) state.data;
                     onAuthSuccess(user);
                     break;
+                case MFA_REQUIRED:
+                    CustomDialog.hideLoading();
+                    showMfaDialog(false);
+                    break;
+                case MFA_SETUP_REQUIRED:
+                    CustomDialog.hideLoading();
+                    startActivityForResult(new Intent(this, MfaEnrollmentActivity.class), 701);
+                    break;
+                case MFA_ERROR:
+                    CustomDialog.hideLoading();
+                    resetLoginButton();
+                    showMfaDialog(true);
+                    break;
                 /*
                 case UNREGISTERED:
                     CustomDialog.hideLoading();
@@ -245,6 +260,45 @@ public class LoginActivity extends BaseActivity {
                     break;
             }
         });
+    }
+
+    private void showMfaDialog(boolean invalid) {
+        if (mfaDialog != null && mfaDialog.isShowing()) mfaDialog.dismiss();
+
+        mfaDialog = new android.app.Dialog(this, R.style.Theme_HASETApp);
+        mfaDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        mfaDialog.setCancelable(false);
+        mfaDialog.setContentView(R.layout.dialog_mfa_challenge);
+
+        final MfaCodeInputView input = mfaDialog.findViewById(R.id.mfaCodeInput);
+        TextView message = mfaDialog.findViewById(R.id.mfaMessage);
+        if (invalid) input.setErrorState(true);
+        if (invalid) message.setText("The code was invalid or expired. Try again.");
+
+        mfaDialog.findViewById(R.id.mfaVerify).setOnClickListener(v -> {
+            if (!input.isComplete()) { input.setErrorState(true); return; }
+            mfaDialog.dismiss();
+            authViewModel.verifyMfa(input.getCode());
+        });
+        mfaDialog.findViewById(R.id.mfaCancel).setOnClickListener(v -> {
+            mfaDialog.dismiss();
+            authViewModel.logout();
+        });
+
+        mfaDialog.show();
+        if (mfaDialog.getWindow() != null) {
+            mfaDialog.getWindow().setLayout(
+                    android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                    android.view.WindowManager.LayoutParams.MATCH_PARENT);
+            mfaDialog.getWindow().setBackgroundDrawableResource(R.color.background_primary);
+            mfaDialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        input.focusFirst();
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 701 && resultCode == RESULT_OK) authViewModel.resumeAfterMfaSetup();
     }
 
     private void onAuthSuccess(UserEntity user) {

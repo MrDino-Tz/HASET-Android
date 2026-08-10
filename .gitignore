@@ -1,5 +1,6 @@
 # Android Studio and Gradle build files
 .gradle/
+.gradle-local/
 .idea/
 *.iml
 *.hprof
@@ -8,6 +9,10 @@ local.properties
 # Build output
 build/
 app/build/
+.xcode-derived/
+.clang-module-cache/
+.swift-module-cache/
+.tmp/
 
 # Native libraries
 *.so
@@ -69,6 +74,7 @@ Thumbs.db
 
 # IDE
 .vscode/
+xcuserdata/
 *.sublime-project
 *.sublime-workspace
 

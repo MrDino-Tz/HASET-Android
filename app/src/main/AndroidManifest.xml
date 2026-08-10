@@ -198,6 +198,7 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.HASETApp" />
 
+        <activity android:name=".activities.MfaEnrollmentActivity" android:screenOrientation="portrait" />
     </application>
 
 </manifest>

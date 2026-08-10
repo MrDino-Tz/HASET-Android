@@ -245,6 +245,13 @@
     <string name="change_profile_picture_desc">Change profile picture, number, E-mail</string>
     <string name="change_password">Change Password</string>
     <string name="change_password_desc">Update and strengthen account security</string>
+    <string name="mfa_settings_title">Multi-factor authentication</string>
+    <string name="mfa_enabled_desc">Extra sign-in protection is enabled</string>
+    <string name="mfa_disabled_desc">Protect sign-in with an authenticator app</string>
+    <string name="mfa_disable_title">Disable multi-factor authentication?</string>
+    <string name="mfa_disable_message">Enter the current six-digit code from your authenticator app to confirm.</string>
+    <string name="mfa_disable_action">Disable MFA</string>
+    <string name="mfa_disabled_success">Multi-factor authentication disabled</string>
     <string name="location_permission">Location Access</string>
     <string name="location_permission_desc">Allow app to access your location for nearby patients</string>
     <string name="location_permission_denied">Location permission denied</string>

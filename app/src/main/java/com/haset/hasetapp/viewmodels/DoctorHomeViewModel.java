@@ -85,22 +85,12 @@ public class DoctorHomeViewModel extends AndroidViewModel {
         return ratingCount;
     }
 
-    public void requestWithdrawal(String doctorId, String doctorName, double amount, String method, 
-                                  String accountNumber, String accountName, String bankName) {
+    public void requestWithdrawalSecure(double amount, String reason, String mfaCode) {
         loading.setValue(true);
-        repository.requestWithdrawal(doctorId, doctorName, amount, method, accountNumber, accountName, bankName, 
-            new FirebaseHelper.OnCompleteListener<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                loading.postValue(false);
-                withdrawSuccess.postValue(result);
-            }
-
-            @Override
-            public void onError(String err) {
-                loading.postValue(false);
-                error.postValue(err);
-            }
+        error.setValue(null);
+        repository.requestWithdrawalSecure(amount, reason, mfaCode, new FirebaseHelper.OnCompleteListener<Boolean>() {
+            public void onSuccess(Boolean result) { loading.postValue(false); withdrawSuccess.postValue(Boolean.TRUE.equals(result)); }
+            public void onError(String message) { loading.postValue(false); error.postValue(message); }
         });
     }
 

@@ -21,11 +21,21 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.gson.JsonObject;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.api.RetrofitClient;
+import com.haset.hasetapp.ui.MfaCodeInputView;
 import com.haset.hasetapp.utils.BottomSheetHelper;
+import com.haset.hasetapp.utils.CustomDialog;
+import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ThemeHelper;
 import com.haset.hasetapp.viewmodels.ProfileViewModel;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class SettingsActivity extends BaseActivity {
 
@@ -38,11 +48,15 @@ public class SettingsActivity extends BaseActivity {
     private View dividerLocation;
     private MaterialSwitch switchNotification;
     private MaterialSwitch switchLocation;
+    private MaterialSwitch switchMfa;
     private TextView tvLanguageValue;
     private TextView tvThemeValue;
+    private TextView tvMfaDescription;
     private PreferenceManager preferenceManager;
     private ProfileViewModel viewModel;
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
+    private static final int MFA_ENROLLMENT_REQUEST = 1702;
+    private boolean updatingMfaSwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +69,7 @@ public class SettingsActivity extends BaseActivity {
         initializeViews();
         setupNotificationSwitch();
         setupLocationSwitch();
+        setupMfaSwitch();
         checkUserRole();
         updateLanguageText();
         updateThemeText();
@@ -71,8 +86,10 @@ public class SettingsActivity extends BaseActivity {
         dividerLocation = findViewById(R.id.dividerLocation);
         switchNotification = findViewById(R.id.switchNotification);
         switchLocation = findViewById(R.id.switchLocation);
+        switchMfa = findViewById(R.id.switchMfa);
         tvLanguageValue = findViewById(R.id.tvLanguageValue);
         tvThemeValue = findViewById(R.id.tvThemeValue);
+        tvMfaDescription = findViewById(R.id.tvMfaDescription);
     }
 
     private void checkUserRole() {
@@ -113,6 +130,132 @@ public class SettingsActivity extends BaseActivity {
                     preferenceManager.setLocationEnabled(false);
                 }
             });
+        }
+    }
+
+    private void setupMfaSwitch() {
+        if (switchMfa == null) return;
+        switchMfa.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (updatingMfaSwitch) return;
+            if (isChecked) {
+                startActivityForResult(new Intent(this, MfaEnrollmentActivity.class), MFA_ENROLLMENT_REQUEST);
+            } else {
+                showDisableMfaDialog();
+            }
+        });
+        loadMfaStatus();
+    }
+
+    private void loadMfaStatus() {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) {
+            setMfaUi(false, false);
+            return;
+        }
+        switchMfa.setEnabled(false);
+        user.getIdToken(true).addOnSuccessListener(token ->
+                RetrofitClient.getInstance().getMobileMfaApiService().status("Bearer " + token.getToken())
+                        .enqueue(new Callback<JsonObject>() {
+                            @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                                if (!response.isSuccessful() || response.body() == null) {
+                                    setMfaUi(false, false);
+                                    Toast.makeText(SettingsActivity.this, "Unable to load MFA status.", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                boolean enabled = response.body().has("two_factor_enabled")
+                                        && response.body().get("two_factor_enabled").getAsBoolean();
+                                setMfaUi(enabled, true);
+                            }
+
+                            @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                                setMfaUi(false, false);
+                                Toast.makeText(SettingsActivity.this, "Unable to load MFA status.", Toast.LENGTH_SHORT).show();
+                            }
+                        }))
+                .addOnFailureListener(error -> {
+                    setMfaUi(false, false);
+                    Toast.makeText(this, "Authentication expired.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void setMfaUi(boolean enabled, boolean interactive) {
+        updatingMfaSwitch = true;
+        switchMfa.setChecked(enabled);
+        switchMfa.setEnabled(interactive);
+        updatingMfaSwitch = false;
+        if (tvMfaDescription != null) {
+            tvMfaDescription.setText(enabled ? R.string.mfa_enabled_desc : R.string.mfa_disabled_desc);
+        }
+    }
+
+    private void showDisableMfaDialog() {
+        MfaCodeInputView input = new MfaCodeInputView(this);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.mfa_disable_title)
+                .setMessage(R.string.mfa_disable_message)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, (dismissed, which) -> setMfaUi(true, true))
+                .setPositiveButton(R.string.mfa_disable_action, null)
+                .create();
+        dialog.setOnCancelListener(ignored -> setMfaUi(true, true));
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            if (!input.isComplete()) {
+                input.setErrorState(true);
+                return;
+            }
+            String code = input.getCode();
+            input.clearCode();
+            dialog.dismiss();
+            disableMfa(code);
+        }));
+        dialog.show();
+        input.focusFirst();
+    }
+
+    private void disableMfa(String code) {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) {
+            setMfaUi(true, true);
+            Toast.makeText(this, "Authentication expired.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        switchMfa.setEnabled(false);
+        CustomDialog.showLoading(this, getString(R.string.mfa_disable_action));
+        user.getIdToken(true).addOnSuccessListener(token -> {
+            JsonObject body = new JsonObject();
+            body.addProperty("code", code);
+            RetrofitClient.getInstance().getMobileMfaApiService().disable("Bearer " + token.getToken(), body)
+                    .enqueue(new Callback<JsonObject>() {
+                        @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                            CustomDialog.hideLoading();
+                            if (response.isSuccessful()) {
+                                setMfaUi(false, true);
+                                Toast.makeText(SettingsActivity.this, R.string.mfa_disabled_success, Toast.LENGTH_SHORT).show();
+                            } else {
+                                setMfaUi(true, true);
+                                Toast.makeText(SettingsActivity.this, "Invalid or expired MFA code.", Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                            CustomDialog.hideLoading();
+                            setMfaUi(true, true);
+                            Toast.makeText(SettingsActivity.this, "Unable to disable MFA. Try again.", Toast.LENGTH_LONG).show();
+                        }
+                    });
+        }).addOnFailureListener(error -> {
+            CustomDialog.hideLoading();
+            setMfaUi(true, true);
+            Toast.makeText(this, "Authentication expired.", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == MFA_ENROLLMENT_REQUEST) {
+            if (resultCode == RESULT_OK) setMfaUi(true, true);
+            else loadMfaStatus();
         }
     }
 

@@ -12,6 +12,10 @@ struct RootView: View {
                 OnboardingView()
             case .login:
                 LoginView()
+            case .mfaChallenge:
+                MFAChallengeView()
+            case .mfaEnrollment:
+                MFAEnrollmentView()
             case .forgotPassword:
                 ForgotPasswordView()
             case .roleSelection:
@@ -22,6 +26,7 @@ struct RootView: View {
                 DashboardRootView(role: role)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(HASETTheme.backgroundPrimary.ignoresSafeArea())
         .environment(\.locale, Locale(identifier: appViewModel.selectedLanguage))
         .id(appViewModel.selectedLanguage)
@@ -45,10 +50,6 @@ struct RootView: View {
                     ProgressView("Loading...")
                         .tint(HASETTheme.greenPrimary)
                         .padding(24)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(Color.white)
-                        )
                 }
             }
         }

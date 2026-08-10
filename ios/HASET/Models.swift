@@ -47,6 +47,8 @@ enum AppRoute: Equatable {
     case splash
     case onboarding
     case login
+    case mfaChallenge
+    case mfaEnrollment
     case forgotPassword
     case roleSelection
     case register(UserRole)
@@ -164,6 +166,8 @@ struct AppointmentSummary: Identifiable, Hashable {
     let doctorId: String?
     let title: String
     let subtitle: String
+    let date: String
+    let time: String
     let dateText: String
     let status: Status
     let appointmentType: String?
@@ -206,6 +210,21 @@ struct DoctorWalletSummary: Codable, Hashable {
     let balance: Double
     let totalEarnings: Double?
     let lastUpdated: TimeInterval?
+}
+
+struct DoctorWithdrawalSummary: Identifiable, Hashable {
+    let id: String
+    let amount: Double
+    let status: String
+    let createdAt: Date?
+    let failureReason: String?
+}
+
+struct MobileMFASetupResponse: Codable {
+    let secret: String
+    let otpauthURI: String
+    let recoveryCodes: [String]
+    enum CodingKeys: String, CodingKey { case secret; case otpauthURI = "otpauth_uri"; case recoveryCodes = "recovery_codes" }
 }
 
 struct DoctorPresenceSummary: Codable, Hashable {
