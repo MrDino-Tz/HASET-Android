@@ -255,7 +255,7 @@ struct AdminMetric: Identifiable, Hashable {
 struct PaymentInitiationResponse: Decodable {
     let status: String
     let message: String?
-    let transactionId: Int
+    let transactionId: Int?
     let orderReference: String?
     let paymentStatus: String?
     let paymentChannel: String?
@@ -271,6 +271,61 @@ struct PaymentInitiationResponse: Decodable {
         case paymentChannel = "payment_channel"
         case paymentUrl = "payment_url"
         case reference
+        case data
+    }
+
+    private struct NestedData: Decodable {
+        let transactionId: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case transactionId = "transaction_id"
+            case id
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            transactionId = Self.decodeInt(container, key: .transactionId)
+                ?? Self.decodeInt(container, key: .id)
+        }
+
+        private static func decodeInt(
+            _ container: KeyedDecodingContainer<CodingKeys>,
+            key: CodingKeys
+        ) -> Int? {
+            if let value = try? container.decode(Int.self, forKey: key) {
+                return value
+            }
+            if let value = try? container.decode(String.self, forKey: key) {
+                return Int(value)
+            }
+            return nil
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decodeIfPresent(String.self, forKey: .status) ?? "error"
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        transactionId = Self.decodeInt(container, key: .transactionId)
+            ?? (try? container.decodeIfPresent(NestedData.self, forKey: .data))??.transactionId
+        orderReference = try container.decodeIfPresent(String.self, forKey: .orderReference)
+        paymentStatus = try container.decodeIfPresent(String.self, forKey: .paymentStatus)
+        paymentChannel = try container.decodeIfPresent(String.self, forKey: .paymentChannel)
+        paymentUrl = try container.decodeIfPresent(String.self, forKey: .paymentUrl)
+        reference = try container.decodeIfPresent(String.self, forKey: .reference)
+    }
+
+    private static func decodeInt(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        key: CodingKeys
+    ) -> Int? {
+        if let value = try? container.decode(Int.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decode(String.self, forKey: key) {
+            return Int(value)
+        }
+        return nil
     }
 
     var isSuccess: Bool {
@@ -280,7 +335,7 @@ struct PaymentInitiationResponse: Decodable {
 
 struct PaymentStatusEnvelope: Decodable {
     struct Transaction: Decodable {
-        let id: Int
+        let id: Int?
         let status: String
         let paymentStatus: String?
         let amount: Double?
@@ -302,6 +357,20 @@ struct PaymentStatusEnvelope: Decodable {
             case externalReference = "external_reference"
         }
 
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = (try? container.decode(Int.self, forKey: .id))
+                ?? (try? Int(container.decode(String.self, forKey: .id)))
+            status = try container.decodeIfPresent(String.self, forKey: .status) ?? "pending"
+            paymentStatus = try container.decodeIfPresent(String.self, forKey: .paymentStatus)
+            amount = try container.decodeIfPresent(Double.self, forKey: .amount)
+            currency = try container.decodeIfPresent(String.self, forKey: .currency)
+            provider = try container.decodeIfPresent(String.self, forKey: .provider)
+            createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+            updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
+            externalReference = try container.decodeIfPresent(String.self, forKey: .externalReference)
+        }
+
         var isSuccess: Bool {
             status.caseInsensitiveCompare("success") == .orderedSame
         }
@@ -318,6 +387,21 @@ struct PaymentStatusEnvelope: Decodable {
     let status: String
     let message: String?
     let transaction: Transaction?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case message
+        case transaction
+        case data
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decodeIfPresent(String.self, forKey: .status) ?? "pending"
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        transaction = try container.decodeIfPresent(Transaction.self, forKey: .transaction)
+            ?? (try? container.decodeIfPresent(Transaction.self, forKey: .data)) ?? nil
+    }
 }
 
 enum ThemeMode: String, Codable, CaseIterable, Identifiable {

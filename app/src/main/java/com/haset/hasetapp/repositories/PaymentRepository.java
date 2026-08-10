@@ -125,6 +125,19 @@ public class PaymentRepository {
                         untrackCall(call);
                         if (response.isSuccessful() && response.body() != null) {
                             PaymentResponse paymentResponse = response.body();
+                            if (paymentResponse.isSuccess() && paymentResponse.getTransactionId() <= 0) {
+                                isProcessingPayment = false;
+                                String message = paymentResponse.getMessage() != null
+                                        ? paymentResponse.getMessage()
+                                        : "Payment response did not include a transaction ID. Please retry.";
+                                if (initiationCallback != null) {
+                                    initiationCallback.onError(message);
+                                }
+                                if (finalCallback != null) {
+                                    finalCallback.onError(message);
+                                }
+                                return;
+                            }
                             currentTransactionId = paymentResponse.getTransactionId();
 
                             saveTransactionToFirebase(userId, doctorId, amount, paymentResponse);
@@ -390,7 +403,9 @@ public class PaymentRepository {
             return;
         }
 
-        currentUser.getIdToken(false)
+        // Force refresh so an old anonymous session cannot send an expired token
+        // to the payment API.
+        currentUser.getIdToken(true)
                 .addOnSuccessListener(result -> {
                     String token = result != null ? result.getToken() : null;
                     if (token == null || token.trim().isEmpty()) {

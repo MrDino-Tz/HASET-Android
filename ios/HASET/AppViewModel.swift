@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -681,12 +682,16 @@ final class AppViewModel: ObservableObject {
         let idToken = sessionStore.loadSession()?.idToken
         do {
             notifications = try await authService.fetchNotifications(userId: currentUser.userId, idToken: idToken)
+            await MainActor.run {
+                UIApplication.shared.applicationIconBadgeNumber = notifications.filter { !$0.isRead }.count
+            }
         } catch {
             notifications = []
         }
     }
 
     func logout() {
+        UIApplication.shared.applicationIconBadgeNumber = 0
         sessionStore.clearSession()
         activeSession = nil
         pendingMFASession = nil

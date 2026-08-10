@@ -250,7 +250,8 @@ final class AuthService {
         let localId: String
         let idToken: String
         let refreshToken: String?
-        let email: String
+        // Anonymous Firebase sign-up responses do not include an email field.
+        let email: String?
     }
 
     private struct RefreshTokenResponse: Decodable {
@@ -907,7 +908,11 @@ final class AuthService {
         role: UserRole,
         idToken: String?
     ) async throws -> [(String, [String: Any])] {
-        let url = try databaseURL(path: "appointments", authToken: idToken)
+        let queryItems: [URLQueryItem] = role == .admin ? [] : [
+            URLQueryItem(name: "orderBy", value: role == .doctor ? "\"doctorId\"" : "\"patientId\""),
+            URLQueryItem(name: "equalTo", value: "\"\(userId)\"")
+        ]
+        let url = try databaseURL(path: "appointments", authToken: idToken, queryItems: queryItems)
         let (data, response) = try await URLSession.shared.data(from: url)
         try validate(response: response, data: data)
         guard data != Data("null".utf8) else { return [] }
@@ -1239,13 +1244,11 @@ final class AuthService {
     }
 
     func fetchChatMessages(chatRoomId: String, currentUserId: String, idToken: String?) async throws -> [ChatMessageSummary] {
-        let url = try databaseURL(path: "messages/\(chatRoomId)", authToken: idToken)
-        let (data, response) = try await URLSession.shared.data(from: url)
-        try validate(response: response, data: data)
-        guard data != Data("null".utf8) else { return [] }
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ServiceError.invalidResponse
-        }
+        let json = try await fetchParticipantChatMessages(
+            chatRoomId: chatRoomId,
+            currentUserId: currentUserId,
+            idToken: idToken
+        )
 
         let messages = json.compactMap { key, value -> ChatMessageSummary? in
             guard let item = value as? [String: Any] else { return nil }
@@ -1299,7 +1302,14 @@ final class AuthService {
     }
 
     func markChatMessagesRead(chatRoomId: String, currentUserId: String, idToken: String?) async throws {
-        let url = try databaseURL(path: "messages/\(chatRoomId)", authToken: idToken)
+        let url = try databaseURL(
+            path: "messages/\(chatRoomId)",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"receiverId\""),
+                URLQueryItem(name: "equalTo", value: "\"\(currentUserId)\"")
+            ]
+        )
         let (data, response) = try await URLSession.shared.data(from: url)
         try validate(response: response, data: data)
         guard data != Data("null".utf8) else { return }
@@ -1520,7 +1530,14 @@ final class AuthService {
     }
 
     private func fetchUnreadMessageCount(chatRoomId: String, currentUserId: String, idToken: String?) async throws -> Int {
-        let url = try databaseURL(path: "messages/\(chatRoomId)", authToken: idToken)
+        let url = try databaseURL(
+            path: "messages/\(chatRoomId)",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"receiverId\""),
+                URLQueryItem(name: "equalTo", value: "\"\(currentUserId)\"")
+            ]
+        )
         let (data, response) = try await URLSession.shared.data(from: url)
         try validate(response: response, data: data)
         guard data != Data("null".utf8) else { return 0 }
@@ -1536,6 +1553,46 @@ final class AuthService {
                 total += 1
             }
         }
+    }
+
+    private func fetchParticipantChatMessages(
+        chatRoomId: String,
+        currentUserId: String,
+        idToken: String?
+    ) async throws -> [String: Any] {
+        let sentURL = try databaseURL(
+            path: "messages/\(chatRoomId)",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"senderId\""),
+                URLQueryItem(name: "equalTo", value: "\"\(currentUserId)\"")
+            ]
+        )
+        let receivedURL = try databaseURL(
+            path: "messages/\(chatRoomId)",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"receiverId\""),
+                URLQueryItem(name: "equalTo", value: "\"\(currentUserId)\"")
+            ]
+        )
+
+        async let sentResponse = URLSession.shared.data(from: sentURL)
+        async let receivedResponse = URLSession.shared.data(from: receivedURL)
+        let (sentResult, receivedResult) = try await (sentResponse, receivedResponse)
+        try validate(response: sentResult.1, data: sentResult.0)
+        try validate(response: receivedResult.1, data: receivedResult.0)
+
+        var messages: [String: Any] = [:]
+        if sentResult.0 != Data("null".utf8),
+           let sent = try JSONSerialization.jsonObject(with: sentResult.0) as? [String: Any] {
+            messages.merge(sent) { _, new in new }
+        }
+        if receivedResult.0 != Data("null".utf8),
+           let received = try JSONSerialization.jsonObject(with: receivedResult.0) as? [String: Any] {
+            messages.merge(received) { _, new in new }
+        }
+        return messages
     }
 
     private func appointmentStatus(from rawValue: String?) -> AppointmentSummary.Status {

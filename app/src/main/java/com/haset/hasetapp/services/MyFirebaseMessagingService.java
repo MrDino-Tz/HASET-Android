@@ -64,12 +64,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onMessageReceived(remoteMessage);
         
         // Check if message contains data payload
-        if (remoteMessage.getData().size() > 0) {
+        boolean handledDataPayload = remoteMessage.getData().size() > 0
+                && remoteMessage.getData().get("type") != null;
+        if (handledDataPayload) {
             handleDataMessage(remoteMessage.getData());
         }
         
         // Check if message contains notification payload
-        if (remoteMessage.getNotification() != null) {
+        if (!handledDataPayload && remoteMessage.getNotification() != null) {
             showNotification(
                 remoteMessage.getNotification().getTitle(),
                 remoteMessage.getNotification().getBody(),
@@ -291,6 +293,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setNumber(1)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(message));
         
         NotificationManager notificationManager = 
@@ -310,7 +313,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         String userRole = pm.getUserRole();
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
             String type = data.get("type");
-            if (type == null || (!"appointment_reminder".equals(type) && !"chat_message".equals(type) && !"new_appointment".equals(type))) {
+            if (type == null || (!"appointment_reminder".equals(type)
+                    && !"appointment_status".equals(type)
+                    && !"chat_message".equals(type)
+                    && !"new_appointment".equals(type))) {
                 Log.d(TAG, "Doctor skipping simple notification");
                 return;
             }

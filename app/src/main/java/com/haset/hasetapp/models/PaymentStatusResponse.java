@@ -1,9 +1,12 @@
 package com.haset.hasetapp.models;
 
+import com.google.gson.Gson;
+
 public class PaymentStatusResponse {
     private String status;
     private String message;
     private Transaction transaction;
+    private Object data;
 
     public static class Transaction {
         private int id;
@@ -58,12 +61,25 @@ public class PaymentStatusResponse {
     // Getters
     public String getStatus() { return status; }
     public String getMessage() { return message; }
-    public Transaction getTransaction() { return transaction; }
+    public Transaction getTransaction() {
+        if (transaction != null) {
+            return transaction;
+        }
+        if (data != null) {
+            try {
+                return new Gson().fromJson(new Gson().toJson(data), Transaction.class);
+            } catch (RuntimeException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
 
     // Setters
     public void setStatus(String status) { this.status = status; }
     public void setMessage(String message) { this.message = message; }
     public void setTransaction(Transaction transaction) { this.transaction = transaction; }
+    public void setData(Object data) { this.data = data; }
     
     public boolean isSuccess() {
         return "success".equalsIgnoreCase(status);

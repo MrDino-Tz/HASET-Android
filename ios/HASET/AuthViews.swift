@@ -576,6 +576,15 @@ struct RegisterView: View {
     @State private var password = ""
     @State private var doctorSignupPayment: DoctorSignupPaymentRequest?
 
+    private var canSubmitRegistration: Bool {
+        let phoneDigits = phone.filter(\.isNumber)
+        return ValidationService.isValidName(fullName)
+            && ValidationService.isValidEmail(email)
+            && phoneDigits.count == 9
+            && ValidationService.isValidPassword(password)
+            && (role != .doctor || !regNo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -618,6 +627,13 @@ struct RegisterView: View {
                     RoundedInputField(title: appViewModel.tr("password"), systemImage: "lock", text: $password, isSecure: true)
 
                     Button(appViewModel.tr("sign_up")) {
+                        guard canSubmitRegistration else {
+                            appViewModel.alertState = AlertState(
+                                title: appViewModel.tr("error"),
+                                message: "Enter a valid name, email, 9-digit phone number, and password of at least 6 characters."
+                            )
+                            return
+                        }
                         if role == .doctor {
                             let fee = appViewModel.doctorRegistrationFee
                             doctorSignupPayment = DoctorSignupPaymentRequest(
@@ -656,6 +672,8 @@ struct RegisterView: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
+                    .disabled(!canSubmitRegistration)
+                    .opacity(canSubmitRegistration ? 1 : 0.55)
 
                     Text(appViewModel.tr("or"))
                         .font(HASETTheme.font(.medium, 14))

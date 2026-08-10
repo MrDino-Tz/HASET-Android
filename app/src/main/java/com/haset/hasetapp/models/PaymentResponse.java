@@ -1,5 +1,7 @@
 package com.haset.hasetapp.models;
 
+import java.util.Map;
+
 public class PaymentResponse {
     private String status;
     private String message;
@@ -14,7 +16,36 @@ public class PaymentResponse {
     // Getters
     public String getStatus() { return status; }
     public String getMessage() { return message; }
-    public int getTransactionId() { return transaction_id; }
+    public int getTransactionId() {
+        if (transaction_id > 0) {
+            return transaction_id;
+        }
+        if (data instanceof Map) {
+            Map<?, ?> payload = (Map<?, ?>) data;
+            Integer nested = parseTransactionId(payload.get("transaction_id"));
+            if (nested == null) {
+                nested = parseTransactionId(payload.get("id"));
+            }
+            if (nested != null) {
+                return nested;
+            }
+        }
+        return transaction_id;
+    }
+
+    private static Integer parseTransactionId(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
     public String getOrderReference() { return order_reference; }
     public String getPaymentStatus() { return payment_status; }
     public String getPaymentChannel() { return payment_channel; }

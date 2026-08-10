@@ -90,21 +90,10 @@ xcuserdata/
 *.gen
 *.template
 
-# Documentation
-*.md
-*.txt
-*.rst
-*.markdown
-
 # Environment files
 .env
 .env.local
 .env.*.local
-
-# Gradle wrapper
-gradlew
-gradlew.bat
-gradle-wrapper.properties
 
 # Maven
 target/
@@ -118,6 +107,14 @@ Cargo.toml
 
 # Java
 *.class
+
+# Firebase local emulator and CLI output
+.firebase/
+firebase-debug.log
+database-debug.log
+
+# Accidental Windows device-name file
+/nul
 
 # Java package files
 *.jar

@@ -199,7 +199,13 @@ public class DashboardActivity extends BaseActivity {
     }
 
     private void handleIntent(Intent intent) {
-        if (intent != null && "prescription_detail".equals(intent.getStringExtra("navigate_to"))) {
+        if (intent != null && "appointments".equals(intent.getStringExtra("navigate_to"))) {
+            // Notification taps must open the actionable appointments screen,
+            // including when DashboardActivity was already running.
+            if (bottomNavigation != null) {
+                bottomNavigation.setSelectedItemId(R.id.nav_appointments);
+            }
+        } else if (intent != null && "prescription_detail".equals(intent.getStringExtra("navigate_to"))) {
             String prescriptionId = intent.getStringExtra("prescription_id");
             if (prescriptionId != null) {
                 Fragment fragment = com.haset.hasetapp.fragments.PrescriptionDetailFragment.newInstance(prescriptionId);

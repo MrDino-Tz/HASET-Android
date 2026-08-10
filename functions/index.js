@@ -1,9 +1,13 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require('firebase-functions/v1');
+const { initializeApp } = require('firebase-admin/app');
+const { getDatabase } = require('firebase-admin/database');
+const { getMessaging } = require('firebase-admin/messaging');
 
-admin.initializeApp();
+initializeApp({
+  databaseURL: 'https://hasetapp-4eeba-default-rtdb.firebaseio.com',
+});
 
-const DB = admin.database();
+const DB = getDatabase();
 
 exports.onNewAppointment = functions.database
   .ref('/appointments/{appointmentId}')
@@ -81,7 +85,7 @@ exports.onNewAppointment = functions.database
     };
 
     try {
-      await admin.messaging().send(message);
+      await getMessaging().send(message);
       functions.logger.info('Appointment notification sent');
 
       // Write dedup marker on success

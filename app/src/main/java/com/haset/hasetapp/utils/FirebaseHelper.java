@@ -871,7 +871,6 @@ public class FirebaseHelper {
                                 user.setPhone(phone != null ? phone : "");
                                 user.setRole(role);
                                 user.setProfileImage(profileImage != null ? profileImage : "");
-                                user.setPassword(""); // Firebase users don't need password
                                 user.setCreatedAt(snapshot.child("createdAt").getValue(Long.class) != null ? 
                                     snapshot.child("createdAt").getValue(Long.class) : System.currentTimeMillis());
                                 
@@ -1157,18 +1156,24 @@ public class FirebaseHelper {
             return;
         }
 
-        getDoctorsNodeRef().child(doctorId).setValue(doctorEntity)
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("doctorId", doctorId);
+        updates.put("specialty", doctorEntity.getSpecialty());
+        updates.put("consultationFee", doctorEntity.getConsultationFee());
+        updates.put("availableTimes", doctorEntity.getAvailableTimes());
+        updates.put("location", doctorEntity.getLocation());
+        updates.put("regNo", doctorEntity.getRegNo());
+        updates.put("about", doctorEntity.getAbout());
+        updates.put("profileImage", doctorEntity.getProfileImage());
+        updates.put("online", doctorEntity.isOnline());
+        updates.put("onlineStatus", doctorEntity.getOnlineStatus());
+        updates.put("lastUpdated", doctorEntity.getLastUpdated());
+
+        // Update only mutable profile/presence fields. Replacing the entire
+        // record would overwrite immutable approved/verified values and be
+        // rejected by the database rules.
+        getDoctorsNodeRef().child(doctorId).updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("specialty", doctorEntity.getSpecialty());
-                    updates.put("consultationFee", doctorEntity.getConsultationFee());
-                    updates.put("location", doctorEntity.getLocation());
-                    updates.put("regNo", doctorEntity.getRegNo());
-                    updates.put("about", doctorEntity.getAbout());
-                    updates.put("profileImage", doctorEntity.getProfileImage());
-                    updates.put("online", doctorEntity.isOnline());
-                    updates.put("onlineStatus", doctorEntity.getOnlineStatus());
-                    updates.put("lastUpdated", doctorEntity.getLastUpdated());
                     getUsersRef().child(doctorId).updateChildren(updates)
                             .addOnSuccessListener(v -> listener.onSuccess(true))
                             .addOnFailureListener(e -> listener.onError(e.getMessage()));

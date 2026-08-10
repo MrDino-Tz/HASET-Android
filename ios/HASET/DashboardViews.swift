@@ -1733,6 +1733,8 @@ struct PaymentCheckoutView: View {
     @State private var consultationId: String
     @State private var idempotencyKey: String
     @State private var paymentSessionReady = false
+    @State private var didRetryPaymentAuth = false
+    @State private var paymentAuthSession: StoredSession?
 
     private let paymentService = AuthService()
     private let sessionStore = SessionStore()
@@ -1961,7 +1963,9 @@ struct PaymentCheckoutView: View {
             statusMessage = appViewModel.tr("preparing_payment")
             canRetryStatus = false
         }
-        if sessionStore.loadSession() != nil {
+        // Anonymous payment sessions are short-lived. Reuse the signed-in
+        // session for normal users, and mint an anonymous one for guest flows.
+        if paymentAuthSession != nil {
             await MainActor.run {
                 paymentSessionReady = true
                 statusMessage = ""
@@ -1970,7 +1974,7 @@ struct PaymentCheckoutView: View {
         }
         do {
             let anonymousSession = try await paymentService.signInAnonymously()
-            sessionStore.saveSession(anonymousSession)
+            paymentAuthSession = anonymousSession
             await MainActor.run {
                 paymentSessionReady = true
                 statusMessage = ""
@@ -2146,7 +2150,13 @@ struct PaymentCheckoutView: View {
                 paymentAccount: selectedMethod == .mobileMoney ? backendPaymentAccount : "",
                 idToken: idToken
             )
-            transactionId = response.transactionId
+            guard let responseTransactionId = response.transactionId else {
+                isProcessing = false
+                canRetryStatus = true
+                statusMessage = response.message ?? "Payment response did not include a transaction ID. Please retry."
+                return
+            }
+            transactionId = responseTransactionId
             statusMessage = appViewModel.tr("payment_initiated")
             if response.isSuccess {
                 if selectedMethod == .cardPayment {
@@ -2174,6 +2184,19 @@ struct PaymentCheckoutView: View {
                 statusMessage = response.message ?? "Payment initiation failed"
             }
         } catch {
+            if !didRetryPaymentAuth,
+               case ServiceError.message(let message) = error,
+               message.lowercased().contains("unauthorized") {
+                didRetryPaymentAuth = true
+                paymentAuthSession = nil
+                if appViewModel.currentUser == nil { sessionStore.clearSession() }
+                paymentSessionReady = false
+                await preparePaymentSession()
+                if paymentSessionReady {
+                    await startPayment()
+                    return
+                }
+            }
             isProcessing = false
             canRetryStatus = true
             statusMessage = error.localizedDescription
@@ -2263,9 +2286,11 @@ struct PaymentCheckoutView: View {
     }
 
     private func refreshedPaymentToken() async throws -> String? {
-        guard let session = sessionStore.loadSession() else { return nil }
+        guard let session = paymentAuthSession ?? sessionStore.loadSession() else { return nil }
         let refreshedSession = try await paymentService.refreshSessionIfNeeded(session)
-        if refreshedSession.idToken != session.idToken || refreshedSession.refreshToken != session.refreshToken {
+        if paymentAuthSession != nil {
+            paymentAuthSession = refreshedSession
+        } else if refreshedSession.idToken != session.idToken || refreshedSession.refreshToken != session.refreshToken {
             sessionStore.saveSession(refreshedSession)
         }
         return refreshedSession.idToken

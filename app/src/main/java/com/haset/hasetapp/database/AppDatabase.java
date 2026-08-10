@@ -51,8 +51,9 @@ import java.util.concurrent.Executors;
  * - Version 16: Added WithdrawalRequest entity for wallet withdrawal system
  * - Version 18: Added imageUrl, views, and authorId to ArticlePostEntity
  * - Version 19: Added isDemo field to DoctorEntity
+ * - Version 20: Removed the obsolete local password column; authentication is Firebase-only
  */
-@Database(entities = {UserEntity.class, DoctorEntity.class, DoctorRatingEntity.class, DoctorWalletEntity.class, ArticlePostEntity.class, AuditLogEntity.class, PrescriptionEntity.class, WithdrawalRequest.class}, version = 19, exportSchema = false)
+@Database(entities = {UserEntity.class, DoctorEntity.class, DoctorRatingEntity.class, DoctorWalletEntity.class, ArticlePostEntity.class, AuditLogEntity.class, PrescriptionEntity.class, WithdrawalRequest.class}, version = 20, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     private static final String TAG = "AppDatabase";
@@ -2711,6 +2712,27 @@ public abstract class AppDatabase extends RoomDatabase {
             }
         }
     };
+
+    static final Migration MIGRATION_19_20 = new Migration(19, 20) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE users_secure (" +
+                    "userId TEXT NOT NULL PRIMARY KEY, " +
+                    "email TEXT, " +
+                    "fullName TEXT, " +
+                    "phone TEXT, " +
+                    "role TEXT, " +
+                    "profileImage TEXT, " +
+                    "age INTEGER NOT NULL, " +
+                    "gender TEXT, " +
+                    "createdAt INTEGER NOT NULL, " +
+                    "regNo TEXT)");
+            database.execSQL("INSERT INTO users_secure (userId, email, fullName, phone, role, profileImage, age, gender, createdAt, regNo) " +
+                    "SELECT userId, email, fullName, phone, role, profileImage, age, gender, createdAt, regNo FROM users");
+            database.execSQL("DROP TABLE users");
+            database.execSQL("ALTER TABLE users_secure RENAME TO users");
+        }
+    };
     
     
     private static volatile AppDatabase INSTANCE;
@@ -2781,7 +2803,8 @@ public abstract class AppDatabase extends RoomDatabase {
                                 MIGRATION_15_16,  // Handles 15→16 - schema update
                                 MIGRATION_16_17,   // Handles 16→17 - withdrawal requests table
                                 MIGRATION_17_18,   // Handles 17→18 - adds imageUrl, views, authorId to article_posts
-                                MIGRATION_18_19    // Handles 18→19 - adds isDemo field to doctors table
+                                MIGRATION_18_19,   // Handles 18→19 - adds isDemo field to doctors table
+                                MIGRATION_19_20    // Handles 19→20 - removes obsolete local password storage
                             )
                             .build();
                     

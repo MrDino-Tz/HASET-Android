@@ -10,6 +10,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
+import com.google.firebase.auth.FirebaseAuth;
 import com.haset.hasetapp.firebase.FirebaseHelper;
 import com.haset.hasetapp.models.ChatMessage;
 import com.haset.hasetapp.models.Conversation;
@@ -80,11 +81,13 @@ public class ChatRepository {
         Map<String, ChatMessage> messagesById = new HashMap<>();
         List<ChatMessage> messages = new ArrayList<>();
 
-        Query orderedMessages = firebaseHelper.getMessagesRef()
-                .child(chatRoomId)
-                .orderByChild("timestamp");
+        String currentUserId = FirebaseAuth.getInstance().getUid();
+        if (currentUserId == null) {
+            messagesLiveData.postValue(Collections.emptyList());
+            return messagesLiveData;
+        }
 
-        orderedMessages.addChildEventListener(new ChildEventListener() {
+        ChildEventListener participantMessageListener = new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
                 ChatMessage message = snapshot.getValue(ChatMessage.class);
@@ -134,7 +137,13 @@ public class ChatRepository {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        };
+
+        DatabaseReference roomRef = firebaseHelper.getMessagesRef().child(chatRoomId);
+        roomRef.orderByChild("senderId").equalTo(currentUserId)
+                .addChildEventListener(participantMessageListener);
+        roomRef.orderByChild("receiverId").equalTo(currentUserId)
+                .addChildEventListener(participantMessageListener);
 
         return messagesLiveData;
     }
@@ -256,7 +265,9 @@ public class ChatRepository {
     }
 
     public void markAllMessagesAsRead(String chatRoomId, String currentUserId) {
-        firebaseHelper.getMessagesRef().child(chatRoomId).addListenerForSingleValueEvent(new ValueEventListener() {
+        firebaseHelper.getMessagesRef().child(chatRoomId)
+                .orderByChild("receiverId").equalTo(currentUserId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot messageSnapshot : snapshot.getChildren()) {
@@ -302,7 +313,9 @@ public class ChatRepository {
         
         for (Conversation conversation : conversations) {
             String chatRoomId = conversation.getConversationId();
-            messagesRef.child(chatRoomId).addListenerForSingleValueEvent(new ValueEventListener() {
+            messagesRef.child(chatRoomId)
+                    .orderByChild("receiverId").equalTo(userId)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     int unreadCount = 0;
