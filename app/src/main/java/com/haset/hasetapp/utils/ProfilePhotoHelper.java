@@ -497,6 +497,55 @@ public class ProfilePhotoHelper {
         }
         return initials.toString().toUpperCase();
     }
+
+    /**
+     * Fetch a user's profile photo URL from Firebase (users/{userId}/profileImage).
+     * Falls back to doctors/{userId}/profileImage if not found on the users node.
+     * @param context Application context
+     * @param userId The ID of the user whose profile photo URL is to be fetched
+     * @param listener Callback that receives the URL (null if none available)
+     */
+    public static void fetchProfilePhotoUrl(Context context, String userId, OnProfilePhotoUrlListener listener) {
+        if (userId == null || userId.isEmpty()) {
+            if (listener != null) listener.onProfilePhotoUrl(null);
+            return;
+        }
+
+        FirebaseHelper.getUsersRef().child(userId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                String profileImage = snapshot.child("profileImage").getValue(String.class);
+                if (profileImage != null && !profileImage.isEmpty()) {
+                    if (listener != null) listener.onProfilePhotoUrl(profileImage);
+                    return;
+                }
+                // Fallback: check doctors node
+                FirebaseHelper.getDoctorsNodeRef().child(userId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot doctorSnapshot) {
+                        String doctorImage = doctorSnapshot.child("profileImage").getValue(String.class);
+                        if (listener != null) {
+                            listener.onProfilePhotoUrl(doctorImage != null && !doctorImage.isEmpty() ? doctorImage : null);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                        if (listener != null) listener.onProfilePhotoUrl(null);
+                    }
+                });
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                if (listener != null) listener.onProfilePhotoUrl(null);
+            }
+        });
+    }
+
+    public interface OnProfilePhotoUrlListener {
+        void onProfilePhotoUrl(String url);
+    }
     
     /**
      * Load profile photo into CircleImageView from a given image URL string using Glide.

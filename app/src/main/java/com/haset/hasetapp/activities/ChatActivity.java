@@ -731,7 +731,17 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
     private void setupRecyclerView() {
         chatAdapter = new ChatAdapter(currentUserId);
-        chatAdapter.setOtherUserProfileImageUrl(getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_IMAGE));
+        // Prefer the image passed by the launcher, otherwise resolve it from Firebase
+        String launcherImage = getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_IMAGE);
+        if (launcherImage != null && !launcherImage.isEmpty()) {
+            chatAdapter.setOtherUserProfileImageUrl(launcherImage);
+        } else if (chatUserId != null) {
+            com.haset.hasetapp.utils.ProfilePhotoHelper.fetchProfilePhotoUrl(this, chatUserId, url -> {
+                if (url != null && chatAdapter != null) {
+                    chatAdapter.setOtherUserProfileImageUrl(url);
+                }
+            });
+        }
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         rvMessages.setLayoutManager(layoutManager);
