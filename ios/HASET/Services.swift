@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Security
+import UIKit
 import UserNotifications
 
 enum HASETConstants {
@@ -179,7 +180,13 @@ final class PermissionService: NSObject, CLLocationManagerDelegate {
         if let settings = await notificationSettings(), settings.authorizationStatus == .authorized {
             return true
         }
-        return (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+        let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+        if granted {
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
+        return granted
     }
 
     @MainActor

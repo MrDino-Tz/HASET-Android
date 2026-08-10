@@ -10,16 +10,23 @@ import com.haset.hasetapp.database.entities.AppointmentEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import android.os.Handler;
+import android.os.Looper;
 
 public class AppointmentRepository {
     private final FirebaseHelper firebaseHelper = FirebaseHelper.getInstance();
 
     public LiveData<List<Appointment>> getAppointments(String userId, String role) {
         MutableLiveData<List<Appointment>> appointmentsLiveData = new MutableLiveData<>();
+        final boolean[] completed = {false};
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!completed[0]) appointmentsLiveData.postValue(new ArrayList<>());
+        }, 15000);
         
         FirebaseHelper.getAppointmentsByUser(userId, role, new FirebaseHelper.OnCompleteListener<List<AppointmentEntity>>() {
             @Override
             public void onSuccess(List<AppointmentEntity> appointmentEntities) {
+                completed[0] = true;
                 List<Appointment> list = new ArrayList<>();
                 for (AppointmentEntity entity : appointmentEntities) {
                     list.add(new Appointment(entity));
@@ -29,7 +36,11 @@ public class AppointmentRepository {
 
             @Override
             public void onError(String error) {
-                // Could implement error state
+                completed[0] = true;
+                // Always complete the loading stream. Leaving it unset makes
+                // every appointment tab display an endless spinner on a rules
+                // or connectivity error.
+                appointmentsLiveData.postValue(new ArrayList<>());
             }
         });
         

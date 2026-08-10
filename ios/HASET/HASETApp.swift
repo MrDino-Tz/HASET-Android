@@ -27,6 +27,7 @@ final class HASETNotificationDelegate: NSObject, UNUserNotificationCenterDelegat
 
 extension Notification.Name {
     static let hasetNotificationOpened = Notification.Name("haset.notification.opened")
+    static let hasetAPNsTokenUpdated = Notification.Name("haset.apns.token.updated")
 }
 
 final class HASETAppDelegate: NSObject, UIApplicationDelegate {
@@ -38,6 +39,16 @@ final class HASETAppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = notificationDelegate
         return true
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+        UserDefaults.standard.set(token, forKey: "apns_device_token")
+        NotificationCenter.default.post(name: .hasetAPNsTokenUpdated, object: token)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NSLog("APNs registration failed: %@", error.localizedDescription)
     }
 }
 

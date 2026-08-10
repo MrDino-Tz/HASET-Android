@@ -101,3 +101,45 @@ exports.onNewAppointment = functions.database
 
     return null;
   });
+
+// Deliver durable in-app notifications through FCM when a recipient is
+// online or backgrounded. The database entry remains the source of truth.
+exports.onNotificationCreated = functions.database
+  .ref('/notifications/{userId}/{notificationId}')
+  .onCreate(async (snapshot, context) => {
+    const notification = snapshot.val() || {};
+    const { userId, notificationId } = context.params;
+    const tokenSnap = await DB.ref(`users/${userId}/fcmToken`).once('value');
+    const token = tokenSnap.val();
+    if (!token) {
+      functions.logger.info('No FCM token for notification recipient', { userId, notificationId });
+      return null;
+    }
+
+    const title = notification.title || 'HASET notification';
+    const body = notification.message || '';
+    try {
+      await getMessaging().send({
+        token,
+        data: {
+          type: notification.type || 'general',
+          notificationId,
+          title: String(title),
+          message: String(body),
+          relatedId: String(notification.relatedId || ''),
+        },
+        notification: { title: String(title), body: String(body) },
+        android: {
+          priority: 'high',
+          notification: { channelId: 'general', sound: 'default', priority: 'high' },
+        },
+      });
+    } catch (error) {
+      functions.logger.error('Notification delivery failed', {
+        userId,
+        notificationId,
+        code: error && error.code ? error.code : 'unknown',
+      });
+    }
+    return null;
+  });

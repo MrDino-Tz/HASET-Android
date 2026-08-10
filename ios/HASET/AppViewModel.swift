@@ -572,14 +572,28 @@ final class AppViewModel: ObservableObject {
             } else {
                 idToken = nil
             }
-            let result = try await authService.fetchAppointments(
-                userId: currentUser.userId,
-                role: currentUser.role,
-                idToken: idToken
-            )
+            let result = try await withThrowingTaskGroup(of: [AppointmentSummary].self) { group in
+                group.addTask {
+                    try await self.authService.fetchAppointments(
+                        userId: currentUser.userId,
+                        role: currentUser.role,
+                        idToken: idToken
+                    )
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 15_000_000_000)
+                    throw ServiceError.message("Appointment loading timed out. Pull to retry.")
+                }
+                defer { group.cancelAll() }
+                return try await group.next()!
+            }
             appointments = result
         } catch {
-            appointments = []
+            // Keep already-loaded appointments visible during a transient
+            // network failure instead of replacing them with a spinner/blank.
+            if appointments.isEmpty {
+                appointments = []
+            }
             didLoadAppointments = false
             alertState = AlertState(title: tr("error"), message: "Unable to load appointments: \(error.localizedDescription)")
         }

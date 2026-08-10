@@ -416,55 +416,19 @@ public class FirebaseHelper {
     }
 
     public static void getAppointmentsByUser(String userId, String role, OnCompleteListener<List<AppointmentEntity>> listener) {
-        DatabaseReference userAppointmentsRef;
-        if (Constants.ROLE_DOCTOR.equals(role)) {
-            userAppointmentsRef = getDoctorAppointmentsRef(userId);
-        } else {
-            userAppointmentsRef = getPatientAppointmentsRef(userId);
-        }
-
-        userAppointmentsRef.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+        // Read the indexed main collection in one request instead of fetching
+        // the index and then issuing one network request per appointment.
+        String participantField = Constants.ROLE_DOCTOR.equals(role) ? "doctorId" : "patientId";
+        getAppointmentsRef().orderByChild(participantField).equalTo(userId)
+                .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
                 List<AppointmentEntity> appointments = new ArrayList<>();
-                if (dataSnapshot.exists()) {
-                    long childrenCount = dataSnapshot.getChildrenCount();
-                    final int[] snapshotCount = {0}; // Use array to be accessible in inner class
-                    
-                    for (com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        String appointmentId = snapshot.getKey();
-                        if (appointmentId != null) {
-                            getAppointmentsRef().child(appointmentId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot appointmentSnapshot) {
-                                    AppointmentEntity appointment = appointmentSnapshot.getValue(AppointmentEntity.class);
-                                    if (appointment != null) {
-                                        appointments.add(appointment);
-                                    }
-                                    
-                                    // Increment counter and check if all appointments are fetched
-                                    snapshotCount[0]++;
-                                    if (snapshotCount[0] == childrenCount) {
-                                        listener.onSuccess(appointments);
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
-                                    listener.onError(databaseError.getMessage());
-                                }
-                            });
-                        } else {
-                            // Handle null appointmentId
-                            snapshotCount[0]++;
-                            if (snapshotCount[0] == childrenCount) {
-                                listener.onSuccess(appointments);
-                            }
-                        }
-                    }
-                } else {
-                    listener.onSuccess(appointments); // No appointments found
+                for (com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    AppointmentEntity appointment = snapshot.getValue(AppointmentEntity.class);
+                    if (appointment != null) appointments.add(appointment);
                 }
+                listener.onSuccess(appointments);
             }
 
             @Override
