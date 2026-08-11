@@ -402,6 +402,9 @@
 <!--    <string name="balance_default">0 TZS</string>-->
     <string name="na">N/A</string>
     <string name="close">Close</string>
+    <string name="hospital_location_title">HASET Hospital Location</string>
+    <string name="hospital_location_subtitle">Find us on the map below, then tap to open directions in Google Maps.</string>
+    <string name="open_in_google_maps">Open in Google Maps</string>
     <string name="no_appointments_found">No appointments found</string>
 <!--    <string name="failed_to_load_appointments">Failed to load appointments</string>-->
     <string name="no_appointments_to_export">No appointments selected to export</string>

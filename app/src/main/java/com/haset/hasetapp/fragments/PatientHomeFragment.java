@@ -511,8 +511,7 @@ public class PatientHomeFragment extends Fragment {
         
         if (llHospitals != null) {
             llHospitals.setOnClickListener(v -> {
-                Intent intent = new Intent(requireContext(), com.haset.hasetapp.activities.HospitalsActivity.class);
-                startActivity(intent);
+                new HospitalsLocationBottomSheet().show(getChildFragmentManager(), HospitalsLocationBottomSheet.TAG);
             });
         }
 
