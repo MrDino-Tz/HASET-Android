@@ -307,9 +307,15 @@ public class RegisterActivity extends BaseActivity {
         FirebaseHelper.getAppConfig(new FirebaseHelper.OnCompleteListener<AppConfig>() {
             @Override
             public void onSuccess(AppConfig config) {
-                double fee = config != null && config.getDoctorRegistrationFee() > 0
-                    ? config.getDoctorRegistrationFee()
+                // Zero is a valid admin-configured fee (free registration).
+                // Only fall back when app_config itself could not be loaded.
+                double fee = config != null
+                    ? Math.max(0.0, config.getDoctorRegistrationFee())
                     : 500.0;
+                if (fee == 0.0) {
+                    authViewModel.register(email, password, newUser);
+                    return;
+                }
                 ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             }
 

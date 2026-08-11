@@ -398,10 +398,9 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
             public void onSuccess(Prescription result) {
                 if (isAdded()) {
                     progressOverlay.setVisibility(View.GONE);
-                    AuditLogger.getInstance(requireContext()).logPrescriptionIssued(prescription.getPrescriptionId(), 
+                    AuditLogger.getInstance(requireContext()).logPrescriptionIssued(prescription.getPrescriptionId(),
                             prescription.getPatientName());
                     sendPrescriptionChatMessage(result);
-                    dismiss();
                 }
             }
 
@@ -418,7 +417,6 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
     private void sendPrescriptionChatMessage(Prescription prescription) {
         String doctorId = prescription.getDoctorId();
         String patientId = prescription.getPatientId();
-        String roomId = com.haset.hasetapp.utils.FirebaseHelper.generateChatRoomId(doctorId, patientId);
         
         com.haset.hasetapp.models.ChatMessage message = new com.haset.hasetapp.models.ChatMessage(doctorId, patientId, "New Prescription Issued");
         message.setSenderName(prescription.getDoctorName());
@@ -428,7 +426,23 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
         message.setTimestamp(System.currentTimeMillis());
         message.setMessageStatus("sent");
         
-        com.haset.hasetapp.utils.FirebaseHelper.sendPrescriptionMessage(roomId, message);
+        com.haset.hasetapp.utils.FirebaseHelper.sendPrescriptionMessage(message,
+                new com.haset.hasetapp.utils.FirebaseHelper.OnCompleteListener<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        if (isAdded()) {
+                            requireActivity().runOnUiThread(() -> dismiss());
+                        }
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        if (isAdded()) {
+                            requireActivity().runOnUiThread(() ->
+                                    showSnackbar("Prescription saved, but chat delivery failed: " + error));
+                        }
+                    }
+                });
     }
 
     private void showSnackbar(String message) {

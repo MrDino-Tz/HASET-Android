@@ -164,15 +164,19 @@
             android:layout_height="wrap_content"
             android:text=" • 0 views"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:singleLine="true"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvCommentCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
             android:text=" • 0 comments"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:singleLine="true" />
 
         <TextView
             android:id="@+id/tvShareCount"

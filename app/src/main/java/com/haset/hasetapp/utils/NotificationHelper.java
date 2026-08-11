@@ -79,8 +79,9 @@ public class NotificationHelper {
         Intent replyIntent = new Intent(context, com.haset.hasetapp.receivers.DirectReplyReceiver.class);
         replyIntent.setAction(Constants.ACTION_REPLY);
         replyIntent.putExtra(Constants.EXTRA_CHAT_USER_ID, senderId);
+        replyIntent.putExtra(Constants.EXTRA_CHAT_USER_NAME, senderName);
+        replyIntent.putExtra("chatRoomId", chatId);
         replyIntent.putExtra("notificationId", notificationId);
-        replyIntent.putExtra("senderId", preferenceManager.getUserId()); // Current user ID for reply context
 
         PendingIntent replyPendingIntent = PendingIntent.getBroadcast(
                 context,

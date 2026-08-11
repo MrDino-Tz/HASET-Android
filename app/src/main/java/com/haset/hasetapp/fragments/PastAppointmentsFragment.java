@@ -86,7 +86,11 @@ public class PastAppointmentsFragment extends Fragment implements AppointmentAda
         String role = preferenceManager.getUserRole();
         
         viewModel.setUserInfo(userId, role);
-        viewModel.getPastAppointments().observe(getViewLifecycleOwner(), appointments -> {
+        boolean isDoctor = Constants.ROLE_DOCTOR.equalsIgnoreCase(role);
+        androidx.lifecycle.LiveData<List<Appointment>> appointmentsSource = isDoctor
+                ? viewModel.getCompletedAppointments()
+                : viewModel.getPastAppointments();
+        appointmentsSource.observe(getViewLifecycleOwner(), appointments -> {
             if (isAdded() && rootView != null) {
                 hideShimmerLoading();
                 if (appointmentAdapter != null) {

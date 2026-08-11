@@ -15,6 +15,7 @@ final class AppViewModel: ObservableObject {
     @Published var locationEnabled: Bool
     @Published var patientHomeHighlights: [HomeHighlight] = []
     @Published var patientPopularArticles: [ArticleSummary] = []
+    @Published var patientHealthTips: [HealthTipSummary] = []
     @Published var doctors: [DoctorSummary] = []
     @Published var appointments: [AppointmentSummary] = []
     @Published var conversations: [ConversationSummary] = []
@@ -130,6 +131,17 @@ final class AppViewModel: ObservableObject {
 
     func currentIdToken() -> String? {
         sessionStore.loadSession()?.idToken
+    }
+
+    func refreshDoctorRegistrationFee() async {
+        do {
+            if let fee = try await authService.fetchAppConfig()?.doctorRegistrationFee,
+               fee >= 0 {
+                doctorRegistrationFee = fee
+            }
+        } catch {
+            // Keep the most recently loaded amount when temporarily offline.
+        }
     }
 
     func completeOnboarding() {
@@ -357,6 +369,8 @@ final class AppViewModel: ObservableObject {
         guard var profile = currentUser else { return false }
         let trimmedName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedPhone = phone.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedAge = age.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedGender = gender.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard ValidationService.isValidName(trimmedName) else {
             alertState = AlertState(title: tr("error"), message: tr("name_required"))
@@ -366,11 +380,15 @@ final class AppViewModel: ObservableObject {
             alertState = AlertState(title: tr("error"), message: tr("valid_phone_required"))
             return false
         }
+        if !trimmedAge.isEmpty, !(1 ... 120).contains(Int(trimmedAge) ?? 0) {
+            alertState = AlertState(title: tr("error"), message: "Enter a valid age between 1 and 120.")
+            return false
+        }
 
         profile.fullName = trimmedName
         profile.phone = trimmedPhone
-        profile.age = age.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : age
-        profile.gender = gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : gender
+        profile.age = trimmedAge.isEmpty ? nil : trimmedAge
+        profile.gender = trimmedGender.isEmpty ? nil : trimmedGender
         profile.bio = bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : bio
         profile.specialization = specialization.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : specialization
         profile.consultationFee = consultationFee.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : consultationFee
@@ -448,7 +466,12 @@ final class AppViewModel: ObservableObject {
         Task {
             defer { isLoading = false }
             do {
-                let idToken = sessionStore.loadSession()?.idToken
+                guard let storedSession = sessionStore.loadSession() else {
+                    throw ServiceError.message("Authentication expired. Please sign in again.")
+                }
+                let session = try await authService.refreshSessionIfNeeded(storedSession)
+                sessionStore.saveSession(session)
+                activeSession = session
                 try await authService.createAppointment(
                     patient: currentUser,
                     doctor: doctor,
@@ -456,7 +479,7 @@ final class AppViewModel: ObservableObject {
                     time: trimmedTime,
                     reason: trimmedReason,
                     appointmentType: appointmentType,
-                    idToken: idToken
+                    idToken: session.idToken
                 )
                 await loadAppointments(force: true)
                 alertState = AlertState(
@@ -488,6 +511,12 @@ final class AppViewModel: ObservableObject {
         } catch {
             patientHomeHighlights = []
             patientPopularArticles = []
+        }
+
+        do {
+            patientHealthTips = try await authService.fetchHealthTips(idToken: idToken)
+        } catch {
+            patientHealthTips = []
         }
     }
 
@@ -718,6 +747,7 @@ final class AppViewModel: ObservableObject {
         didLoadNotifications = false
         patientHomeHighlights = []
         patientPopularArticles = []
+        patientHealthTips = []
         doctors = []
         appointments = []
         conversations = []

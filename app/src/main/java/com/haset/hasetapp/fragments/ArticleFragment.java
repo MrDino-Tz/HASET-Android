@@ -15,11 +15,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.gson.Gson;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.ArticleDetailActivity;
+import com.haset.hasetapp.adapters.HealthTipAdapter;
 import com.haset.hasetapp.adapters.PostFeedAdapter;
 import com.haset.hasetapp.firebase.ArticlePostHelper;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
+import com.haset.hasetapp.models.HealthTip;
+import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.viewmodels.ArticleViewModel;
 
 import java.util.ArrayList;
@@ -35,6 +42,10 @@ public class ArticleFragment extends Fragment {
     private android.widget.TextView tvEmptyTitle, tvEmptySubtitle;
     private android.widget.ImageView ivEmptyIcon;
     private PostFeedAdapter articleAdapter;
+    private HealthTipAdapter healthTipAdapter;
+    private boolean healthTipsTab;
+    private DatabaseReference healthTipsReference;
+    private ValueEventListener healthTipsListener;
     private Gson gson = new Gson();
     private String highlightArticleId;
     private boolean shouldScrollToHighlighted = false;
@@ -65,19 +76,24 @@ public class ArticleFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         highlightArticleId = getArguments() != null ? getArguments().getString(ARG_HIGHLIGHT_ARTICLE_ID) : null;
+        String tabTitle = getArguments() != null ? getArguments().getString("tab_title", "Articles") : "Articles";
+        healthTipsTab = "Health Tips".equalsIgnoreCase(tabTitle);
 
         rvPosts = view.findViewById(R.id.rvPosts);
         rvPosts.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        articleAdapter = new PostFeedAdapter(new ArrayList<>(), requireContext());
-
-        articleAdapter.setOnArticleClickListener(article -> {
-            Intent intent = new Intent(requireContext(), ArticleDetailActivity.class);
-            intent.putExtra(ArticleDetailActivity.EXTRA_ARTICLE, gson.toJson(article));
-            startActivity(intent);
-        });
-
-        rvPosts.setAdapter(articleAdapter);
+        if (healthTipsTab) {
+            healthTipAdapter = new HealthTipAdapter();
+            rvPosts.setAdapter(healthTipAdapter);
+        } else {
+            articleAdapter = new PostFeedAdapter(new ArrayList<>(), requireContext());
+            articleAdapter.setOnArticleClickListener(article -> {
+                Intent intent = new Intent(requireContext(), ArticleDetailActivity.class);
+                intent.putExtra(ArticleDetailActivity.EXTRA_ARTICLE, gson.toJson(article));
+                startActivity(intent);
+            });
+            rvPosts.setAdapter(articleAdapter);
+        }
 
         layoutEmptyState = view.findViewById(R.id.layoutEmptyState);
         tvEmptyTitle = view.findViewById(R.id.tvEmptyStateTitle);
@@ -94,7 +110,9 @@ public class ArticleFragment extends Fragment {
         swipeRefresh.setColorSchemeResources(R.color.green_primary);
         swipeRefresh.setOnRefreshListener(() -> {
             String tabTitle = getArguments() != null ? getArguments().getString("tab_title") : "Articles";
-            if ("Saved".equalsIgnoreCase(tabTitle)) {
+            if (healthTipsTab) {
+                refreshHealthTips();
+            } else if ("Saved".equalsIgnoreCase(tabTitle)) {
                 String userId = new com.haset.hasetapp.utils.PreferenceManager(requireContext()).getUserId();
                 if (userId != null) {
                     viewModel.refreshSavedArticles(userId);
@@ -109,6 +127,11 @@ public class ArticleFragment extends Fragment {
 
     private void setupObservers() {
         String tabTitle = getArguments() != null ? getArguments().getString("tab_title") : "Articles";
+
+        if (healthTipsTab) {
+            observeHealthTips();
+            return;
+        }
         
         if ("Saved".equalsIgnoreCase(tabTitle)) {
             String userId = new com.haset.hasetapp.utils.PreferenceManager(requireContext()).getUserId();
@@ -174,7 +197,8 @@ public class ArticleFragment extends Fragment {
     }
 
     private void showEmptyState(String tabTitle) {
-        articleAdapter.setPosts(new ArrayList<>());
+        if (articleAdapter != null) articleAdapter.setPosts(new ArrayList<>());
+        if (healthTipAdapter != null) healthTipAdapter.setTips(new ArrayList<>());
         layoutEmptyState.setVisibility(View.VISIBLE);
         
         if ("Health Tips".equalsIgnoreCase(tabTitle)) {
@@ -211,7 +235,8 @@ public class ArticleFragment extends Fragment {
     }
 
     private void showErrorState(String error) {
-        articleAdapter.setPosts(new ArrayList<>());
+        if (articleAdapter != null) articleAdapter.setPosts(new ArrayList<>());
+        if (healthTipAdapter != null) healthTipAdapter.setTips(new ArrayList<>());
         layoutEmptyState.setVisibility(View.VISIBLE);
         tvEmptyTitle.setText("Error Loading Articles");
         tvEmptySubtitle.setText("Could not load content: " + error + ". Please check your connection and try again.");
@@ -222,7 +247,9 @@ public class ArticleFragment extends Fragment {
         if (getArguments() == null) return;
         String tabTitle = getArguments().getString("tab_title", "Articles");
         
-        if ("Saved".equalsIgnoreCase(tabTitle)) {
+        if (healthTipsTab) {
+            observeHealthTips();
+        } else if ("Saved".equalsIgnoreCase(tabTitle)) {
             String userId = new com.haset.hasetapp.utils.PreferenceManager(requireContext()).getUserId();
             if (userId != null) {
                 viewModel.refreshSavedArticles(userId);
@@ -248,5 +275,73 @@ public class ArticleFragment extends Fragment {
         if (articleAdapter != null) {
             articleAdapter.setLoading(false);
         }
+    }
+
+    private void observeHealthTips() {
+        if (healthTipsListener != null) return;
+        healthTipsReference = FirebaseHelper.getDatabaseReference().child("health_quotes");
+        healthTipsListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                displayHealthTips(snapshot);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (!isAdded()) return;
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                showErrorState(error.getMessage());
+            }
+        };
+        healthTipsReference.addValueEventListener(healthTipsListener);
+    }
+
+    private void refreshHealthTips() {
+        DatabaseReference reference = FirebaseHelper.getDatabaseReference().child("health_quotes");
+        reference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                displayHealthTips(snapshot);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (!isAdded()) return;
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                showErrorState(error.getMessage());
+            }
+        });
+    }
+
+    private void displayHealthTips(DataSnapshot snapshot) {
+        if (!isAdded() || healthTipAdapter == null) return;
+        List<HealthTip> tips = new ArrayList<>();
+        for (DataSnapshot child : snapshot.getChildren()) {
+            Boolean enabled = child.child("enabled").getValue(Boolean.class);
+            if (Boolean.FALSE.equals(enabled)) continue;
+
+            String text = child.child("text").getValue(String.class);
+            if (text == null || text.trim().isEmpty()) continue;
+            String author = child.child("author").getValue(String.class);
+            if (author == null || author.trim().isEmpty()) author = "HASET Hospital";
+            Long timestamp = child.child("createdAt").getValue(Long.class);
+            if (timestamp == null) timestamp = child.child("timestamp").getValue(Long.class);
+            tips.add(new HealthTip(child.getKey(), text.trim(), author.trim(), timestamp == null ? 0L : timestamp));
+        }
+
+        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+        healthTipAdapter.setTips(tips);
+        layoutEmptyState.setVisibility(tips.isEmpty() ? View.VISIBLE : View.GONE);
+        if (tips.isEmpty()) showEmptyState("Health Tips");
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (healthTipsReference != null && healthTipsListener != null) {
+            healthTipsReference.removeEventListener(healthTipsListener);
+        }
+        healthTipsListener = null;
+        healthTipsReference = null;
+        super.onDestroyView();
     }
 }

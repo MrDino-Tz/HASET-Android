@@ -35,6 +35,7 @@
     <string name="phone">Phone Number</string>
     <string name="full_name">Full Name</string>
     <string name="age">Age</string>
+    <string name="error_valid_age">Enter an age between 1 and 120</string>
     <string name="gender">Gender</string>
     <string name="male">Male</string>
     <string name="female">Female</string>
@@ -74,6 +75,10 @@
     <string name="approved_appointments">Approved Appointments</string>
     <string name="manage_schedule">Manage Schedule</string>
     <string name="my_patients">My Patients</string>
+    <plurals name="patient_appointment_count">
+        <item quantity="one">%d appointment</item>
+        <item quantity="other">%d appointments</item>
+    </plurals>
 
     <!-- Appointment -->
     <string name="select_date">Select Date</string>
@@ -938,6 +943,7 @@
     <string name="whatsapp">WhatsApp</string>
     <string name="call_support">Call Support</string>
     <string name="health_tips">Health Tips</string>
+    <string name="health_tip_author_format">— %1$s</string>
     <string name="saved_articles">Saved</string>
     <string name="support_tickets">Support Tickets</string>
     <string name="no_support_tickets">No support tickets</string>

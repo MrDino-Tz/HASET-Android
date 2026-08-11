@@ -38,7 +38,6 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
     private ConversationAdapter conversationAdapter;
     private PreferenceManager preferenceManager;
     private String currentUserId;
-    private boolean isFirstLoad = true;
     private ChatListViewModel viewModel;
     private View layoutEmpty;
     private android.widget.TextView tvEmptyMessage;
@@ -148,10 +147,11 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
             hideShimmerLoading();
             filterAndDisplay(conversations);
 
-            if (isFirstLoad) {
-                isFirstLoad = false;
-                viewModel.syncUnreadCounts(currentUserId, conversations);
-            }
+            viewModel.syncUnreadCounts(currentUserId, conversations, () -> {
+                if (isAdded() && conversationAdapter != null) {
+                    conversationAdapter.notifyDataSetChanged();
+                }
+            });
         });
     }
 

@@ -581,7 +581,7 @@ struct RegisterView: View {
         return ValidationService.isValidName(fullName)
             && ValidationService.isValidEmail(email)
             && phoneDigits.count == 9
-            && ValidationService.isValidPassword(password)
+            && ValidationService.isStrongPassword(password)
             && (role != .doctor || !regNo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
@@ -630,7 +630,7 @@ struct RegisterView: View {
                         guard canSubmitRegistration else {
                             appViewModel.alertState = AlertState(
                                 title: appViewModel.tr("error"),
-                                message: "Enter a valid name, email, 9-digit phone number, and password of at least 6 characters."
+                                message: "Enter a valid name, email, 9-digit phone number, and a password with at least 12 characters, uppercase, lowercase, and a number."
                             )
                             return
                         }
@@ -715,6 +715,12 @@ struct RegisterView: View {
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
+        .task {
+            while role == .doctor && !Task.isCancelled {
+                await appViewModel.refreshDoctorRegistrationFee()
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
         .sheet(item: $doctorSignupPayment) { request in
             let fee = appViewModel.doctorRegistrationFee
             PaymentCheckoutView(

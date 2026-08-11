@@ -22,6 +22,7 @@ public class AppointmentsViewModel extends AndroidViewModel {
     private final LiveData<List<Appointment>> upcomingAppointments;
     private final LiveData<List<Appointment>> pendingAppointments;
     private final LiveData<List<Appointment>> pastAppointments;
+    private final LiveData<List<Appointment>> completedAppointments;
     private final LiveData<List<Appointment>> cancelledAppointments;
 
     public AppointmentsViewModel(@NonNull Application application) {
@@ -60,6 +61,18 @@ public class AppointmentsViewModel extends AndroidViewModel {
             if (appointments != null) {
                 for (Appointment a : appointments) {
                     if (a.isPast()) {
+                        filtered.add(a);
+                    }
+                }
+            }
+            return filtered;
+        });
+
+        completedAppointments = Transformations.map(allAppointments, appointments -> {
+            List<Appointment> filtered = new ArrayList<>();
+            if (appointments != null) {
+                for (Appointment a : appointments) {
+                    if (Constants.STATUS_COMPLETED.equalsIgnoreCase(a.getStatus())) {
                         filtered.add(a);
                     }
                 }
@@ -106,6 +119,10 @@ public class AppointmentsViewModel extends AndroidViewModel {
 
     public LiveData<List<Appointment>> getPastAppointments() {
         return pastAppointments;
+    }
+
+    public LiveData<List<Appointment>> getCompletedAppointments() {
+        return completedAppointments;
     }
 
     public LiveData<List<Appointment>> getCancelledAppointments() {

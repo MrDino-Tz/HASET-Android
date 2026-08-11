@@ -108,10 +108,13 @@ public class PrescriptionDetailFragment extends Fragment {
     private void displayPrescription(Prescription prescription) {
         // Load image
         if (prescription.getImageUrl() != null && !prescription.getImageUrl().isEmpty()) {
+            viewImage(true);
             Glide.with(this)
                 .load(prescription.getImageUrl())
                 .placeholder(R.drawable.ic_prescription)
                 .into(ivPrescriptionImage);
+        } else {
+            viewImage(false);
         }
         
         // Set doctor name
@@ -135,6 +138,11 @@ public class PrescriptionDetailFragment extends Fragment {
             com.haset.hasetapp.adapters.MedicineAdapter adapter = new com.haset.hasetapp.adapters.MedicineAdapter(prescription.getMedicines());
             recyclerViewMedicines.setAdapter(adapter);
         }
+    }
+
+    private void viewImage(boolean visible) {
+        View parent = (View) ivPrescriptionImage.getParent();
+        parent.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
     
     private void showDeleteConfirmation() {
