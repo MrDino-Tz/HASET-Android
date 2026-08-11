@@ -341,6 +341,9 @@
     <string name="profile_updated">Profile updated successfully</string>
     <string name="uploading">Uploading...</string>
     <string name="good_morning">Good Morning,</string>
+    <string name="good_afternoon">Good Afternoon,</string>
+    <string name="good_evening">Good Evening,</string>
+    <string name="good_night">Good Night,</string>
     <string name="hello">Hello,</string>
     <string name="quick_actions">Quick Actions &amp; Services</string>
     <string name="schedule">Schedule</string>

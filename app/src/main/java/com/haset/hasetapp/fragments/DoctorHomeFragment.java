@@ -124,12 +124,25 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
 
         refreshHeaderProfile();
 
-        // Set current date
+        // Set current date & dynamic greeting
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
         if (tvTodayDate != null) {
-            java.util.Calendar calendar = java.util.Calendar.getInstance();
             java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("EEEE, MMM dd", java.util.Locale.getDefault());
             String dateString = dateFormat.format(calendar.getTime());
             tvTodayDate.setText(dateString);
+        }
+        
+        if (tvGreeting != null) {
+            int hour = calendar.get(java.util.Calendar.HOUR_OF_DAY);
+            if (hour >= 0 && hour < 12) {
+                tvGreeting.setText(R.string.good_morning);
+            } else if (hour >= 12 && hour < 17) {
+                tvGreeting.setText(R.string.good_afternoon);
+            } else if (hour >= 17 && hour < 21) {
+                tvGreeting.setText(R.string.good_evening);
+            } else {
+                tvGreeting.setText(R.string.good_night);
+            }
         }
     }
 
