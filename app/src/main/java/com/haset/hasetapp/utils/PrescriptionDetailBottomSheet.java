@@ -22,6 +22,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Context;
+import android.view.ContextThemeWrapper;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -242,7 +247,8 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
 
         // Step 1 — capture bitmap on the main thread.
         prescriptionContent.post(() -> {
-            Bitmap bitmap = captureViewBitmap(prescriptionContent);
+            View viewToCapture = isDarkModeActive() ? getPrintReadyView() : prescriptionContent;
+            Bitmap bitmap = captureViewBitmap(viewToCapture);
             if (bitmap == null) {
                 mainHandler.post(() -> {
                     if (isAdded()) showSnackbar("Failed to capture prescription content.");
@@ -406,7 +412,8 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
     private void printPrescription() {
         if (prescriptionContent == null) return;
 
-        Bitmap bitmap = captureViewBitmap(prescriptionContent);
+        View viewToCapture = isDarkModeActive() ? getPrintReadyView() : prescriptionContent;
+        Bitmap bitmap = captureViewBitmap(viewToCapture);
         if (bitmap == null) {
             showSnackbar("Failed to capture prescription for printing.");
             return;
@@ -469,6 +476,97 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private boolean isDarkModeActive() {
+        if (getContext() == null) return false;
+        int currentNightMode = getContext().getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return currentNightMode == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    private View getPrintReadyView() {
+        if (prescription == null || getContext() == null) return prescriptionContent;
+
+        try {
+            // Force a light theme context wrapper
+            Context context = requireContext();
+            ContextThemeWrapper lightThemeContext = new ContextThemeWrapper(context, R.style.Theme_HASETApp);
+            Configuration config = new Configuration(lightThemeContext.getResources().getConfiguration());
+            config.uiMode = (config.uiMode & ~Configuration.UI_MODE_NIGHT_MASK) | Configuration.UI_MODE_NIGHT_NO;
+            Context lightModeContext = lightThemeContext.createConfigurationContext(config);
+
+            // Inflate the exact same layout file under the light context
+            View printView = LayoutInflater.from(lightModeContext).inflate(R.layout.bottom_sheet_prescription_details, null);
+            View printContent = printView.findViewById(R.id.prescriptionContent);
+
+            // Bind data to printContent views
+            TextView tvPrescId = printView.findViewById(R.id.tvPrescriptionId);
+            TextView tvDt = printView.findViewById(R.id.tvDate);
+            TextView tvPatName = printView.findViewById(R.id.tvPatientName);
+            TextView tvDocName = printView.findViewById(R.id.tvDoctorName);
+            TextView tvDocSpec = printView.findViewById(R.id.tvDoctorSpecialty);
+            TextView tvInst = printView.findViewById(R.id.tvInstructions);
+            View cImage = printView.findViewById(R.id.cardImage);
+            ImageView ivPrescImg = printView.findViewById(R.id.ivPrescriptionImage);
+            RecyclerView rvMeds = printView.findViewById(R.id.rvMedicines);
+
+            if (prescription.getPrescriptionId() != null) {
+                tvPrescId.setText(prescription.getPrescriptionId()
+                        .substring(0, Math.min(12, prescription.getPrescriptionId().length()))
+                        .toUpperCase(Locale.ROOT));
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            tvDt.setText(sdf.format(new Date(prescription.getCreatedAt())));
+
+            String patientName = prescription.getPatientName();
+            tvPatName.setText(patientName == null || patientName.trim().isEmpty() ? "Patient" : patientName.trim());
+
+            tvDocName.setText(prescription.getDoctorName() != null ? prescription.getDoctorName() : "Doctor");
+            tvDocSpec.setText("Prescribing clinician");
+
+            tvInst.setText(prescription.getInstructions() != null ? prescription.getInstructions() : "No special instructions.");
+
+            if (cardImage != null && cardImage.getVisibility() == View.VISIBLE) {
+                cImage.setVisibility(View.VISIBLE);
+                if (ivPrescriptionImage != null) {
+                    Drawable drawable = ivPrescriptionImage.getDrawable();
+                    if (drawable != null) {
+                        ivPrescImg.setImageDrawable(drawable);
+                    }
+                }
+            } else {
+                cImage.setVisibility(View.GONE);
+            }
+
+            if (prescription.getMedicines() != null && !prescription.getMedicines().isEmpty()) {
+                LinearLayoutManager llm = new LinearLayoutManager(lightModeContext) {
+                    @Override
+                    public boolean isAutoMeasureEnabled() {
+                        return true;
+                    }
+                };
+                rvMeds.setLayoutManager(llm);
+                rvMeds.setNestedScrollingEnabled(false);
+                rvMeds.setAdapter(new MedicineAdapter(prescription.getMedicines()));
+            }
+
+            // Measure and layout the printContent view
+            int width = prescriptionContent.getWidth();
+            if (width <= 0) {
+                width = Resources.getSystem().getDisplayMetrics().widthPixels;
+            }
+
+            int widthSpec = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY);
+            int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            printContent.measure(widthSpec, heightSpec);
+            printContent.layout(0, 0, printContent.getMeasuredWidth(), printContent.getMeasuredHeight());
+
+            return printContent;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return prescriptionContent; // Fallback to current view on any exception
+        }
+    }
 
     private void showSnackbar(String message) {
         if (getView() != null) {

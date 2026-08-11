@@ -9,6 +9,16 @@
     <color name="colorBackground">@color/background_primary</color>
     <color name="colorCardBackground">@color/background_card</color>
     
+    <!-- Prescription Semantic Colors (Light Theme) -->
+    <color name="prescription_bg">@color/background_card</color>
+    <color name="prescription_section_bg">#F7FAF8</color>
+    <color name="prescription_section_stroke">#DDE9E1</color>
+    <color name="prescription_instruction_bg">#FFF9E8</color>
+    <color name="prescription_instruction_stroke">#F0DFA3</color>
+    <color name="prescription_table_header_bg">@color/text_primary</color>
+    <color name="prescription_table_header_text">@color/white</color>
+
+    
     <!-- Green Theme Colors -->
     <color name="green_primary">#008800</color>
     <color name="green_light">#11AA11</color>

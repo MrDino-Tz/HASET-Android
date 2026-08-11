@@ -10,6 +10,16 @@
     <color name="colorBackground">@color/background_primary</color>
     <color name="colorCardBackground">@color/background_card</color>
     
+    <!-- Prescription Semantic Colors (Dark Theme) -->
+    <color name="prescription_bg">@color/background_card</color>
+    <color name="prescription_section_bg">#1A2520</color>
+    <color name="prescription_section_stroke">#2E3D34</color>
+    <color name="prescription_instruction_bg">#2D2615</color>
+    <color name="prescription_instruction_stroke">#4D3F25</color>
+    <color name="prescription_table_header_bg">#333333</color>
+    <color name="prescription_table_header_text">#FFFFFF</color>
+
+    
     <!-- Green Theme Colors for Dark Mode -->
     <color name="green_primary">#008800</color>
     <color name="green_light">#11AA11</color>
