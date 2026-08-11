@@ -452,6 +452,7 @@
     <string name="recommend_app">Pendekeza programu hii kwa marafiki</string>
     <string name="share_app_text">Pakua Programu ya H-Care - Mshirika wako unayeaminika kwa huduma ya afya inayopatikana: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
     <string name="delete">Futa</string>
+    <string name="select">Chagua</string>
     
     <!-- Bottom Sheet Strings -->
     <string name="no_bio_available">Hakuna maelezo ya wasifu.</string>

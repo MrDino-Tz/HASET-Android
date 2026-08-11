@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_share"
         android:title="@string/share" />
     <item
+        android:id="@+id/action_select"
+        android:icon="@drawable/ic_check_circle"
+        android:title="@string/select" />
+    <item
         android:id="@+id/action_forward"
         android:icon="@drawable/ic_forward_outlined"
         android:title="@string/forward" />

@@ -797,11 +797,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         rvMessages.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         chatAdapter.setOnMessageLongClickListener((message, view) -> {
-            if (currentUserId.equals(message.getSenderId())) {
-                toggleMessageSelection(message);
-            } else if (!chatAdapter.isSelectionMode()) {
-                showChatContextMenu(message, view);
-            }
+            showChatContextMenu(message, view);
         });
 
         chatAdapter.setOnReplyClickListener(messageId -> {
@@ -1061,7 +1057,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         // Attach reply information if replying
         if (replyingToMessage != null) {
             message.setReplyToMessageId(replyingToMessage.getMessageId());
-            message.setReplyToText(replyingToMessage.getMessage());
+            message.setReplyToText(getReplyPreviewText(replyingToMessage));
             message.setReplyToSenderName(replyingToMessage.getSenderName());
         }
 
@@ -1086,12 +1082,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         tvReplyName.setText(senderName);
         
         // Set the message text (or file type for attachments)
-        String previewText = message.getMessage();
-        if (!"text".equals(message.getMessageType())) {
-            previewText = message.getMessageType().substring(0, 1).toUpperCase() + 
-                         message.getMessageType().substring(1);
-        }
-        tvReplyText.setText(previewText);
+        tvReplyText.setText(getReplyPreviewText(message));
         
         // Set up cancel button
         ivCancelReply.setOnClickListener(v -> cancelReply());
@@ -1221,10 +1212,17 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         int menuRes = "text".equals(message.getMessageType()) ? R.menu.menu_chat_text : R.menu.menu_chat_file;
         popup.getMenuInflater().inflate(menuRes, popup.getMenu());
 
+        boolean isOwn = currentUserId.equals(message.getSenderId());
+        popup.getMenu().findItem(R.id.action_delete).setVisible(isOwn);
+        popup.getMenu().findItem(R.id.action_select).setVisible(isOwn);
+
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_copy) {
                 copyToClipboard(message.getMessage());
+                return true;
+            } else if (id == R.id.action_select) {
+                toggleMessageSelection(message);
                 return true;
             } else if (id == R.id.action_delete) {
                 new androidx.appcompat.app.AlertDialog.Builder(this)
