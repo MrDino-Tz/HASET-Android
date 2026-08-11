@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
     android:background="@drawable/dialog_background">
@@ -49,14 +49,14 @@
     </LinearLayout>
 
     <!-- Location Icon -->
-    <ImageView
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="center"
-        android:src="@drawable/ic_hospital_24"
-        app:tint="@color/green_primary"
-        android:layout_marginBottom="12dp"
-        android:contentDescription="@string/hospital_location_title" />
+<!--    <ImageView-->
+<!--        android:layout_width="48dp"-->
+<!--        android:layout_height="48dp"-->
+<!--        android:layout_gravity="center"-->
+<!--        android:src="@drawable/ic_hospital_24"-->
+<!--        app:tint="@color/green_primary"-->
+<!--        android:layout_marginBottom="12dp"-->
+<!--        android:contentDescription="@string/hospital_location_title" />-->
 
     <!-- Title -->
     <TextView
@@ -64,26 +64,16 @@
         android:layout_height="wrap_content"
         android:text="@string/hospital_location_title"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="20sp"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="4dp" />
-
-    <!-- Subtitle -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hospital_location_subtitle"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="14sp"
-        android:lineSpacingExtra="4dp"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
 
     <!-- Map -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="440dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginBottom="20dp"
         android:background="@drawable/bg_rounded_map"
         android:clipToOutline="true">

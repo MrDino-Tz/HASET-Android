@@ -25,7 +25,20 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
 
     public static final String TAG = "HospitalsLocationBottomSheet";
 
-    private static final String MAP_EMBED_URL = "https://maps.google.com/maps?q=HASET+Hospital,+Dar+es+Salaam,+Tanzania&z=15&output=embed";
+    private static final String MAP_EMBED_URL = "https://maps.google.com/maps?q=HASET+Dispensary+-+Mtoni+Branch&z=17&output=embed";
+
+    @SuppressLint("SetJavaScriptEnabled")
+    @Override
+    public void onStart() {
+        super.onStart();
+        android.app.Dialog dialog = getDialog();
+        if (dialog != null && dialog.getWindow() != null) {
+            android.view.ViewGroup.LayoutParams params = new android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+            dialog.getWindow().setLayout(params.width, params.height);
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Nullable
@@ -61,7 +74,12 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
             }
         });
 
-        webViewMap.loadUrl(MAP_EMBED_URL);
+        webViewMap.loadDataWithBaseURL(null,
+                "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+                + "<style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;}"
+                + "iframe{width:100%;height:100%;border:0;}</style></head>"
+                + "<body><iframe src=\"" + MAP_EMBED_URL + "\" allowfullscreen></iframe></body></html>",
+                "text/html", "UTF-8", null);
 
         MaterialButton btnOpenInMaps = view.findViewById(R.id.btnOpenInMaps);
         btnOpenInMaps.setOnClickListener(v -> {
