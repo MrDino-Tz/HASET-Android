@@ -1,6 +1,74 @@
 import PhotosUI
 import SwiftUI
 import UIKit
+import WebKit
+
+private struct HostedCheckoutDestination: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+private struct HostedCheckoutWebView: UIViewRepresentable {
+    let url: URL
+    let onCallback: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onCallback: onCallback) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .default()
+        configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
+        webView.allowsBackForwardNavigationGestures = true
+        webView.load(URLRequest(url: url))
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {}
+
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+        private let onCallback: () -> Void
+
+        init(onCallback: @escaping () -> Void) { self.onCallback = onCallback }
+
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationAction: WKNavigationAction,
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        ) {
+            guard let target = navigationAction.request.url else {
+                decisionHandler(.cancel)
+                return
+            }
+            if target.host?.lowercased() == "hasethospital.or.tz",
+               (target.path.hasPrefix("/payment/success") || target.path.hasPrefix("/payment/cancel")) {
+                onCallback()
+                decisionHandler(.cancel)
+                return
+            }
+            if let scheme = target.scheme?.lowercased(), scheme != "https" && scheme != "http" {
+                UIApplication.shared.open(target)
+                decisionHandler(.cancel)
+                return
+            }
+            decisionHandler(.allow)
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            createWebViewWith configuration: WKWebViewConfiguration,
+            for navigationAction: WKNavigationAction,
+            windowFeatures: WKWindowFeatures
+        ) -> WKWebView? {
+            if navigationAction.targetFrame == nil, let target = navigationAction.request.url {
+                webView.load(URLRequest(url: target))
+            }
+            return nil
+        }
+    }
+}
 
 struct DashboardRootView: View {
     let role: UserRole
@@ -1728,7 +1796,6 @@ struct PaymentCheckoutView: View {
 
     @EnvironmentObject private var appViewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     @State private var selectedMethod: PaymentMethod
     @State private var selectedProvider = "Vodacom"
@@ -1745,6 +1812,7 @@ struct PaymentCheckoutView: View {
     @State private var didRetryPaymentAuth = false
     @State private var paymentAuthSession: StoredSession?
     @State private var showingCancelConfirmation = false
+    @State private var hostedCheckout: HostedCheckoutDestination?
 
     private let paymentService = AuthService()
     private let sessionStore = SessionStore()
@@ -1769,7 +1837,8 @@ struct PaymentCheckoutView: View {
         self.onPaymentConfirmed = onPaymentConfirmed
         _selectedMethod = State(initialValue: initialMethod)
         _consultationId = State(initialValue: "consult-\(UUID().uuidString.lowercased())")
-        _idempotencyKey = State(initialValue: String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(30)).lowercased())
+        // Keep margin below Snippe's 30-character processor limit.
+        _idempotencyKey = State(initialValue: String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(24)).lowercased())
     }
 
     var body: some View {
@@ -1980,6 +2049,25 @@ struct PaymentCheckoutView: View {
             }
             .task {
                 await preparePaymentSession()
+            }
+            .sheet(item: $hostedCheckout, onDismiss: {
+                guard transactionId != nil else { return }
+                Task { await checkStatus() }
+            }) { destination in
+                NavigationStack {
+                    HostedCheckoutWebView(url: destination.url) {
+                        hostedCheckout = nil
+                        Task { await checkStatus() }
+                    }
+                    .ignoresSafeArea(edges: .bottom)
+                    .navigationTitle(appViewModel.tr("secure_payment"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(appViewModel.tr("close")) { hostedCheckout = nil }
+                        }
+                    }
+                }
             }
         }
     }
@@ -2195,7 +2283,7 @@ struct PaymentCheckoutView: View {
                         return
                     }
                     await MainActor.run {
-                        openURL(url)
+                        hostedCheckout = HostedCheckoutDestination(url: url)
                         statusMessage = appViewModel.tr("card_checkout_opened")
                     }
                 } else {
@@ -2265,6 +2353,7 @@ struct PaymentCheckoutView: View {
                         canRetryStatus = false
                         processingPulse = false
                         statusMessage = appViewModel.tr("payment_confirmed")
+                        hostedCheckout = nil
                         onPaymentConfirmed()
                         dismiss()
                     }

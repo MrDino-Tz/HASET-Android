@@ -1,6 +1,8 @@
 package com.haset.hasetapp.utils;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -94,19 +96,26 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
             tvPercentage.setText(percentage + "%");
             updateCalculatedAmount();
         });
+
+        etAppointmentFee.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateCalculatedAmount();
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
         
         // Cancel button
         btnCancel.setOnClickListener(v -> dismiss());
         
         // Send button
         btnSend.setOnClickListener(v -> sendService());
+        updateCalculatedAmount();
     }
     
     private void updateCalculatedAmount() {
         try {
-            String feeStr = etAppointmentFee.getText() != null ? 
-                etAppointmentFee.getText().toString().trim() : "0";
-            double fee = feeStr.isEmpty() ? 0 : Double.parseDouble(feeStr);
+            double fee = parseFee();
             int percentage = (int) sliderPercentage.getValue();
             
             double calculatedAmount = (fee * percentage) / 100.0;
@@ -137,7 +146,7 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
         
         double fee;
         try {
-            fee = Double.parseDouble(feeStr);
+            fee = parseFee();
         } catch (NumberFormatException e) {
             etAppointmentFee.setError(requireContext().getString(R.string.error_invalid_fee));
             etAppointmentFee.requestFocus();
@@ -149,12 +158,22 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
             etAppointmentFee.requestFocus();
             return;
         }
+
+        double patientAmount = (fee * sliderPercentage.getValue()) / 100.0;
+        if (patientAmount < Constants.MIN_PAYMENT_AMOUNT) {
+            etAppointmentFee.setError(requireContext().getString(
+                    R.string.error_service_payment_minimum,
+                    formatCurrency(Constants.MIN_PAYMENT_AMOUNT)));
+            etAppointmentFee.requestFocus();
+            return;
+        }
         
         // Create service object
         Service service = new Service();
         service.setServiceName(serviceName);
         service.setAppointmentFee(fee);
         service.setPatientPercentage((int) sliderPercentage.getValue());
+        service.setPatientPayAmount(patientAmount);
         service.setDoctorId(doctorId);
         service.setPatientId(patientId);
         
@@ -169,5 +188,14 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
     private String formatCurrency(double amount) {
         NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
         return formatter.format(amount);
+    }
+
+    private double parseFee() {
+        String raw = etAppointmentFee.getText() == null
+                ? ""
+                : etAppointmentFee.getText().toString().trim();
+        String numeric = raw.replace(",", "").replaceAll("[^0-9.]", "");
+        if (numeric.isEmpty()) return 0.0;
+        return Double.parseDouble(numeric);
     }
 }

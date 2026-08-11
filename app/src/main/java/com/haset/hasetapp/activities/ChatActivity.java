@@ -622,10 +622,33 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         message.setMessageStatus("sent");
         message.setTimestamp(System.currentTimeMillis());
         
-        viewModel.sendMessage(chatRoomId, message, currentUserId, chatUserId, 
+        String messageId = viewModel.sendMessage(chatRoomId, message, currentUserId, chatUserId,
             preferenceManager.getUserName(), chatUserName);
-        
-        Toast.makeText(this, R.string.service_payment_sent, Toast.LENGTH_SHORT).show();
+        if (messageId == null) {
+            Toast.makeText(this, R.string.failed_to_send_message, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("serviceId", service.getServiceId());
+        request.put("messageId", messageId);
+        request.put("chatRoomId", chatRoomId);
+        request.put("doctorId", currentUserId);
+        request.put("patientId", chatUserId);
+        request.put("serviceName", service.getServiceName());
+        request.put("appointmentFee", service.getAppointmentFee());
+        request.put("patientPercentage", service.getPatientPercentage());
+        request.put("patientPayAmount", service.getPatientPayAmount());
+        request.put("status", "pending");
+        request.put("createdAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+        com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase()
+                .getReference("service_payment_requests")
+                .child(service.getServiceId())
+                .setValue(request)
+                .addOnSuccessListener(ignored -> Toast.makeText(
+                        ChatActivity.this, R.string.service_payment_sent, Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(error -> Toast.makeText(
+                        ChatActivity.this, error.getMessage(), Toast.LENGTH_LONG).show());
     }
 
     private void onServicePayClicked(String messageId, Service service) {
@@ -664,10 +687,9 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         });
     }
 
-    private void updateServicePaymentStatus(String messageId, boolean paid) {
-        com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase().getReference("chats")
+    private void updateServicePaymentStatus(String messageId, boolean paid, int transactionId) {
+        com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase().getReference("messages")
             .child(chatRoomId)
-            .child("messages")
             .child(messageId)
             .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
                 @Override
@@ -678,12 +700,20 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                             Gson gson = new Gson();
                             Service service = gson.fromJson(message.getMessage(), Service.class);
                             if (service != null) {
-                                service.setPaid(true);
-                                service.setPaymentStatus("paid");
-                                message.setMessage(gson.toJson(service));
-                                snapshot.getRef().setValue(message).addOnSuccessListener(aVoid -> {
-                                    Toast.makeText(ChatActivity.this, R.string.payment_successful_chat, Toast.LENGTH_SHORT).show();
-                                });
+                                Map<String, Object> paidUpdate = new HashMap<>();
+                                paidUpdate.put("status", paid ? "paid" : "pending");
+                                paidUpdate.put("transactionId", String.valueOf(transactionId));
+                                paidUpdate.put("paidAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+                                com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase()
+                                        .getReference("service_payment_requests")
+                                        .child(service.getServiceId())
+                                        .updateChildren(paidUpdate)
+                                        .addOnSuccessListener(ignored -> Toast.makeText(
+                                                ChatActivity.this,
+                                                R.string.payment_successful_chat,
+                                                Toast.LENGTH_SHORT).show())
+                                        .addOnFailureListener(error -> Log.e(
+                                                "ChatActivity", "Unable to persist service payment status", error));
                             }
                         } catch (Exception e) {
                             Log.e("ChatActivity", "Error updating payment status", e);
@@ -1114,7 +1144,10 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
             if (requestCode == SERVICE_PAYMENT_REQUEST_CODE && data != null) {
                 String messageId = data.getStringExtra("service_message_id");
                 if (messageId != null) {
-                    updateServicePaymentStatus(messageId, true);
+                    updateServicePaymentStatus(
+                            messageId,
+                            true,
+                            data.getIntExtra("transaction_id", -1));
                 }
             } else if (requestCode == Constants.REQUEST_CODE_CAMERA) {
                 // Camera result - use the file we created

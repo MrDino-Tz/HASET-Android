@@ -236,6 +236,14 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return messages.size() + 1; // +1 for Header
     }
 
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        if (holder instanceof ServiceViewHolder) {
+            ((ServiceViewHolder) holder).stopStatusListener();
+        }
+        super.onViewRecycled(holder);
+    }
+
     public void toggleSelection(ChatMessage message) {
         if (message == null || message.getMessageId() == null) return;
         String messageId = message.getMessageId();
@@ -704,6 +712,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     class ServiceViewHolder extends BaseViewHolder {
         TextView tvServiceTitle, tvServiceName, tvTotalFee, tvPatientPay, tvPercentageLabel, tvPaymentStatus;
         com.google.android.material.button.MaterialButton btnPay;
+        com.google.firebase.database.DatabaseReference statusReference;
+        com.google.firebase.database.ValueEventListener statusListener;
+        String boundServiceId;
 
         ServiceViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -724,6 +735,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 com.haset.hasetapp.models.Service service = gson.fromJson(message.getMessage(), com.haset.hasetapp.models.Service.class);
                 
                 if (service != null) {
+                    stopStatusListener();
+                    boundServiceId = service.getServiceId();
                     tvServiceName.setText(service.getServiceName() != null ? service.getServiceName() : "Service");
                     
                     // Format currency
@@ -732,8 +745,35 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     tvPatientPay.setText(formatter.format(service.getPatientPayAmount()) + " TZS");
                     tvPercentageLabel.setText("You Pay (" + service.getPatientPercentage() + "%):");
                     
-                    // Check payment status
-                    if (service.isPaid() || "paid".equalsIgnoreCase(service.getPaymentStatus())) {
+                    renderPaymentState(message, service, isSent,
+                            service.isPaid() || "paid".equalsIgnoreCase(service.getPaymentStatus()));
+
+                    if (boundServiceId != null && !boundServiceId.trim().isEmpty()) {
+                        statusReference = com.google.firebase.database.FirebaseDatabase.getInstance()
+                                .getReference("service_payment_requests")
+                                .child(boundServiceId);
+                        statusListener = new com.google.firebase.database.ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                                if (!boundServiceId.equals(service.getServiceId())) return;
+                                if (!snapshot.exists()) return;
+                                String status = snapshot.child("status").getValue(String.class);
+                                renderPaymentState(message, service, isSent, "paid".equalsIgnoreCase(status));
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {}
+                        };
+                        statusReference.addValueEventListener(statusListener);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void renderPaymentState(ChatMessage message, Service service, boolean isSent, boolean paid) {
+                    if (paid) {
                         tvPaymentStatus.setText(itemView.getContext().getString(R.string.payment_paid));
                         tvPaymentStatus.setTextColor(itemView.getContext().getResources().getColor(R.color.green_primary, null));
                         tvPaymentStatus.setBackgroundResource(R.drawable.bg_badge_green);
@@ -755,10 +795,15 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             btnPay.setVisibility(View.GONE);
                         }
                     }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+        }
+
+        void stopStatusListener() {
+            if (statusReference != null && statusListener != null) {
+                statusReference.removeEventListener(statusListener);
             }
+            statusReference = null;
+            statusListener = null;
+            boundServiceId = null;
         }
     }
 

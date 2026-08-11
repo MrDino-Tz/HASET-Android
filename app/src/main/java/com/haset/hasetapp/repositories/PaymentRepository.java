@@ -6,6 +6,8 @@ import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.haset.hasetapp.api.PaymentApiService;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.models.PaymentRequest;
@@ -108,7 +110,9 @@ public class PaymentRepository {
         PaymentRequest request = new PaymentRequest(userId, doctorId, consultationId, amount, paymentMethod,
                 provider, paymentAccount, buyerEmail, buyerName, buyerPhone,
                 "https://hasethospital.or.tz/payment");
-        String idempotencyKey = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        // Stay comfortably below Snippe's 30-character gateway limit. Some downstream
+        // card processors reject boundary-length keys with PAY_001.
+        String idempotencyKey = UUID.randomUUID().toString().replace("-", "").substring(0, 24);
 
         Log.d(TAG, "=== PAYMENT REQUEST ===");
         Log.d(TAG, "Submitting mobile payment request");
@@ -159,7 +163,9 @@ public class PaymentRepository {
                             String errorMsg = "Payment initiation failed";
                             try {
                                 if (response.errorBody() != null) {
-                                    errorMsg = "Payment failed: " + response.errorBody().string();
+                                    errorMsg = paymentErrorMessage(
+                                            response.errorBody().string(), paymentMethod
+                                    );
                                 }
                             } catch (Exception ignored) {
                             }
@@ -189,6 +195,24 @@ public class PaymentRepository {
                 }
             }
         });
+    }
+
+    private static String paymentErrorMessage(String rawBody, String paymentMethod) {
+        Integer transactionId = null;
+        try {
+            JsonObject error = JsonParser.parseString(rawBody).getAsJsonObject();
+            if (error.has("transaction_id") && !error.get("transaction_id").isJsonNull()) {
+                transactionId = error.get("transaction_id").getAsInt();
+            }
+        } catch (Exception ignored) {
+        }
+
+        String reference = transactionId == null ? "" : " Reference: " + transactionId + ".";
+        if ("card".equals(paymentMethod)) {
+            return "Card payment is temporarily unavailable. Please use mobile money or try again later."
+                    + reference;
+        }
+        return "Payment could not be started. Please try again later." + reference;
     }
 
     private void saveTransactionToFirebase(String userId, String doctorId, double amount, PaymentResponse paymentResponse) {
@@ -355,7 +379,11 @@ public class PaymentRepository {
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         untrackCall(call);
                         if (callback != null) {
-                            if (response.isSuccessful()) {
+                            if (response.isSuccessful() || response.code() == 409) {
+                                // Snippe cannot remotely cancel direct card/mobile-money
+                                // requests. A 409 means the local payment screen can still
+                                // be abandoned; any late provider result is reconciled by
+                                // the signed payment webhook.
                                 callback.onSuccess(null);
                             } else {
                                 callback.onError("Cancel failed: " + response.code());

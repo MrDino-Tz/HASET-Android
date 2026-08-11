@@ -695,6 +695,9 @@
 
     <!-- ChatActivity -->
     <string name="service_payment_sent">Ombi la malipo ya huduma limetumwa</string>
+    <string name="secure_payment">Malipo salama</string>
+    <string name="failed_to_send_message">Imeshindikana kutuma ujumbe</string>
+    <string name="error_service_payment_minimum">Malipo ya mgonjwa lazima yawe angalau TZS %1$s</string>
     <string name="payment_successful_chat">Malipo yamefaulu!</string>
     <string name="original_message_not_found">Ujumbe wa asili haujapatikana</string>
     <string name="message_deleted">Ujumbe umefutwa</string>

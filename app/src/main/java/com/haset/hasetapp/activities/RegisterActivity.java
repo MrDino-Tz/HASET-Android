@@ -362,6 +362,9 @@ public class RegisterActivity extends BaseActivity {
         Intent paymentIntent = new Intent(this, PaymentActivity.class);
         paymentIntent.putExtra("doctor", paymentDoctor);
         paymentIntent.putExtra("consultation_fee", fee);
+        paymentIntent.putExtra("buyer_email", newUser.getEmail());
+        paymentIntent.putExtra("buyer_name", newUser.getFullName());
+        paymentIntent.putExtra("buyer_phone", newUser.getPhone());
         doctorPaymentLauncher.launch(paymentIntent);
     }
 
@@ -369,16 +372,20 @@ public class RegisterActivity extends BaseActivity {
         doctorPaymentLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (pendingDoctorPaymentRequiresAnonymousAuth
+                        && currentUser != null
+                        && currentUser.isAnonymous()) {
+                    FirebaseAuth.getInstance().signOut();
+                }
+
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
-                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                    if (pendingDoctorPaymentRequiresAnonymousAuth && currentUser != null) {
-                        FirebaseAuth.getInstance().signOut();
-                    }
                     // A successful payment must still result in a normal credential-backed
                     // account. Never promote an anonymous Firebase session to a doctor.
                     CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
                     authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
                 } else {
+                    CustomDialog.hideLoading();
                     resetRegisterButton();
                 }
 

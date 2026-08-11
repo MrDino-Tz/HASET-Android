@@ -1087,7 +1087,7 @@ final class AuthService {
             "doctor_id": doctor.id,
             "consultation_id": consultationId,
             "amount": Int(amount.rounded()),
-            "payment_method": paymentMethod
+            "payment_method": paymentMethod == "card" ? "checkout" : paymentMethod
         ]
         if paymentMethod == "mobile_money" {
             payload["provider"] = provider
@@ -1095,8 +1095,8 @@ final class AuthService {
         } else {
             let nameParts = user.fullName.split(separator: " ").map(String.init)
             payload["redirect_url"] = "https://hasethospital.or.tz/payment/success"
-            payload["cancel_url"] = "https://hasethospital.or.tz/payment/cancel"
-            payload["customer"] = [
+            var customer: [String: Any] = [
+                "name": user.fullName.isEmpty ? "HASET Customer" : user.fullName,
                 "firstname": nameParts.first ?? "HASET",
                 "lastname": nameParts.dropFirst().joined(separator: " ").isEmpty ? "Customer" : nameParts.dropFirst().joined(separator: " "),
                 "email": user.email,
@@ -1104,9 +1104,12 @@ final class AuthService {
                 "city": "Dar es Salaam",
                 "state": "Dar es Salaam",
                 "postcode": "14101",
-                "country": "TZ",
-                "phone": user.phone
+                "country": "TZ"
             ]
+            if !user.phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                customer["phone"] = user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            payload["customer"] = customer
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 

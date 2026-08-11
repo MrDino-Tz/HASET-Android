@@ -120,6 +120,10 @@ public class PaymentViewModel extends AndroidViewModel {
         repository.cleanup();
     }
 
+    public int getCurrentTransactionId() {
+        return repository.getCurrentTransactionId();
+    }
+
     public void requestCancelPayment(FirebaseHelper.OnCompleteListener<PaymentStatusResponse> callback) {
         int transactionId = repository.getCurrentTransactionId();
         if (transactionId <= 0) {

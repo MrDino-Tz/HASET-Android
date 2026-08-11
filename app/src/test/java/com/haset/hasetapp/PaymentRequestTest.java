@@ -28,4 +28,34 @@ public class PaymentRequestTest {
         assertEquals("Vodacom", json.get("provider").getAsString());
         assertEquals("0712345678", json.get("payment_account").getAsString());
     }
+
+    @Test
+    public void cardRequestOmitsMobileMoneyFieldsAndUsesApprovedCallbacks() {
+        PaymentRequest request = new PaymentRequest(
+                "temporary-user",
+                "doctor_registration",
+                "registration-123",
+                2000.0,
+                "card",
+                "",
+                "",
+                null,
+                null,
+                null,
+                "https://hasethospital.or.tz/payment"
+        );
+
+        JsonObject json = new Gson().toJsonTree(request).getAsJsonObject();
+        assertEquals("checkout", json.get("payment_method").getAsString());
+        org.junit.Assert.assertFalse(json.has("provider"));
+        org.junit.Assert.assertFalse(json.has("payment_account"));
+        assertEquals("https://hasethospital.or.tz/payment/success",
+                json.get("redirect_url").getAsString());
+        org.junit.Assert.assertFalse(json.has("cancel_url"));
+        assertEquals("HASET Customer",
+                json.getAsJsonObject("customer").get("name").getAsString());
+        assertEquals("support@hasethospital.or.tz",
+                json.getAsJsonObject("customer").get("email").getAsString());
+        org.junit.Assert.assertFalse(json.getAsJsonObject("customer").has("phone"));
+    }
 }

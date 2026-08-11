@@ -24,6 +24,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
+import com.haset.hasetapp.utils.PreferenceManager;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.PaymentViewModel;
 
@@ -136,9 +137,10 @@ public class PaymentActivity extends AppCompatActivity {
         viewModel.getPaymentUrl().observe(this, paymentUrl -> {
             if (paymentUrl == null || paymentUrl.trim().isEmpty()) return;
             try {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(paymentUrl));
+                Intent checkout = new Intent(this, HostedCheckoutActivity.class);
+                checkout.putExtra(HostedCheckoutActivity.EXTRA_CHECKOUT_URL, paymentUrl);
                 cardCheckoutOpened = true;
-                startActivity(browserIntent);
+                startActivity(checkout);
                 tvSelectedPaymentDetails.setText(R.string.card_checkout_opened);
             } catch (Exception ignored) {
                 tvSelectedPaymentDetails.setText(R.string.card_checkout_unavailable);
@@ -285,6 +287,7 @@ public class PaymentActivity extends AppCompatActivity {
             Intent resultIntent = new Intent();
             resultIntent.putExtra("service_message_id", serviceMessageId);
             resultIntent.putExtra("chat_room_id", chatRoomId);
+            resultIntent.putExtra("transaction_id", viewModel.getCurrentTransactionId());
             setResult(RESULT_OK, resultIntent);
             finish();
         });
@@ -405,12 +408,22 @@ public class PaymentActivity extends AppCompatActivity {
         registrationFeeListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                Number value = snapshot.getValue(Number.class);
+                Object rawValue = snapshot.getValue();
+                Double parsedFee = null;
+                if (rawValue instanceof Number) {
+                    parsedFee = ((Number) rawValue).doubleValue();
+                } else if (rawValue instanceof String) {
+                    try {
+                        parsedFee = Double.parseDouble(((String) rawValue).trim());
+                    } catch (NumberFormatException ignored) {
+                        android.util.Log.w("PaymentActivity", "Invalid registration fee value: " + rawValue);
+                    }
+                }
                 boolean processing = viewModel != null
                         && Boolean.TRUE.equals(viewModel.getProcessing().getValue());
-                if (value == null || paymentInitiated || processing) return;
+                if (parsedFee == null || paymentInitiated || processing) return;
 
-                double latestFee = Math.max(0.0, value.doubleValue());
+                double latestFee = Math.max(0.0, parsedFee);
                 if (latestFee == 0.0) {
                     setResult(RESULT_OK);
                     finish();
@@ -581,7 +594,8 @@ public class PaymentActivity extends AppCompatActivity {
             
             paymentMethod = getString(R.string.payment_card_payment);
             paymentMethodCode = "card";
-            paymentProvider = "";
+            paymentProvider = provider;
+            paymentAccount = "hosted_checkout";
             bottomSheetDialog.dismiss();
             updatePaymentMethodDisplay(paymentMethod, provider, getString(R.string.hosted_card_checkout));
             enablePayButton();
@@ -897,9 +911,22 @@ public class PaymentActivity extends AppCompatActivity {
                 
                 // Call backend API with the documented mobile payment payload
                 com.google.firebase.auth.FirebaseUser firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                String buyerEmail = firebaseUser != null ? firebaseUser.getEmail() : null;
-                String buyerName = firebaseUser != null ? firebaseUser.getDisplayName() : null;
-                String buyerPhone = firebaseUser != null ? firebaseUser.getPhoneNumber() : null;
+                PreferenceManager preferences = new PreferenceManager(this);
+                String buyerEmail = firstNonBlank(
+                    getIntent().getStringExtra("buyer_email"),
+                    firebaseUser != null ? firebaseUser.getEmail() : null,
+                    preferences.getUserEmail()
+                );
+                String buyerName = firstNonBlank(
+                    getIntent().getStringExtra("buyer_name"),
+                    firebaseUser != null ? firebaseUser.getDisplayName() : null,
+                    preferences.getUserName()
+                );
+                String buyerPhone = firstNonBlank(
+                    getIntent().getStringExtra("buyer_phone"),
+                    firebaseUser != null ? firebaseUser.getPhoneNumber() : null,
+                    preferences.getUserPhone()
+                );
                 viewModel.processPayment(
                     userId,
                     doctorId,
@@ -930,6 +957,14 @@ public class PaymentActivity extends AppCompatActivity {
             btnPayNow.setEnabled(true);
             btnCancel.setEnabled(true);
         }
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) return value.trim();
+        }
+        return null;
     }
     
     private String getCurrentUserId() {

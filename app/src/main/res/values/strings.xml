@@ -743,6 +743,9 @@
 
     <!-- ChatActivity -->
     <string name="service_payment_sent">Service payment request sent</string>
+    <string name="secure_payment">Secure payment</string>
+    <string name="failed_to_send_message">Failed to send message</string>
+    <string name="error_service_payment_minimum">Patient payment must be at least TZS %1$s</string>
     <string name="payment_successful_chat">Payment successful!</string>
     <string name="original_message_not_found">Original message not found</string>
     <string name="message_deleted">Message deleted</string>

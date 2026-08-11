@@ -54,6 +54,16 @@ test.before(async () => {
         "doctor-a": { doctorId: "doctor-a", approved: true, verified: true },
         "doctor-c": { doctorId: "doctor-c", approved: false, verified: false },
       },
+      payment_transactions: {
+        "9001": {
+          transactionId: 9001,
+          userId: "patient-a",
+          doctorId: "doctor-a",
+          amount: 500,
+          status: "success",
+          createdAt: 1786500000000,
+        },
+      },
       messages: {
         "patient-a_patient-b": {
           "message-a": {
@@ -154,6 +164,37 @@ test("keeps financial records server-owned", async () => {
   await assertFails(set(ref(patient, "payment_transactions/fake"), { userId: "patient-a", amount: 1 }));
   await assertFails(set(ref(doctor, "doctor_wallets/doctor-a"), { balance: 999999 }));
   await assertFails(set(ref(doctor, "withdrawal_requests/fake"), { doctorId: "doctor-a", amount: 999999 }));
+});
+
+test("ties service payment completion to a matching backend transaction", async () => {
+  const serviceId = "service-a";
+  const request = {
+    serviceId,
+    messageId: "message-service-a",
+    chatRoomId: "doctor-a_patient-a",
+    doctorId: "doctor-a",
+    patientId: "patient-a",
+    serviceName: "Follow-up service",
+    appointmentFee: 1000,
+    patientPercentage: 50,
+    patientPayAmount: 500,
+    status: "pending",
+    createdAt: 1786500000000,
+  };
+
+  await assertSucceeds(set(ref(doctor, `service_payment_requests/${serviceId}`), request));
+  await assertFails(update(ref(otherPatient, `service_payment_requests/${serviceId}`), {
+    status: "paid", transactionId: "9001", paidAt: 1786500001000,
+  }));
+  await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
+    status: "paid", transactionId: "missing", paidAt: 1786500001000,
+  }));
+  await assertSucceeds(update(ref(patient, `service_payment_requests/${serviceId}`), {
+    status: "paid", transactionId: "9001", paidAt: 1786500001000,
+  }));
+
+  const paidRequest = await assertSucceeds(get(ref(doctor, `service_payment_requests/${serviceId}`)));
+  assert.equal(paidRequest.child("status").val(), "paid");
 });
 
 test("limits chat reads to message participants and scoped queries", async () => {
