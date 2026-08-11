@@ -64,6 +64,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_rounded"
                     android:stateListAnimator="@animator/press_scale"
                     android:padding="10dp"
                     android:src="@drawable/ic_more_vert"

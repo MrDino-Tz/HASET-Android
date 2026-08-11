@@ -43,6 +43,11 @@
             android:textColor="@color/green_primary"
             android:textSize="20sp"
             android:layout_marginStart="16dp" />
+
+        <View
+            android:layout_width="34dp"
+            android:layout_height="34dp" />
+
     </LinearLayout>
 
     <include
