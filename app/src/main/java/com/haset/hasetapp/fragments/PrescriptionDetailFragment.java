@@ -157,10 +157,21 @@ public class PrescriptionDetailFragment extends Fragment {
             tvInstructions.setText(R.string.na);
         }
         
-        // Setup medicines RecyclerView
+        // Setup medicines RecyclerView.
+        // IMPORTANT: Use a LinearLayoutManager that auto-measures all children so that
+        // every medicine row is fully laid out — even rows that are off-screen.
+        // This prevents blank rows appearing in the PDF bitmap capture.
         if (prescription.getMedicines() != null && !prescription.getMedicines().isEmpty()) {
-            recyclerViewMedicines.setLayoutManager(new LinearLayoutManager(requireContext()));
-            com.haset.hasetapp.adapters.MedicineAdapter adapter = new com.haset.hasetapp.adapters.MedicineAdapter(prescription.getMedicines());
+            LinearLayoutManager llm = new LinearLayoutManager(requireContext()) {
+                @Override
+                public boolean isAutoMeasureEnabled() {
+                    return true; // Forces RecyclerView to measure ALL children upfront
+                }
+            };
+            recyclerViewMedicines.setLayoutManager(llm);
+            recyclerViewMedicines.setNestedScrollingEnabled(false); // Let parent ScrollView handle scrolling
+            com.haset.hasetapp.adapters.MedicineAdapter adapter =
+                    new com.haset.hasetapp.adapters.MedicineAdapter(prescription.getMedicines());
             recyclerViewMedicines.setAdapter(adapter);
         }
     }
