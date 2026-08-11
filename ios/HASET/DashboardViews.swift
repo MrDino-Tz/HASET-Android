@@ -411,7 +411,7 @@ struct RoleHomeView: View {
                 }
                 .buttonStyle(.plain)
 
-                NavigationLink { AppointmentsOverviewView(role: .doctor) } label: {
+                NavigationLink { DoctorPatientsView() } label: {
                     doctorActionCard(title: appViewModel.tr("patients"), systemImage: "person.2.fill")
                 }
                 .buttonStyle(.plain)
@@ -499,9 +499,18 @@ struct RoleHomeView: View {
 
     private var doctorOverviewStats: some View {
         HStack(spacing: 10) {
-            doctorStatCard(title: appViewModel.tr("pending"), value: "\(pendingAppointmentCount)", icon: "clock", background: Color(red: 0.95, green: 0.63, blue: 0.07))
-            doctorStatCard(title: appViewModel.tr("approved"), value: "\(approvedAppointmentCount)", icon: "checkmark.circle.fill", background: Color(red: 0.11, green: 0.77, blue: 0.50))
-            doctorStatCard(title: appViewModel.tr("cancelled"), value: "\(cancelledAppointmentCount)", icon: "xmark", background: Color(red: 0.92, green: 0.23, blue: 0.27))
+            NavigationLink { AppointmentsOverviewView(role: .doctor, initialStatus: .pending) } label: {
+                doctorStatCard(title: appViewModel.tr("pending"), value: "\(pendingAppointmentCount)", icon: "clock", background: Color(red: 0.95, green: 0.63, blue: 0.07))
+            }
+            .buttonStyle(.plain)
+            NavigationLink { AppointmentsOverviewView(role: .doctor, initialStatus: .completed) } label: {
+                doctorStatCard(title: appViewModel.tr("completed"), value: "\(completedAppointmentCount)", icon: "checkmark.circle.fill", background: Color(red: 0.11, green: 0.77, blue: 0.50))
+            }
+            .buttonStyle(.plain)
+            NavigationLink { AppointmentsOverviewView(role: .doctor, initialStatus: .cancelled) } label: {
+                doctorStatCard(title: appViewModel.tr("cancelled"), value: "\(cancelledAppointmentCount)", icon: "xmark", background: Color(red: 0.92, green: 0.23, blue: 0.27))
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -509,8 +518,8 @@ struct RoleHomeView: View {
         appViewModel.appointments.filter { $0.status == .pending }.count
     }
 
-    private var approvedAppointmentCount: Int {
-        appViewModel.appointments.filter { $0.status == .approved }.count
+    private var completedAppointmentCount: Int {
+        appViewModel.appointments.filter { $0.status == .completed }.count
     }
 
     private var cancelledAppointmentCount: Int {
@@ -1735,6 +1744,7 @@ struct PaymentCheckoutView: View {
     @State private var paymentSessionReady = false
     @State private var didRetryPaymentAuth = false
     @State private var paymentAuthSession: StoredSession?
+    @State private var showingCancelConfirmation = false
 
     private let paymentService = AuthService()
     private let sessionStore = SessionStore()
@@ -1917,8 +1927,8 @@ struct PaymentCheckoutView: View {
                             }
 
                             if isProcessing {
-                                Button(appViewModel.tr("terminate")) {
-                                    terminatePaymentFlow()
+                                Button(appViewModel.tr("cancel_payment")) {
+                                    showingCancelConfirmation = true
                                 }
                                 .font(HASETTheme.font(.medium, 14))
                                 .foregroundStyle(HASETTheme.redPrimary)
@@ -1947,11 +1957,27 @@ struct PaymentCheckoutView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(appViewModel.tr("close")) {
-                        terminatePaymentFlow()
+                        if isProcessing {
+                            showingCancelConfirmation = true
+                        } else {
+                            dismiss()
+                        }
                     }
                 }
             }
             .interactiveDismissDisabled(isProcessing)
+            .confirmationDialog(
+                appViewModel.tr("cancel_payment"),
+                isPresented: $showingCancelConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(appViewModel.tr("keep_waiting"), role: .cancel) {}
+                Button(appViewModel.tr("cancel_payment"), role: .destructive) {
+                    terminatePaymentFlow()
+                }
+            } message: {
+                Text(appViewModel.tr("cancel_payment_warning"))
+            }
             .task {
                 await preparePaymentSession()
             }
@@ -2365,6 +2391,73 @@ private struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+private struct DoctorPatientItem: Identifiable {
+    let id: String
+    let name: String
+    let appointments: [AppointmentSummary]
+}
+
+struct DoctorPatientsView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+
+    private var patients: [DoctorPatientItem] {
+        let appointmentsWithPatients = appViewModel.appointments.filter { $0.patientId?.isEmpty == false }
+        return Dictionary(grouping: appointmentsWithPatients, by: { $0.patientId! })
+            .map { patientId, appointments in
+                DoctorPatientItem(
+                    id: patientId,
+                    name: appointments.first?.title ?? appViewModel.tr("patient"),
+                    appointments: appointments
+                )
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                if patients.isEmpty {
+                    CardContainer {
+                        Text(appViewModel.tr("no_appointments_message"))
+                            .font(HASETTheme.font(.medium, 15))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 12)
+                    }
+                } else {
+                    ForEach(patients) { patient in
+                        CardContainer {
+                            HStack(spacing: 14) {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .font(.system(size: 42))
+                                    .foregroundStyle(HASETTheme.greenPrimary)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(patient.name)
+                                        .font(HASETTheme.font(.medium, 16))
+                                        .foregroundStyle(HASETTheme.textPrimary)
+                                    Text("\(patient.appointments.count) \(appViewModel.tr("appointments"))")
+                                        .font(HASETTheme.font(.regular, 13))
+                                        .foregroundStyle(HASETTheme.textSecondary)
+                                }
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(20)
+        }
+        .background(HASETTheme.backgroundPrimary)
+        .navigationTitle(appViewModel.tr("patients"))
+        .task {
+            await appViewModel.loadAppointments(force: false)
+        }
+        .refreshable {
+            await appViewModel.loadAppointments(force: true)
+        }
+    }
+}
+
 struct AppointmentsOverviewView: View {
     let role: UserRole
     @EnvironmentObject private var appViewModel: AppViewModel
@@ -2373,6 +2466,11 @@ struct AppointmentsOverviewView: View {
     @State private var appointmentToReschedule: AppointmentSummary?
     @State private var actionInProgressId: String?
     @State private var selectedConversation: ConversationSummary?
+
+    init(role: UserRole, initialStatus: AppointmentSummary.Status? = nil) {
+        self.role = role
+        _selectedStatus = State(initialValue: initialStatus)
+    }
 
     private var appointments: [AppointmentSummary] {
         appViewModel.appointments
@@ -2396,7 +2494,9 @@ struct AppointmentsOverviewView: View {
                 }
                 .pickerStyle(.segmented)
                 .onAppear {
-                    selectedStatus = role == .doctor ? .pending : .approved
+                    if selectedStatus == nil {
+                        selectedStatus = role == .doctor ? .pending : .approved
+                    }
                 }
 
                 if visibleAppointments.isEmpty {
@@ -3008,6 +3108,28 @@ struct ProfileScreen: View {
                     .buttonStyle(PrimaryButtonStyle())
                 }
 
+                if let user = appViewModel.currentUser {
+                    sectionHeader(appViewModel.tr("basic"))
+                    CardContainer {
+                        VStack(spacing: 0) {
+                            NavigationLink { EditProfileView() } label: {
+                                ProfileValueRow(icon: "phone", title: appViewModel.tr("phone"), value: user.phone.isEmpty ? appViewModel.tr("not_set") : user.phone)
+                            }
+                            .buttonStyle(.plain)
+                            rowDivider()
+                            NavigationLink { EditProfileView() } label: {
+                                ProfileValueRow(icon: "calendar", title: appViewModel.tr("age"), value: user.age ?? appViewModel.tr("not_set"))
+                            }
+                            .buttonStyle(.plain)
+                            rowDivider()
+                            NavigationLink { EditProfileView() } label: {
+                                ProfileValueRow(icon: "person", title: appViewModel.tr("gender"), value: user.gender ?? appViewModel.tr("not_set"))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
                 sectionHeader(appViewModel.tr("general"))
                 CardContainer {
                     VStack(spacing: 0) {
@@ -3492,9 +3614,15 @@ struct ArticlesView: View {
                 }
                 .pickerStyle(.segmented)
 
-                if visibleArticles.isEmpty {
+                if selectedTab == .healthTips, !visibleHealthTips.isEmpty {
+                    LazyVStack(spacing: 12) {
+                        ForEach(visibleHealthTips) { tip in
+                            HealthTipCard(tip: tip)
+                        }
+                    }
+                } else if visibleArticles.isEmpty {
                     CardContainer {
-                        Text(appViewModel.tr("no_articles_found"))
+                        Text(selectedTab == .healthTips ? appViewModel.tr("no_health_tips_found") : appViewModel.tr("no_articles_found"))
                             .font(HASETTheme.font(.medium, 15))
                             .foregroundStyle(HASETTheme.textSecondary)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -3623,7 +3751,10 @@ struct ArticlesView: View {
         .onAppear {
             showArticleDetail = false
             selectedArticle = nil
-            Task { await loadArticleInteractionState() }
+            Task {
+                await appViewModel.loadPatientHomeContent(force: true)
+                await loadArticleInteractionState()
+            }
         }
     }
 
@@ -3639,7 +3770,7 @@ struct ArticlesView: View {
         case .healthTips:
             base = []
         case .saved:
-            base = []
+            base = articleItems.filter { savedArticleIDs.contains($0.id) }
         }
 
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -3649,6 +3780,14 @@ struct ArticlesView: View {
                 $0.author.lowercased().contains(query) ||
                 $0.excerpt.lowercased().contains(query) ||
                 $0.category.lowercased().contains(query)
+        }
+    }
+
+    private var visibleHealthTips: [HealthTipSummary] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return appViewModel.patientHealthTips }
+        return appViewModel.patientHealthTips.filter {
+            $0.text.lowercased().contains(query) || $0.author.lowercased().contains(query)
         }
     }
 
@@ -3746,6 +3885,24 @@ struct ArticlesView: View {
             await MainActor.run {
                 articleComments = comments
                 commentingArticle = article
+                articleOverrides[article.id] = ArticleSummary(
+                    id: article.id,
+                    title: article.title,
+                    author: article.author,
+                    authorImage: article.authorImage,
+                    category: article.category,
+                    excerpt: article.excerpt,
+                    imageName: article.imageName,
+                    imageURL: article.imageURL,
+                    timestamp: article.timestamp,
+                    readTime: article.readTime,
+                    content: article.content,
+                    viewCount: article.viewCount,
+                    likeCount: article.likeCount,
+                    commentCount: comments.count,
+                    shareCount: article.shareCount,
+                    type: article.type
+                )
             }
         } catch {
             await MainActor.run {
@@ -3877,6 +4034,38 @@ struct ArticlesView: View {
         } else {
             EmptyView()
         }
+    }
+}
+
+private struct HealthTipCard: View {
+    let tip: HealthTipSummary
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "heart.text.square.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(HASETTheme.greenPrimary)
+                .frame(width: 48, height: 48)
+                .background(HASETTheme.greenPrimary.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(tip.text)
+                    .font(HASETTheme.font(.medium, 16))
+                    .foregroundStyle(HASETTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("— \(tip.author)")
+                    .font(HASETTheme.font(.regular, 13))
+                    .foregroundStyle(HASETTheme.textSecondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background(HASETTheme.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: HASETTheme.greenPrimary.opacity(0.07), radius: 8, x: 0, y: 4)
     }
 }
 

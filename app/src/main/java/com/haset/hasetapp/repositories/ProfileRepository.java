@@ -35,6 +35,18 @@ public class ProfileRepository {
                         
                         user.setRole(snapshot.child("role").getValue(String.class));
                         user.setProfileImage(snapshot.child("profileImage").getValue(String.class));
+                        Object ageValue = snapshot.child("age").getValue();
+                        if (ageValue instanceof Number) {
+                            user.setAge(((Number) ageValue).intValue());
+                        } else if (ageValue != null) {
+                            try {
+                                user.setAge(Integer.parseInt(String.valueOf(ageValue)));
+                            } catch (NumberFormatException ignored) {
+                                user.setAge(0);
+                            }
+                        }
+                        Object genderValue = snapshot.child("gender").getValue();
+                        user.setGender(genderValue == null ? "" : String.valueOf(genderValue));
                         Long createdAt = snapshot.child("createdAt").getValue(Long.class);
                         user.setCreatedAt(createdAt != null ? createdAt : System.currentTimeMillis());
                         
@@ -119,7 +131,14 @@ public class ProfileRepository {
     }
 
     public void updateUserInfo(UserEntity user, FirebaseHelper.OnCompleteListener<Void> callback) {
-        firebaseHelper.getUsersRef().child(user.getUserId()).setValue(user)
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("fullName", user.getFullName());
+        updates.put("email", user.getEmail());
+        updates.put("phone", user.getPhone());
+        updates.put("profileImage", user.getProfileImage() == null ? "" : user.getProfileImage());
+        updates.put("age", user.getAge());
+        updates.put("gender", user.getGender() == null ? "" : user.getGender());
+        firebaseHelper.getUsersRef().child(user.getUserId()).updateChildren(updates)
                 .addOnSuccessListener(aVoid -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }

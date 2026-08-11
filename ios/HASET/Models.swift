@@ -134,6 +134,13 @@ struct ArticleComment: Identifiable, Hashable {
     let timestamp: TimeInterval
 }
 
+struct HealthTipSummary: Identifiable, Hashable {
+    let id: String
+    let text: String
+    let author: String
+    let timestamp: TimeInterval
+}
+
 struct HomeHighlight: Identifiable, Hashable {
     let id: String
     let titleLine1: String

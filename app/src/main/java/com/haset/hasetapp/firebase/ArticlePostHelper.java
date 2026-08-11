@@ -64,7 +64,7 @@ public class ArticlePostHelper {
                             posts.add(post);
                         }
                     }
-                    listener.onSuccess(posts);
+                    loadInteractionCounts(posts, listener);
                 })
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
@@ -104,7 +104,7 @@ public class ArticlePostHelper {
                     }
                     // Sort by creation date (newest first)
                     posts.sort((p1, p2) -> Long.compare(p2.getCreatedAt(), p1.getCreatedAt()));
-                    listener.onSuccess(posts);
+                    loadInteractionCounts(posts, listener);
                 })
                 .addOnFailureListener(e -> {
                     // Fallback: Get all posts and filter locally
@@ -120,7 +120,7 @@ public class ArticlePostHelper {
                                 }
                                 // Sort by creation date (newest first)
                                 posts.sort((p1, p2) -> Long.compare(p2.getCreatedAt(), p1.getCreatedAt()));
-                                listener.onSuccess(posts);
+                                loadInteractionCounts(posts, listener);
                             })
                             .addOnFailureListener(e2 -> listener.onError(e2.getMessage()));
                 });
@@ -233,39 +233,15 @@ public class ArticlePostHelper {
             boolean isLiked = dataSnapshot.exists() && Boolean.TRUE.equals(dataSnapshot.getValue(Boolean.class));
             
             if (isLiked) {
-                // Unlike: remove like record and decrement count
-                postLikesRef.removeValue().addOnSuccessListener(aVoid -> {
-                    // Decrement likes count
-                    articlePostsRef.child(postId).child("likes")
-                            .get()
-                            .addOnSuccessListener(likesSnapshot -> {
-                                Integer currentLikes = likesSnapshot.getValue(Integer.class);
-                                int newLikes = Math.max(0, (currentLikes != null ? currentLikes : 0) - 1);
-                                
-                                articlePostsRef.child(postId).child("likes")
-                                        .setValue(newLikes)
-                                        .addOnSuccessListener(aVoid2 -> listener.onSuccess(false))
-                                        .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                            })
-                            .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                }).addOnFailureListener(e -> listener.onError(e.getMessage()));
+                // The per-user child is the source of truth. Normal users cannot
+                // write the protected article_posts counter.
+                postLikesRef.removeValue()
+                        .addOnSuccessListener(aVoid -> listener.onSuccess(false))
+                        .addOnFailureListener(e -> listener.onError(e.getMessage()));
             } else {
-                // Like: add like record and increment count
-                postLikesRef.setValue(true).addOnSuccessListener(aVoid -> {
-                    // Increment likes count
-                    articlePostsRef.child(postId).child("likes")
-                            .get()
-                            .addOnSuccessListener(likesSnapshot -> {
-                                Integer currentLikes = likesSnapshot.getValue(Integer.class);
-                                int newLikes = (currentLikes != null ? currentLikes : 0) + 1;
-                                
-                                articlePostsRef.child(postId).child("likes")
-                                        .setValue(newLikes)
-                                        .addOnSuccessListener(aVoid2 -> listener.onSuccess(true))
-                                        .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                            })
-                            .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                }).addOnFailureListener(e -> listener.onError(e.getMessage()));
+                postLikesRef.setValue(true)
+                        .addOnSuccessListener(aVoid -> listener.onSuccess(true))
+                        .addOnFailureListener(e -> listener.onError(e.getMessage()));
             }
         }).addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
@@ -295,20 +271,10 @@ public class ArticlePostHelper {
      * Increment comments count for an article
      */
     public void incrementComments(String postId, OnCompleteListener<Void> listener) {
-        articlePostsRef.child(postId).child("comments")
-                .get()
+        FirebaseHelper.getInstance().getDatabaseReference()
+                .child("post_comments").child(postId).get()
                 .addOnSuccessListener(dataSnapshot -> {
-                    Integer currentComments = dataSnapshot.getValue(Integer.class);
-                    int newComments = (currentComments != null ? currentComments : 0) + 1;
-                    
-                    articlePostsRef.child(postId).child("comments")
-                            .setValue(newComments)
-                            .addOnSuccessListener(aVoid -> {
-                                if (listener != null) listener.onSuccess(null);
-                            })
-                            .addOnFailureListener(e -> {
-                                if (listener != null) listener.onError(e.getMessage());
-                            });
+                    if (listener != null) listener.onSuccess(null);
                 })
                 .addOnFailureListener(e -> {
                     if (listener != null) listener.onError(e.getMessage());
@@ -410,7 +376,7 @@ public class ArticlePostHelper {
                         posts.add(post);
                     }
                 }
-                listener.onSuccess(posts);
+                loadInteractionCounts(posts, listener);
             }
             
             @Override
@@ -418,6 +384,29 @@ public class ArticlePostHelper {
                 listener.onError(databaseError.getMessage());
             }
         });
+    }
+
+    private void loadInteractionCounts(List<ArticlePostEntity> posts,
+                                       OnCompleteListener<List<ArticlePostEntity>> listener) {
+        DatabaseReference databaseRoot = FirebaseHelper.getInstance().getDatabaseReference();
+        com.google.android.gms.tasks.Task<DataSnapshot> likesTask = databaseRoot.child("post_likes").get();
+        com.google.android.gms.tasks.Task<DataSnapshot> commentsTask = databaseRoot.child("post_comments").get();
+
+        com.google.android.gms.tasks.Tasks.whenAllComplete(likesTask, commentsTask)
+                .addOnCompleteListener(task -> {
+                    DataSnapshot likes = likesTask.isSuccessful() ? likesTask.getResult() : null;
+                    DataSnapshot comments = commentsTask.isSuccessful() ? commentsTask.getResult() : null;
+                    for (ArticlePostEntity post : posts) {
+                        String postId = post.getPostId();
+                        if (likes != null) {
+                            post.setLikes((int) likes.child(postId).getChildrenCount());
+                        }
+                        if (comments != null) {
+                            post.setComments((int) comments.child(postId).getChildrenCount());
+                        }
+                    }
+                    listener.onSuccess(posts);
+                });
     }
     /**
      * Toggle save status for an article

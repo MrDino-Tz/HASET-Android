@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
@@ -45,7 +47,7 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
     private PrescriptionHelper prescriptionHelper;
 
     private ImageView ivDoctorAvatar, ivPrescriptionImage, ivClose;
-    private TextView tvPrescriptionId, tvDate, tvDoctorName, tvDoctorSpecialty, tvInstructions;
+    private TextView tvPrescriptionId, tvDate, tvPatientName, tvDoctorName, tvDoctorSpecialty, tvInstructions;
     private RecyclerView rvMedicines;
     private View prescriptionContent;
     private View cardImage;
@@ -80,6 +82,23 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        if (getDialog() == null) return;
+        View bottomSheet = getDialog().findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (bottomSheet == null) return;
+        int targetHeight = (int) (getResources().getDisplayMetrics().heightPixels * 0.92f);
+        ViewGroup.LayoutParams params = bottomSheet.getLayoutParams();
+        params.height = targetHeight;
+        bottomSheet.setLayoutParams(params);
+        com.google.android.material.bottomsheet.BottomSheetBehavior<View> behavior =
+                com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet);
+        behavior.setPeekHeight(targetHeight);
+        behavior.setSkipCollapsed(true);
+        behavior.setState(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
@@ -93,6 +112,7 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
         ivClose = view.findViewById(R.id.ivClose);
         tvPrescriptionId = view.findViewById(R.id.tvPrescriptionId);
         tvDate = view.findViewById(R.id.tvDate);
+        tvPatientName = view.findViewById(R.id.tvPatientName);
         tvDoctorName = view.findViewById(R.id.tvDoctorName);
         tvDoctorSpecialty = view.findViewById(R.id.tvDoctorSpecialty);
         tvInstructions = view.findViewById(R.id.tvInstructions);
@@ -133,14 +153,19 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
 
     private void displayPrescription() {
         if (prescription.getPrescriptionId() != null) {
-            tvPrescriptionId.setText("ID: #" + prescription.getPrescriptionId().substring(0, Math.min(10, prescription.getPrescriptionId().length())));
+            tvPrescriptionId.setText(prescription.getPrescriptionId()
+                    .substring(0, Math.min(12, prescription.getPrescriptionId().length())).toUpperCase(Locale.ROOT));
         }
-        
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-        tvDate.setText("Issued on " + sdf.format(new Date(prescription.getCreatedAt())));
-        
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+        tvDate.setText(sdf.format(new Date(prescription.getCreatedAt())));
+
+        String patientName = prescription.getPatientName();
+        tvPatientName.setText(patientName == null || patientName.trim().isEmpty()
+                ? "Patient" : patientName.trim());
+
         tvDoctorName.setText(prescription.getDoctorName() != null ? prescription.getDoctorName() : "Doctor");
-        tvDoctorSpecialty.setText("Consultant Physician"); 
+        tvDoctorSpecialty.setText("Prescribing clinician");
 
         tvInstructions.setText(prescription.getInstructions() != null ? prescription.getInstructions() : "No special instructions.");
 
@@ -207,12 +232,31 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
         if (bitmap == null) return;
 
         PdfDocument document = new PdfDocument();
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(bitmap.getWidth(), bitmap.getHeight(), 1).create();
-        PdfDocument.Page page = document.startPage(pageInfo);
+        final int pageWidth = 595;
+        final int pageHeight = 842;
+        final int margin = 32;
+        final int contentWidth = pageWidth - (margin * 2);
+        final int contentHeight = pageHeight - (margin * 2);
+        float scale = contentWidth / (float) bitmap.getWidth();
+        float scaledHeight = bitmap.getHeight() * scale;
+        int pageCount = Math.max(1, (int) Math.ceil(scaledHeight / contentHeight));
+        Paint bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
-        Canvas canvas = page.getCanvas();
-        canvas.drawBitmap(bitmap, 0, 0, null);
-        document.finishPage(page);
+        for (int pageNumber = 0; pageNumber < pageCount; pageNumber++) {
+            PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(
+                    pageWidth, pageHeight, pageNumber + 1).create();
+            PdfDocument.Page page = document.startPage(pageInfo);
+            Canvas canvas = page.getCanvas();
+            canvas.drawColor(Color.WHITE);
+            canvas.save();
+            canvas.clipRect(margin, margin, pageWidth - margin, pageHeight - margin);
+            Matrix matrix = new Matrix();
+            matrix.postScale(scale, scale);
+            matrix.postTranslate(margin, margin - (pageNumber * contentHeight));
+            canvas.drawBitmap(bitmap, matrix, bitmapPaint);
+            canvas.restore();
+            document.finishPage(page);
+        }
 
         File pdfFile = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Prescription_" + prescriptionId + ".pdf");
         
@@ -237,6 +281,7 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
     }
 
     private Bitmap createBitmapFromView(View view) {
+        if (view == null || view.getWidth() <= 0 || view.getHeight() <= 0) return null;
         Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(Color.WHITE);

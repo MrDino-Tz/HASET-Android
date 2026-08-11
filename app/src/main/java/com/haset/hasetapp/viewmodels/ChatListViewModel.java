@@ -26,8 +26,8 @@ public class ChatListViewModel extends AndroidViewModel {
         return conversations;
     }
 
-    public void syncUnreadCounts(String userId, List<Conversation> conversations) {
-        repository.syncUnreadCounts(getApplication(), userId, conversations);
+    public void syncUnreadCounts(String userId, List<Conversation> conversations, Runnable onCountUpdated) {
+        repository.syncUnreadCounts(getApplication(), userId, conversations, onCountUpdated);
     }
 
     public void deleteConversation(String userId, String otherUserId) {

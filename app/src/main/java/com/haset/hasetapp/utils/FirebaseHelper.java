@@ -67,6 +67,73 @@ public class FirebaseHelper {
         }
     }
 
+    /**
+     * Sends a text reply from a notification using the same Firebase schema as
+     * ChatRepository. This path must work without any Activity or dashboard state.
+     */
+    public static void sendDirectReply(String receiverId, String senderName,
+                                       String receiverName, String text,
+                                       OnCompleteListener<Void> listener) {
+        FirebaseUser authenticatedUser = getFirebaseAuth().getCurrentUser();
+        if (authenticatedUser == null) {
+            listener.onError("Authentication is not available");
+            return;
+        }
+        String senderId = authenticatedUser.getUid();
+        if (receiverId == null || receiverId.trim().isEmpty()
+                || receiverId.equals(senderId) || text == null || text.trim().isEmpty()) {
+            listener.onError("Invalid direct reply");
+            return;
+        }
+
+        String chatRoomId = generateChatRoomId(senderId, receiverId);
+        DatabaseReference messageRef = getMessagesRef().child(chatRoomId).push();
+        String messageId = messageRef.getKey();
+        if (messageId == null) {
+            listener.onError("Failed to generate message ID");
+            return;
+        }
+
+        long timestamp = System.currentTimeMillis();
+        Map<String, Object> value = new HashMap<>();
+        value.put("messageId", messageId);
+        value.put("senderId", senderId);
+        value.put("senderName", senderName == null ? "" : senderName);
+        value.put("receiverId", receiverId);
+        value.put("receiverName", receiverName == null ? "" : receiverName);
+        value.put("message", text.trim());
+        value.put("messageType", "text");
+        value.put("messageStatus", "sent");
+        value.put("timestamp", timestamp);
+        value.put("isRead", false);
+        value.put("deliveredTimestamp", 0L);
+        value.put("readTimestamp", 0L);
+
+        messageRef.setValue(value).addOnSuccessListener(ignored -> {
+            Map<String, Object> senderConversation = new HashMap<>();
+            senderConversation.put("otherUserId", receiverId);
+            senderConversation.put("otherUserName", receiverName == null ? "" : receiverName);
+            senderConversation.put("lastMessage", text.trim());
+            senderConversation.put("lastMessageTimestamp", timestamp);
+            senderConversation.put("lastMessageSenderId", senderId);
+            senderConversation.put("isArchived", false);
+
+            Map<String, Object> receiverConversation = new HashMap<>();
+            receiverConversation.put("otherUserId", senderId);
+            receiverConversation.put("otherUserName", senderName == null ? "" : senderName);
+            receiverConversation.put("lastMessage", text.trim());
+            receiverConversation.put("lastMessageTimestamp", timestamp);
+            receiverConversation.put("lastMessageSenderId", senderId);
+            receiverConversation.put("isArchived", false);
+
+            getUserConversationsRef().child(senderId).child(receiverId)
+                    .updateChildren(senderConversation);
+            getUserConversationsRef().child(receiverId).child(senderId)
+                    .updateChildren(receiverConversation);
+            listener.onSuccess(null);
+        }).addOnFailureListener(error -> listener.onError(error.getMessage()));
+    }
+
     public static FirebaseAuth getFirebaseAuth() {
         if (mAuth == null) {
             mAuth = FirebaseAuth.getInstance();
@@ -1305,24 +1372,71 @@ public class FirebaseHelper {
                 userId1 + "_" + userId2 : userId2 + "_" + userId1;
     }
 
-    public static void sendPrescriptionMessage(String chatRoomId, com.haset.hasetapp.models.ChatMessage message) {
-        DatabaseReference messagesRef = getFirebaseDatabase().getReference("messages").child(chatRoomId);
-        String messageId = messagesRef.push().getKey();
-        if (messageId != null) {
-            message.setMessageId(messageId);
-            messagesRef.child(messageId).setValue(message);
-            
-            // Update last message in conversations
-            DatabaseReference convRef = getFirebaseDatabase().getReference("user_conversations");
-            java.util.Map<String, Object> update = new java.util.HashMap<>();
-            update.put("lastMessage", "💊 Prescription Issued");
-            update.put("timestamp", message.getTimestamp());
-            update.put("lastMessageSenderId", message.getSenderId());
-            update.put("unreadCount", 1); // Ideally increment, but for simplicity
-
-            convRef.child(message.getSenderId()).child(message.getReceiverId()).updateChildren(update);
-            convRef.child(message.getReceiverId()).child(message.getSenderId()).updateChildren(update);
+    public static void sendPrescriptionMessage(com.haset.hasetapp.models.ChatMessage message,
+                                               OnCompleteListener<Void> listener) {
+        FirebaseUser authenticatedUser = getFirebaseAuth().getCurrentUser();
+        if (authenticatedUser == null) {
+            listener.onError("Authentication expired. Please sign in again.");
+            return;
         }
+        String senderId = authenticatedUser.getUid();
+        String receiverId = message.getReceiverId();
+        String prescriptionId = message.getPrescriptionId();
+        if (receiverId == null || receiverId.trim().isEmpty()
+                || receiverId.equals(senderId)
+                || prescriptionId == null || prescriptionId.trim().isEmpty()) {
+            listener.onError("Prescription chat details are incomplete");
+            return;
+        }
+
+        String effectiveRoomId = generateChatRoomId(senderId, receiverId);
+        DatabaseReference messageRef = getMessagesRef().child(effectiveRoomId).push();
+        String messageId = messageRef.getKey();
+        if (messageId == null) {
+            listener.onError("Failed to generate message ID");
+            return;
+        }
+
+        long timestamp = message.getTimestamp() > 0
+                ? message.getTimestamp() : System.currentTimeMillis();
+        Map<String, Object> value = new HashMap<>();
+        value.put("messageId", messageId);
+        value.put("senderId", senderId);
+        value.put("senderName", message.getSenderName() == null ? "" : message.getSenderName());
+        value.put("receiverId", receiverId);
+        value.put("receiverName", message.getReceiverName() == null ? "" : message.getReceiverName());
+        value.put("message", message.getMessage() == null ? "New Prescription Issued" : message.getMessage());
+        value.put("messageType", "prescription");
+        value.put("messageStatus", "sent");
+        value.put("timestamp", timestamp);
+        value.put("isRead", false);
+        value.put("deliveredTimestamp", 0L);
+        value.put("readTimestamp", 0L);
+        value.put("prescriptionId", prescriptionId);
+
+        messageRef.setValue(value).addOnSuccessListener(ignored -> {
+            Map<String, Object> senderConversation = new HashMap<>();
+            senderConversation.put("otherUserId", receiverId);
+            senderConversation.put("otherUserName", message.getReceiverName() == null ? "" : message.getReceiverName());
+            senderConversation.put("lastMessage", "Prescription Issued");
+            senderConversation.put("lastMessageTimestamp", timestamp);
+            senderConversation.put("lastMessageSenderId", senderId);
+            senderConversation.put("isArchived", false);
+
+            Map<String, Object> receiverConversation = new HashMap<>();
+            receiverConversation.put("otherUserId", senderId);
+            receiverConversation.put("otherUserName", message.getSenderName() == null ? "" : message.getSenderName());
+            receiverConversation.put("lastMessage", "Prescription Issued");
+            receiverConversation.put("lastMessageTimestamp", timestamp);
+            receiverConversation.put("lastMessageSenderId", senderId);
+            receiverConversation.put("isArchived", false);
+
+            getUserConversationsRef().child(senderId).child(receiverId)
+                    .updateChildren(senderConversation);
+            getUserConversationsRef().child(receiverId).child(senderId)
+                    .updateChildren(receiverConversation);
+            listener.onSuccess(null);
+        }).addOnFailureListener(error -> listener.onError(error.getMessage()));
     }
     public static DatabaseReference getAppConfigRef() {
         return getFirebaseDatabase().getReference(Constants.APP_CONFIG_PATH);
@@ -1333,17 +1447,15 @@ public class FirebaseHelper {
     }
 
     public static void getAppConfig(OnCompleteListener<AppConfig> listener) {
-        getAppConfigRef().addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                AppConfig config = snapshot.getValue(AppConfig.class);
-                listener.onSuccess(config);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                listener.onError(error.getMessage());
-            }
-        });
+        // DatabaseReference#get() requests the current server snapshot first.
+        // A one-shot ValueEventListener may immediately consume stale data from
+        // Firebase's disk cache and detach before a changed admin fee arrives.
+        getAppConfigRef().get()
+                .addOnSuccessListener(snapshot ->
+                        listener.onSuccess(snapshot.getValue(AppConfig.class)))
+                .addOnFailureListener(error ->
+                        listener.onError(error.getMessage() != null
+                                ? error.getMessage()
+                                : "Unable to load app configuration"));
     }
 }

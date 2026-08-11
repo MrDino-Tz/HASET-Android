@@ -35,6 +35,7 @@
     <string name="phone">Namba ya Simu</string>
     <string name="full_name">Jina Kamili</string>
     <string name="age">Umri</string>
+    <string name="error_valid_age">Weka umri kati ya 1 na 120</string>
     <string name="gender">Jinsia</string>
     <string name="male">Mwanaume</string>
     <string name="female">Mwanamke</string>
@@ -74,6 +75,10 @@
     <string name="approved_appointments">Miadi Iliyoidhinishwa</string>
     <string name="manage_schedule">Simamia Ratiba</string>
     <string name="my_patients">Wagonjwa Wangu</string>
+    <plurals name="patient_appointment_count">
+        <item quantity="one">Miadi %d</item>
+        <item quantity="other">Miadi %d</item>
+    </plurals>
 
     <!-- Appointment -->
     <string name="select_date">Chagua Tarehe</string>

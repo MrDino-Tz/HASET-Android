@@ -267,6 +267,21 @@ public class EditProfileActivity extends AppCompatActivity {
             return;
         }
 
+        if (!ageStr.isEmpty()) {
+            try {
+                int age = Integer.parseInt(ageStr);
+                if (age < 1 || age > 120) {
+                    etAge.setError(getString(R.string.error_valid_age));
+                    etAge.requestFocus();
+                    return;
+                }
+            } catch (NumberFormatException error) {
+                etAge.setError(getString(R.string.error_valid_age));
+                etAge.requestFocus();
+                return;
+            }
+        }
+
         // Show progress
         showProgress(true);
 

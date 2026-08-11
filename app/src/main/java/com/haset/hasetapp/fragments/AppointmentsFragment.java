@@ -92,6 +92,16 @@ public class AppointmentsFragment extends Fragment {
         viewPager.setAdapter(new AppointmentTabAdapter(requireActivity()));
         new TabLayoutMediator(tabLayout, viewPager, (tab, pos) -> tab.setText(TAB_TITLES[pos])).attach();
 
+        String requestedStatus = preferenceManager.getString("appointment_filter_status", "all");
+        int requestedTab = 0;
+        if (Constants.STATUS_COMPLETED.equalsIgnoreCase(requestedStatus)) {
+            requestedTab = 1;
+        } else if (Constants.STATUS_CANCELLED.equalsIgnoreCase(requestedStatus)) {
+            requestedTab = 2;
+        }
+        viewPager.setCurrentItem(requestedTab, false);
+        preferenceManager.saveString("appointment_filter_status", "all");
+
         btnMoreOptions.setOnClickListener(v -> showMoreOptionsMenu());
     }
 

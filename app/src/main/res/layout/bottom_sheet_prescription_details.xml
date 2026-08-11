@@ -3,267 +3,367 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/dialog_background"
-    android:orientation="vertical"
-    android:paddingBottom="24dp">
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:orientation="vertical">
 
-    <!-- Handle -->
     <View
         android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="12dp"
-        android:background="?attr/colorOutline" />
+        android:layout_marginTop="10dp"
+        android:background="@color/divider" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_height="56dp"
         android:gravity="center_vertical"
-        android:padding="20dp">
+        android:paddingHorizontal="20dp">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Prescription Details"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="20sp"
-            android:fontFamily="@font/poppins_regular" />
+            android:fontFamily="@font/poppins_medium"
+            android:text="Prescription Report"
+            android:textColor="@color/text_primary"
+            android:textSize="19sp" />
 
         <ImageView
             android:id="@+id/ivClose"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_clear"
-            app:tint="?attr/colorOnSurfaceVariant"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:focusable="true" />
+            android:contentDescription="@string/close"
+            android:focusable="true"
+            android:padding="10dp"
+            android:src="@drawable/ic_clear"
+            app:tint="@color/text_secondary" />
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constrainedHeight="true">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingHorizontal="14dp"
+        android:paddingBottom="12dp">
 
         <LinearLayout
+            android:id="@+id/prescriptionContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/bg_prescription_document"
             android:orientation="vertical"
-            android:paddingHorizontal="20dp">
+            android:padding="20dp">
 
-            <LinearLayout
-                android:id="@+id/prescriptionContent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Prescription Header with Logo -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp"
-                    android:layout_marginTop="8dp">
-
-                    <ImageView
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/app_logo_icon" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-                        
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="HASET Telemedicine"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:fontFamily="@font/poppins_regular" />
-                            
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Official Prescription"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="12sp"
-                            android:fontFamily="@font/poppins_regular" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Prescription ID & Status -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:id="@+id/tvPrescriptionId"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/poppins"
-                    tools:text="ID: #PRES-12345" />
-
-                <TextView
-                    android:id="@+id/tvDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/poppins"
-                    tools:text="Issued on Jan 22, 2026" />
-            </LinearLayout>
-
-            <!-- Doctor Info Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="24dp">
+                android:orientation="horizontal">
 
-                <de.hdodenhof.circleimageview.CircleImageView
-                    android:id="@+id/ivDoctorAvatar"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:src="@drawable/profile_photo" />
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/app_logo_icon" />
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:layout_marginStart="16dp"
                     android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/tvDoctorName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
-                        android:fontFamily="@font/poppins_regular"
-                        tools:text="Dr. John Smith" />
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="HASET Telemedicine"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp" />
 
                     <TextView
-                        android:id="@+id/tvDoctorSpecialty"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:textSize="13sp"
-                        android:fontFamily="@font/poppins"
-                        tools:text="General Physician" />
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="Official digital prescription"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_prescription_badge"
+                    android:fontFamily="@font/poppins_medium"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:text="VERIFIED"
+                    android:textColor="@color/green_primary"
+                    android:textSize="9sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="14dp"
+                android:background="@color/divider" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="REFERENCE"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/tvPrescriptionId"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        tools:text="PRES-12345" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="ISSUED"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/tvDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        tools:text="22 Jan 2026" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Image Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_prescription_section"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="PATIENT"
+                    android:textColor="@color/green_primary"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvPatientName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    tools:text="Amina Hassan" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="12dp"
+                    android:background="@color/divider" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="PRESCRIBED BY"
+                    android:textColor="@color/green_primary"
+                    android:textSize="10sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/ivDoctorAvatar"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/profile_photo" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvDoctorName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_medium"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            tools:text="Dr. John Smith" />
+
+                        <TextView
+                            android:id="@+id/tvDoctorSpecialty"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="Prescribing clinician"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardImage"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant"
+                android:layout_height="220dp"
+                android:layout_marginTop="18dp"
                 android:visibility="gone"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp"
                 tools:visibility="visible">
 
                 <ImageView
                     android:id="@+id/ivPrescriptionImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    tools:src="@tools:sample/backgrounds/scenic" />
+                    android:contentDescription="@string/prescription_details"
+                    android:scaleType="centerInside"
+                    tools:src="@drawable/ic_prescription" />
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Medicines Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Prescribed Medications"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/poppins_medium"
+                android:text="PRESCRIBED MEDICATIONS"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvMedicines"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
 
-            <!-- Instructions Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Special Instructions"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins_regular"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:id="@+id/tvInstructions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins"
-                android:layout_marginBottom="32dp"
-                tools:text="Please take medications as prescribed and complete the course." />
-
-            </LinearLayout> <!-- Close prescriptionContent -->
-
-            <!-- Actions -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingTop="12dp"
-                android:paddingBottom="24dp"
-                android:paddingHorizontal="2dp">
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_prescription_instruction"
+                android:orientation="vertical"
+                android:padding="14dp">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnExportPdf"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    app:iconTint="@color/green_primary"
-                    android:text="Download PDF"
-                    app:icon="@drawable/ic_download"
-                    android:fontFamily="@font/poppins_regular"
-                    app:cornerRadius="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="SPECIAL INSTRUCTIONS"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPrint"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:layout_weight="1"
-                    android:text="Print"
-                    app:icon="@drawable/print_24"
-                    app:iconTint="@color/green_primary"
+                <TextView
+                    android:id="@+id/tvInstructions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:fontFamily="@font/poppins_regular"
-                    app:cornerRadius="12dp"
-                    android:layout_marginStart="12dp" />
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    tools:text="Take medicines exactly as prescribed and complete the full course." />
             </LinearLayout>
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:text="Generated securely by HASET Telemedicine"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="8dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExportPdf"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:fontFamily="@font/poppins_medium"
+            android:text="Download PDF"
+            android:textColor="@color/green_primary"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/ic_download"
+            app:iconTint="@color/green_primary"
+            app:strokeColor="@color/green_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPrint"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/green_primary"
+            android:fontFamily="@font/poppins_medium"
+            android:text="Print"
+            android:textColor="@color/white"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/print_24"
+            app:iconTint="@color/white" />
+    </LinearLayout>
 </LinearLayout>

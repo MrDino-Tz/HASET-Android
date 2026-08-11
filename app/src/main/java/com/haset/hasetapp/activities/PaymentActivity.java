@@ -17,6 +17,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
@@ -46,6 +50,8 @@ public class PaymentActivity extends AppCompatActivity {
     private String chatRoomId = null;
     private String consultationId;
     private boolean cardCheckoutOpened = false;
+    private DatabaseReference registrationFeeRef;
+    private ValueEventListener registrationFeeListener;
 
     private static final String STATE_CONSULTATION_ID = "payment_consultation_id";
 
@@ -77,6 +83,7 @@ public class PaymentActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(PaymentViewModel.class);
         setupObservers();
         setupViews();
+        observeDoctorRegistrationFee();
         setupClickListeners();
     }
 
@@ -87,17 +94,11 @@ public class PaymentActivity extends AppCompatActivity {
     }
     
     @Override
-    protected void onPause() {
-        super.onPause();
-        // Stop polling when app goes to background
-        if (!cardCheckoutOpened && viewModel != null && viewModel.getProcessing().getValue() != null && viewModel.getProcessing().getValue()) {
-            viewModel.cancelPayment();
-        }
-    }
-    
-    @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (registrationFeeRef != null && registrationFeeListener != null) {
+            registrationFeeRef.removeEventListener(registrationFeeListener);
+        }
         // Stop polling when activity is destroyed
         if (viewModel != null) {
             viewModel.cancelPayment();
@@ -391,6 +392,43 @@ public class PaymentActivity extends AppCompatActivity {
         // Disable pay button until payment method is selected
         btnPayNow.setEnabled(false);
         btnPayNow.setAlpha(0.5f);
+    }
+
+    private void observeDoctorRegistrationFee() {
+        if (doctor == null || !("doctor_registration".equals(doctor.getDoctorId())
+                || "doctor_registration".equals(doctor.getUserId()))) {
+            return;
+        }
+
+        registrationFeeRef = com.haset.hasetapp.utils.FirebaseHelper.getAppConfigRef()
+                .child("doctorRegistrationFee");
+        registrationFeeListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                Number value = snapshot.getValue(Number.class);
+                boolean processing = viewModel != null
+                        && Boolean.TRUE.equals(viewModel.getProcessing().getValue());
+                if (value == null || paymentInitiated || processing) return;
+
+                double latestFee = Math.max(0.0, value.doubleValue());
+                if (latestFee == 0.0) {
+                    setResult(RESULT_OK);
+                    finish();
+                    return;
+                }
+
+                consultationFee = latestFee;
+                doctor.setConsultationFee(latestFee);
+                tvAmount.setText(String.format(Locale.getDefault(), "%,.0f TZS", latestFee));
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                android.util.Log.w("PaymentActivity", "Registration fee listener cancelled: "
+                        + error.getMessage());
+            }
+        };
+        registrationFeeRef.addValueEventListener(registrationFeeListener);
     }
 
     private void setupClickListeners() {

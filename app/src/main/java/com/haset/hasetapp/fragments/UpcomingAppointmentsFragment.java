@@ -98,7 +98,11 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         String role = preferenceManager.getUserRole();
 
         viewModel.setUserInfo(userId, role);
-        viewModel.getUpcomingAppointments().observe(getViewLifecycleOwner(), appointments -> {
+        boolean isDoctor = Constants.ROLE_DOCTOR.equalsIgnoreCase(role);
+        androidx.lifecycle.LiveData<List<Appointment>> appointmentsSource = isDoctor
+                ? viewModel.getPendingAppointments()
+                : viewModel.getUpcomingAppointments();
+        appointmentsSource.observe(getViewLifecycleOwner(), appointments -> {
             if (isAdded() && rootView != null) {
                 hideShimmerLoading();
                 if (appointmentAdapter != null) {

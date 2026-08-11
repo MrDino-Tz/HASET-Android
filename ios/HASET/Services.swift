@@ -499,15 +499,25 @@ final class AuthService {
     }
 
     func fetchPopularArticles(idToken: String?) async throws -> [ArticleSummary] {
-        let url = try databaseURL(path: "article_posts", authToken: idToken)
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let articlesURL = try databaseURL(path: "article_posts", authToken: idToken)
+        let likesURL = try databaseURL(path: "post_likes", authToken: idToken)
+        let commentsURL = try databaseURL(path: "post_comments", authToken: idToken)
+        async let articlesRequest = URLSession.shared.data(from: articlesURL)
+        async let likesRequest = URLSession.shared.data(from: likesURL)
+        async let commentsRequest = URLSession.shared.data(from: commentsURL)
+        let ((data, response), (likesData, likesResponse), (commentsData, commentsResponse)) =
+            try await (articlesRequest, likesRequest, commentsRequest)
         try validate(response: response, data: data)
+        try validate(response: likesResponse, data: likesData)
+        try validate(response: commentsResponse, data: commentsData)
         guard data != Data("null".utf8) else {
             return []
         }
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ServiceError.invalidResponse
         }
+        let likesJSON = (try? JSONSerialization.jsonObject(with: likesData) as? [String: Any]) ?? [:]
+        let commentsJSON = (try? JSONSerialization.jsonObject(with: commentsData) as? [String: Any]) ?? [:]
 
         let articles = json.compactMap { key, value -> ArticleSummary? in
             guard let item = value as? [String: Any] else { return nil }
@@ -528,8 +538,12 @@ final class AuthService {
             let tags = stringValue(item["tags"])?.nonEmpty ?? ""
             let content = description.isEmpty ? [title] : [description]
 
+            let postId = stringValue(item["postId"])?.nonEmpty ?? key
+            let likeCount = (likesJSON[postId] as? [String: Any])?.count ?? 0
+            let commentCount = (commentsJSON[postId] as? [String: Any])?.count ?? 0
+
             return ArticleSummary(
-                id: stringValue(item["postId"])?.nonEmpty ?? key,
+                id: postId,
                 title: title,
                 author: author,
                 authorImage: stringValue(item["profileImage"])?.nonEmpty,
@@ -541,8 +555,8 @@ final class AuthService {
                 readTime: estimatedReadTime(from: description),
                 content: content,
                 viewCount: views,
-                likeCount: intValue(item["likes"]) ?? 0,
-                commentCount: intValue(item["comments"]) ?? 0,
+                likeCount: likeCount,
+                commentCount: commentCount,
                 shareCount: intValue(item["shares"]) ?? 0,
                 type: type
             )
@@ -557,6 +571,38 @@ final class AuthService {
                 }
                 return leftTime > rightTime
             }
+    }
+
+    func fetchHealthTips(idToken: String?) async throws -> [HealthTipSummary] {
+        let url = try databaseURL(path: "health_quotes", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return [] }
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ServiceError.invalidResponse
+        }
+
+        return json.compactMap { key, value -> HealthTipSummary? in
+            if let text = stringValue(value)?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+                return HealthTipSummary(id: key, text: text, author: "HASET Hospital", timestamp: 0)
+            }
+
+            guard let item = value as? [String: Any] else { return nil }
+            if let enabled = item["enabled"] as? Bool, !enabled { return nil }
+            guard let text = stringValue(item["text"])?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+                return nil
+            }
+            return HealthTipSummary(
+                id: key,
+                text: text,
+                author: stringValue(item["author"])?.nonEmpty ?? "HASET Hospital",
+                timestamp: timeIntervalValue(item["createdAt"]) ?? timeIntervalValue(item["timestamp"]) ?? 0
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.timestamp == rhs.timestamp { return lhs.id < rhs.id }
+            return lhs.timestamp > rhs.timestamp
+        }
     }
 
     func fetchSavedArticleIDs(userId: String, idToken: String?) async throws -> Set<String> {
@@ -596,23 +642,16 @@ final class AuthService {
 
     func toggleArticleLike(postId: String, userId: String, idToken: String?) async throws -> Bool {
         let likeURL = try databaseURL(path: "post_likes/\(postId)/\(userId)", authToken: idToken)
-        let countURL = try databaseURL(path: "article_posts/\(postId)/likes", authToken: idToken)
 
         let (likeData, likeResponse) = try await URLSession.shared.data(from: likeURL)
         try validate(response: likeResponse, data: likeData)
         let currentlyLiked = likeData != Data("null".utf8)
 
-        let (countData, countResponse) = try await URLSession.shared.data(from: countURL)
-        try validate(response: countResponse, data: countData)
-        let currentCount = (try? JSONDecoder().decode(Int.self, from: countData)) ?? 0
-
         if currentlyLiked {
             try await delete(url: likeURL)
-            try await put(max(0, currentCount - 1), url: countURL)
             return false
         } else {
             try await put(true, url: likeURL)
-            try await put(currentCount + 1, url: countURL)
             return true
         }
     }
@@ -661,7 +700,6 @@ final class AuthService {
         ]
         let commentURL = try databaseURL(path: "post_comments/\(postId)/\(commentId)", authToken: idToken)
         try await put(payload, url: commentURL)
-        _ = try await incrementCounter(path: "article_posts/\(postId)/comments", idToken: idToken)
         return ArticleComment(
             id: commentId,
             userId: user.userId,
@@ -1408,9 +1446,13 @@ final class AuthService {
     private func saveUserProfile(_ profile: UserProfile, idToken: String) async throws {
         let url = try databaseURL(path: "users/\(profile.userId)", authToken: idToken)
         let encoded = try JSONEncoder().encode(profile)
-        guard let fields = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+        guard var fields = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
             throw ServiceError.invalidResponse
         }
+        // Optional Codable properties are omitted when nil. Send explicit nulls so
+        // cleared demographic values are also removed from Firebase.
+        fields["age"] = profile.age ?? NSNull()
+        fields["gender"] = profile.gender ?? NSNull()
         try await patch(fields, url: url)
     }
 

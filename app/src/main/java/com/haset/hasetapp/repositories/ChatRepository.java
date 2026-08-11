@@ -448,7 +448,9 @@ public class ChatRepository {
         return typingLiveData;
     }
 
-    public void syncUnreadCounts(Context context, String userId, List<Conversation> conversations) {
+    public void syncUnreadCounts(Context context, String userId, List<Conversation> conversations,
+                                 Runnable onCountUpdated) {
+        if (userId == null || conversations == null) return;
         NotificationBadgeHelper badgeHelper = new NotificationBadgeHelper(context);
         DatabaseReference messagesRef = firebaseHelper.getMessagesRef();
         
@@ -470,6 +472,7 @@ public class ChatRepository {
                     
                     // Recalculate total
                     recalculateTotalUnread(context, conversations);
+                    if (onCountUpdated != null) onCountUpdated.run();
                 }
 
                 @Override

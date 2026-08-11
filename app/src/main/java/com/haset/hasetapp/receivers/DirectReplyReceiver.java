@@ -13,6 +13,7 @@ import androidx.core.app.RemoteInput;
 import com.haset.hasetapp.database.entities.MessageEntity;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 public class DirectReplyReceiver extends BroadcastReceiver {
 
@@ -23,44 +24,38 @@ public class DirectReplyReceiver extends BroadcastReceiver {
             if (remoteInput != null) {
                 CharSequence replyText = remoteInput.getCharSequence(Constants.KEY_TEXT_REPLY);
                 if (replyText != null) {
-                    processReply(context, intent, replyText.toString());
+                    PendingResult pendingResult = goAsync();
+                    processReply(context.getApplicationContext(), intent,
+                            replyText.toString(), pendingResult);
                 }
             }
         }
     }
 
-    private void processReply(Context context, Intent intent, String replyText) {
+    private void processReply(Context context, Intent intent, String replyText,
+                              PendingResult pendingResult) {
         String recipientId = intent.getStringExtra(Constants.EXTRA_CHAT_USER_ID);
-        String senderId = intent.getStringExtra("senderId"); // We might need to pass this or get from prefs
-        
-        // If senderId is missing (e.g. app killed), try getting from prefs
-        if (senderId == null) {
-            // Ideally use PreferenceManager, but here we can try FirebaseHelper if initialized
-             senderId = FirebaseHelper.getInstance().getCurrentUserId();
-        }
+        String recipientName = intent.getStringExtra(Constants.EXTRA_CHAT_USER_NAME);
+        String senderName = new PreferenceManager(context).getUserName();
+        String cleanReply = replyText == null ? "" : replyText.trim();
 
-        if (recipientId != null && senderId != null) {
-            MessageEntity message = new MessageEntity();
-            message.setSenderId(senderId);
-            message.setReceiverId(recipientId);
-            message.setMessage(replyText);
-            message.setTimestamp(System.currentTimeMillis());
-            message.setType("text");
-            message.setRead(false);
-
-            // Send message via FirebaseHelper (make sure to use the static context or similar)
-            FirebaseHelper.sendMessage(message, new FirebaseHelper.OnCompleteListener<Void>() {
+        if (recipientId != null && !recipientId.isEmpty() && !cleanReply.isEmpty()) {
+            FirebaseHelper.sendDirectReply(recipientId, senderName, recipientName, cleanReply,
+                    new FirebaseHelper.OnCompleteListener<Void>() {
                 @Override
                 public void onSuccess(Void result) {
-                    // Update notification to show "Replied" or cancel it
                     updateNotification(context, intent.getIntExtra("notificationId", 0));
+                    pendingResult.finish();
                 }
 
                 @Override
                 public void onError(String error) {
                     Toast.makeText(context, R.string.failed_to_send_reply, Toast.LENGTH_SHORT).show();
+                    pendingResult.finish();
                 }
             });
+        } else {
+            pendingResult.finish();
         }
     }
 

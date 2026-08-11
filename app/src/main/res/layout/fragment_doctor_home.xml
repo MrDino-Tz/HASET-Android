@@ -406,7 +406,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="0dp"
-                                android:text="@string/approved"
+                                android:text="@string/completed"
                                 android:textColor="@color/white_dark"
                                 android:textSize="14sp"
                                 android:fontFamily="@font/poppins_medium"/>

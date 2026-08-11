@@ -37,6 +37,7 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.activities.NotificationActivity;
 import com.haset.hasetapp.activities.ArticleActivity;
+import com.haset.hasetapp.activities.DoctorPatientsActivity;
 
 import com.haset.hasetapp.adapters.AppointmentAdapter;
 import com.haset.hasetapp.adapters.RecentAppointmentAdapter;
@@ -183,7 +184,8 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         }
         
         if (llPatients != null) {
-            llPatients.setOnClickListener(v -> navigateToAppointments(null));
+            llPatients.setOnClickListener(v ->
+                    startActivity(new Intent(requireContext(), DoctorPatientsActivity.class)));
         }
         
         if (llArticlesAction != null) {
@@ -351,9 +353,9 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             navigateToAppointments(Constants.STATUS_PENDING);
         });
         
-        // Approved appointments card - navigate to appointments with approved filter
+        // Completed appointments card - navigate to the completed tab
         view.findViewById(R.id.cardApproved).setOnClickListener(v -> {
-            navigateToAppointments(Constants.STATUS_APPROVED);
+            navigateToAppointments(Constants.STATUS_COMPLETED);
         });
         
         // Cancelled appointments card - navigate to appointments with cancelled filter
@@ -419,15 +421,15 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         // Observe Appointments
         viewModel.getAppointments(doctorId).observe(getViewLifecycleOwner(), appointments -> {
             if (appointments != null) {
-                int pending = 0, approved = 0, cancelled = 0;
+                int pending = 0, completed = 0, cancelled = 0;
                 for (Appointment a : appointments) {
                     switch (a.getStatus()) {
                         case Constants.STATUS_PENDING: pending++; break;
-                        case Constants.STATUS_APPROVED: approved++; break;
+                        case Constants.STATUS_COMPLETED: completed++; break;
                         case Constants.STATUS_CANCELLED: cancelled++; break;
                     }
                 }
-                updateUIWithAppointments(appointments, pending, approved, cancelled);
+                updateUIWithAppointments(appointments, pending, completed, cancelled);
                 hidePageShimmer();
             }
         });
@@ -471,9 +473,9 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         }
     }
 
-    private void updateUIWithAppointments(List<Appointment> appointments, int pendingCount, int approvedCount, int cancelledCount) {
+    private void updateUIWithAppointments(List<Appointment> appointments, int pendingCount, int completedCount, int cancelledCount) {
         tvPendingCount.setText(String.valueOf(pendingCount));
-        tvApprovedCount.setText(String.valueOf(approvedCount));
+        tvApprovedCount.setText(String.valueOf(completedCount));
         tvCancelledCount.setText(String.valueOf(cancelledCount));
 
         // Sort appointments by date (most recent first)
