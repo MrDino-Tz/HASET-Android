@@ -29,6 +29,11 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class DoctorHomeRepository {
     private final FirebaseHelper firebaseHelper = FirebaseHelper.getInstance();
@@ -98,20 +103,66 @@ public class DoctorHomeRepository {
         liveData.postValue(appointments);
     }
 
-    public LiveData<DoctorWalletEntity> getWalletBalance(String doctorId) {
-        MutableLiveData<DoctorWalletEntity> walletLiveData = new MutableLiveData<>();
-        FirebaseHelper.getDoctorWallet(doctorId, new FirebaseHelper.OnCompleteListener<DoctorWalletEntity>() {
-            @Override
-            public void onSuccess(DoctorWalletEntity wallet) {
-                walletLiveData.postValue(wallet);
-            }
+    public void fetchWalletBalance(String doctorId, FirebaseHelper.OnCompleteListener<DoctorWalletEntity> callback) {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) {
+            callback.onError("Authentication expired. Please sign in again.");
+            return;
+        }
+        user.getIdToken(true).addOnSuccessListener(token ->
+            RetrofitClient.getInstance().getDoctorPayoutApiService()
+                .getWallet("Bearer " + token.getToken())
+                .enqueue(new Callback<JsonObject>() {
+                    @Override
+                    public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                        if (!response.isSuccessful() || response.body() == null) {
+                            callback.onError(errorMessage(response, "Unable to load the doctor wallet."));
+                            return;
+                        }
+                        JsonObject envelope = response.body();
+                        if (!envelope.has("wallet") || envelope.get("wallet").isJsonNull()) {
+                            DoctorWalletEntity empty = new DoctorWalletEntity();
+                            empty.setDoctorId(doctorId);
+                            empty.setBalance(0);
+                            empty.setTotalEarnings(0);
+                            callback.onSuccess(empty);
+                            return;
+                        }
+                        JsonObject json = envelope.getAsJsonObject("wallet");
+                        DoctorWalletEntity wallet = new DoctorWalletEntity();
+                        wallet.setDoctorId(jsonString(json, "doctor_id", doctorId));
+                        double available = jsonDouble(json, "available_balance");
+                        double reserved = jsonDouble(json, "reserved_balance");
+                        double paidOut = jsonDouble(json, "paid_out_balance");
+                        wallet.setBalance(available);
+                        wallet.setTotalEarnings(available + reserved + paidOut);
+                        wallet.setLastUpdated(parseIsoTimestamp(jsonString(json, "updated_at", null)));
+                        if (envelope.has("payout_destinations") && envelope.get("payout_destinations").isJsonObject()) {
+                            JsonObject destinations = envelope.getAsJsonObject("payout_destinations");
+                            JsonObject mobile = destinations.has("mobile_money") ? destinations.getAsJsonObject("mobile_money") : null;
+                            JsonObject bank = destinations.has("bank") ? destinations.getAsJsonObject("bank") : null;
+                            wallet.setMobileMoneyAvailable(mobile != null && mobile.has("available") && mobile.get("available").getAsBoolean());
+                            wallet.setBankAvailable(bank != null && bank.has("available") && bank.get("available").getAsBoolean());
+                            if (mobile != null) {
+                                String provider = jsonString(mobile, "provider", "");
+                                String account = jsonString(mobile, "masked_account", "");
+                                if (!provider.isEmpty() || !account.isEmpty()) wallet.setMobileMoneyLabel((provider + "  " + account).trim());
+                            }
+                            if (bank != null) {
+                                String bankCode = jsonString(bank, "bank_code", "");
+                                String account = jsonString(bank, "masked_account", "");
+                                if (!bankCode.isEmpty() || !account.isEmpty()) wallet.setBankLabel((bankCode + "  " + account).trim());
+                            }
+                        }
+                        callback.onSuccess(wallet);
+                    }
 
-            @Override
-            public void onError(String error) {
-                walletLiveData.postValue(null);
-            }
-        });
-        return walletLiveData;
+                    @Override
+                    public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                        callback.onError("Network error while loading the doctor wallet.");
+                    }
+                })
+        ).addOnFailureListener(error -> callback.onError("Authentication expired. Please sign in again."));
     }
 
     public void updateAppointmentStatus(Appointment appointment, String status, FirebaseHelper.OnCompleteListener<Void> callback) {
@@ -164,7 +215,7 @@ public class DoctorHomeRepository {
         return ratingCountLiveData;
     }
 
-    public void requestWithdrawalSecure(double amount, String reason, String mfaCode, FirebaseHelper.OnCompleteListener<Boolean> callback) {
+    public void requestWithdrawalSecure(double amount, String reason, String payoutMethod, String mfaCode, FirebaseHelper.OnCompleteListener<Boolean> callback) {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) { callback.onError("Authentication expired. Please sign in again."); return; }
         user.getIdToken(true).addOnSuccessListener(result -> {
@@ -174,9 +225,14 @@ public class DoctorHomeRepository {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) { callback.onError(response.code() == 429 ? "Too many MFA attempts. Please wait and retry." : "Invalid or expired MFA code."); return; }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
-                    JsonObject body = new JsonObject(); body.addProperty("request_id", "WR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24)); body.addProperty("amount", Math.round(amount)); body.addProperty("reason", reason);
+                    JsonObject body = new JsonObject(); body.addProperty("request_id", "WR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24)); body.addProperty("amount", Math.round(amount)); body.addProperty("reason", reason); body.addProperty("payout_method", payoutMethod);
                     RetrofitClient.getInstance().getDoctorPayoutApiService().requestWithdrawal(bearer, actionToken, body).enqueue(new Callback<JsonObject>() {
-                        public void onResponse(Call<JsonObject> c, Response<JsonObject> r) { if (r.isSuccessful()) callback.onSuccess(true); else callback.onError(r.code() == 429 ? "Too many requests. Please retry later." : "Payout request failed."); }
+                        public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
+                            if (r.isSuccessful()) callback.onSuccess(true);
+                            else callback.onError(r.code() == 429
+                                    ? "Too many requests. Please retry later."
+                                    : errorMessage(r, "Payout request failed."));
+                        }
                         public void onFailure(Call<JsonObject> c, Throwable t) { callback.onError("Network error while submitting payout request."); }
                     });
                 }
@@ -185,13 +241,18 @@ public class DoctorHomeRepository {
         }).addOnFailureListener(e -> callback.onError("Authentication expired. Please sign in again."));
     }
 
-    public LiveData<List<WithdrawalRequest>> getWithdrawalRequests(String doctorId) {
-        MutableLiveData<List<WithdrawalRequest>> requestsLiveData = new MutableLiveData<>();
+    public void fetchWithdrawalRequests(String doctorId, FirebaseHelper.OnCompleteListener<List<WithdrawalRequest>> callback) {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
-        if (user == null) { requestsLiveData.postValue(null); return requestsLiveData; }
+        if (user == null) {
+            callback.onError("Authentication expired. Please sign in again.");
+            return;
+        }
         user.getIdToken(true).addOnSuccessListener(token -> RetrofitClient.getInstance().getDoctorPayoutApiService().listWithdrawals("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                if (!response.isSuccessful() || response.body() == null) { requestsLiveData.postValue(null); return; }
+                if (!response.isSuccessful() || response.body() == null) {
+                    callback.onError(errorMessage(response, "Unable to load withdrawal history."));
+                    return;
+                }
                 List<WithdrawalRequest> list = new ArrayList<>();
                 if (response.body().has("withdrawals") && response.body().get("withdrawals").isJsonArray()) {
                     for (com.google.gson.JsonElement element : response.body().getAsJsonArray("withdrawals")) {
@@ -199,16 +260,66 @@ public class DoctorHomeRepository {
                         WithdrawalRequest item = new WithdrawalRequest();
                         item.setRequestId(w.has("request_id") ? w.get("request_id").getAsString() : "");
                         item.setDoctorId(doctorId); item.setAmount(w.has("amount") ? w.get("amount").getAsDouble() : 0);
+                        item.setFeeAmount(w.has("fee_amount") && !w.get("fee_amount").isJsonNull() ? w.get("fee_amount").getAsDouble() : 0);
                         item.setStatus(w.has("status") ? w.get("status").getAsString() : "pending");
-                        item.setMethod("mobile"); item.setRequestedAt(w.has("created_at") ? 0 : System.currentTimeMillis());
+                        String payoutMethod = jsonString(w, "payout_method", "mobile_money");
+                        item.setMethod("bank".equals(payoutMethod) ? WithdrawalRequest.METHOD_BANK : WithdrawalRequest.METHOD_MOBILE_MONEY);
+                        item.setAccountNumber("bank".equals(payoutMethod) ? jsonString(w, "bank_account_masked", "") : jsonString(w, "phone_number_masked", ""));
+                        item.setBankName("bank".equals(payoutMethod) ? jsonString(w, "bank_code", "") : jsonString(w, "provider", ""));
+                        item.setRequestedAt(parseIsoTimestamp(jsonString(w, "created_at", null)));
                         item.setRejectionReason(w.has("failure_reason") && !w.get("failure_reason").isJsonNull() ? w.get("failure_reason").getAsString() : null);
                         list.add(item);
                     }
                 }
-                requestsLiveData.postValue(list);
+                callback.onSuccess(list);
             }
-            public void onFailure(Call<JsonObject> call, Throwable t) { requestsLiveData.postValue(null); }
-        })).addOnFailureListener(e -> requestsLiveData.postValue(null));
-        return requestsLiveData;
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                callback.onError("Network error while loading withdrawal history.");
+            }
+        })).addOnFailureListener(e -> callback.onError("Authentication expired. Please sign in again."));
+    }
+
+    private static String errorMessage(Response<?> response, String fallback) {
+        try {
+            if (response.errorBody() != null) {
+                JsonObject error = com.google.gson.JsonParser.parseString(response.errorBody().string()).getAsJsonObject();
+                if (error.has("message") && !error.get("message").isJsonNull()) {
+                    return error.get("message").getAsString();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return fallback;
+    }
+
+    private static String jsonString(JsonObject json, String key, String fallback) {
+        return json.has(key) && !json.get(key).isJsonNull() ? json.get(key).getAsString() : fallback;
+    }
+
+    private static double jsonDouble(JsonObject json, String key) {
+        try {
+            return json.has(key) && !json.get(key).isJsonNull() ? json.get(key).getAsDouble() : 0;
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    private static long parseIsoTimestamp(String value) {
+        if (value == null || value.trim().isEmpty()) return System.currentTimeMillis();
+        String normalized = value.trim().replaceFirst("(\\.\\d{3})\\d+(?=Z|[+-])", "$1");
+        String[] patterns = {
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+            "yyyy-MM-dd'T'HH:mm:ssX"
+        };
+        for (String pattern : patterns) {
+            try {
+                SimpleDateFormat format = new SimpleDateFormat(pattern, Locale.US);
+                format.setTimeZone(TimeZone.getTimeZone("UTC"));
+                Date parsed = format.parse(normalized);
+                if (parsed != null) return parsed.getTime();
+            } catch (ParseException ignored) {
+            }
+        }
+        return System.currentTimeMillis();
     }
 }

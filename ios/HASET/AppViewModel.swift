@@ -272,9 +272,10 @@ final class AppViewModel: ObservableObject {
             let rows = try await authService.fetchDoctorWithdrawals(idToken: session.idToken)
             doctorWithdrawals = rows.compactMap { row in
                 guard let id = row["request_id"] as? String, let amount = (row["amount"] as? NSNumber)?.doubleValue ?? (row["amount"] as? Double) else { return nil }
+                let feeAmount = (row["fee_amount"] as? NSNumber)?.doubleValue ?? (row["fee_amount"] as? Double) ?? 0
                 let status = row["status"] as? String ?? "unknown"
                 let date = (row["created_at"] as? String).flatMap { ISO8601DateFormatter().date(from: $0) }
-                return DoctorWithdrawalSummary(id: id, amount: amount, status: status, createdAt: date, failureReason: row["failure_reason"] as? String)
+                return DoctorWithdrawalSummary(id: id, amount: amount, feeAmount: feeAmount, status: status, createdAt: date, failureReason: row["failure_reason"] as? String)
             }
             await loadDoctorWallet(force: true)
         } catch { doctorWalletError = error.localizedDescription }
@@ -524,9 +525,15 @@ final class AppViewModel: ObservableObject {
         guard currentUser?.role == .doctor else { return }
         if doctorWallet != nil && !force { return }
 
-        let idToken = sessionStore.loadSession()?.idToken
         do {
-            doctorWallet = try await authService.fetchDoctorWallet(doctorId: currentUser?.userId ?? "", idToken: idToken)
+            guard let session = sessionStore.loadSession() else { doctorWallet = nil; return }
+            let freshSession = try await authService.refreshSessionIfNeeded(session)
+            sessionStore.saveSession(freshSession)
+            activeSession = freshSession
+            doctorWallet = try await authService.fetchDoctorWallet(
+                doctorId: currentUser?.userId ?? freshSession.userId,
+                idToken: freshSession.idToken
+            )
         } catch {
             doctorWallet = nil
         }

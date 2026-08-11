@@ -144,8 +144,6 @@ public class PaymentRepository {
                             }
                             currentTransactionId = paymentResponse.getTransactionId();
 
-                            saveTransactionToFirebase(userId, doctorId, amount, paymentResponse);
-
                             if (initiationCallback != null) {
                                 initiationCallback.onSuccess(paymentResponse);
                             }
@@ -215,41 +213,6 @@ public class PaymentRepository {
         return "Payment could not be started. Please try again later." + reference;
     }
 
-    private void saveTransactionToFirebase(String userId, String doctorId, double amount, PaymentResponse paymentResponse) {
-        try {
-            java.util.Map<String, Object> tx = new java.util.HashMap<>();
-            tx.put("transactionId", paymentResponse.getTransactionId());
-            tx.put("orderReference", paymentResponse.getOrderReference());
-            tx.put("amount", amount);
-            tx.put("provider", paymentResponse.getPaymentChannel() != null ? paymentResponse.getPaymentChannel() : "unknown");
-            tx.put("userId", userId);
-            tx.put("doctorId", doctorId);
-            tx.put("status", "pending");
-            tx.put("createdAt", System.currentTimeMillis());
-            com.google.firebase.database.FirebaseDatabase.getInstance()
-                .getReference("payment_transactions")
-                .child(String.valueOf(paymentResponse.getTransactionId()))
-                .setValue(tx);
-            Log.d(TAG, "Transaction saved to Firebase: " + paymentResponse.getTransactionId());
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to save transaction to Firebase: " + e.getMessage());
-        }
-    }
-
-    private void updateTransactionStatus(int transactionId, String status) {
-        try {
-            java.util.Map<String, Object> updates = new java.util.HashMap<>();
-            updates.put("status", status);
-            updates.put("updatedAt", System.currentTimeMillis());
-            com.google.firebase.database.FirebaseDatabase.getInstance()
-                .getReference("payment_transactions")
-                .child(String.valueOf(transactionId))
-                .updateChildren(updates);
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to update transaction status: " + e.getMessage());
-        }
-    }
-
     private void startStatusPolling(int transactionId, String doctorId, double amount,
                                     FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
         currentTransactionId = transactionId;
@@ -282,7 +245,6 @@ public class PaymentRepository {
                             handlePaymentSuccess(transactionId, doctorId, amount, finalCallback);
                         } else if (transaction.isFailed()) {
                             isProcessingPayment = false;
-                            updateTransactionStatus(transactionId, transaction.getStatus());
                             if (finalCallback != null) {
                                 finalCallback.onError("Payment was unsuccessful or cancelled.");
                             }
@@ -314,7 +276,6 @@ public class PaymentRepository {
     private void handlePaymentSuccess(int transactionId, String doctorId, double amount,
                                       FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
         // Settlement and doctor wallet credit are owned by the payment backend.
-        updateTransactionStatus(transactionId, "success");
         currentTransactionId = -1;
         isProcessingPayment = false;
         if (finalCallback != null) finalCallback.onSuccess(true);

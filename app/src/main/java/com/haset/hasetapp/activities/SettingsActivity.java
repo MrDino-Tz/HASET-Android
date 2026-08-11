@@ -199,21 +199,58 @@ public class SettingsActivity extends BaseActivity {
                 .setMessage(R.string.mfa_disable_message)
                 .setView(input)
                 .setNegativeButton(android.R.string.cancel, (dismissed, which) -> setMfaUi(true, true))
+                .setNeutralButton(R.string.use_recovery_code, null)
+                .setPositiveButton(R.string.mfa_disable_action, null)
+                .create();
+        dialog.setOnCancelListener(ignored -> setMfaUi(true, true));
+        dialog.setOnShowListener(ignored -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                if (!input.isComplete()) {
+                    input.setErrorState(true);
+                    return;
+                }
+                String code = input.getCode();
+                input.clearCode();
+                dialog.dismiss();
+                disableMfa(code);
+            });
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> {
+                dialog.dismiss();
+                showRecoveryDisableDialog();
+            });
+        });
+        dialog.show();
+        input.focusFirst();
+    }
+
+    private void showRecoveryDisableDialog() {
+        EditText input = new EditText(this);
+        input.setHint(R.string.recovery_code_hint);
+        input.setSingleLine(true);
+        input.setAllCaps(true);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(10)});
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.recovery_code_title)
+                .setMessage(R.string.recovery_code_message)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, (dismissed, which) -> setMfaUi(true, true))
                 .setPositiveButton(R.string.mfa_disable_action, null)
                 .create();
         dialog.setOnCancelListener(ignored -> setMfaUi(true, true));
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
-            if (!input.isComplete()) {
-                input.setErrorState(true);
+            String code = input.getText().toString().trim().toUpperCase(java.util.Locale.US);
+            if (!code.matches("[A-F0-9]{10}")) {
+                input.setError(getString(R.string.invalid_recovery_code));
                 return;
             }
-            String code = input.getCode();
-            input.clearCode();
             dialog.dismiss();
             disableMfa(code);
         }));
         dialog.show();
-        input.focusFirst();
+        input.requestFocus();
     }
 
     private void disableMfa(String code) {

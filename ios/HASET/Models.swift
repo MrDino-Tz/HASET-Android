@@ -217,11 +217,19 @@ struct DoctorWalletSummary: Codable, Hashable {
     let balance: Double
     let totalEarnings: Double?
     let lastUpdated: TimeInterval?
+    let mobileMoneyDestination: PayoutDestinationSummary?
+    let bankDestination: PayoutDestinationSummary?
+}
+
+struct PayoutDestinationSummary: Codable, Hashable {
+    let available: Bool
+    let label: String
 }
 
 struct DoctorWithdrawalSummary: Identifiable, Hashable {
     let id: String
     let amount: Double
+    let feeAmount: Double
     let status: String
     let createdAt: Date?
     let failureReason: String?

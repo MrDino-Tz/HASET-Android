@@ -1,5 +1,6 @@
 package com.haset.hasetapp.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,8 +20,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
+import com.google.gson.JsonObject;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 import androidx.lifecycle.ViewModelProvider;
@@ -29,13 +32,19 @@ import com.haset.hasetapp.database.entities.WithdrawalRequest;
 import java.util.List;
 import java.util.Locale;
 import com.haset.hasetapp.ui.MfaCodeInputView;
+import com.haset.hasetapp.utils.FirebaseHelper;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DoctorWalletActivity extends BaseActivity {
+    private static final int MFA_ENROLLMENT_REQUEST = 1703;
     private TextView tvBalance, tvTotalEarnings;
     private RecyclerView rvTransactions;
     private PreferenceManager preferenceManager;
     private DoctorWalletEntity currentWallet;
-    private MaterialButton btnWithdraw;
+    private MaterialButton btnWithdraw, btnPayoutAccounts;
     private DoctorHomeViewModel viewModel;
     private BottomSheetDialog withdrawDialog;
     private ImageView ivToggleBalance;
@@ -67,7 +76,9 @@ public class DoctorWalletActivity extends BaseActivity {
                     Toast.makeText(DoctorWalletActivity.this, 
                         R.string.withdrawal_request_submitted, 
                         Toast.LENGTH_LONG).show();
-                    loadWalletData(); // Reload wallet data
+                    String doctorId = preferenceManager.getUserId();
+                    viewModel.refreshWalletBalance(doctorId);
+                    viewModel.refreshWithdrawalRequests(doctorId);
                 } else {
                     Toast.makeText(DoctorWalletActivity.this, R.string.insufficient_balance, Toast.LENGTH_SHORT).show();
                 }
@@ -110,11 +121,13 @@ public class DoctorWalletActivity extends BaseActivity {
         tvTotalEarnings = findViewById(R.id.tvTotalEarnings);
         rvTransactions = findViewById(R.id.rvTransactions);
         btnWithdraw = findViewById(R.id.btnWithdraw);
+        btnPayoutAccounts = findViewById(R.id.btnPayoutAccounts);
         ivToggleBalance = findViewById(R.id.ivToggleBalance);
         
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         
-        btnWithdraw.setOnClickListener(v -> showWithdrawBottomSheet());
+        btnWithdraw.setOnClickListener(v -> checkMfaThenShowWithdrawal());
+        btnPayoutAccounts.setOnClickListener(v -> checkMfaThenShowPayoutAccounts());
         
         ivToggleBalance.setOnClickListener(v -> {
             isBalanceVisible = !isBalanceVisible;
@@ -141,9 +154,10 @@ public class DoctorWalletActivity extends BaseActivity {
                 String formattedEarnings = String.format(Locale.getDefault(), getString(R.string.currency_format), wallet.getTotalEarnings());
                 tvTotalEarnings.setText(formattedEarnings);
                 
-                // Enable/disable withdraw button based on balance
-                btnWithdraw.setEnabled(wallet.getBalance() > 0);
-                btnWithdraw.setAlpha(wallet.getBalance() > 0 ? 1.0f : 0.5f);
+                // Keep the action responsive. The click handler explains why a
+                // zero-balance wallet cannot submit a withdrawal.
+                btnWithdraw.setEnabled(true);
+                btnWithdraw.setAlpha(1.0f);
                 
                 // Stop shimmer and show content
                 if (shimmerBalance != null) {
@@ -155,8 +169,8 @@ public class DoctorWalletActivity extends BaseActivity {
                 balanceAmount = 0;
                 updateBalanceDisplay();
                 tvTotalEarnings.setText("0 TZS");
-                btnWithdraw.setEnabled(false);
-                btnWithdraw.setAlpha(0.5f);
+                btnWithdraw.setEnabled(true);
+                btnWithdraw.setAlpha(1.0f);
                 
                 // Stop shimmer and show default content
                 if (shimmerBalance != null) {
@@ -214,13 +228,12 @@ public class DoctorWalletActivity extends BaseActivity {
 
         TextView tvAvailableBalance = view.findViewById(R.id.tvAvailableBalance);
         TextInputEditText etWithdrawAmount = view.findViewById(R.id.etAmount);
-        // Bank transfer options commented out - using mobile money only
-        // LinearLayout llBankTransfer = view.findViewById(R.id.llBankTransfer);
         com.google.android.material.card.MaterialCardView cvMobileMoney = view.findViewById(R.id.llMobileMoney);
+        com.google.android.material.card.MaterialCardView cvBank = view.findViewById(R.id.llBank);
+        TextView tvMobileDestination = view.findViewById(R.id.tvMobileDestination);
+        TextView tvBankDestination = view.findViewById(R.id.tvBankDestination);
         ImageView ivMobileSelected = view.findViewById(R.id.ivMobileSelected);
-        LinearLayout llAccountDetails = view.findViewById(R.id.llAccountDetails);
-        TextInputLayout tilMobileNumber = view.findViewById(R.id.tilMobileNumber);
-        TextInputEditText etMobileNumber = view.findViewById(R.id.etMobileNumber);
+        ImageView ivBankSelected = view.findViewById(R.id.ivBankSelected);
         MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
         MaterialButton btnConfirmWithdraw = view.findViewById(R.id.btnConfirmWithdraw);
         MfaCodeInputView mfaCodeInput = view.findViewById(R.id.mfaCodeInput);
@@ -229,104 +242,34 @@ public class DoctorWalletActivity extends BaseActivity {
         String availableBalance = String.format(Locale.getDefault(), getString(R.string.available_balance_format), currentWallet.getBalance());
         tvAvailableBalance.setText(availableBalance);
 
-        // Withdrawal method selection
-        String[] selectedMethod = {""}; // Use array to allow modification in inner class
-
-        // Bank transfer option commented out - using mobile money only
-        // llBankTransfer.setOnClickListener(v -> {
-        //     selectedMethod[0] = "bank";
-        //     ivBankSelected.setVisibility(View.VISIBLE);
-        //     ivMobileSelected.setVisibility(View.GONE);
-        //     llAccountDetails.setVisibility(View.VISIBLE);
-        //     tilBankAccount.setVisibility(View.VISIBLE);
-        //     tilBankName.setVisibility(View.VISIBLE);
-        //     tilMobileNumber.setVisibility(View.GONE);
-        //     
-        //     // Clear mobile number input
-        //     if (etMobileNumber.getText() != null) {
-        //         etMobileNumber.getText().clear();
-        //     }
-        // });
-
-        cvMobileMoney.setOnClickListener(v -> {
-            selectedMethod[0] = "mobile";
-            ivMobileSelected.setVisibility(View.VISIBLE);
-            llAccountDetails.setVisibility(View.VISIBLE);
-            tilMobileNumber.setVisibility(View.VISIBLE);
-            
-            // Highlight selected card
-            cvMobileMoney.setCardBackgroundColor(getResources().getColor(R.color.green_light_very));
-            cvMobileMoney.setStrokeColor(getResources().getColor(R.color.green_primary));
-            cvMobileMoney.setStrokeWidth(4);
-        });
+        final String[] selectedMethod = {currentWallet.isMobileMoneyAvailable() ? "mobile_money" : (currentWallet.isBankAvailable() ? "bank" : "")};
+        tvMobileDestination.setText(currentWallet.getMobileMoneyLabel() == null ? getString(R.string.not_configured) : currentWallet.getMobileMoneyLabel());
+        tvBankDestination.setText(currentWallet.getBankLabel() == null ? getString(R.string.not_configured) : currentWallet.getBankLabel());
+        cvMobileMoney.setEnabled(currentWallet.isMobileMoneyAvailable());
+        cvBank.setEnabled(currentWallet.isBankAvailable());
+        Runnable renderSelection = () -> {
+            boolean mobile = "mobile_money".equals(selectedMethod[0]);
+            boolean bank = "bank".equals(selectedMethod[0]);
+            int selectedBackground = androidx.core.content.ContextCompat.getColor(this, R.color.green_light_very);
+            int neutralBackground = androidx.core.content.ContextCompat.getColor(this, R.color.white);
+            int selectedStroke = androidx.core.content.ContextCompat.getColor(this, R.color.green_primary);
+            int neutralStroke = androidx.core.content.ContextCompat.getColor(this, R.color.chat_bubble_border);
+            int oneDp = Math.max(1, Math.round(getResources().getDisplayMetrics().density));
+            cvMobileMoney.setCardBackgroundColor(mobile ? selectedBackground : neutralBackground);
+            cvMobileMoney.setStrokeColor(mobile ? selectedStroke : neutralStroke);
+            cvMobileMoney.setStrokeWidth(mobile ? oneDp * 2 : oneDp);
+            cvBank.setCardBackgroundColor(bank ? selectedBackground : neutralBackground);
+            cvBank.setStrokeColor(bank ? selectedStroke : neutralStroke);
+            cvBank.setStrokeWidth(bank ? oneDp * 2 : oneDp);
+            cvMobileMoney.setAlpha(currentWallet.isMobileMoneyAvailable() ? 1f : 0.5f);
+            cvBank.setAlpha(currentWallet.isBankAvailable() ? 1f : 0.5f);
+            ivMobileSelected.setVisibility(mobile ? View.VISIBLE : View.INVISIBLE);
+            ivBankSelected.setVisibility(bank ? View.VISIBLE : View.INVISIBLE);
+        };
+        cvMobileMoney.setOnClickListener(v -> { if (currentWallet.isMobileMoneyAvailable()) { selectedMethod[0] = "mobile_money"; renderSelection.run(); } });
+        cvBank.setOnClickListener(v -> { if (currentWallet.isBankAvailable()) { selectedMethod[0] = "bank"; renderSelection.run(); } });
+        renderSelection.run();
         
-        // Default select mobile money if it's the only option
-        cvMobileMoney.performClick();
-        
-        // Bank account text watcher commented out - using mobile money only
-        // etBankAccount.addTextChangedListener(new TextWatcher() {
-        //     private boolean isFormatting = false;
-        //     
-        //     @Override
-        //     public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-        //     
-        //     @Override
-        //     public void onTextChanged(CharSequence s, int start, int before, int count) {}
-        //     
-        //     @Override
-        //     public void afterTextChanged(Editable s) {
-        //         if (isFormatting) return;
-        //         isFormatting = true;
-        //         
-        //         String digits = s.toString().replaceAll("[^0-9]", "");
-        //         if (digits.length() > 20) digits = digits.substring(0, 20);
-        //         
-        //         StringBuilder formatted = new StringBuilder();
-        //         for (int i = 0; i < digits.length(); i++) {
-        //             if (i > 0 && i % 4 == 0) formatted.append(" ");
-        //             formatted.append(digits.charAt(i));
-        //         }
-        //         
-        //         String formattedText = formatted.toString();
-        //         if (!s.toString().equals(formattedText)) {
-        //             s.replace(0, s.length(), formattedText);
-        //         }
-        //         isFormatting = false;
-        //     }
-        // });
-        
-        // Add text watcher for mobile number formatting (groups of 3)
-        etMobileNumber.addTextChangedListener(new TextWatcher() {
-            private boolean isFormatting = false;
-            
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (isFormatting) return;
-                isFormatting = true;
-                
-                String digits = s.toString().replaceAll("\\s", "");
-                if (digits.length() > 9) digits = digits.substring(0, 9);
-                
-                StringBuilder formatted = new StringBuilder();
-                for (int i = 0; i < digits.length(); i++) {
-                    if (i > 0 && i % 3 == 0) formatted.append(" ");
-                    formatted.append(digits.charAt(i));
-                }
-                
-                String formattedText = formatted.toString();
-                if (!s.toString().equals(formattedText)) {
-                    s.replace(0, s.length(), formattedText);
-                }
-                isFormatting = false;
-            }
-        });
-
         // Format amount input
         etWithdrawAmount.addTextChangedListener(new TextWatcher() {
             @Override
@@ -337,18 +280,10 @@ public class DoctorWalletActivity extends BaseActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                // Enable confirm button only if amount is valid
                 String amountStr = s.toString().trim();
-                if (!TextUtils.isEmpty(amountStr)) {
-                    try {
-                        double amount = Double.parseDouble(amountStr);
-                        btnConfirmWithdraw.setEnabled(amount > 0 && amount <= currentWallet.getBalance());
-                    } catch (NumberFormatException e) {
-                        btnConfirmWithdraw.setEnabled(false);
-                    }
-                } else {
-                    btnConfirmWithdraw.setEnabled(false);
-                }
+                // Keep the action responsive for invalid amounts so the click handler
+                // can explain the gateway minimum or insufficient balance.
+                btnConfirmWithdraw.setEnabled(!TextUtils.isEmpty(amountStr));
             }
         });
 
@@ -370,8 +305,12 @@ public class DoctorWalletActivity extends BaseActivity {
                 return;
             }
 
-            if (amount <= 0) {
-                Toast.makeText(this, R.string.amount_greater_than_zero, Toast.LENGTH_SHORT).show();
+            if (amount < 5000) {
+                double missing = 5000 - currentWallet.getBalance();
+                String message = currentWallet.getBalance() < 5000
+                        ? getString(R.string.minimum_withdrawal_missing_amount, missing)
+                        : getString(R.string.minimum_withdrawal_amount);
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -380,39 +319,9 @@ public class DoctorWalletActivity extends BaseActivity {
                 return;
             }
 
-            if (TextUtils.isEmpty(selectedMethod[0])) {
-                Toast.makeText(this, R.string.select_withdrawal_method, Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Validate account details based on method
-            // Bank validation commented out - using mobile money only
-            // if (selectedMethod[0].equals("bank")) {
-            //     String bankAccount = etBankAccount.getText() != null ? etBankAccount.getText().toString().trim() : "";
-            //     String bankName = etBankName.getText() != null ? etBankName.getText().toString().trim() : "";
-            //     
-            //     if (TextUtils.isEmpty(bankAccount) || bankAccount.replaceAll("\\s", "").length() < 8) {
-            //         Toast.makeText(this, "Please enter a valid account number", Toast.LENGTH_SHORT).show();
-            //         return;
-            //     }
-            //     
-            //     if (TextUtils.isEmpty(bankName)) {
-            //         Toast.makeText(this, "Please enter bank name", Toast.LENGTH_SHORT).show();
-            //         return;
-            //     }
-            // } else 
-            if (selectedMethod[0].equals("mobile")) {
-                String mobileNumber = etMobileNumber.getText() != null ? 
-                    etMobileNumber.getText().toString().replaceAll("\\s", "").trim() : "";
-                
-                if (TextUtils.isEmpty(mobileNumber) || mobileNumber.length() < 9) {
-                    Toast.makeText(this, R.string.enter_valid_mobile, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            }
-
             // Process withdrawal
             if (!mfaCodeInput.isComplete()) { mfaCodeInput.setErrorState(true); Toast.makeText(this, "Enter the six-digit MFA code", Toast.LENGTH_SHORT).show(); return; }
+            if (selectedMethod[0].isEmpty()) { Toast.makeText(this, R.string.no_verified_payout_destination, Toast.LENGTH_LONG).show(); return; }
             processWithdrawal(amount, selectedMethod[0], btnConfirmWithdraw, mfaCodeInput.getCode());
         });
 
@@ -423,26 +332,193 @@ public class DoctorWalletActivity extends BaseActivity {
         withdrawDialog.show();
     }
 
-    private void processWithdrawal(double amount, String method, MaterialButton confirmBtn, String mfaCode) {
-        String doctorId = preferenceManager.getUserId();
-        String doctorName = preferenceManager.getUserName();
+    private void checkMfaThenShowWithdrawal() {
+        if (currentWallet == null || currentWallet.getBalance() <= 0) {
+            Toast.makeText(this, R.string.no_balance_withdrawal, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        btnWithdraw.setEnabled(false);
+        user.getIdToken(true).addOnSuccessListener(token ->
+            RetrofitClient.getInstance().getMobileMfaApiService()
+                .status("Bearer " + token.getToken())
+                .enqueue(new Callback<JsonObject>() {
+                    @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                        btnWithdraw.setEnabled(true);
+                        boolean enabled = response.isSuccessful() && response.body() != null
+                                && response.body().has("two_factor_enabled")
+                                && response.body().get("two_factor_enabled").getAsBoolean();
+                        if (enabled) showWithdrawBottomSheet();
+                        else showMfaRequiredDialog();
+                    }
+
+                    @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                        btnWithdraw.setEnabled(true);
+                        Toast.makeText(DoctorWalletActivity.this,
+                                R.string.mfa_status_unavailable, Toast.LENGTH_LONG).show();
+                    }
+                })
+        ).addOnFailureListener(error -> {
+            btnWithdraw.setEnabled(true);
+            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void showMfaRequiredDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.mfa_required_for_withdrawal_title)
+                .setMessage(R.string.mfa_required_for_withdrawal_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.enable_mfa, (dialog, which) ->
+                        startActivityForResult(
+                                new Intent(this, MfaEnrollmentActivity.class),
+                                MFA_ENROLLMENT_REQUEST))
+                .show();
+    }
+
+    private void checkMfaThenShowPayoutAccounts() {
+        com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) { Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show(); return; }
+        btnPayoutAccounts.setEnabled(false);
+        user.getIdToken(true).addOnSuccessListener(token -> RetrofitClient.getInstance().getMobileMfaApiService()
+                .status("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
+                    @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                        btnPayoutAccounts.setEnabled(true);
+                        boolean enabled = response.isSuccessful() && response.body() != null
+                                && response.body().has("two_factor_enabled")
+                                && response.body().get("two_factor_enabled").getAsBoolean();
+                        if (enabled) showPayoutAccountDialog(); else showMfaRequiredDialog();
+                    }
+                    @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                        btnPayoutAccounts.setEnabled(true);
+                        Toast.makeText(DoctorWalletActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_LONG).show();
+                    }
+                }))
+                .addOnFailureListener(error -> {
+                    btnPayoutAccounts.setEnabled(true);
+                    Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showPayoutAccountDialog() {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_payout_destination, null);
+        RadioGroup typeGroup = view.findViewById(R.id.rgDestinationType);
+        LinearLayout mobileFields = view.findViewById(R.id.mobileFields);
+        LinearLayout bankFields = view.findViewById(R.id.bankFields);
+        TextInputEditText provider = view.findViewById(R.id.etPayoutProvider);
+        TextInputEditText phone = view.findViewById(R.id.etPayoutPhone);
+        TextInputEditText bankCode = view.findViewById(R.id.etBankCode);
+        TextInputEditText bankAccount = view.findViewById(R.id.etBankAccount);
+        TextInputEditText mfaCode = view.findViewById(R.id.etDestinationMfaCode);
+        typeGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean bank = checkedId == R.id.rbBank;
+            mobileFields.setVisibility(bank ? View.GONE : View.VISIBLE);
+            bankFields.setVisibility(bank ? View.VISIBLE : View.GONE);
+        });
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Payout accounts")
+                .setView(view)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Submit for approval", null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            boolean bank = typeGroup.getCheckedRadioButtonId() == R.id.rbBank;
+            String code = text(mfaCode);
+            if (code.length() != 6) { mfaCode.setError("Enter your six-digit MFA code"); return; }
+            JsonObject body = new JsonObject();
+            body.addProperty("destination_type", bank ? "bank" : "mobile_money");
+            if (bank) {
+                if (text(bankCode).isEmpty() || text(bankAccount).length() < 5) { bankAccount.setError("Enter a valid bank and account number"); return; }
+                body.addProperty("bank_code", text(bankCode)); body.addProperty("bank_account", text(bankAccount));
+            } else {
+                if (text(provider).isEmpty() || !text(phone).matches("^(?:0\\d{9}|\\+255\\d{9})$")) { phone.setError("Use 07XXXXXXXX or +255XXXXXXXXX"); return; }
+                body.addProperty("provider", text(provider)); body.addProperty("phone_number", text(phone));
+            }
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+            submitPayoutDestination(body, code, dialog);
+        }));
+        dialog.show();
+    }
+
+    private String text(TextInputEditText field) {
+        return field.getText() == null ? "" : field.getText().toString().trim();
+    }
+
+    private void submitPayoutDestination(JsonObject destination, String mfaCode, androidx.appcompat.app.AlertDialog dialog) {
+        com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) { dialog.dismiss(); return; }
+        user.getIdToken(true).addOnSuccessListener(token -> {
+            String bearer = "Bearer " + token.getToken();
+            JsonObject codeBody = new JsonObject(); codeBody.addProperty("code", mfaCode);
+            RetrofitClient.getInstance().getMobileMfaApiService().verify(bearer, codeBody).enqueue(new Callback<JsonObject>() {
+                @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) {
+                        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                        Toast.makeText(DoctorWalletActivity.this, "Invalid or expired MFA code.", Toast.LENGTH_LONG).show(); return;
+                    }
+                    String actionToken = response.body().get("mfa_action_token").getAsString();
+                    RetrofitClient.getInstance().getDoctorPayoutApiService().updatePayoutDestination(bearer, actionToken, destination).enqueue(new Callback<JsonObject>() {
+                        @Override public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
+                            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                            if (r.isSuccessful()) {
+                                dialog.dismiss();
+                                Toast.makeText(DoctorWalletActivity.this, "Payout account submitted for finance approval.", Toast.LENGTH_LONG).show();
+                            } else Toast.makeText(DoctorWalletActivity.this, payoutErrorMessage(r), Toast.LENGTH_LONG).show();
+                        }
+                        @Override public void onFailure(Call<JsonObject> c, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(DoctorWalletActivity.this, "Network error while saving payout account.", Toast.LENGTH_LONG).show(); }
+                    });
+                }
+                @Override public void onFailure(Call<JsonObject> call, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(DoctorWalletActivity.this, "Network error while verifying MFA.", Toast.LENGTH_LONG).show(); }
+            });
+        }).addOnFailureListener(error -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true));
+    }
+
+    private String payoutErrorMessage(Response<JsonObject> response) {
+        try {
+            if (response.errorBody() != null) {
+                JsonObject body = com.google.gson.JsonParser.parseString(response.errorBody().string()).getAsJsonObject();
+                if (body.has("message") && !body.get("message").isJsonNull()) return body.get("message").getAsString();
+                if (body.has("errors") && body.get("errors").isJsonObject()) {
+                    for (String key : body.getAsJsonObject("errors").keySet()) {
+                        if (body.getAsJsonObject("errors").get(key).isJsonArray()
+                                && body.getAsJsonObject("errors").getAsJsonArray(key).size() > 0) {
+                            return body.getAsJsonObject("errors").getAsJsonArray(key).get(0).getAsString();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { }
+        return response.code() >= 500
+                ? "The payout service is temporarily unavailable. Please try again."
+                : "Could not save payout account. Check the details and try again.";
+    }
+
+    private void processWithdrawal(double amount, String payoutMethod, MaterialButton confirmBtn, String mfaCode) {
         confirmBtn.setEnabled(false);
         confirmBtn.setText(R.string.processing);
-        
-        // Get account details
-        View view = withdrawDialog.getWindow().getDecorView();
-        TextInputEditText etMobileNumber = view.findViewById(R.id.etMobileNumber);
-        String accountNumber = etMobileNumber.getText() != null ? 
-            etMobileNumber.getText().toString().replaceAll("\\s", "").trim() : "";
-        
-        // The repository verifies MFA server-side and submits the payout request.
-        viewModel.requestWithdrawalSecure(amount, "Doctor payout request", mfaCode);
+
+        // The backend uses the independently verified payout destination stored on the wallet.
+        viewModel.requestWithdrawalSecure(amount, "Doctor payout request", payoutMethod, mfaCode);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == MFA_ENROLLMENT_REQUEST && resultCode == RESULT_OK) {
+            checkMfaThenShowWithdrawal();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Reload wallet data when activity resumes
-        loadWalletData();
+        String doctorId = preferenceManager.getUserId();
+        viewModel.refreshWalletBalance(doctorId);
+        viewModel.refreshWithdrawalRequests(doctorId);
     }
 }

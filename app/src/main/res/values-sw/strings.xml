@@ -247,6 +247,11 @@
     <string name="mfa_disable_message">Weka msimbo wa sasa wa tarakimu sita kutoka programu yako ya uthibitishaji.</string>
     <string name="mfa_disable_action">Zima MFA</string>
     <string name="mfa_disabled_success">Uthibitishaji wa hatua mbili umezimwa</string>
+    <string name="use_recovery_code">Tumia namba ya urejeshaji</string>
+    <string name="recovery_code_title">Urejeshaji wa MFA</string>
+    <string name="recovery_code_message">Weka moja ya namba za herufi 10 ulizohifadhi ulipowasha MFA. Kila namba hutumika mara moja tu.</string>
+    <string name="recovery_code_hint">Namba ya urejeshaji</string>
+    <string name="invalid_recovery_code">Weka namba halali ya urejeshaji yenye herufi 10</string>
     <string name="location_permission">Ufikiaji wa Mahali</string>
     <string name="location_permission_desc">Ruhusu programu kufikia mahali popote kwa wagonjwa wa karibu</string>
     <string name="location_permission_denied">Ruhusa ya mahali imkanwa</string>
@@ -815,6 +820,16 @@
     <!-- DoctorWalletActivity states -->
     <string name="balance_default">0 TZS</string>
     <string name="btn_withdraw">Toa Pesa</string>
+    <string name="verified_payout_account">Akaunti ya malipo iliyothibitishwa</string>
+    <string name="approved_mobile_money_destination">Namba yako ya simu iliyothibitishwa kwa malipo ndiyo itakayotumika</string>
+    <string name="minimum_withdrawal_amount">Kiasi cha chini cha kutoa ni TZS 5,000</string>
+    <string name="minimum_withdrawal_notice">Kiasi cha chini cha malipo ni TZS 5,000. Ada za mtoa huduma zinaweza kutumika.</string>
+    <string name="minimum_withdrawal_missing_amount">Kiasi cha chini ni TZS 5,000. Unahitaji TZS %1$,.0f zaidi.</string>
+    <string name="authentication_expired">Muda wa uthibitishaji umeisha. Tafadhali ingia tena.</string>
+    <string name="mfa_status_unavailable">Imeshindikana kuthibitisha hali ya MFA. Jaribu tena.</string>
+    <string name="mfa_required_for_withdrawal_title">Washa MFA ili kutoa pesa</string>
+    <string name="mfa_required_for_withdrawal_message">Kutoa pesa kunahitaji uthibitishaji wa hatua nyingi. Washa MFA kwanza; unaweza kuizima baadaye kwenye Mipangilio wakati hautoi pesa.</string>
+    <string name="enable_mfa">Washa MFA</string>
     <string name="btn_processing">Inashughulikia…</string>
 
     <!-- RegisterActivity fee dialog -->

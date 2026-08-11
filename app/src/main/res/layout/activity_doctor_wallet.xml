@@ -153,6 +153,17 @@
                         app:cornerRadius="25dp"
                         android:textSize="14sp"
                         android:paddingHorizontal="32dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPayoutAccounts"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="8dp"
+                        android:text="Payout accounts"
+                        android:textColor="@color/white"
+                        app:icon="@drawable/ic_wallet"
+                        app:iconTint="@color/white" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -247,4 +258,3 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>
-

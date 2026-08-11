@@ -88,7 +88,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Select Recipient Account"
+                android:text="@string/verified_payout_account"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -105,9 +105,9 @@
                 app:cardCornerRadius="12dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:strokeColor="@color/green_primary"
-                app:strokeWidth="1.5dp"
-                app:cardBackgroundColor="@color/green_light_very">
+                app:strokeColor="@color/chat_bubble_border"
+                app:strokeWidth="1dp"
+                app:cardBackgroundColor="@color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -148,9 +148,10 @@
                             android:fontFamily="@font/poppins_medium" />
 
                         <TextView
+                            android:id="@+id/tvMobileDestination"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="M-Pesa, Tigo Pesa, Airtel Money"
+                            android:text="@string/approved_mobile_money_destination"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             android:fontFamily="@font/poppins_regular" />
@@ -162,7 +163,29 @@
                         android:layout_height="24dp"
                         android:src="@drawable/ic_check"
                         app:tint="@color/green_primary"
-                        android:visibility="visible" />
+                        android:visibility="invisible" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/llBank"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardElevation="0dp"
+                app:cardCornerRadius="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:strokeColor="@color/chat_bubble_border"
+                app:strokeWidth="1dp"
+                app:cardBackgroundColor="@color/white">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_wallet" app:tint="@color/green_primary" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/bank_account" android:textColor="@color/text_primary" android:textSize="16sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/tvBankDestination" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/not_configured" android:textColor="@color/text_secondary" android:textSize="12sp" />
+                    </LinearLayout>
+                    <ImageView android:id="@+id/ivBankSelected" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_check" app:tint="@color/green_primary" android:visibility="invisible" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -172,7 +195,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="visible">
+                android:visibility="gone">
 
                 <!-- Mobile Number (for Mobile Money) -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -234,7 +257,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
-                        android:text="Transfers take 24-48 hours to complete."
+                        android:text="@string/minimum_withdrawal_notice"
                         android:textColor="@color/alert_text"
                         android:textSize="12sp"
                         android:fontFamily="@font/poppins_regular" />

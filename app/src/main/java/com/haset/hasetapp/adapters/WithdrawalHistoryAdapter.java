@@ -67,26 +67,32 @@ public class WithdrawalHistoryAdapter extends RecyclerView.Adapter<WithdrawalHis
         public void bind(WithdrawalRequest request) {
             tvAmount.setText(String.format(Locale.getDefault(), "%,.0f TZS", request.getAmount()));
             tvDate.setText("Requested on: " + dateFormat.format(new Date(request.getRequestedAt())));
-            tvMethod.setText(request.getMethod().equalsIgnoreCase("mobile") ? "Mobile Money" : "Bank Transfer");
-            
-            String status = request.getStatus();
+            String method = "mobile".equalsIgnoreCase(request.getMethod()) ? "Mobile Money" : "Bank Transfer";
+            tvMethod.setText(request.getFeeAmount() > 0
+                    ? String.format(Locale.getDefault(), "%s • Fee: %,.0f TZS", method, request.getFeeAmount())
+                    : method);
+
+            String status = request.getStatus() == null ? "requested" : request.getStatus();
             tvStatus.setText(status.toUpperCase());
+            llRejectionArea.setVisibility(View.GONE);
             
             Context context = itemView.getContext();
             
             switch (status.toLowerCase()) {
                 case WithdrawalRequest.STATUS_PENDING:
+                case "requested":
                     tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
                     tvStatus.setTextColor(ContextCompat.getColor(context, R.color.orange_primary));
-                    llRejectionArea.setVisibility(View.GONE);
                     break;
                 case WithdrawalRequest.STATUS_APPROVED:
                 case WithdrawalRequest.STATUS_COMPLETED:
+                case "processing":
+                case "paid":
                     tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
                     tvStatus.setTextColor(ContextCompat.getColor(context, R.color.green_primary));
-                    llRejectionArea.setVisibility(View.GONE);
                     break;
                 case WithdrawalRequest.STATUS_REJECTED:
+                case "failed":
                     tvStatus.setBackgroundResource(R.drawable.bg_status_rejected);
                     tvStatus.setTextColor(ContextCompat.getColor(context, R.color.red_light));
                     
@@ -96,6 +102,10 @@ public class WithdrawalHistoryAdapter extends RecyclerView.Adapter<WithdrawalHis
                     } else {
                         llRejectionArea.setVisibility(View.GONE);
                     }
+                    break;
+                default:
+                    tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
+                    tvStatus.setTextColor(ContextCompat.getColor(context, R.color.orange_primary));
                     break;
             }
         }

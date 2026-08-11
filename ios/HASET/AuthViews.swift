@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreImage.CIFilterBuiltins
 import UIKit
+import UniformTypeIdentifiers
 
 struct SixDigitMFAInput: View {
     @Binding var code: String
@@ -388,12 +389,36 @@ struct MFAChallengeView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     @State private var code = ""
     @State private var invalid = false
+    @State private var useRecoveryCode = false
     var body: some View {
         VStack(spacing: 24) {
             Text("Verify your identity").font(.title2.bold())
-            Text("Enter your six-digit TOTP code or recovery code.").multilineTextAlignment(.center)
-            SixDigitMFAInput(code: $code, isInvalid: invalid, isVerified: false) { if code.count == 6 { appViewModel.verifyLoginMFA(code: code) } }
-            Button("Verify") { appViewModel.verifyLoginMFA(code: code) }.buttonStyle(PrimaryButtonStyle()).disabled(code.count < 6)
+            Text(useRecoveryCode
+                 ? "Enter one of the 10-character recovery codes saved during MFA setup. It can be used only once."
+                 : "Enter the six-digit code from your authenticator app.")
+                .multilineTextAlignment(.center)
+            if useRecoveryCode {
+                SecureField("Recovery code", text: $code)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: code) { value in
+                        code = String(value.uppercased().filter { "0123456789ABCDEF".contains($0) }.prefix(10))
+                        invalid = false
+                    }
+            } else {
+                SixDigitMFAInput(code: $code, isInvalid: invalid, isVerified: false) {
+                    if code.count == 6 { appViewModel.verifyLoginMFA(code: code) }
+                }
+            }
+            Button("Verify") { appViewModel.verifyLoginMFA(code: code) }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(code.count != (useRecoveryCode ? 10 : 6))
+            Button(useRecoveryCode ? "Use authenticator code" : "Use a recovery code") {
+                code = ""
+                invalid = false
+                useRecoveryCode.toggle()
+            }
             Button("Cancel") { appViewModel.logout() }
         }.padding(24).onChange(of: appViewModel.mfaError) { _ in invalid = true }
     }
@@ -412,6 +437,7 @@ struct MFAEnrollmentView: View {
     @State private var didRequest = false
     @State private var privacyCovered = false
     @State private var screenCaptured = false
+    @State private var showManualKey = false
 
     init(onComplete: (() -> Void)? = nil, onCancel: (() -> Void)? = nil) {
         self.onComplete = onComplete
@@ -420,13 +446,50 @@ struct MFAEnrollmentView: View {
 
     var body: some View {
         ScrollView {
-                VStack(spacing: 16) {
-                Text("Set up two-factor authentication").font(.title2.bold())
-                Text("Scan this QR code with an authenticator app, or use the manual setup key.").multilineTextAlignment(.center)
+            VStack(spacing: 20) {
+                Text("Set up two-factor authentication")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 16)
+                Text("Scan the QR code using Google Authenticator, Microsoft Authenticator, or another authenticator app.")
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .multilineTextAlignment(.center)
                 if let setup {
-                    if let image = qrImage(from: setup.otpauthURI) { image.resizable().interpolation(.none).scaledToFit().frame(width: 220, height: 220).padding(16).background(Color.white) }
-                    Text(setup.secret).font(.system(.body, design: .monospaced)).textSelection(.enabled)
-                    Button("Copy setup key") { UIPasteboard.general.string = setup.secret }.buttonStyle(.bordered)
+                    if let qrCode = qrImage(from: setup.otpauthURI) {
+                        qrCode
+                            .resizable()
+                            .interpolation(.none)
+                            .scaledToFit()
+                            .frame(width: 220, height: 220)
+                            .padding(18)
+                            .background(RoundedRectangle(cornerRadius: 18).fill(Color.white))
+                            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.black.opacity(0.08)))
+                            .accessibilityLabel("Authenticator setup QR code")
+                    } else {
+                        Text("The QR code could not be generated. Retry setup or use the setup key below.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                    }
+                    Button(showManualKey ? "Hide setup key" : "Can't scan? Use a setup key") {
+                        withAnimation { showManualKey.toggle() }
+                    }
+                    .buttonStyle(.bordered)
+                    if showManualKey {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Manual setup key").font(.caption).foregroundStyle(HASETTheme.textSecondary)
+                            Text(formattedSecret(setup.secret))
+                                .font(.system(.body, design: .monospaced).weight(.semibold))
+                                .minimumScaleFactor(0.72)
+                                .lineLimit(2)
+                                .textSelection(.enabled)
+                            Button("Copy setup key") { copySetupKey(setup.secret) }
+                                .font(.caption.bold())
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(HASETTheme.backgroundPrimary))
+                    }
                     SixDigitMFAInput(code: $code, isInvalid: error != nil, isVerified: false) { confirm() }
                     Button(loading ? "Confirming…" : "Confirm authenticator") { confirm() }.buttonStyle(PrimaryButtonStyle()).disabled(loading || code.count != 6)
                     if !setup.recoveryCodes.isEmpty { Text("Recovery codes will be shown after confirmation.").font(.caption) }
@@ -437,7 +500,9 @@ struct MFAEnrollmentView: View {
                 } else {
                     Button("Log out") { appViewModel.logout() }
                 }
-            }.padding(24)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
         .privacySensitive()
         .overlay { if privacyCovered || screenCaptured { Color.black.ignoresSafeArea().overlay(Text("Sensitive MFA information hidden").foregroundStyle(.white)) } }
@@ -486,11 +551,29 @@ struct MFAEnrollmentView: View {
         Task { do { try await AuthService().confirmMobileMFA(code: code, idToken: session.idToken); loading = false; acknowledged = true; code = "" } catch let confirmationError { loading = false; error = confirmationError.localizedDescription; code = "" } }
     }
     private func qrImage(from value: String) -> Image? {
-        let filter = CIFilter.qrCodeGenerator(); filter.message = Data(value.utf8); filter.correctionLevel = "M"
+        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(value.utf8)
+        filter.correctionLevel = "M"
         guard let output = filter.outputImage else { return nil }
-        let scaled = output.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
-        let context = CIContext(); guard let cg = context.createCGImage(scaled, from: scaled.extent) else { return nil }
-        return Image(uiImage: UIImage(cgImage: cg))
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        guard let cgImage = context.createCGImage(output, from: output.extent) else { return nil }
+        return Image(uiImage: UIImage(cgImage: cgImage))
+    }
+
+    private func formattedSecret(_ secret: String) -> String {
+        stride(from: 0, to: secret.count, by: 4).map { offset in
+            let start = secret.index(secret.startIndex, offsetBy: offset)
+            let end = secret.index(start, offsetBy: min(4, secret.distance(from: start, to: secret.endIndex)))
+            return String(secret[start..<end])
+        }.joined(separator: " ")
+    }
+
+    private func copySetupKey(_ secret: String) {
+        UIPasteboard.general.setItems(
+            [[UTType.plainText.identifier: secret]],
+            options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(120)]
+        )
     }
 }
 

@@ -18,7 +18,10 @@ public class DoctorHomeViewModel extends AndroidViewModel {
     private final DoctorHomeRepository repository;
     private NotificationBadgeHelper badgeHelper;
     private LiveData<List<Appointment>> appointments;
-    private LiveData<DoctorWalletEntity> wallet;
+    private final MutableLiveData<DoctorWalletEntity> wallet = new MutableLiveData<>();
+    private final MutableLiveData<List<com.haset.hasetapp.database.entities.WithdrawalRequest>> withdrawals = new MutableLiveData<>();
+    private boolean walletLoaded;
+    private boolean withdrawalsLoaded;
     private LiveData<Integer> ratingCount;
     private MutableLiveData<Integer> notificationCount;
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
@@ -41,10 +44,21 @@ public class DoctorHomeViewModel extends AndroidViewModel {
     }
 
     public LiveData<DoctorWalletEntity> getWalletBalance(String doctorId) {
-        if (wallet == null) {
-            wallet = repository.getWalletBalance(doctorId);
-        }
+        if (!walletLoaded) refreshWalletBalance(doctorId);
         return wallet;
+    }
+
+    public void refreshWalletBalance(String doctorId) {
+        if (doctorId == null || doctorId.trim().isEmpty()) return;
+        repository.fetchWalletBalance(doctorId, new FirebaseHelper.OnCompleteListener<DoctorWalletEntity>() {
+            @Override public void onSuccess(DoctorWalletEntity result) {
+                walletLoaded = true;
+                wallet.postValue(result);
+            }
+            @Override public void onError(String message) {
+                error.postValue(message);
+            }
+        });
     }
 
     public void updateAppointmentStatus(Appointment appointment, String status, FirebaseHelper.OnCompleteListener<Void> callback) {
@@ -85,11 +99,14 @@ public class DoctorHomeViewModel extends AndroidViewModel {
         return ratingCount;
     }
 
-    public void requestWithdrawalSecure(double amount, String reason, String mfaCode) {
+    public void requestWithdrawalSecure(double amount, String reason, String payoutMethod, String mfaCode) {
         loading.setValue(true);
         error.setValue(null);
-        repository.requestWithdrawalSecure(amount, reason, mfaCode, new FirebaseHelper.OnCompleteListener<Boolean>() {
-            public void onSuccess(Boolean result) { loading.postValue(false); withdrawSuccess.postValue(Boolean.TRUE.equals(result)); }
+        repository.requestWithdrawalSecure(amount, reason, payoutMethod, mfaCode, new FirebaseHelper.OnCompleteListener<Boolean>() {
+            public void onSuccess(Boolean result) {
+                loading.postValue(false);
+                withdrawSuccess.postValue(Boolean.TRUE.equals(result));
+            }
             public void onError(String message) { loading.postValue(false); error.postValue(message); }
         });
     }
@@ -99,6 +116,21 @@ public class DoctorHomeViewModel extends AndroidViewModel {
     public LiveData<Boolean> getWithdrawSuccess() { return withdrawSuccess; }
 
     public LiveData<List<com.haset.hasetapp.database.entities.WithdrawalRequest>> getWithdrawalRequests(String doctorId) {
-        return repository.getWithdrawalRequests(doctorId);
+        if (!withdrawalsLoaded) refreshWithdrawalRequests(doctorId);
+        return withdrawals;
+    }
+
+    public void refreshWithdrawalRequests(String doctorId) {
+        if (doctorId == null || doctorId.trim().isEmpty()) return;
+        repository.fetchWithdrawalRequests(doctorId,
+                new FirebaseHelper.OnCompleteListener<List<com.haset.hasetapp.database.entities.WithdrawalRequest>>() {
+            @Override public void onSuccess(List<com.haset.hasetapp.database.entities.WithdrawalRequest> result) {
+                withdrawalsLoaded = true;
+                withdrawals.postValue(result);
+            }
+            @Override public void onError(String message) {
+                error.postValue(message);
+            }
+        });
     }
 }

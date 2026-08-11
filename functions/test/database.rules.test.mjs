@@ -64,6 +64,20 @@ test.before(async () => {
           createdAt: 1786500000000,
         },
       },
+      doctor_wallets: {
+        "doctor-a": { doctorId: "doctor-a", balance: 125000, totalEarnings: 200000, lastUpdated: 1786500000000 },
+        "doctor-b": { doctorId: "doctor-b", balance: 75000, totalEarnings: 90000, lastUpdated: 1786500000000 },
+      },
+      withdrawal_requests: {
+        "withdrawal-a": {
+          requestId: "withdrawal-a", doctorId: "doctor-a", amount: 25000,
+          status: "pending", requestedAt: 1786500000000,
+        },
+        "withdrawal-b": {
+          requestId: "withdrawal-b", doctorId: "doctor-b", amount: 10000,
+          status: "pending", requestedAt: 1786500000000,
+        },
+      },
       messages: {
         "patient-a_patient-b": {
           "message-a": {
@@ -164,6 +178,21 @@ test("keeps financial records server-owned", async () => {
   await assertFails(set(ref(patient, "payment_transactions/fake"), { userId: "patient-a", amount: 1 }));
   await assertFails(set(ref(doctor, "doctor_wallets/doctor-a"), { balance: 999999 }));
   await assertFails(set(ref(doctor, "withdrawal_requests/fake"), { doctorId: "doctor-a", amount: 999999 }));
+});
+
+test("isolates each doctor's wallet and withdrawal records", async () => {
+  await assertSucceeds(get(ref(doctor, "doctor_wallets/doctor-a")));
+  await assertFails(get(ref(doctor, "doctor_wallets/doctor-b")));
+  await assertFails(get(ref(patient, "doctor_wallets/doctor-a")));
+  await assertSucceeds(get(ref(admin, "doctor_wallets/doctor-a")));
+
+  await assertSucceeds(get(ref(doctor, "withdrawal_requests/withdrawal-a")));
+  await assertFails(get(ref(doctor, "withdrawal_requests/withdrawal-b")));
+  await assertFails(get(ref(patient, "withdrawal_requests/withdrawal-a")));
+  await assertSucceeds(get(ref(admin, "withdrawal_requests/withdrawal-a")));
+
+  await assertFails(update(ref(doctor, "doctor_wallets/doctor-a"), { balance: 999999 }));
+  await assertFails(update(ref(doctor, "withdrawal_requests/withdrawal-a"), { amount: 1 }));
 });
 
 test("ties service payment completion to a matching backend transaction", async () => {

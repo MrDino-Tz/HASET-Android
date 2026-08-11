@@ -22,6 +22,8 @@ public class WithdrawalRequest {
     private String doctorId;
     private String doctorName;
     private double amount;
+    @Ignore
+    private double feeAmount;
     private String method; // mobile or bank
     private String accountNumber; // mobile number or bank account
     private String accountName; // bank account name (optional)
@@ -82,6 +84,9 @@ public class WithdrawalRequest {
     public void setAmount(double amount) {
         this.amount = amount;
     }
+
+    public double getFeeAmount() { return feeAmount; }
+    public void setFeeAmount(double feeAmount) { this.feeAmount = feeAmount; }
     
     public String getMethod() {
         return method;

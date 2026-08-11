@@ -100,6 +100,7 @@ struct DashboardRootView: View {
 struct RoleHomeView: View {
     let role: UserRole
     @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedHeroIndex = 0
     @State private var showingChildrensCorner = false
     @State private var doctorBalanceHidden = true
@@ -131,15 +132,23 @@ struct RoleHomeView: View {
             .padding(20)
         }
         .background(HASETTheme.backgroundPrimary)
+        .refreshable {
+            if role == .doctor { await appViewModel.loadDoctorWallet(force: true) }
+            await appViewModel.loadAppointments(force: true)
+        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             if role == .patient {
                 await appViewModel.loadPatientHomeContent(force: false)
             } else if role == .doctor {
-                await appViewModel.loadDoctorWallet(force: false)
+                await appViewModel.loadDoctorWallet(force: true)
                 await appViewModel.loadDoctorPresence(force: false)
             }
+        }
+        .onChange(of: scenePhase) { phase in
+            guard phase == .active, role == .doctor else { return }
+            Task { await appViewModel.loadDoctorWallet(force: true) }
         }
     }
 
@@ -1165,6 +1174,21 @@ private struct DoctorWalletView: View {
     @State private var mfaCode = ""
     @State private var submitting = false
     @State private var message: String?
+    @State private var showNoBalanceAlert = false
+    @State private var checkingMFA = false
+    @State private var showMFARequired = false
+    @State private var showMFAEnrollment = false
+    @State private var payoutMethod = "mobile_money"
+    @State private var showPayoutAccounts = false
+    @State private var payoutSetupAfterMFA = false
+    @State private var destinationType = "mobile_money"
+    @State private var destinationProvider = ""
+    @State private var destinationPhone = ""
+    @State private var destinationBank = ""
+    @State private var destinationAccount = ""
+    @State private var destinationMFA = ""
+    @State private var destinationMessage: String?
+    @State private var savingDestination = false
 
     private var balanceText: String {
         if isHidden { return "•••••• TZS" }
@@ -1244,15 +1268,39 @@ private struct DoctorWalletView: View {
                         }
                     }
                 }
-                Button("Withdraw") { showWithdraw = true }
+                Button(checkingMFA ? "Checking security…" : "Withdraw") {
+                    if (appViewModel.doctorWallet?.balance ?? 0) > 0 {
+                        checkMfaThenWithdraw()
+                    } else {
+                        showNoBalanceAlert = true
+                    }
+                }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled((appViewModel.doctorWallet?.balance ?? 0) <= 0)
+                    .disabled(checkingMFA)
+                Button("Payout accounts") { checkMfaThenConfigurePayout() }
+                    .buttonStyle(.bordered)
+                    .disabled(checkingMFA)
                 SectionTitle("Withdrawal history")
                 if appViewModel.doctorWalletLoading && appViewModel.doctorWithdrawals.isEmpty { ProgressView() }
                 else if let error = appViewModel.doctorWalletError { VStack { Text(error); Button("Retry") { Task { await appViewModel.loadDoctorWithdrawals() } } } }
                 else if appViewModel.doctorWithdrawals.isEmpty { Text("No withdrawals yet.").foregroundStyle(HASETTheme.textSecondary) }
                 else { ForEach(appViewModel.doctorWithdrawals) { item in
-                    CardContainer { HStack { VStack(alignment: .leading) { Text(item.id).font(.caption); Text(String(format: "%,.0f TZS", item.amount)).font(.headline) }; Spacer(); Text(item.status.capitalized).foregroundStyle(item.status.lowercased() == "paid" || item.status.lowercased() == "completed" ? HASETTheme.greenPrimary : .orange) } }
+                    CardContainer {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.id).font(.caption)
+                                Text(String(format: "%,.0f TZS", item.amount)).font(.headline)
+                                if item.feeAmount > 0 {
+                                    Text(String(format: "Provider fee: %,.0f TZS", item.feeAmount))
+                                        .font(.caption)
+                                        .foregroundStyle(HASETTheme.textSecondary)
+                                }
+                            }
+                            Spacer()
+                            Text(item.status.capitalized)
+                                .foregroundStyle(item.status.lowercased() == "paid" || item.status.lowercased() == "completed" ? HASETTheme.greenPrimary : .orange)
+                        }
+                    }
                 } }
             }
             .padding(20)
@@ -1262,15 +1310,135 @@ private struct DoctorWalletView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await appViewModel.loadDoctorWithdrawals() }
         .refreshable { await appViewModel.loadDoctorWithdrawals() }
+        .alert("Withdrawal unavailable", isPresented: $showNoBalanceAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("No balance is available for withdrawal.")
+        }
+        .alert("Enable MFA to withdraw", isPresented: $showMFARequired) {
+            Button("Cancel", role: .cancel) {}
+            Button("Enable MFA") { showMFAEnrollment = true }
+        } message: {
+            Text("Withdrawals require multi-factor authentication. Enable MFA first; you may disable it later from Settings when you are not withdrawing.")
+        }
+        .sheet(isPresented: $showMFAEnrollment) {
+            MFAEnrollmentView(
+                onComplete: {
+                    showMFAEnrollment = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        if payoutSetupAfterMFA { showPayoutAccounts = true }
+                        else { selectDefaultPayoutMethod(); showWithdraw = true }
+                    }
+                },
+                onCancel: { showMFAEnrollment = false }
+            )
+            .environmentObject(appViewModel)
+        }
         .sheet(isPresented: $showWithdraw) {
             VStack(spacing: 16) {
                 Text("Request withdrawal").font(.title3.bold())
+                if availablePayoutMethods.isEmpty {
+                    Text("No approved payout account is available. Contact finance support.").foregroundStyle(.red)
+                } else {
+                    Picker("Payout account", selection: $payoutMethod) {
+                        ForEach(availablePayoutMethods, id: \.0) { method in Text(method.1).tag(method.0) }
+                    }.pickerStyle(.segmented)
+                    Text(selectedDestinationLabel).font(.caption).foregroundStyle(HASETTheme.textSecondary)
+                }
                 TextField("Amount", text: $amount).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                 SixDigitMFAInput(code: $mfaCode, isInvalid: false, isVerified: false) {}
                 if let message { Text(message).foregroundStyle(.red) }
-                Button(submitting ? "Submitting…" : "Submit") { submitWithdrawal() }.buttonStyle(PrimaryButtonStyle()).disabled(submitting)
+                Button(submitting ? "Submitting…" : "Submit") { submitWithdrawal() }.buttonStyle(PrimaryButtonStyle()).disabled(submitting || availablePayoutMethods.isEmpty)
                 Button("Cancel") { clearPayoutState(); showWithdraw = false }
             }.padding(24).interactiveDismissDisabled(submitting)
+        }
+        .sheet(isPresented: $showPayoutAccounts) {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("Payout accounts").font(.title3.bold())
+                    Text("Choose where you receive payouts. Finance must approve a change before it can be used.")
+                        .font(.caption).foregroundStyle(HASETTheme.textSecondary)
+                    Picker("Account type", selection: $destinationType) {
+                        Text("Mobile Money").tag("mobile_money")
+                        Text("Bank Account").tag("bank")
+                    }.pickerStyle(.segmented)
+                    if destinationType == "bank" {
+                        TextField("Bank code or bank name", text: $destinationBank).textFieldStyle(.roundedBorder)
+                        TextField("Bank account number", text: $destinationAccount).textFieldStyle(.roundedBorder)
+                    } else {
+                        TextField("Provider (M-Pesa, Airtel Money, Mixx by Yas)", text: $destinationProvider).textFieldStyle(.roundedBorder)
+                        TextField("Mobile number", text: $destinationPhone).keyboardType(.phonePad).textFieldStyle(.roundedBorder)
+                    }
+                    SixDigitMFAInput(code: $destinationMFA, isInvalid: destinationMessage != nil, isVerified: false) {}
+                    if let destinationMessage { Text(destinationMessage).foregroundStyle(.red).font(.caption) }
+                    Button(savingDestination ? "Submitting…" : "Submit for approval") { submitPayoutDestination() }
+                        .buttonStyle(PrimaryButtonStyle()).disabled(savingDestination)
+                    Button("Cancel") { clearDestinationState(); showPayoutAccounts = false }
+                }.padding(24)
+            }.interactiveDismissDisabled(savingDestination)
+        }
+    }
+
+    private var availablePayoutMethods: [(String, String)] {
+        var methods: [(String, String)] = []
+        if appViewModel.doctorWallet?.mobileMoneyDestination?.available == true { methods.append(("mobile_money", "Mobile Money")) }
+        if appViewModel.doctorWallet?.bankDestination?.available == true { methods.append(("bank", "Bank")) }
+        return methods
+    }
+
+    private var selectedDestinationLabel: String {
+        payoutMethod == "bank" ? (appViewModel.doctorWallet?.bankDestination?.label ?? "Bank") : (appViewModel.doctorWallet?.mobileMoneyDestination?.label ?? "Mobile Money")
+    }
+
+    private func checkMfaThenWithdraw() {
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            appViewModel.alertState = AlertState(title: "Authentication", message: "Authentication expired. Please sign in again.")
+            return
+        }
+        checkingMFA = true
+        payoutSetupAfterMFA = false
+        Task {
+            do {
+                let service = AuthService()
+                let freshSession = try await service.refreshSessionIfNeeded(session)
+                SessionStore().saveSession(freshSession)
+                appViewModel.activeSession = freshSession
+                let enabled = try await service.mobileMFAStatus(idToken: freshSession.idToken)
+                checkingMFA = false
+                if enabled { selectDefaultPayoutMethod(); showWithdraw = true }
+                else { showMFARequired = true }
+            } catch {
+                checkingMFA = false
+                appViewModel.alertState = AlertState(title: "MFA", message: error.localizedDescription)
+            }
+        }
+    }
+
+    private func checkMfaThenConfigurePayout() {
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            appViewModel.alertState = AlertState(title: "Authentication", message: "Authentication expired. Please sign in again.")
+            return
+        }
+        checkingMFA = true
+        payoutSetupAfterMFA = true
+        Task {
+            do {
+                let service = AuthService()
+                let fresh = try await service.refreshSessionIfNeeded(session)
+                SessionStore().saveSession(fresh); appViewModel.activeSession = fresh
+                let enabled = try await service.mobileMFAStatus(idToken: fresh.idToken)
+                checkingMFA = false
+                if enabled { showPayoutAccounts = true } else { showMFARequired = true }
+            } catch {
+                checkingMFA = false
+                appViewModel.alertState = AlertState(title: "MFA", message: error.localizedDescription)
+            }
+        }
+    }
+
+    private func selectDefaultPayoutMethod() {
+        if !availablePayoutMethods.contains(where: { $0.0 == payoutMethod }) {
+            payoutMethod = availablePayoutMethods.first?.0 ?? "mobile_money"
         }
     }
 
@@ -1279,7 +1447,40 @@ private struct DoctorWalletView: View {
         guard mfaCode.count == 6 else { message = "Enter the six-digit MFA code."; return }
         guard let session = SessionStore().loadSession() else { message = "Authentication expired."; return }
         submitting = true; message = nil
-        Task { do { let token = try await AuthService().verifyMobileMFA(code: mfaCode, idToken: session.idToken); try await AuthService().requestDoctorWithdrawal(amount: value, reason: "Doctor payout request", idToken: session.idToken, mfaActionToken: token); await appViewModel.loadDoctorWithdrawals(); await MainActor.run { clearPayoutState(); showWithdraw = false } } catch { await MainActor.run { submitting = false; message = error.localizedDescription; mfaCode = "" } } }
+        Task { do {
+            guard let token = try await AuthService().verifyMobileMFA(code: mfaCode, idToken: session.idToken) else {
+                throw ServiceError.message("Payouts require a current authenticator code; recovery codes are for account access only.")
+            }
+            try await AuthService().requestDoctorWithdrawal(amount: value, reason: "Doctor payout request", payoutMethod: payoutMethod, idToken: session.idToken, mfaActionToken: token)
+            await appViewModel.loadDoctorWithdrawals()
+            await MainActor.run { clearPayoutState(); showWithdraw = false }
+        } catch { await MainActor.run { submitting = false; message = error.localizedDescription; mfaCode = "" } } }
+    }
+    private func submitPayoutDestination() {
+        let provider = destinationProvider.trimmingCharacters(in: .whitespacesAndNewlines)
+        let phone = destinationPhone.trimmingCharacters(in: .whitespacesAndNewlines)
+        let bank = destinationBank.trimmingCharacters(in: .whitespacesAndNewlines)
+        let account = destinationAccount.trimmingCharacters(in: .whitespacesAndNewlines)
+        if destinationType == "bank" {
+            guard !bank.isEmpty, account.count >= 5 else { destinationMessage = "Enter a valid bank and account number."; return }
+        } else {
+            guard !provider.isEmpty, phone.range(of: "^(?:0\\d{9}|\\+255\\d{9})$", options: .regularExpression) != nil else { destinationMessage = "Use 07XXXXXXXX or +255XXXXXXXXX."; return }
+        }
+        guard destinationMFA.count == 6 else { destinationMessage = "Enter the six-digit MFA code."; return }
+        guard let session = SessionStore().loadSession() else { destinationMessage = "Authentication expired."; return }
+        savingDestination = true; destinationMessage = nil
+        Task { do {
+            guard let token = try await AuthService().verifyMobileMFA(code: destinationMFA, idToken: session.idToken) else { throw ServiceError.message("A current authenticator code is required.") }
+            try await AuthService().updateDoctorPayoutDestination(type: destinationType, provider: provider, phone: phone, bankCode: bank, bankAccount: account, idToken: session.idToken, mfaActionToken: token)
+            await MainActor.run {
+                clearDestinationState(); showPayoutAccounts = false
+                appViewModel.alertState = AlertState(title: "Payout account submitted", message: "Finance approval and the security cooling-off period are required before withdrawal.")
+            }
+        } catch { await MainActor.run { savingDestination = false; destinationMessage = error.localizedDescription; destinationMFA = "" } } }
+    }
+    private func clearDestinationState() {
+        destinationProvider = ""; destinationPhone = ""; destinationBank = ""; destinationAccount = ""
+        destinationMFA = ""; destinationMessage = nil; savingDestination = false
     }
     private func clearPayoutState() { amount = ""; mfaCode = ""; submitting = false; message = nil }
 }
@@ -4490,6 +4691,7 @@ private struct MFADisableView: View {
     @State private var code = ""
     @State private var loading = false
     @State private var error: String?
+    @State private var useRecoveryCode = false
 
     var body: some View {
         NavigationStack {
@@ -4500,11 +4702,24 @@ private struct MFADisableView: View {
                 Text("Disable multi-factor authentication?")
                     .font(HASETTheme.font(.medium, 20))
                     .multilineTextAlignment(.center)
-                Text("Enter the current six-digit code from your authenticator app to confirm.")
+                Text(useRecoveryCode
+                     ? "Enter one unused 10-character recovery code. This code will be consumed."
+                     : "Enter the current six-digit code from your authenticator app to confirm.")
                     .font(HASETTheme.font(.regular, 14))
                     .foregroundStyle(HASETTheme.textSecondary)
                     .multilineTextAlignment(.center)
-                SixDigitMFAInput(code: $code, isInvalid: error != nil, isVerified: false) {}
+                if useRecoveryCode {
+                    SecureField("Recovery code", text: $code)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: code) { value in
+                            code = String(value.uppercased().filter { "0123456789ABCDEF".contains($0) }.prefix(10))
+                            error = nil
+                        }
+                } else {
+                    SixDigitMFAInput(code: $code, isInvalid: error != nil, isVerified: false) {}
+                }
                 if let error {
                     Text(error)
                         .font(HASETTheme.font(.regular, 13))
@@ -4513,7 +4728,13 @@ private struct MFADisableView: View {
                 }
                 Button(loading ? "Disabling…" : "Disable MFA") { disableMFA() }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(loading || code.count != 6)
+                    .disabled(loading || code.count != (useRecoveryCode ? 10 : 6))
+                Button(useRecoveryCode ? "Use authenticator code" : "Use a recovery code") {
+                    code = ""
+                    error = nil
+                    useRecoveryCode.toggle()
+                }
+                .foregroundStyle(HASETTheme.greenPrimary)
                 Button(appViewModel.tr("cancel"), action: onCancel)
                     .foregroundStyle(HASETTheme.greenPrimary)
             }
@@ -4526,7 +4747,7 @@ private struct MFADisableView: View {
     }
 
     private func disableMFA() {
-        guard code.count == 6, !loading else { return }
+        guard code.count == (useRecoveryCode ? 10 : 6), !loading else { return }
         guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
             error = "Authentication expired. Please sign in again."
             return

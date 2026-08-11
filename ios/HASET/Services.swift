@@ -1175,13 +1175,14 @@ final class AuthService {
         let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
     }
 
-    func verifyMobileMFA(code: String, idToken: String) async throws -> String {
+    func verifyMobileMFA(code: String, idToken: String) async throws -> String? {
         let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/verify")!
         var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type"); request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code])
         let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
-        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any], let token = object["mfa_action_token"] as? String else { throw ServiceError.invalidResponse }
-        return token
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              (object["mfa_verified"] as? Bool) == true else { throw ServiceError.invalidResponse }
+        return object["mfa_action_token"] as? String
     }
 
     func disableMobileMFA(code: String, idToken: String) async throws {
@@ -1191,7 +1192,7 @@ final class AuthService {
         let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
     }
 
-    func requestDoctorWithdrawal(amount: Int, reason: String, idToken: String, mfaActionToken: String) async throws {
+    func requestDoctorWithdrawal(amount: Int, reason: String, payoutMethod: String, idToken: String, mfaActionToken: String) async throws {
         let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/doctor/withdrawals")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -1201,8 +1202,29 @@ final class AuthService {
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "request_id": "WR-\(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(24))",
             "amount": amount,
-            "reason": reason
+            "reason": reason,
+            "payout_method": payoutMethod
         ])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
+    }
+
+    func updateDoctorPayoutDestination(type: String, provider: String, phone: String, bankCode: String, bankAccount: String, idToken: String, mfaActionToken: String) async throws {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/doctor/payout-destination")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(mfaActionToken, forHTTPHeaderField: "X-MFA-Action-Token")
+        var body: [String: Any] = ["destination_type": type]
+        if type == "bank" {
+            body["bank_code"] = bankCode
+            body["bank_account"] = bankAccount
+        } else {
+            body["provider"] = provider
+            body["phone_number"] = phone
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
     }
@@ -1227,11 +1249,19 @@ final class AuthService {
         try validate(response: response, data: data)
         guard let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let wallet = envelope["wallet"] as? [String: Any] else { return nil }
+        let available = doubleValue(wallet["available_balance"]) ?? 0
+        let reserved = doubleValue(wallet["reserved_balance"]) ?? 0
+        let paidOut = doubleValue(wallet["paid_out_balance"]) ?? 0
+        let destinations = envelope["payout_destinations"] as? [String: Any]
+        let mobile = destinations?["mobile_money"] as? [String: Any]
+        let bank = destinations?["bank"] as? [String: Any]
         return DoctorWalletSummary(
             doctorId: stringValue(wallet["doctor_id"])?.nonEmpty ?? doctorId,
-            balance: doubleValue(wallet["available_balance"]) ?? 0,
-            totalEarnings: doubleValue(wallet["paid_out_balance"]),
-            lastUpdated: timeIntervalValue(wallet["updated_at"])
+            balance: available,
+            totalEarnings: available + reserved + paidOut,
+            lastUpdated: timeIntervalValue(wallet["updated_at"]),
+            mobileMoneyDestination: mobile.map { PayoutDestinationSummary(available: boolValue($0["available"]) ?? false, label: "\(stringValue($0["provider"]) ?? "Mobile Money")  \(stringValue($0["masked_account"]) ?? "")") },
+            bankDestination: bank.map { PayoutDestinationSummary(available: boolValue($0["available"]) ?? false, label: "\(stringValue($0["bank_code"]) ?? "Bank")  \(stringValue($0["masked_account"]) ?? "")") }
         )
     }
 

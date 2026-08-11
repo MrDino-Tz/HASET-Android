@@ -52,6 +52,15 @@
             app:backgroundTint="@color/green_primary"
             app:cornerRadius="12dp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/mfaUseRecovery"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/use_recovery_code"
+            android:textAllCaps="false" />
+
         <TextView
             android:id="@+id/mfaCancel"
             android:layout_width="wrap_content"

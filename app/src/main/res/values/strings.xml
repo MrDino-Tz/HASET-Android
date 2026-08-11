@@ -260,6 +260,11 @@
     <string name="mfa_disable_message">Enter the current six-digit code from your authenticator app to confirm.</string>
     <string name="mfa_disable_action">Disable MFA</string>
     <string name="mfa_disabled_success">Multi-factor authentication disabled</string>
+    <string name="use_recovery_code">Use a recovery code</string>
+    <string name="recovery_code_title">MFA recovery</string>
+    <string name="recovery_code_message">Enter one of the 10-character recovery codes saved when MFA was enabled. Each code works only once.</string>
+    <string name="recovery_code_hint">Recovery code</string>
+    <string name="invalid_recovery_code">Enter a valid 10-character recovery code</string>
     <string name="location_permission">Location Access</string>
     <string name="location_permission_desc">Allow app to access your location for nearby patients</string>
     <string name="location_permission_denied">Location permission denied</string>
@@ -862,6 +867,16 @@
     <!-- DoctorWalletActivity states -->
     <string name="balance_default">0 TZS</string>
     <string name="btn_withdraw">Withdraw</string>
+    <string name="verified_payout_account">Verified payout account</string>
+    <string name="approved_mobile_money_destination">Your independently approved mobile-money destination will be used</string>
+    <string name="minimum_withdrawal_amount">The minimum withdrawal is TZS 5,000</string>
+    <string name="minimum_withdrawal_notice">Minimum payout: TZS 5,000. Transfers may include provider fees and can take time to complete.</string>
+    <string name="minimum_withdrawal_missing_amount">The payout minimum is TZS 5,000. You need TZS %1$,.0f more.</string>
+    <string name="authentication_expired">Authentication expired. Please sign in again.</string>
+    <string name="mfa_status_unavailable">Unable to verify MFA status. Please try again.</string>
+    <string name="mfa_required_for_withdrawal_title">Enable MFA to withdraw</string>
+    <string name="mfa_required_for_withdrawal_message">Withdrawals require multi-factor authentication. Enable MFA first, then you may disable it later from Settings when you are not withdrawing.</string>
+    <string name="enable_mfa">Enable MFA</string>
     <string name="btn_processing">Processing…</string>
 
     <!-- RegisterActivity fee dialog -->
@@ -955,4 +970,7 @@
     <string name="no_support_tickets">No support tickets</string>
     <string name="ticket_resolved">Resolved</string>
     <string name="ticket_open">Open</string>
+    <string name="bank_account">Bank Account</string>
+    <string name="not_configured">Not configured</string>
+    <string name="no_verified_payout_destination">No approved payout account is available. Contact finance support.</string>
 </resources>

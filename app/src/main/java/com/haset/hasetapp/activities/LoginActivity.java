@@ -280,6 +280,7 @@ public class LoginActivity extends BaseActivity {
             mfaDialog.dismiss();
             authViewModel.verifyMfa(input.getCode());
         });
+        mfaDialog.findViewById(R.id.mfaUseRecovery).setOnClickListener(v -> showRecoveryCodeDialog());
         mfaDialog.findViewById(R.id.mfaCancel).setOnClickListener(v -> {
             mfaDialog.dismiss();
             authViewModel.logout();
@@ -294,6 +295,37 @@ public class LoginActivity extends BaseActivity {
             mfaDialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
         input.focusFirst();
+    }
+
+    private void showRecoveryCodeDialog() {
+        final android.widget.EditText recoveryInput = new android.widget.EditText(this);
+        recoveryInput.setHint(R.string.recovery_code_hint);
+        recoveryInput.setSingleLine(true);
+        recoveryInput.setAllCaps(true);
+        recoveryInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        recoveryInput.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(10)});
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.recovery_code_title)
+                .setMessage(R.string.recovery_code_message)
+                .setView(recoveryInput)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok, null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(view -> {
+                    String code = recoveryInput.getText().toString().trim().toUpperCase(java.util.Locale.US);
+                    if (!code.matches("[A-F0-9]{10}")) {
+                        recoveryInput.setError(getString(R.string.invalid_recovery_code));
+                        return;
+                    }
+                    dialog.dismiss();
+                    if (mfaDialog != null) mfaDialog.dismiss();
+                    authViewModel.verifyMfa(code);
+                }));
+        dialog.show();
+        recoveryInput.requestFocus();
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
