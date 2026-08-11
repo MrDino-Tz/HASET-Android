@@ -424,7 +424,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
                     // Set reply text
                     if (tvReplyToText != null) {
-                        tvReplyToText.setText(message.getReplyToText());
+                        String replyText = message.getReplyToText();
+                        tvReplyToText.setText((replyText == null || replyText.isEmpty())
+                                ? itemView.getContext().getString(R.string.message) : replyText);
                     }
 
                     // Adapt colors to bubble style

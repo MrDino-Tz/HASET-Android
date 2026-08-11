@@ -495,6 +495,7 @@
     <string name="reply">Reply</string>
     <string name="copy">Copy</string>
     <string name="select">Select</string>
+    <string name="message">Message</string>
     <string name="forward">Forward</string>
     <string name="download">Download</string>
     <string name="text_copied">Text copied to clipboard</string>

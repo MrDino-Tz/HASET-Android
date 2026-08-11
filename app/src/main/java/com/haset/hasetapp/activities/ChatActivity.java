@@ -1101,6 +1101,22 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         llReplyContainer.setVisibility(View.GONE);
     }
 
+    private String getReplyPreviewText(ChatMessage message) {
+        if (message == null) return "";
+        String type = message.getMessageType();
+        if (!"text".equals(type)) {
+            String label = (type == null || type.isEmpty()) ? "Message"
+                    : type.substring(0, 1).toUpperCase() + type.substring(1);
+            String fileName = message.getAttachmentFileName();
+            if (fileName != null && !fileName.isEmpty()) {
+                label = label + " · " + fileName;
+            }
+            return label;
+        }
+        String text = message.getMessage();
+        return (text == null || text.isEmpty()) ? "Message" : text;
+    }
+
     private void updateConversation(String userId, String otherUserId, String otherUserName, String lastMessage, long timestamp, String senderId) {
     }
 

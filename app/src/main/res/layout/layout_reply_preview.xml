@@ -4,6 +4,7 @@
     android:id="@+id/llReplyPreview"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:minWidth="200dp"
     android:orientation="horizontal"
     android:background="@drawable/bg_reply_message"
     android:paddingTop="4dp"
