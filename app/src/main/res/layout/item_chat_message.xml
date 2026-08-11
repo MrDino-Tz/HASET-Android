@@ -52,14 +52,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp" />
 
-            <TextView
-                android:id="@+id/tvMessage"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins_medium"
-                tools:text="Hello, how are you?" />
+                <TextView
+                    android:id="@+id/tvMessage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_medium"
+                    tools:text="Hello, how are you?" />
 
         </LinearLayout>
 

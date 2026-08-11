@@ -232,6 +232,7 @@
         android:id="@+id/llReplyContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="36dp"
         android:orientation="horizontal"
         android:background="@drawable/rounded_edittext_background"
         android:layout_marginHorizontal="8dp"
@@ -264,7 +265,7 @@
 
             <TextView
                 android:id="@+id/tvReplyText"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="12sp"
