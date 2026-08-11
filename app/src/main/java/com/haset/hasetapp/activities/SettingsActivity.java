@@ -90,6 +90,10 @@ public class SettingsActivity extends BaseActivity {
         tvLanguageValue = findViewById(R.id.tvLanguageValue);
         tvThemeValue = findViewById(R.id.tvThemeValue);
         tvMfaDescription = findViewById(R.id.tvMfaDescription);
+        TextView tvVersion = findViewById(R.id.tvVersion);
+        if (tvVersion != null) {
+            tvVersion.setText("App Version: 1.0.0.DTC");
+        }
     }
 
     private void checkUserRole() {

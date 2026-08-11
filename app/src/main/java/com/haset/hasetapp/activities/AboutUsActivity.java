@@ -36,11 +36,7 @@ public class AboutUsActivity extends AppCompatActivity {
         ImageView btnBack = findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> finish());
         
-        // Set app version
-        TextView tvVersion = findViewById(R.id.tvVersion);
-        if (tvVersion != null) {
-            tvVersion.setText("App Version: 1.0.0.DTC");
-        }
+
 
         // Setup legal links
         TextView btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy);
