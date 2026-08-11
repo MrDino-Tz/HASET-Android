@@ -320,7 +320,7 @@
                 android:src="@drawable/ic_add"
                 android:padding="10dp"
                 android:background="@drawable/bg_search_circle"
-                android:foreground="@drawable/ripple_effect_circular"
+                android:foreground="@drawable/ripple_effect_rounded"
                 android:clickable="true"
                 android:focusable="true"
                 android:elevation="2dp"
@@ -359,7 +359,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:background="@drawable/bg_search_circle"
-                android:foreground="@drawable/ripple_effect_circular"
+                android:foreground="@drawable/ripple_effect_rounded"
                 android:stateListAnimator="@animator/press_scale"/>
 
         </LinearLayout>

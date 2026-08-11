@@ -114,14 +114,15 @@
 
                 <!-- Action Buttons (Status Toggle, Notification) -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="123dp"
+                    android:layout_height="34dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
+                    android:layout_marginEnd="23dp"
                     android:clipChildren="false"
-                    android:clipToPadding="false">
+                    android:clipToPadding="false"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <!-- Online Status Toggle -->
                     <LinearLayout
@@ -129,12 +130,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:background="@drawable/bg_status_toggle"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="12dp"
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground">
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp">
 
                         <View
                             android:id="@+id/statusIndicator"
@@ -166,16 +167,16 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:background="@drawable/bg_search_circle"
-                            android:foreground="@drawable/ripple_effect_circular"
+                            android:foreground="@drawable/ripple_effect_rounded"
                             android:clickable="true"
+                            android:elevation="24dp"
                             android:focusable="true"
-                            android:stateListAnimator="@animator/press_scale"
+                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
+                            android:outlineSpotShadowColor="@color/chat_shadow_color"
                             android:padding="10dp"
                             android:src="@drawable/ic_bell"
-                            app:tint="@color/green_primary"
-                            android:elevation="24dp"
-                            android:outlineAmbientShadowColor="@color/chat_shadow_color"
-                            android:outlineSpotShadowColor="@color/chat_shadow_color" />
+                            android:stateListAnimator="@animator/press_scale"
+                            app:tint="@color/green_primary" />
 
                         <TextView
                             android:id="@+id/tvNotificationBadge"
@@ -183,12 +184,12 @@
                             android:layout_height="16dp"
                             android:layout_gravity="top|end"
                             android:background="@drawable/bg_notification_badge"
+                            android:elevation="25dp"
                             android:gravity="center"
                             android:textColor="@color/white"
                             android:textSize="9sp"
                             android:textStyle="bold"
                             android:visibility="gone"
-                            android:elevation="25dp"
                             tools:text="3"
                             tools:visibility="visible" />
                     </FrameLayout>
