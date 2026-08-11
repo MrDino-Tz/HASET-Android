@@ -78,7 +78,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     private android.widget.ProgressBar progressBar;
 
     // Header Profile Components
-    private de.hdodenhof.circleimageview.CircleImageView ivProfileHeader;
+    private ImageView ivProfileHeader;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerProfileHeader;
     private android.view.View profileImageContainer;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerPageLoading;
