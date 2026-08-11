@@ -1,21 +1,36 @@
 package com.haset.hasetapp.fragments;
 
+import android.content.ContentValues;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.pdf.PdfDocument;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.haset.hasetapp.R;
@@ -24,15 +39,25 @@ import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.PrescriptionHelper;
 import com.haset.hasetapp.viewmodels.PrescriptionViewModel;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Fragment to display prescription details
  */
 public class PrescriptionDetailFragment extends Fragment {
-    
+
+    // Single background thread dedicated to PDF generation.
+    // Keeps disk I/O off the main thread without the overhead of a full thread pool.
+    private final ExecutorService pdfExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler  = new Handler(Looper.getMainLooper());
     private ImageView ivPrescriptionImage;
     private TextView tvDoctorName, tvDate, tvInstructions;
     private RecyclerView recyclerViewMedicines;
@@ -179,45 +204,214 @@ public class PrescriptionDetailFragment extends Fragment {
         if (requireActivity() instanceof com.haset.hasetapp.activities.PrescriptionActivity) {
             com.haset.hasetapp.activities.PrescriptionActivity activity = (com.haset.hasetapp.activities.PrescriptionActivity) requireActivity();
             activity.setToolbarTitle(getString(R.string.prescription_details));
-            
-            // Setup download button if there is an image
-            if (prescription != null && prescription.getImageUrl() != null && !prescription.getImageUrl().isEmpty()) {
-                activity.setDownloadButtonVisible(true, v -> downloadPrescriptionImage());
-            } else {
-                activity.setDownloadButtonVisible(false, null);
-            }
+            // Always show the download button — generates a full PDF regardless of image
+            activity.setDownloadButtonVisible(true, v -> generateAndDownloadPdf());
         }
     }
 
-    private void downloadPrescriptionImage() {
-        if (prescription == null || prescription.getImageUrl() == null || prescription.getImageUrl().isEmpty()) {
-            com.google.android.material.snackbar.Snackbar.make(requireView(), "No image to download", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+    // ---------------------------------------------------------------------------
+    // PDF generation
+    //
+    // Thread split:
+    //   Main thread  → bitmap capture (View.draw() is not thread-safe)
+    //   pdfExecutor  → paginate bitmap + disk I/O (the expensive work)
+    //   mainHandler  → post Snackbar result back to UI
+    // ---------------------------------------------------------------------------
+    private void generateAndDownloadPdf() {
+        if (prescription == null) return;
+
+        View rootView = requireView();
+        if (rootView.getWidth() <= 0 || rootView.getHeight() <= 0) {
+            com.google.android.material.snackbar.Snackbar.make(rootView,
+                    "Layout not ready, please try again.",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
             return;
         }
 
-        String url = prescription.getImageUrl();
-        String fileName = "Prescription_" + prescription.getPrescriptionId() + ".jpg";
+        // Show an immediate "working" indicator on the UI thread.
+        com.google.android.material.snackbar.Snackbar.make(rootView,
+                "Generating PDF…",
+                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
 
-        android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(android.net.Uri.parse(url));
-        request.setTitle(getString(R.string.downloading_prescription));
-        request.setDescription("Saving prescription image to gallery");
-        request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        request.setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, fileName);
-        request.setAllowedOverMetered(true);
-        request.setAllowedOverRoaming(true);
+        // Step 1 — capture bitmap on the main thread (View.draw() requirement).
+        rootView.post(() -> {
+            Bitmap bitmap = createBitmapFromScrollView(rootView);
+            if (bitmap == null) {
+                mainHandler.post(() -> {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(),
+                                "Failed to capture prescription layout.",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+                return;
+            }
 
-        android.app.DownloadManager downloadManager = (android.app.DownloadManager) requireContext().getSystemService(android.content.Context.DOWNLOAD_SERVICE);
-        if (downloadManager != null) {
-            downloadManager.enqueue(request);
-            com.google.android.material.snackbar.Snackbar.make(requireView(), "Download started...", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+            // Step 2 — hand off bitmap to the background thread for all disk I/O.
+            pdfExecutor.execute(() -> writePdfFromBitmap(bitmap));
+        });
+    }
+
+    /** Captures the entire scrollable content of the given view into a Bitmap. */
+    private Bitmap createBitmapFromScrollView(View view) {
+        try {
+            // If it's a ScrollView we need the full scrollable height.
+            int width = view.getWidth();
+            int height;
+            if (view instanceof ScrollView) {
+                ScrollView sv = (ScrollView) view;
+                View child = sv.getChildAt(0);
+                height = child != null ? child.getMeasuredHeight() : view.getHeight();
+            } else {
+                height = view.getHeight();
+            }
+            if (width <= 0 || height <= 0) return null;
+
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            canvas.drawColor(Color.WHITE);
+            view.draw(canvas);
+            return bitmap;
+        } catch (OutOfMemoryError e) {
+            return null;
+        }
+    }
+
+    /**
+     * Paginates the bitmap into A4-sized PDF pages and saves to a dedicated
+     * "HASET/Prescriptions/" folder — similar to how WhatsApp stores its files
+     * under "WhatsApp/Media/..." — so all prescription PDFs are organized in one
+     * branded location visible in the device Files app.
+     *
+     * Save paths:
+     *   Android 10+  → Internal Storage/HASET/Prescriptions/<filename>.pdf  (MediaStore)
+     *   Android 9-   → /sdcard/HASET/Prescriptions/<filename>.pdf
+     */
+    private static final String HASET_FOLDER        = "HASET";
+    // Android 10+: MediaStore.Downloads enforces "Download/" as the required root.
+    // The branded subfolder lives inside it: Download/HASET/Prescriptions/
+    private static final String PRESCRIPTION_FOLDER_Q      = "Download/HASET/Prescriptions";
+    // Android 9-: Free to create any folder under external storage root.
+    private static final String PRESCRIPTION_FOLDER_LEGACY = "HASET/Prescriptions";
+
+    private void writePdfFromBitmap(Bitmap bitmap) {
+        final int pageWidth     = 595;   // A4 @ 72 dpi
+        final int pageHeight    = 842;
+        final int margin        = 32;
+        final int contentWidth  = pageWidth  - margin * 2;
+        final int contentHeight = pageHeight - margin * 2;
+
+        float scale        = contentWidth / (float) bitmap.getWidth();
+        float scaledHeight = bitmap.getHeight() * scale;
+        int pageCount      = Math.max(1, (int) Math.ceil(scaledHeight / contentHeight));
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        PdfDocument document = new PdfDocument();
+
+        for (int i = 0; i < pageCount; i++) {
+            PdfDocument.PageInfo info = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, i + 1).create();
+            PdfDocument.Page page = document.startPage(info);
+            Canvas canvas = page.getCanvas();
+            canvas.drawColor(Color.WHITE);
+            canvas.save();
+            canvas.clipRect(margin, margin, pageWidth - margin, pageHeight - margin);
+            Matrix matrix = new Matrix();
+            matrix.postScale(scale, scale);
+            matrix.postTranslate(margin, margin - (i * (float) contentHeight));
+            canvas.drawBitmap(bitmap, matrix, paint);
+            canvas.restore();
+            document.finishPage(page);
+        }
+
+        String fileName = "Prescription_" + prescription.getPrescriptionId() + ".pdf";
+        boolean saved   = false;
+        Uri     savedUri = null;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+: Scoped storage via MediaStore.
+            // RELATIVE_PATH creates the folder structure automatically if it doesn't exist.
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+            values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
+            values.put(MediaStore.Downloads.RELATIVE_PATH, PRESCRIPTION_FOLDER_Q);
+            savedUri = requireContext().getContentResolver()
+                    .insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            if (savedUri != null) {
+                try (OutputStream os = requireContext().getContentResolver().openOutputStream(savedUri)) {
+                    if (os != null) {
+                        document.writeTo(os);
+                        saved = true;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         } else {
-            com.google.android.material.snackbar.Snackbar.make(requireView(), "Download failed: Service unavailable", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+            // Android 9 and below: legacy external storage with explicit directory creation.
+            File dir = new File(Environment.getExternalStorageDirectory(), PRESCRIPTION_FOLDER_LEGACY);
+            if (!dir.exists() && !dir.mkdirs()) {
+                // Fallback: create a .nomedia file to keep it tidy
+                dir = new File(Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_DOWNLOADS), HASET_FOLDER + "/Prescriptions");
+                dir.mkdirs();
+            }
+            // Place a .nomedia file so the folder doesn't pollute the Gallery
+            File noMedia = new File(dir.getParentFile(), ".nomedia");
+            if (!noMedia.exists()) {
+                try { noMedia.createNewFile(); } catch (IOException ignored) {}
+            }
+            File file = new File(dir, fileName);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                document.writeTo(fos);
+                savedUri = FileProvider.getUriForFile(requireContext(),
+                        requireContext().getPackageName() + ".fileprovider", file);
+                saved = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        document.close();
+        bitmap.recycle();
+
+        // Post UI updates back to the main thread — this method runs on pdfExecutor.
+        if (saved && savedUri != null) {
+            final Uri finalUri = savedUri;
+            final String savedFileName = fileName;
+            // Build a human-readable path for the Snackbar message
+            final String displayPath = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                    ? PRESCRIPTION_FOLDER_Q + "/" + savedFileName
+                    : PRESCRIPTION_FOLDER_LEGACY + "/" + savedFileName;
+            mainHandler.post(() -> {
+                if (!isAdded()) return;
+                com.google.android.material.snackbar.Snackbar
+                        .make(requireView(),
+                                "Saved: " + displayPath,
+                                com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                        .setAction("OPEN", v -> {
+                            Intent open = new Intent(Intent.ACTION_VIEW);
+                            open.setDataAndType(finalUri, "application/pdf");
+                            open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(Intent.createChooser(open, "Open PDF"));
+                        })
+                        .show();
+            });
+        } else {
+            mainHandler.post(() -> {
+                if (!isAdded()) return;
+                com.google.android.material.snackbar.Snackbar
+                        .make(requireView(), "Failed to save PDF.",
+                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+            });
         }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Shut down the PDF executor to prevent memory/thread leaks when the
+        // fragment is destroyed (e.g. user navigates back mid-generation).
+        pdfExecutor.shutdownNow();
         // Hide download button when leaving this fragment
         if (requireActivity() instanceof com.haset.hasetapp.activities.PrescriptionActivity) {
             ((com.haset.hasetapp.activities.PrescriptionActivity) requireActivity()).setDownloadButtonVisible(false, null);
