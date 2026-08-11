@@ -103,7 +103,7 @@ public class PatientHomeFragment extends Fragment {
     private HomeViewModel viewModel;
 
     // Header Profile Components
-    private de.hdodenhof.circleimageview.CircleImageView ivProfileHeader;
+    private ImageView ivProfileHeader;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerProfileHeader;
     private android.view.View profileImageContainer;
     

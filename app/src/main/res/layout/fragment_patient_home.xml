@@ -42,7 +42,8 @@
                     android:elevation="24dp"
                     android:outlineAmbientShadowColor="@color/chat_shadow_color"
                     android:outlineSpotShadowColor="@color/chat_shadow_color"
-                    android:background="@drawable/bg_search_circle">
+                    android:background="@drawable/bg_search_circle"
+                    android:clipToOutline="true">
 
                     <com.facebook.shimmer.ShimmerFrameLayout
                         android:id="@+id/shimmerProfileHeader"
@@ -57,14 +58,15 @@
                             android:background="@drawable/bg_search_circle" />
                     </com.facebook.shimmer.ShimmerFrameLayout>
 
-                    <de.hdodenhof.circleimageview.CircleImageView
+                    <ImageView
                         android:id="@+id/ivProfileHeader"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
                         android:src="@drawable/profile_photo"
                         android:visibility="gone"
-                        app:civ_border_width="1dp"
-                        app:civ_border_color="@color/divider" />
+                        android:background="@drawable/bg_search_circle"
+                        android:clipToOutline="true" />
 
                     <TextView
                         android:id="@+id/tvUserInitials"

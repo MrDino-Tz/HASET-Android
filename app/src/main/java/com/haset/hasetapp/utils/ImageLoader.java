@@ -37,10 +37,10 @@ public class ImageLoader {
             .placeholder(DEFAULT_PLACEHOLDER)
             .error(DEFAULT_ERROR);
     
-    private static final RequestOptions CIRCLE_OPTIONS = DEFAULT_OPTIONS
+    private static final RequestOptions CIRCLE_OPTIONS = DEFAULT_OPTIONS.clone()
             .transform(new CircleCrop());
     
-    private static final RequestOptions ROUNDED_OPTIONS = DEFAULT_OPTIONS
+    private static final RequestOptions ROUNDED_OPTIONS = DEFAULT_OPTIONS.clone()
             .transform(new CenterCrop(), new RoundedCorners(12));
     
     private static final RequestOptions BANNER_OPTIONS = new RequestOptions()
