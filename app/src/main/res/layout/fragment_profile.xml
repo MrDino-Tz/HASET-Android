@@ -41,6 +41,7 @@
                 android:padding="8dp"
                 android:src="@drawable/ic_settings"
                 android:background="@drawable/bg_search_circle"
+                android:foreground="@drawable/ripple_effect_rounded"
                 android:clickable="true"
                 android:focusable="true"
                 android:contentDescription="@string/settings"

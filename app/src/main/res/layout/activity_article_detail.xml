@@ -38,7 +38,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:background="@drawable/bg_search_circle"
-                    android:foreground="@drawable/ripple_effect_circular"
+                    android:foreground="@drawable/ripple_effect_rounded"
                     android:clickable="true"
                     android:focusable="true"
                     android:stateListAnimator="@animator/press_scale"
@@ -262,7 +262,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="?attr/selectableItemBackground"
+                    android:foreground="@drawable/ripple_effect_rounded"
                     android:clickable="true"
                     android:focusable="true"
                     android:padding="4dp">
@@ -296,7 +296,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:background="?attr/selectableItemBackground"
+                    android:foreground="@drawable/ripple_effect_rounded"
                     android:clickable="true"
                     android:focusable="true"
                     android:padding="4dp">

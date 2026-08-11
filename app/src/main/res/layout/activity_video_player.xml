@@ -27,6 +27,7 @@
         android:padding="8dp"
         android:src="@drawable/ic_angle_left_solid"
         android:background="@drawable/circle_button_semitransparent"
+        android:foreground="@drawable/ripple_effect_rounded"
         app:tint="@android:color/white" />
 
 </RelativeLayout>
