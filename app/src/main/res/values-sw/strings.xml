@@ -637,6 +637,7 @@
     <!-- NotificationActivity -->
     <string name="appointment">Miadi</string>
     <string name="payment">Malipo</string>
+    <string name="info">Taarifa</string>
     <string name="appointments_cleared">Miadi imefutwa</string>
     <string name="failed_to_clear_appointments">Imeshindwa kufuta miadi</string>
     <string name="clear_appointments">Futa Miadi</string>
@@ -854,6 +855,10 @@
     <!-- Dialogs -->
     <string name="delete_message">Futa Ujumbe</string>
     <string name="delete_message_confirm">Je, una uhakika unataka kufuta ujumbe huu?</string>
+    <string name="selected_messages_count">%1$d zimechaguliwa</string>
+    <string name="delete_selected_messages_confirm">Futa ujumbe %1$d uliochaguliwa?</string>
+    <string name="messages_deleted_count">Ujumbe %1$d umefutwa</string>
+    <string name="only_sent_messages_selectable">Unaweza kuchagua ujumbe uliotuma tu</string>
     <string name="exit_app">Toka Programu</string>
     <string name="exit_app_confirm">Je, una uhakika unataka kutoka?</string>
     <string name="notification_permission_title">Ruhusa ya Arifa Inahitajika</string>

@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import assert from "node:assert/strict";
 import test from "node:test";
 import {
   assertFails,
@@ -169,6 +170,7 @@ test("limits chat reads to message participants and scoped queries", async () =>
 test("prevents chat recipients from changing sender content", async () => {
   const messageRef = ref(otherPatient, "messages/patient-a_patient-b/message-a");
   await assertFails(update(messageRef, { message: "Tampered text", isRead: true, messageStatus: "read", readTimestamp: 1786500001000 }));
+  await assertSucceeds(update(messageRef, { messageStatus: "delivered" }));
   await assertSucceeds(update(messageRef, { isRead: true, messageStatus: "read", readTimestamp: 1786500001000 }));
   await assertFails(update(ref(patient, "messages/patient-a_patient-b/message-a"), { receiverId: "doctor-a" }));
 });
@@ -182,7 +184,7 @@ test("validates new chat identities and rejects unknown fields", async () => {
     receiverName: "Doctor A",
     message: "Hello doctor",
     messageType: "text",
-    messageStatus: "sending",
+    messageStatus: "sent",
     timestamp: 1786500002000,
     isRead: false,
     deliveredTimestamp: 0,
@@ -195,4 +197,80 @@ test("validates new chat identities and rejects unknown fields", async () => {
     messageId: "message-c",
     adminOnly: true,
   }));
+});
+
+test("sends a chat-room message through delivered and read states", async () => {
+  const room = "messages/patient-a_doctor-a";
+  const messageRef = ref(patient, `${room}/message-lifecycle`);
+  const message = {
+    messageId: "message-lifecycle",
+    senderId: "patient-a",
+    senderName: "Patient A",
+    receiverId: "doctor-a",
+    receiverName: "Doctor A",
+    message: "Chat-room delivery test",
+    messageType: "text",
+    messageStatus: "sent",
+    timestamp: 1786500003000,
+    isRead: false,
+    deliveredTimestamp: 0,
+    readTimestamp: 0,
+  };
+
+  await assertSucceeds(set(messageRef, message));
+
+  const received = await assertSucceeds(get(query(
+    ref(doctor, room),
+    orderByChild("receiverId"),
+    equalTo("doctor-a"),
+  )));
+  assert.equal(received.child("message-lifecycle/message").val(), message.message);
+  assert.equal(received.child("message-lifecycle/messageStatus").val(), "sent");
+
+  const receiverMessageRef = ref(doctor, `${room}/message-lifecycle`);
+  await assertSucceeds(update(receiverMessageRef, { messageStatus: "delivered" }));
+  await assertSucceeds(update(receiverMessageRef, {
+    isRead: true,
+    messageStatus: "read",
+    readTimestamp: 1786500004000,
+  }));
+
+  const finalMessage = await assertSucceeds(get(receiverMessageRef));
+  assert.equal(finalMessage.child("messageStatus").val(), "read");
+  assert.equal(finalMessage.child("isRead").val(), true);
+});
+
+test("allows a sender to batch-delete selected chat messages", async () => {
+  const room = "messages/patient-a_doctor-a";
+  const makeMessage = (messageId, timestamp) => ({
+    messageId,
+    senderId: "patient-a",
+    senderName: "Patient A",
+    receiverId: "doctor-a",
+    receiverName: "Doctor A",
+    message: `Delete test ${messageId}`,
+    messageType: "text",
+    messageStatus: "sent",
+    timestamp,
+    isRead: false,
+    deliveredTimestamp: 0,
+    readTimestamp: 0,
+  });
+
+  await assertSucceeds(set(ref(patient, `${room}/batch-delete-a`),
+    makeMessage("batch-delete-a", 1786500005000)));
+  await assertSucceeds(set(ref(patient, `${room}/batch-delete-b`),
+    makeMessage("batch-delete-b", 1786500006000)));
+  await assertSucceeds(update(ref(patient, room), {
+    "batch-delete-a": null,
+    "batch-delete-b": null,
+  }));
+
+  const remaining = await assertSucceeds(get(query(
+    ref(patient, room),
+    orderByChild("senderId"),
+    equalTo("patient-a"),
+  )));
+  assert.equal(remaining.child("batch-delete-a").exists(), false);
+  assert.equal(remaining.child("batch-delete-b").exists(), false);
 });

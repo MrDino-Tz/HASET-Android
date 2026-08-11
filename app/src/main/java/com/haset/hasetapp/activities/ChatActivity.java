@@ -105,6 +105,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     private ChatMessage replyingToMessage;
     
     private ChatAdapter chatAdapter;
+    private androidx.appcompat.view.ActionMode messageSelectionActionMode;
     private String chatUserId;
     private String chatUserName;
     private String currentUserId;
@@ -235,7 +236,13 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
         chatUserId = getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_ID);
         chatUserName = getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_NAME);
-        currentUserId = preferenceManager.getUserId();
+        // Firebase rules authorize messages with auth.uid. Preferences can be
+        // stale after account switching or reinstalling, so never use them as
+        // the chat participant identity when an authenticated UID is present.
+        currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (currentUserId == null || currentUserId.trim().isEmpty()) {
+            currentUserId = preferenceManager.getUserId();
+        }
 
         // Fallback for legacy "otherUserId" key (from old startChatWithPatient)
         if (chatUserId == null) {
@@ -260,7 +267,13 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
         tvChatName.setText(chatUserName);
         // Set up back button listener
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            if (messageSelectionActionMode != null) {
+                messageSelectionActionMode.finish();
+            } else {
+                finish();
+            }
+        });
         // Removed toolbar.setNavigationOnClickListener(v -> finish());
         ProfilePhotoHelper.loadProfilePhoto(this, chatUserId, ivChatProfile, shimmerChatProfile);
 
@@ -754,7 +767,11 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         rvMessages.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         chatAdapter.setOnMessageLongClickListener((message, view) -> {
-            showChatContextMenu(message, view);
+            if (currentUserId.equals(message.getSenderId())) {
+                toggleMessageSelection(message);
+            } else if (!chatAdapter.isSelectionMode()) {
+                showChatContextMenu(message, view);
+            }
         });
 
         chatAdapter.setOnReplyClickListener(messageId -> {
@@ -780,6 +797,15 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         });
 
         chatAdapter.setOnMessageClickListener(message -> {
+            if (chatAdapter.isSelectionMode()) {
+                if (currentUserId.equals(message.getSenderId())) {
+                    toggleMessageSelection(message);
+                } else {
+                    Toast.makeText(this, R.string.only_sent_messages_selectable, Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+
             String type = message.getMessageType();
             String url = message.getAttachmentUrl();
             
@@ -832,6 +858,77 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                 }, 100);
             }
         });
+    }
+
+    private void toggleMessageSelection(ChatMessage message) {
+        chatAdapter.toggleSelection(message);
+        if (chatAdapter.getSelectedCount() == 0) {
+            if (messageSelectionActionMode != null) messageSelectionActionMode.finish();
+            return;
+        }
+
+        if (messageSelectionActionMode == null) {
+            messageSelectionActionMode = startSupportActionMode(messageSelectionCallback);
+        }
+        updateMessageSelectionTitle();
+    }
+
+    private void updateMessageSelectionTitle() {
+        if (messageSelectionActionMode != null && chatAdapter != null) {
+            messageSelectionActionMode.setTitle(
+                    getString(R.string.selected_messages_count, chatAdapter.getSelectedCount()));
+        }
+    }
+
+    private final androidx.appcompat.view.ActionMode.Callback messageSelectionCallback =
+            new androidx.appcompat.view.ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(androidx.appcompat.view.ActionMode mode, android.view.Menu menu) {
+            android.view.MenuItem delete = menu.add(0, R.id.action_delete, 0, R.string.delete_messages);
+            delete.setIcon(R.drawable.ic_delete);
+            delete.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(androidx.appcompat.view.ActionMode mode, android.view.Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(androidx.appcompat.view.ActionMode mode, android.view.MenuItem item) {
+            if (item.getItemId() != R.id.action_delete) return false;
+
+            List<ChatMessage> selected = new java.util.ArrayList<>(chatAdapter.getSelectedMessages());
+            int count = selected.size();
+            new androidx.appcompat.app.AlertDialog.Builder(ChatActivity.this)
+                    .setTitle(R.string.delete_messages)
+                    .setMessage(getString(R.string.delete_selected_messages_confirm, count))
+                    .setPositiveButton(R.string.delete, (dialog, which) -> {
+                        viewModel.deleteMessages(chatRoomId, selected, currentUserId, chatUserId);
+                        Toast.makeText(ChatActivity.this,
+                                getString(R.string.messages_deleted_count, count), Toast.LENGTH_SHORT).show();
+                        mode.finish();
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+            return true;
+        }
+
+        @Override
+        public void onDestroyActionMode(androidx.appcompat.view.ActionMode mode) {
+            messageSelectionActionMode = null;
+            if (chatAdapter != null) chatAdapter.clearSelection();
+        }
+    };
+
+    @Override
+    public void onBackPressed() {
+        if (messageSelectionActionMode != null) {
+            messageSelectionActionMode.finish();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     private void setupObservers() {

@@ -13,11 +13,16 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.receivers.HealthTipsReceiver;
 import java.util.Calendar;
 import java.util.Random;
 
 public class HealthTipsHelper {
+
+    public static final String NAVIGATE_TO_HEALTH_TIP = "health_tip";
+    public static final String EXTRA_HEALTH_TIP_TITLE = "health_tip_title";
+    public static final String EXTRA_HEALTH_TIP_TEXT = "health_tip_text";
     
     private static final String CHANNEL_ID = "health_tips_channel";
     private static final String CHANNEL_NAME = "Vidokezo vya Afya";
@@ -298,13 +303,13 @@ public class HealthTipsHelper {
         String tip = tips[random.nextInt(tips.length)];
         String title = getTipTitleByType(tipType);
         
-        // Create intent to open app
-        Intent appIntent = new Intent(context, com.haset.hasetapp.MainActivity.class);
-        appIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Carry the exact notification content into the app so tapping a tip
+        // displays the tip instead of opening the old placeholder MainActivity.
+        Intent appIntent = createHealthTipIntent(title, tip);
         
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context, 
-                0, 
+                notificationId,
                 appIntent, 
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -324,7 +329,7 @@ public class HealthTipsHelper {
         notificationManager.notify(notificationId, builder.build());
         
         // Create group summary for health tips
-        createHealthTipsGroupSummary();
+        createHealthTipsGroupSummary(title, tip);
         
         Log.d("HealthTips", "Health tip shown: " + tipType + " - " + tip);
     }
@@ -424,14 +429,13 @@ public class HealthTipsHelper {
         }
     }
     
-    private void createHealthTipsGroupSummary() {
+    private void createHealthTipsGroupSummary(String latestTipTitle, String latestTip) {
         // Create intent for group summary
-        Intent intent = new Intent(context, com.haset.hasetapp.MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Intent intent = createHealthTipIntent(latestTipTitle, latestTip);
         
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                GROUP_SUMMARY_HEALTH_TIPS_ID.hashCode(),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -449,6 +453,19 @@ public class HealthTipsHelper {
         
         // Show group summary
         notificationManager.notify(GROUP_SUMMARY_HEALTH_TIPS_ID.hashCode(), summaryBuilder.build());
+    }
+
+    public static Intent createHealthTipIntent(Context context, String title, String tip) {
+        Intent intent = new Intent(context, DashboardActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("navigate_to", NAVIGATE_TO_HEALTH_TIP);
+        intent.putExtra(EXTRA_HEALTH_TIP_TITLE, title);
+        intent.putExtra(EXTRA_HEALTH_TIP_TEXT, tip);
+        return intent;
+    }
+
+    private Intent createHealthTipIntent(String title, String tip) {
+        return createHealthTipIntent(context, title, tip);
     }
     
     public void saveLastTipDate() {

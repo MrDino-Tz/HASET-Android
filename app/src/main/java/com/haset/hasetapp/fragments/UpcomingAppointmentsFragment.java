@@ -312,8 +312,13 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         tvAppointmentInfo.setText("Rescheduling appointment with " + otherName + "\n" +
                 "Current: " + appointment.getDate() + " at " + appointment.getTime());
         
-        final String[] selectedDate = {null};
-        final String[] selectedTime = {null};
+        // Start from the existing appointment values. This lets the patient
+        // change only the time while keeping today's date.
+        final String[] selectedDate = {appointment.getDate()};
+        final String[] selectedTime = {appointment.getTime()};
+        btnSelectDate.setText(selectedDate[0]);
+        btnSelectTime.setText(selectedTime[0]);
+        checkRescheduleReady(btnConfirm, selectedDate[0], selectedTime[0]);
         
         com.google.android.material.bottomsheet.BottomSheetDialog bottomSheet = 
                 new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
@@ -328,6 +333,7 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
             
             datePicker.addOnPositiveButtonClickListener(selection -> {
                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault());
+                sdf.setLenient(false);
                 selectedDate[0] = sdf.format(new java.util.Date(selection));
                 btnSelectDate.setText(selectedDate[0]);
                 btnSelectDate.setIconTintResource(android.R.color.transparent);
@@ -341,6 +347,9 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
             com.google.android.material.timepicker.MaterialTimePicker timePicker = 
                     new com.google.android.material.timepicker.MaterialTimePicker.Builder()
                     .setTitleText("Select Time")
+                    .setHour(getInitialTimePart(appointment.getTime(), true))
+                    .setMinute(getInitialTimePart(appointment.getTime(), false))
+                    .setTimeFormat(com.google.android.material.timepicker.TimeFormat.CLOCK_24H)
                     .build();
             
             timePicker.addOnPositiveButtonClickListener(selection -> {
@@ -421,10 +430,26 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
     }
 
     private long parseDateTimeToMillis(String date, String time) {
+        String[] formats = {"dd MMM yyyy HH:mm", "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm"};
+        for (String format : formats) {
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(format, java.util.Locale.getDefault());
+                sdf.setLenient(false);
+                java.util.Date parsed = sdf.parse(date + " " + time);
+                if (parsed != null) return parsed.getTime();
+            } catch (java.text.ParseException ignored) {
+                // Try the next supported appointment date format.
+            }
+        }
+        return 0;
+    }
+
+    private int getInitialTimePart(String time, boolean hour) {
+        if (time == null) return 0;
         try {
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM yyyy HH:mm", java.util.Locale.getDefault());
-            return sdf.parse(date + " " + time).getTime();
-        } catch (java.text.ParseException e) {
+            String[] parts = time.trim().split(":");
+            return Integer.parseInt(parts[hour ? 0 : 1]);
+        } catch (RuntimeException ignored) {
             return 0;
         }
     }

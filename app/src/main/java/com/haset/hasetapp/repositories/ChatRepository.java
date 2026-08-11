@@ -87,6 +87,11 @@ public class ChatRepository {
             return messagesLiveData;
         }
 
+        // Keep a room reference available to verify removals from either filtered query.
+        // Firebase can emit a transient child-removed event when a child moves between
+        // query result sets; that must not make a still-existing message disappear.
+        DatabaseReference roomRef = firebaseHelper.getMessagesRef().child(chatRoomId);
+
         ChildEventListener participantMessageListener = new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
@@ -101,6 +106,14 @@ public class ChatRepository {
                     messages.addAll(messagesById.values());
                     Collections.sort(messages, MESSAGE_ORDER);
                     messagesLiveData.postValue(new ArrayList<>(messages));
+
+                    // A recipient seeing the message in realtime is the delivery
+                    // acknowledgement. Do this before the chat screen marks it read.
+                    if (currentUserId.equals(message.getReceiverId())
+                            && !message.isRead()
+                            && "sent".equalsIgnoreCase(message.getMessageStatus())) {
+                        markMessageAsDelivered(chatRoomId, id);
+                    }
                 }
             }
 
@@ -124,11 +137,25 @@ public class ChatRepository {
             public void onChildRemoved(@NonNull DataSnapshot snapshot) {
                 String messageId = snapshot.getKey();
                 if (messageId != null) {
-                    messagesById.remove(messageId);
-                    messages.clear();
-                    messages.addAll(messagesById.values());
-                    Collections.sort(messages, MESSAGE_ORDER);
-                    messagesLiveData.postValue(new ArrayList<>(messages));
+                    roomRef.child(messageId).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot current) {
+                            // Only remove after confirming the database node is gone.
+                            if (!current.exists()) {
+                                messagesById.remove(messageId);
+                                messages.clear();
+                                messages.addAll(messagesById.values());
+                                Collections.sort(messages, MESSAGE_ORDER);
+                                messagesLiveData.postValue(new ArrayList<>(messages));
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Log.w("ChatRepository", "Unable to verify message removal: " + messageId,
+                                    error.toException());
+                        }
+                    });
                 }
             }
 
@@ -139,7 +166,6 @@ public class ChatRepository {
             public void onCancelled(@NonNull DatabaseError error) {}
         };
 
-        DatabaseReference roomRef = firebaseHelper.getMessagesRef().child(chatRoomId);
         roomRef.orderByChild("senderId").equalTo(currentUserId)
                 .addChildEventListener(participantMessageListener);
         roomRef.orderByChild("receiverId").equalTo(currentUserId)
@@ -149,28 +175,84 @@ public class ChatRepository {
     }
 
     public String sendMessage(String chatRoomId, ChatMessage message, String senderId, String receiverId, String senderName, String receiverName) {
-        DatabaseReference chatRef = firebaseHelper.getMessagesRef().child(chatRoomId).push();
+        String authenticatedSenderId = FirebaseAuth.getInstance().getUid();
+        if (authenticatedSenderId == null || authenticatedSenderId.trim().isEmpty()) {
+            Log.e("ChatRepository", "Message write blocked: no authenticated Firebase user");
+            return null;
+        }
+        if (receiverId == null || receiverId.trim().isEmpty()
+                || authenticatedSenderId.equals(receiverId)) {
+            Log.e("ChatRepository", "Message write blocked: invalid receiver");
+            return null;
+        }
+
+        String effectiveChatRoomId = generateChatRoomId(authenticatedSenderId, receiverId);
+        message.setSenderId(authenticatedSenderId);
+        message.setReceiverId(receiverId);
+
+        DatabaseReference chatRef = firebaseHelper.getMessagesRef().child(effectiveChatRoomId).push();
         String messageId = chatRef.getKey();
         message.setMessageId(messageId);
         
-        // Don't overwrite it if it's already set to something like "uploading"
-        if (message.getMessageStatus() == null) {
-            message.setMessageStatus("sending");
+        // Text messages should be durable in their first write.  A second status
+        // write can be rejected by the immutable-message rules and cause the
+        // optimistic local event to roll back and disappear.
+        if ("text".equalsIgnoreCase(message.getMessageType())
+                && (message.getMessageStatus() == null || "sending".equalsIgnoreCase(message.getMessageStatus()))) {
+            message.setMessageStatus("sent");
         }
 
-        chatRef.setValue(message).addOnSuccessListener(aVoid -> {
-            if ("sending".equals(message.getMessageStatus())) {
-                chatRef.child("messageStatus").setValue("sent");
-            }
-            updateConversation(senderId, receiverId, receiverName, message.getMessage(), message.getTimestamp(), senderId);
-            updateConversation(receiverId, senderId, senderName, message.getMessage(), message.getTimestamp(), senderId);
-            com.haset.hasetapp.database.entities.NotificationEntity notification =
-                    new com.haset.hasetapp.database.entities.NotificationEntity(
-                            null, receiverId, senderName, message.getMessage(),
-                            "chat_message", chatRoomId);
-            com.haset.hasetapp.utils.FirebaseHelper.addNotification(notification, null);
-        });
+        Map<String, Object> firebaseMessage = toFirebaseMessageMap(message);
+        chatRef.setValue(firebaseMessage).addOnSuccessListener(aVoid -> {
+            updateConversation(authenticatedSenderId, receiverId, receiverName,
+                    message.getMessage(), message.getTimestamp(), authenticatedSenderId);
+            updateConversation(receiverId, authenticatedSenderId, senderName,
+                    message.getMessage(), message.getTimestamp(), authenticatedSenderId);
+            // A Cloud Function creates the receiver-owned durable notification.
+            // The client cannot securely write into another user's node.
+        }).addOnFailureListener(error ->
+                Log.e("ChatRepository", "Message write failed for room=" + effectiveChatRoomId
+                        + ", senderMatchesAuth=" + authenticatedSenderId.equals(message.getSenderId())
+                        + ", fields=" + firebaseMessage.keySet()
+                        + ", id=" + messageId + ": " + error.getMessage(), error));
         return messageId;
+    }
+
+    /**
+     * Build the exact schema accepted by database.rules.json. Serializing the
+     * model directly is unsafe because JavaBean boolean accessors can expose
+     * additional property names (for example read/isRead), which are correctly
+     * rejected by the rules' $other guard.
+     */
+    private Map<String, Object> toFirebaseMessageMap(ChatMessage message) {
+        Map<String, Object> value = new HashMap<>();
+        value.put("messageId", message.getMessageId());
+        value.put("senderId", message.getSenderId());
+        value.put("senderName", message.getSenderName() != null ? message.getSenderName() : "");
+        value.put("receiverId", message.getReceiverId());
+        value.put("receiverName", message.getReceiverName() != null ? message.getReceiverName() : "");
+        value.put("message", message.getMessage() != null ? message.getMessage() : "");
+        value.put("messageType", message.getMessageType() != null ? message.getMessageType() : "text");
+        value.put("messageStatus", message.getMessageStatus() != null ? message.getMessageStatus() : "sent");
+        value.put("timestamp", message.getTimestamp());
+        value.put("isRead", message.isRead());
+        value.put("deliveredTimestamp", message.getDeliveredTimestamp());
+        value.put("readTimestamp", message.getReadTimestamp());
+
+        putOptional(value, "attachmentUrl", message.getAttachmentUrl());
+        putOptional(value, "attachmentFileName", message.getAttachmentFileName());
+        putOptional(value, "attachmentSize", message.getAttachmentSize());
+        putOptional(value, "attachmentDuration", message.getAttachmentDuration());
+        putOptional(value, "replyToMessageId", message.getReplyToMessageId());
+        putOptional(value, "replyToText", message.getReplyToText());
+        putOptional(value, "replyToSenderName", message.getReplyToSenderName());
+        putOptional(value, "prescriptionId", message.getPrescriptionId());
+        if (message.getMetadata() != null) value.put("metadata", message.getMetadata());
+        return value;
+    }
+
+    private void putOptional(Map<String, Object> value, String key, String fieldValue) {
+        if (fieldValue != null) value.put(key, fieldValue);
     }
 
     public void updateMessageAttachment(String chatRoomId, String messageId, String attachmentUrl, String status) {
@@ -190,36 +272,82 @@ public class ChatRepository {
                 Log.d("ChatRepository", "Message deleted successfully");
             });
     }
+
+    public void deleteMessages(String chatRoomId, List<ChatMessage> selectedMessages,
+                               String currentUserId, String otherUserId) {
+        if (chatRoomId == null || selectedMessages == null || selectedMessages.isEmpty()) return;
+
+        Map<String, Object> deletions = new HashMap<>();
+        for (ChatMessage message : selectedMessages) {
+            if (message != null && message.getMessageId() != null
+                    && currentUserId.equals(message.getSenderId())) {
+                deletions.put(message.getMessageId(), null);
+            }
+        }
+        if (deletions.isEmpty()) return;
+
+        firebaseHelper.getMessagesRef().child(chatRoomId).updateChildren(deletions)
+                .addOnSuccessListener(ignored -> {
+                    updateLastMessageAfterDeletion(chatRoomId, currentUserId, otherUserId);
+                    Log.d("ChatRepository", "Deleted " + deletions.size() + " selected messages");
+                })
+                .addOnFailureListener(error -> Log.e("ChatRepository",
+                        "Failed to delete selected messages", error));
+    }
     
     private void updateLastMessageAfterDeletion(String chatRoomId, String currentUserId, String otherUserId) {
-        // Get all remaining messages and find the last one
-        firebaseHelper.getMessagesRef().child(chatRoomId)
-            .orderByChild("timestamp")
-            .limitToLast(1)
-            .addListenerForSingleValueEvent(new ValueEventListener() {
+        // Room-level timestamp queries are intentionally blocked by the rules.
+        // Merge the two participant-scoped queries that are permitted, then
+        // calculate the remaining last message locally.
+        Map<String, ChatMessage> remaining = new HashMap<>();
+        int[] pendingQueries = {2};
+        DatabaseReference roomRef = firebaseHelper.getMessagesRef().child(chatRoomId);
+
+        ValueEventListener listener = new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        for (DataSnapshot msgSnapshot : snapshot.getChildren()) {
-                            ChatMessage lastMsg = msgSnapshot.getValue(ChatMessage.class);
-                            if (lastMsg != null) {
-                                // Update conversation for both users
-                                updateConversationLastMessage(currentUserId, otherUserId, lastMsg);
-                                updateConversationLastMessage(otherUserId, currentUserId, lastMsg);
-                            }
+                    for (DataSnapshot msgSnapshot : snapshot.getChildren()) {
+                        ChatMessage message = msgSnapshot.getValue(ChatMessage.class);
+                        if (message != null && msgSnapshot.getKey() != null) {
+                            message.setMessageId(msgSnapshot.getKey());
+                            remaining.put(msgSnapshot.getKey(), message);
                         }
-                    } else {
-                        // No messages left, clear last message
-                        clearConversationLastMessage(currentUserId, otherUserId);
-                        clearConversationLastMessage(otherUserId, currentUserId);
+                    }
+                    if (--pendingQueries[0] == 0) {
+                        finishLastMessageUpdate(remaining, currentUserId, otherUserId);
                     }
                 }
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
                     Log.e("ChatRepository", "Error updating last message after deletion", error.toException());
+                    if (--pendingQueries[0] == 0) {
+                        finishLastMessageUpdate(remaining, currentUserId, otherUserId);
+                    }
                 }
-            });
+            };
+
+        roomRef.orderByChild("senderId").equalTo(currentUserId)
+                .addListenerForSingleValueEvent(listener);
+        roomRef.orderByChild("receiverId").equalTo(currentUserId)
+                .addListenerForSingleValueEvent(listener);
+    }
+
+    private void finishLastMessageUpdate(Map<String, ChatMessage> remaining,
+                                         String currentUserId, String otherUserId) {
+        ChatMessage lastMessage = null;
+        for (ChatMessage candidate : remaining.values()) {
+            if (lastMessage == null || MESSAGE_ORDER.compare(candidate, lastMessage) > 0) {
+                lastMessage = candidate;
+            }
+        }
+        if (lastMessage != null) {
+            updateConversationLastMessage(currentUserId, otherUserId, lastMessage);
+            updateConversationLastMessage(otherUserId, currentUserId, lastMessage);
+        } else {
+            clearConversationLastMessage(currentUserId, otherUserId);
+            clearConversationLastMessage(otherUserId, currentUserId);
+        }
     }
     
     private void updateConversationLastMessage(String userId, String otherUserId, ChatMessage message) {
@@ -267,6 +395,14 @@ public class ChatRepository {
         updates.put("readTimestamp", System.currentTimeMillis());
 
         firebaseHelper.getMessagesRef().child(chatRoomId).child(messageId).updateChildren(updates);
+    }
+
+    private void markMessageAsDelivered(String chatRoomId, String messageId) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("messageStatus", "delivered");
+        firebaseHelper.getMessagesRef().child(chatRoomId).child(messageId).updateChildren(updates)
+                .addOnFailureListener(error -> Log.w("ChatRepository",
+                        "Unable to mark message delivered: " + messageId, error));
     }
 
     public void markAllMessagesAsRead(String chatRoomId, String currentUserId) {

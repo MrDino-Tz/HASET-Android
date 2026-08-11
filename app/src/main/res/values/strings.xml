@@ -679,6 +679,7 @@
     <!-- NotificationActivity -->
     <string name="appointment">Appointment</string>
     <string name="payment">Payment</string>
+    <string name="info">Info</string>
     <string name="appointments_cleared">Appointments cleared</string>
     <string name="failed_to_clear_appointments">Failed to clear appointments</string>
     <string name="clear_appointments">Clear Appointments</string>
@@ -898,6 +899,10 @@
     <!-- Dialogs -->
     <string name="delete_message">Delete Message</string>
     <string name="delete_message_confirm">Are you sure you want to delete this message?</string>
+    <string name="selected_messages_count">%1$d selected</string>
+    <string name="delete_selected_messages_confirm">Delete %1$d selected messages?</string>
+    <string name="messages_deleted_count">%1$d messages deleted</string>
+    <string name="only_sent_messages_selectable">You can only select messages you sent</string>
     <string name="exit_app">Exit App</string>
     <string name="exit_app_confirm">Are you sure you want to exit?</string>
     <string name="notification_permission_title">Notification Permission Required</string>

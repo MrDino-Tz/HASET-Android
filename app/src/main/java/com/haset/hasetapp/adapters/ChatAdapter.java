@@ -23,7 +23,10 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -42,6 +45,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final String currentUserId;
     private String otherUserProfileImageUrl;
     private OnMessageLongClickListener longClickListener;
+    private final Set<String> selectedMessageIds = new LinkedHashSet<>();
 
     public interface OnMessageLongClickListener {
         void onMessageLongClick(ChatMessage message, View view);
@@ -93,6 +97,11 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.messages.addAll(sorted);
         this.messagesFull.clear();
         this.messagesFull.addAll(sorted);
+        Set<String> existingIds = new HashSet<>();
+        for (ChatMessage message : sorted) {
+            if (message.getMessageId() != null) existingIds.add(message.getMessageId());
+        }
+        selectedMessageIds.retainAll(existingIds);
         
         diffResult.dispatchUpdatesTo(new androidx.recyclerview.widget.ListUpdateCallback() {
             @Override
@@ -216,11 +225,47 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (holder instanceof BaseViewHolder) {
             ((BaseViewHolder) holder).bind(message, previousMessage, isSent);
         }
+
+        String messageId = message.getMessageId();
+        holder.itemView.setBackgroundColor(messageId != null && selectedMessageIds.contains(messageId)
+                ? 0x2234A853 : android.graphics.Color.TRANSPARENT);
     }
 
     @Override
     public int getItemCount() {
         return messages.size() + 1; // +1 for Header
+    }
+
+    public void toggleSelection(ChatMessage message) {
+        if (message == null || message.getMessageId() == null) return;
+        String messageId = message.getMessageId();
+        if (!selectedMessageIds.add(messageId)) selectedMessageIds.remove(messageId);
+        int position = getPositionForMessage(messageId);
+        if (position >= 0) notifyItemChanged(position);
+    }
+
+    public boolean isSelectionMode() {
+        return !selectedMessageIds.isEmpty();
+    }
+
+    public int getSelectedCount() {
+        return selectedMessageIds.size();
+    }
+
+    public List<ChatMessage> getSelectedMessages() {
+        List<ChatMessage> selected = new ArrayList<>();
+        for (ChatMessage message : messagesFull) {
+            if (message.getMessageId() != null && selectedMessageIds.contains(message.getMessageId())) {
+                selected.add(message);
+            }
+        }
+        return selected;
+    }
+
+    public void clearSelection() {
+        if (selectedMessageIds.isEmpty()) return;
+        selectedMessageIds.clear();
+        notifyDataSetChanged();
     }
 
     public interface OnPrescriptionClickListener {

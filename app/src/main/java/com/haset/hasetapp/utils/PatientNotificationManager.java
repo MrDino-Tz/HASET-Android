@@ -335,10 +335,11 @@ public class PatientNotificationManager {
         String tip = loginTips[random.nextInt(loginTips.length)];
         
         // Create intent to open dashboard
-        Intent intent = new Intent(context, DashboardActivity.class);
+        String title = "Dokezo la Afya la Sasa";
+        Intent intent = HealthTipsHelper.createHealthTipIntent(context, title, tip);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                LOGIN_HEALTH_TIP_ID,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -346,7 +347,7 @@ public class PatientNotificationManager {
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_HEALTH_TIPS)
                 .setSmallIcon(R.drawable.logo_v1_notify)
-                .setContentTitle("Dokezo la Afya la Sasa")
+                .setContentTitle(title)
                 .setContentText("Hiki hapa kikumbusho chako cha afya!")
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(tip))
@@ -421,10 +422,11 @@ public class PatientNotificationManager {
         int notificationId = APP_ACTIVE_TIP_BASE_ID + new Random().nextInt(100);
         
         // Create intent to open dashboard
-        Intent intent = new Intent(context, DashboardActivity.class);
+        String title = "Kikumbusho cha Afya";
+        Intent intent = HealthTipsHelper.createHealthTipIntent(context, title, tip);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context,
-                0,
+                notificationId,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -432,7 +434,7 @@ public class PatientNotificationManager {
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_HEALTH_TIPS)
                 .setSmallIcon(R.drawable.logo_v1_notify)
-                .setContentTitle("Kikumbusho cha Afya")
+                .setContentTitle(title)
                 .setContentText("Muda wako wa kujijali kiafya!")
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(tip))

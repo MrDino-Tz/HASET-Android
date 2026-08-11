@@ -34,7 +34,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     // Notification Channels
     private static final String CHANNEL_APPOINTMENTS = "appointments";
     private static final String CHANNEL_MESSAGES = "messages";
-    private static final String CHANNEL_GENERAL = "general";
+    // Use a versioned channel because Android does not allow an existing
+    // channel's importance or sound behavior to be raised after creation.
+    private static final String CHANNEL_GENERAL = "general_alerts_v2";
     
     @Override
     public void onCreate() {
@@ -94,7 +96,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         PreferenceManager pm = new PreferenceManager(this);
         String userRole = pm.getUserRole();
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
-            if (!"appointment_reminder".equals(type) && !"chat_message".equals(type) && !"new_appointment".equals(type)) {
+            if (!"appointment_reminder".equals(type) && !"chat_message".equals(type)
+                    && !"new_appointment".equals(type) && !"admin_broadcast".equals(type)) {
                 Log.d(TAG, "Doctor skipping notification type: " + type);
                 return;
             }
@@ -120,7 +123,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 handleArticleNotification(data);
                 break;
             default:
-                Log.w(TAG, "Unknown notification type: " + type);
+                // Admin broadcasts and future informational types must still be
+                // visible instead of being dropped by an exhaustive switch.
+                handleGeneralNotification(data);
+                break;
         }
     }
     
@@ -237,11 +243,14 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private void handleGeneralNotification(Map<String, String> data) {
         String title = data.get("title");
         String message = data.get("message");
+        String notificationId = data.get("notificationId");
         
         Intent intent = new Intent(this, DashboardActivity.class);
+        intent.putExtra("navigate_to", "notifications");
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         
-        showNotificationWithIntent(title, message, intent, CHANNEL_GENERAL, 4);
+        int systemNotificationId = notificationId != null ? notificationId.hashCode() : 4;
+        showNotificationWithIntent(title, message, intent, CHANNEL_GENERAL, systemNotificationId);
     }
     
     /**
@@ -363,10 +372,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             // General Channel
             NotificationChannel generalChannel = new NotificationChannel(
                 CHANNEL_GENERAL,
-                "General",
-                NotificationManager.IMPORTANCE_DEFAULT
+                "Important information",
+                NotificationManager.IMPORTANCE_HIGH
             );
-            generalChannel.setDescription("General app notifications");
+            generalChannel.setDescription("Important information and messages from HASET administrators");
+            generalChannel.setSound(
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                    null
+            );
+            generalChannel.enableVibration(true);
             notificationManager.createNotificationChannel(generalChannel);
         }
     }

@@ -25,6 +25,7 @@ import com.haset.hasetapp.utils.NetworkUtils;
 import com.haset.hasetapp.utils.NotificationBadgeHelper;
 import com.haset.hasetapp.utils.PatientNotificationManager;
 import com.haset.hasetapp.utils.PreferenceManager;
+import com.haset.hasetapp.utils.HealthTipsHelper;
 import com.haset.hasetapp.utils.StatusBarHelper;
 import com.haset.hasetapp.utils.ThemeHelper;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
@@ -56,6 +57,10 @@ public class DashboardActivity extends BaseActivity {
         setupBottomNavigation();
         loadInitialFragment();
 
+        // Token refresh can happen before authentication. Always bind the
+        // current installation token to the signed-in user on dashboard entry.
+        syncFcmToken();
+
         // The application process can start before authentication is restored;
         // start the conversation listener again after the logged-in user is
         // available so chat notifications are not silently missed.
@@ -70,6 +75,21 @@ public class DashboardActivity extends BaseActivity {
         // Trigger role-specific notifications
         triggerPatientNotifications();
         triggerDoctorNotifications();
+    }
+
+    private void syncFcmToken() {
+        String userId = preferenceManager.getUserId();
+        if (userId == null || userId.trim().isEmpty()) return;
+
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
+                .addOnSuccessListener(token -> {
+                    if (token == null || token.trim().isEmpty()) return;
+                    preferenceManager.setFCMToken(token);
+                    com.haset.hasetapp.utils.FirebaseHelper.getUsersRef()
+                            .child(userId)
+                            .child("fcmToken")
+                            .setValue(token);
+                });
     }
     
     private void triggerPatientNotifications() {
@@ -210,6 +230,16 @@ public class DashboardActivity extends BaseActivity {
             if (bottomNavigation != null) {
                 bottomNavigation.setSelectedItemId(R.id.nav_appointments);
             }
+        } else if (intent != null && "notifications".equals(intent.getStringExtra("navigate_to"))) {
+            startActivity(new Intent(this, NotificationActivity.class));
+        } else if (intent != null && "chat".equals(intent.getStringExtra("navigate_to"))) {
+            String senderId = intent.getStringExtra("senderId");
+            if (senderId != null && !senderId.trim().isEmpty()) {
+                Intent chatIntent = new Intent(this, ChatActivity.class);
+                chatIntent.putExtra(Constants.EXTRA_CHAT_USER_ID, senderId);
+                chatIntent.putExtra(Constants.EXTRA_CHAT_USER_NAME, intent.getStringExtra("senderName"));
+                startActivity(chatIntent);
+            }
         } else if (intent != null && "prescription_detail".equals(intent.getStringExtra("navigate_to"))) {
             String prescriptionId = intent.getStringExtra("prescription_id");
             if (prescriptionId != null) {
@@ -220,6 +250,25 @@ public class DashboardActivity extends BaseActivity {
                         .addToBackStack(null)
                         .commit();
             }
+        } else if (intent != null && HealthTipsHelper.NAVIGATE_TO_HEALTH_TIP.equals(
+                intent.getStringExtra("navigate_to"))) {
+            String title = intent.getStringExtra(HealthTipsHelper.EXTRA_HEALTH_TIP_TITLE);
+            String tip = intent.getStringExtra(HealthTipsHelper.EXTRA_HEALTH_TIP_TEXT);
+            if (tip != null && !tip.trim().isEmpty()) {
+                CustomDialog tipDialog = new CustomDialog(this)
+                        .setDialogType(CustomDialog.DialogType.INFO)
+                        .setTitle(title == null || title.trim().isEmpty()
+                                ? getString(R.string.health_tips) : title)
+                        .setMessage(tip)
+                        .hideNegativeButton();
+                tipDialog.setPositiveButton(getString(android.R.string.ok), v -> tipDialog.dismiss());
+                tipDialog.show();
+            }
+
+            // Avoid showing the same tip again after an activity recreation.
+            intent.removeExtra("navigate_to");
+            intent.removeExtra(HealthTipsHelper.EXTRA_HEALTH_TIP_TITLE);
+            intent.removeExtra(HealthTipsHelper.EXTRA_HEALTH_TIP_TEXT);
         }
     }
 

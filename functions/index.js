@@ -118,20 +118,28 @@ exports.onNotificationCreated = functions.database
 
     const title = notification.title || 'HASET notification';
     const body = notification.message || '';
+    const type = notification.type || 'general';
+    const isChat = type === 'chat_message';
+    const isAppointment = type.startsWith('appointment_');
+    const channelId = isChat ? 'messages' : (isAppointment ? 'appointments' : 'general_alerts_v2');
+    const navigateTo = isChat ? 'chat' : (isAppointment ? 'appointments' : 'notifications');
     try {
       await getMessaging().send({
         token,
         data: {
-          type: notification.type || 'general',
+          type,
           notificationId,
           title: String(title),
           message: String(body),
           relatedId: String(notification.relatedId || ''),
+          senderId: String(notification.senderId || ''),
+          senderName: String(notification.senderName || title),
+          navigate_to: navigateTo,
         },
         notification: { title: String(title), body: String(body) },
         android: {
           priority: 'high',
-          notification: { channelId: 'general', sound: 'default', priority: 'high' },
+          notification: { channelId, sound: 'default', priority: 'high' },
         },
       });
     } catch (error) {
@@ -141,5 +149,38 @@ exports.onNotificationCreated = functions.database
         code: error && error.code ? error.code : 'unknown',
       });
     }
+    return null;
+  });
+
+// Convert each accepted chat message into a durable notification. Client apps
+// cannot securely write inside another user's notifications node, while the
+// Admin SDK can do so after validating the message written by Firebase rules.
+exports.onChatMessageCreated = functions.database
+  .ref('/messages/{chatRoomId}/{messageId}')
+  .onCreate(async (snapshot, context) => {
+    const chatMessage = snapshot.val() || {};
+    const { chatRoomId, messageId } = context.params;
+    const senderId = chatMessage.senderId;
+    const receiverId = chatMessage.receiverId;
+
+    if (!senderId || !receiverId || senderId === receiverId) {
+      functions.logger.warn('Invalid chat notification payload', { chatRoomId, messageId });
+      return null;
+    }
+
+    const senderName = chatMessage.senderName || 'New message';
+    const body = chatMessage.message || 'Sent you an attachment';
+    await DB.ref(`notifications/${receiverId}/${messageId}`).set({
+      notificationId: messageId,
+      userId: receiverId,
+      title: String(senderName),
+      message: String(body),
+      type: 'chat_message',
+      relatedId: chatRoomId,
+      senderId: String(senderId),
+      senderName: String(senderName),
+      timestamp: Number(chatMessage.timestamp) || Date.now(),
+      isRead: false,
+    });
     return null;
   });

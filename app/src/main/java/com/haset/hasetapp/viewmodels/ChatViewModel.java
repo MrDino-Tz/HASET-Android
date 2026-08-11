@@ -47,6 +47,11 @@ public class ChatViewModel extends AndroidViewModel {
         repository.deleteMessage(id, message, currentUserId, otherUserId);
     }
 
+    public void deleteMessages(String id, List<ChatMessage> messages,
+                               String currentUserId, String otherUserId) {
+        repository.deleteMessages(id, messages, currentUserId, otherUserId);
+    }
+
     public void markAsRead(String id, String messageId) {
         repository.markMessageAsRead(id, messageId);
     }
