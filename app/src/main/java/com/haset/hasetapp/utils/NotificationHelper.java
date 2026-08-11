@@ -59,8 +59,7 @@ public class NotificationHelper {
         if (!preferenceManager.isNotificationEnabled()) {
             return;
         }
-
-        int notificationId = (int) System.currentTimeMillis();
+        int notificationId = senderId != null ? senderId.hashCode() : (int) System.currentTimeMillis();
 
         // Intent to open chat when notification is tapped
         Intent chatIntent = new Intent(context, com.haset.hasetapp.activities.ChatActivity.class);
@@ -98,12 +97,36 @@ public class NotificationHelper {
                 .addRemoteInput(new androidx.core.app.RemoteInput.Builder(Constants.KEY_TEXT_REPLY).setLabel("Jibu").build())
                 .build();
 
+        NotificationCompat.MessagingStyle messagingStyle = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            android.service.notification.StatusBarNotification[] activeNotifications = notificationManager.getActiveNotifications();
+            for (android.service.notification.StatusBarNotification sbn : activeNotifications) {
+                if (sbn.getId() == notificationId) {
+                    android.app.Notification notification = sbn.getNotification();
+                    messagingStyle = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(notification);
+                    break;
+                }
+            }
+        }
+
+        androidx.core.app.Person senderPerson = new androidx.core.app.Person.Builder()
+                .setName(senderName)
+                .build();
+
+        if (messagingStyle == null) {
+            androidx.core.app.Person userPerson = new androidx.core.app.Person.Builder()
+                    .setName("Me")
+                    .build();
+            messagingStyle = new NotificationCompat.MessagingStyle(userPerson);
+        }
+        messagingStyle.addMessage(messageBody, System.currentTimeMillis(), senderPerson);
+
         // Build Notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID_MESSAGES)
                 .setSmallIcon(R.drawable.h_10_icon_notification)
                 .setContentTitle(senderName)
                 .setContentText(messageBody)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody))
+                .setStyle(messagingStyle)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
