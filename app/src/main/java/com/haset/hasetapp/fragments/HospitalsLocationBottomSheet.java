@@ -31,13 +31,18 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onStart() {
         super.onStart();
-        android.app.Dialog dialog = getDialog();
-        if (dialog != null && dialog.getWindow() != null) {
-            android.view.ViewGroup.LayoutParams params = new android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT);
-            dialog.getWindow().setLayout(params.width, params.height);
-        }
+        if (getDialog() == null) return;
+        View bottomSheet = getDialog().findViewById(com.google.android.material.R.id.design_bottom_sheet);
+        if (bottomSheet == null) return;
+
+        ViewGroup.LayoutParams params = bottomSheet.getLayoutParams();
+        params.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        bottomSheet.setLayoutParams(params);
+
+        com.google.android.material.bottomsheet.BottomSheetBehavior<View> behavior = 
+                com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet);
+        behavior.setSkipCollapsed(true);
+        behavior.setState(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
