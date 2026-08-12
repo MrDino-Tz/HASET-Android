@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="?attr/colorBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -16,8 +16,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            app:cardElevation="4dp"
             app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
@@ -36,8 +39,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            app:cardElevation="2dp"
             app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
             app:layout_constraintTop_toBottomOf="@id/cardImage">
 
             <LinearLayout
@@ -91,8 +97,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            app:cardElevation="2dp"
             app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
             app:layout_constraintTop_toBottomOf="@id/cardDoctorInfo">
 
             <LinearLayout
@@ -126,8 +135,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            app:cardElevation="2dp"
             app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
             app:layout_constraintTop_toBottomOf="@id/cardMedications">
 
             <LinearLayout
