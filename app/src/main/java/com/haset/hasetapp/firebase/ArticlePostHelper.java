@@ -230,7 +230,7 @@ public class ArticlePostHelper {
         
         // Check if user already liked this post
         postLikesRef.get().addOnSuccessListener(dataSnapshot -> {
-            boolean isLiked = dataSnapshot.exists() && Boolean.TRUE.equals(dataSnapshot.getValue(Boolean.class));
+            boolean isLiked = dataSnapshot.exists() && !Boolean.FALSE.equals(dataSnapshot.getValue());
             
             if (isLiked) {
                 // The per-user child is the source of truth. Normal users cannot
@@ -259,7 +259,7 @@ public class ArticlePostHelper {
                 .child("post_likes").child(postId).child(userId);
         
         postLikesRef.get().addOnSuccessListener(dataSnapshot -> {
-            boolean isLiked = dataSnapshot.exists() && Boolean.TRUE.equals(dataSnapshot.getValue(Boolean.class));
+            boolean isLiked = dataSnapshot.exists() && !Boolean.FALSE.equals(dataSnapshot.getValue());
             listener.onSuccess(isLiked);
         }).addOnFailureListener(e -> {
             // If error, assume not liked

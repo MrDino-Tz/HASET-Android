@@ -271,8 +271,7 @@
                         android:id="@+id/ivLikeIcon"
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:src="@drawable/ic_like"
-                        app:tint="@color/text_secondary" />
+                        android:src="@drawable/ic_like" />
 
                     <TextView
                         android:id="@+id/tvLikesCount"

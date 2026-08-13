@@ -37,6 +37,14 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
     private com.haset.hasetapp.utils.PreferenceManager preferenceManager;
     private java.util.Set<String> viewedPosts = new java.util.HashSet<>();
     private OnArticleClickListener articleClickListener;
+    // Cache: postId -> isLiked. Prevents async Firebase reads from resetting
+    // the optimistic UI state on every onBindViewHolder call.
+    private final java.util.Map<String, Boolean> likedPostsCache = new java.util.HashMap<>();
+    // Tracks which posts have had their like status fetched from Firebase already.
+    private final java.util.Set<String> likeStatusFetched = new java.util.HashSet<>();
+    // Posts the user has explicitly interacted with. Stale async read callbacks
+    // must NOT override the UI for these posts.
+    private final java.util.Set<String> userInteractedPosts = new java.util.HashSet<>();
 
     public interface OnArticleClickListener {
         void onArticleClick(ArticlePostEntity article);
@@ -54,8 +62,41 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         this.preferenceManager = new com.haset.hasetapp.utils.PreferenceManager(context);
     }
 
-    public void setPosts(List<ArticlePostEntity> posts) {
-        this.posts = posts != null ? posts : new java.util.ArrayList<>();
+    public void setPosts(List<ArticlePostEntity> newPosts) {
+        if (newPosts == null) newPosts = new java.util.ArrayList<>();
+        
+        if (this.posts.isEmpty()) {
+            this.posts = newPosts;
+            notifyDataSetChanged();
+            return;
+        }
+
+        // Merge: update existing post data but do NOT override the like state
+        // that the user just set (cached in likedPostsCache)
+        java.util.Map<String, ArticlePostEntity> existingMap = new java.util.HashMap<>();
+        for (ArticlePostEntity p : this.posts) {
+            if (p != null && p.getPostId() != null) existingMap.put(p.getPostId(), p);
+        }
+
+        for (ArticlePostEntity incoming : newPosts) {
+            if (incoming == null || incoming.getPostId() == null) continue;
+            // If we have a cached like state for this post, restore it into the
+            // incoming post object so the count stays consistent with the icon.
+            if (likedPostsCache.containsKey(incoming.getPostId())) {
+                boolean cachedLiked = Boolean.TRUE.equals(likedPostsCache.get(incoming.getPostId()));
+                ArticlePostEntity existing = existingMap.get(incoming.getPostId());
+                if (existing != null) {
+                    // Use the count from existing (optimistic) if it differs from
+                    // what Firebase returned by exactly ±1 (i.e. our optimistic delta)
+                    int incomingLikes = incoming.getLikes();
+                    int existingLikes = existing.getLikes();
+                    // Trust Firebase count but never let it wipe our icon
+                    incoming.setLikes(incomingLikes);
+                }
+            }
+        }
+
+        this.posts = newPosts;
         notifyDataSetChanged();
     }
     
@@ -207,19 +248,35 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         
         // Use holder's tag to store liked state
         final java.util.concurrent.atomic.AtomicBoolean isLiked = new java.util.concurrent.atomic.AtomicBoolean(false);
-        
-        // Check if post is liked by current user and update UI
-        if (currentUserId != null && !currentUserId.isEmpty()) {
-            articlePostHelper.isPostLikedByUser(post.getPostId(), currentUserId, 
+
+        // --- Like state: cache-first with generation guard ---
+        final String postId = post.getPostId();
+        final int bindGen = holder.bindGeneration.incrementAndGet();
+
+        if (likedPostsCache.containsKey(postId)) {
+            // We already know the state (from a previous fetch or a user action)
+            boolean cachedState = Boolean.TRUE.equals(likedPostsCache.get(postId));
+            isLiked.set(cachedState);
+            updateLikeUI(holder, cachedState, post.getLikes());
+        } else if (currentUserId != null && !currentUserId.isEmpty()) {
+            // First time seeing this post — fetch from Firebase once
+            articlePostHelper.isPostLikedByUser(postId, currentUserId,
                 new ArticlePostHelper.OnCompleteListener<Boolean>() {
                     @Override
                     public void onSuccess(Boolean liked) {
+                        // Discard if holder was rebound OR user already interacted
+                        if (holder.bindGeneration.get() != bindGen) return;
+                        if (userInteractedPosts.contains(postId)) return;
+                        likedPostsCache.put(postId, liked);
                         isLiked.set(liked);
                         updateLikeUI(holder, liked, post.getLikes());
                     }
-                    
+
                     @Override
                     public void onError(String error) {
+                        if (holder.bindGeneration.get() != bindGen) return;
+                        if (userInteractedPosts.contains(postId)) return;
+                        likedPostsCache.put(postId, false);
                         isLiked.set(false);
                         updateLikeUI(holder, false, post.getLikes());
                     }
@@ -245,12 +302,17 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                 int newLikes = newLikedState ? currentLikes + 1 : Math.max(0, currentLikes - 1);
                 post.setLikes(newLikes);
                 isLiked.set(newLikedState);
+                // Mark user interaction and update cache immediately
+                userInteractedPosts.add(postId);
+                likedPostsCache.put(postId, newLikedState);
                 updateLikeUI(holder, newLikedState, newLikes);
                 
                 articlePostHelper.toggleLike(post.getPostId(), currentUserId, 
                     new ArticlePostHelper.OnCompleteListener<Boolean>() {
                         @Override
                         public void onSuccess(Boolean isLikedResult) {
+                            // Keep cache in sync with server truth
+                            likedPostsCache.put(post.getPostId(), isLikedResult);
                             if (isLikedResult != newLikedState) {
                                 post.setLikes(isLikedResult ? currentLikes + 1 : Math.max(0, currentLikes - 1));
                                 isLiked.set(isLikedResult);
@@ -266,10 +328,15 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                         @Override
                         public void onError(String error) {
                             android.util.Log.e("PostFeedAdapter", "Error toggling like: " + error);
+                            // Revert cache on error
+                            likedPostsCache.put(post.getPostId(), currentLikedState);
                             post.setLikes(currentLikes);
                             isLiked.set(currentLikedState);
                             updateLikeUI(holder, currentLikedState, currentLikes);
                             if (holder.btnLike != null) holder.btnLike.setEnabled(true);
+                            com.google.android.material.snackbar.Snackbar.make(holder.itemView,
+                                    context.getString(R.string.article_like_error, error != null ? error : ""),
+                                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
                         }
                     });
             });
@@ -455,10 +522,12 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         if (holder.ivLike != null) {
             if (isLiked) {
                 holder.ivLike.setImageResource(R.drawable.ic_like_red);
-                holder.ivLike.setColorFilter(context.getResources().getColor(R.color.red_light, null));
+                androidx.core.widget.ImageViewCompat.setImageTintList(holder.ivLike, 
+                        android.content.res.ColorStateList.valueOf(context.getResources().getColor(R.color.red_primary, null)));
             } else {
                 holder.ivLike.setImageResource(R.drawable.ic_like);
-                holder.ivLike.setColorFilter(context.getResources().getColor(R.color.text_primary, null));
+                androidx.core.widget.ImageViewCompat.setImageTintList(holder.ivLike, 
+                        android.content.res.ColorStateList.valueOf(context.getResources().getColor(R.color.text_primary, null)));
             }
         }
         
@@ -1030,6 +1099,9 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         View containerTagsMusic;
         View btnLike, btnComment, btnShare;
         TextView tvViewCount;
+        // Incremented each time this ViewHolder is bound. Stale async callbacks
+        // compare against this to detect if the holder was recycled/rebound.
+        final java.util.concurrent.atomic.AtomicInteger bindGeneration = new java.util.concurrent.atomic.AtomicInteger(0);
 
         PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -1049,12 +1121,22 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                 ivPostImage = itemView.findViewById(R.id.ivPostImage);
                 
                 btnLike = itemView.findViewById(R.id.btnLike);
-                btnComment = itemView.findViewById(R.id.btnComment);
-                btnShare = itemView.findViewById(R.id.btnShare);
+                ivLike = itemView.findViewById(R.id.ivLike);
+                if (ivLike == null && btnLike instanceof ImageView) {
+                    ivLike = (ImageView) btnLike;
+                }
                 
-                ivLike = (ImageView) btnLike;
-                ivComment = (ImageView) btnComment;
-                ivShare = (ImageView) btnShare;
+                btnComment = itemView.findViewById(R.id.btnComment);
+                ivComment = itemView.findViewById(R.id.ivComment);
+                if (ivComment == null && btnComment instanceof ImageView) {
+                    ivComment = (ImageView) btnComment;
+                }
+                
+                btnShare = itemView.findViewById(R.id.btnShare);
+                ivShare = itemView.findViewById(R.id.ivShare);
+                if (ivShare == null && btnShare instanceof ImageView) {
+                    ivShare = (ImageView) btnShare;
+                }
                 
                 ivSave = itemView.findViewById(R.id.ivSave);
                 ivMoreOptions = itemView.findViewById(R.id.ivMoreOptions);
@@ -1063,9 +1145,6 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                 containerVideo = itemView.findViewById(R.id.containerVideo);
                 containerTagsMusic = itemView.findViewById(R.id.containerTagsMusic);
                 
-                btnLike = itemView.findViewById(R.id.btnLike);
-                btnComment = itemView.findViewById(R.id.btnComment);
-                btnShare = itemView.findViewById(R.id.btnShare);
                 tvViewCount = itemView.findViewById(R.id.tvViewCount);
             } catch (Exception e) {
                 // Shimmer item
