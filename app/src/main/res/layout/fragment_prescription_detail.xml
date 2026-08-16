@@ -6,184 +6,149 @@
     android:layout_height="match_parent"
     android:background="?attr/colorBackground">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- Prescription Image Card -->
+        <!-- Prescription Image -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardImage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="1dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:layout_constraintTop_toTopOf="parent">
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant">
 
             <ImageView
                 android:id="@+id/ivPrescriptionImage"
                 android:layout_width="match_parent"
+<<<<<<< HEAD
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
                 android:maxHeight="620dp"
                 android:minHeight="220dp"
                 android:scaleType="fitCenter"
+=======
+                android:layout_height="250dp"
+                android:scaleType="center"
+>>>>>>> 33ad001670668d63bc26d19c8f4435572d9d52ea
                 android:contentDescription="@string/prescription_details"
                 tools:src="@drawable/ic_prescription" />
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Doctor Info Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardDoctorInfo"
+        <!-- Section Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <!-- Doctor Info Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/issued_by"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textStyle="bold"
+            android:textAllCaps="true" />
+
+        <TextView
+            android:id="@+id/tvDoctorName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="18sp"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            tools:text="Dr. John Smith" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/issue_date"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textStyle="bold"
+            android:textAllCaps="true" />
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="January 15, 2026" />
+
+        <!-- Section Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <!-- Medications Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/medications"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textStyle="bold"
+            android:textAllCaps="true" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewMedicines"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="1dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:layout_constraintTop_toBottomOf="@id/cardImage">
+            android:layout_marginTop="12dp"
+            android:nestedScrollingEnabled="false" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/issued_by"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvDoctorName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="16sp"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="Dr. John Smith" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="@string/issue_date"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="16sp"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="January 15, 2026" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Medications Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardMedications"
+        <!-- Section Divider -->
+        <View
             android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <!-- Instructions Section -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="1dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:layout_constraintTop_toBottomOf="@id/cardDoctorInfo">
+            android:text="@string/instructions"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textStyle="bold"
+            android:textAllCaps="true" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/medications"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerViewMedicines"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:nestedScrollingEnabled="false" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Instructions Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardInstructions"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tvInstructions"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="1dp"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:layout_constraintTop_toBottomOf="@id/cardMedications">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/instructions"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvInstructions"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="14sp"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="Take 2 tablets daily after meals for 7 days" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
+            android:layout_marginTop="12dp"
+            android:textSize="16sp"
+            android:lineSpacingExtra="4dp"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Take 2 tablets daily after meals for 7 days" />
 
         <!-- Delete Button (Doctors only) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDelete"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
+            android:layout_marginTop="32dp"
             android:text="@string/delete_prescription"
             android:visibility="gone"
             style="@style/Widget.Material3.Button.OutlinedButton"
-            app:icon="@drawable/ic_delete"
-            app:layout_constraintTop_toBottomOf="@id/cardInstructions" />
+            app:icon="@drawable/ic_delete" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>

@@ -215,6 +215,7 @@
 <!--    <string name="doctors">Doctors</string>-->
     <string name="article_liked">Article liked</string>
     <string name="article_unliked">Article unliked</string>
+    <string name="article_like_error">Could not update like: %1$s</string>
     <string name="comment_posted">Comment posted</string>
     <string name="error_loading_article">Error loading article</string>
     <string name="comments_feature_coming_soon">Comments feature coming soon</string>

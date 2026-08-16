@@ -49,6 +49,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
     private FirebaseHelper firebaseHelper;
     private PreferenceManager preferenceManager;
     private boolean isLiked = false;
+    private boolean likeInteractionPending = false;
     private Gson gson = new Gson();
 
     private CircleImageView ivAuthorProfile;
@@ -104,12 +105,14 @@ public class ArticleDetailActivity extends AppCompatActivity {
                 new ArticlePostHelper.OnCompleteListener<Boolean>() {
                     @Override
                     public void onSuccess(Boolean liked) {
+                        if (likeInteractionPending) return;
                         isLiked = liked;
                         runOnUiThread(() -> updateLikeIcon());
                     }
 
                     @Override
                     public void onError(String error) {
+                        if (likeInteractionPending) return;
                         isLiked = false;
                         runOnUiThread(() -> updateLikeIcon());
                     }
@@ -210,12 +213,14 @@ public class ArticleDetailActivity extends AppCompatActivity {
                 new ArticlePostHelper.OnCompleteListener<Boolean>() {
                     @Override
                     public void onSuccess(Boolean liked) {
+                        if (likeInteractionPending) return;
                         isLiked = liked;
                         runOnUiThread(() -> updateLikeIcon());
                     }
 
                     @Override
                     public void onError(String error) {
+                        if (likeInteractionPending) return;
                         isLiked = false;
                         runOnUiThread(() -> updateLikeIcon());
                     }
@@ -223,13 +228,16 @@ public class ArticleDetailActivity extends AppCompatActivity {
     }
 
     private void updateLikeIcon() {
+        if (ivLikeIcon == null) return;
         if (isLiked) {
             ivLikeIcon.setImageResource(R.drawable.ic_like_red);
-            ivLikeIcon.setColorFilter(getResources().getColor(R.color.red_primary, null));
-            tvLikesCount.setText(formatCount(article.getLikes()) + " " + getString(R.string.liked));
+            androidx.core.widget.ImageViewCompat.setImageTintList(ivLikeIcon, 
+                    android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.red_primary, null)));
+            tvLikesCount.setText(formatCount(article.getLikes()) + " " + getString(R.string.likes));
         } else {
             ivLikeIcon.setImageResource(R.drawable.ic_like);
-            ivLikeIcon.setColorFilter(getResources().getColor(R.color.text_secondary, null));
+            androidx.core.widget.ImageViewCompat.setImageTintList(ivLikeIcon, 
+                    android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.text_secondary, null)));
             tvLikesCount.setText(formatCount(article.getLikes()) + " " + getString(R.string.likes));
         }
     }
@@ -264,6 +272,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
         final boolean newLikedState = !isLiked;
         final int likesDelta = newLikedState ? 1 : -1;
 
+        likeInteractionPending = true;
         isLiked = newLikedState;
         article.setLikes(article.getLikes() + likesDelta);
         updateLikeIcon();
@@ -273,12 +282,26 @@ public class ArticleDetailActivity extends AppCompatActivity {
                 new ArticlePostHelper.OnCompleteListener<Boolean>() {
                     @Override
                     public void onSuccess(Boolean result) {
+                        likeInteractionPending = false;
+                        if (result != null && result != newLikedState) {
+                            isLiked = result;
+                            article.setLikes(Math.max(0, article.getLikes() + (result ? 2 : -2)));
+                            runOnUiThread(() -> {
+                                updateLikeIcon();
+                                updateStats();
+                            });
+                        }
                         AuditLogger.getInstance(ArticleDetailActivity.this)
                                 .logPostLiked(article.getPostId(), result, article.getType());
                     }
 
                     @Override
                     public void onError(String error) {
+                        likeInteractionPending = false;
+                        android.util.Log.e("ArticleDetailActivity", "Error toggling like: " + error);
+                        com.google.android.material.snackbar.Snackbar.make(layoutLikes, 
+                                getString(R.string.article_like_error, error != null ? error : ""), 
+                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
                         isLiked = !newLikedState;
                         article.setLikes(article.getLikes() - likesDelta);
                         runOnUiThread(() -> {

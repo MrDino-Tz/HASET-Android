@@ -263,7 +263,14 @@ public class ArticleFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadPosts();
+        // Only load posts on first resume (when adapter is empty).
+        // Do NOT re-fetch on every resume — that causes the like icon to
+        // revert because a fresh data emission from Firebase rebinds all items.
+        if (articleAdapter != null && articleAdapter.getItemCount() == 0) {
+            loadPosts();
+        } else if (healthTipsTab && healthTipsListener == null) {
+            loadPosts();
+        }
     }
     
     private void showShimmerLoading() {
