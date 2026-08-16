@@ -1,4 +1,5 @@
 import PhotosUI
+import AVFoundation
 import SwiftUI
 import UIKit
 import WebKit
@@ -700,6 +701,7 @@ struct RoleHomeView: View {
         case .approved: return "checkmark.circle.fill"
         case .completed: return "checkmark.seal.fill"
         case .cancelled: return "xmark.circle.fill"
+        case .declined: return "hand.raised.fill"
         }
     }
 
@@ -709,6 +711,7 @@ struct RoleHomeView: View {
         case .approved: return HASETTheme.greenPrimary
         case .completed: return HASETTheme.textPrimary
         case .cancelled: return HASETTheme.redPrimary
+        case .declined: return HASETTheme.redPrimary
         }
     }
 
@@ -1169,6 +1172,7 @@ private struct SectionTitle: View {
 private struct DoctorWalletView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     let isHidden: Bool
+    @State private var showBalance = false
     @State private var showWithdraw = false
     @State private var amount = ""
     @State private var mfaCode = ""
@@ -1191,7 +1195,7 @@ private struct DoctorWalletView: View {
     @State private var savingDestination = false
 
     private var balanceText: String {
-        if isHidden { return "•••••• TZS" }
+        if !showBalance { return "•••••• TZS" }
         guard let balance = appViewModel.doctorWallet?.balance else { return "0 TZS" }
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -1236,6 +1240,14 @@ private struct DoctorWalletView: View {
                             Text("Updated \(updatedText)")
                                 .font(HASETTheme.font(.regular, 12))
                                 .foregroundStyle(HASETTheme.textSecondary)
+                            Button { showBalance.toggle() } label: {
+                                Image(systemName: showBalance ? "eye" : "eye.slash")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(HASETTheme.greenPrimary)
+                                    .frame(width: 40, height: 40)
+                                    .background(Circle().fill(HASETTheme.greenPrimary.opacity(0.08)))
+                            }
+                            .accessibilityLabel(showBalance ? "Hide balance" : "Show balance")
                         }
 
                         Text(balanceText)
@@ -1254,17 +1266,6 @@ private struct DoctorWalletView: View {
                                 }
                             }
 
-                            CardContainer(fill: Color.orange.opacity(0.10), shadowColor: .clear, cornerRadius: 14, padding: 14) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Doctor ID")
-                                        .font(HASETTheme.font(.regular, 12))
-                                        .foregroundStyle(HASETTheme.textSecondary)
-                                    Text(appViewModel.doctorWallet?.doctorId ?? appViewModel.currentUser?.userId ?? "—")
-                                        .font(HASETTheme.font(.medium, 16))
-                                        .foregroundStyle(HASETTheme.textPrimary)
-                                        .lineLimit(1)
-                                }
-                            }
                         }
                     }
                 }
@@ -1277,8 +1278,12 @@ private struct DoctorWalletView: View {
                 }
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(checkingMFA)
-                Button("Payout accounts") { checkMfaThenConfigurePayout() }
-                    .buttonStyle(.bordered)
+                Button { checkMfaThenConfigurePayout() } label: {
+                    Label("Payout accounts", systemImage: "wallet.pass.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                    .buttonStyle(.borderedProminent)
+                    .tint(HASETTheme.greenPrimary)
                     .disabled(checkingMFA)
                 SectionTitle("Withdrawal history")
                 if appViewModel.doctorWalletLoading && appViewModel.doctorWithdrawals.isEmpty { ProgressView() }
@@ -1308,7 +1313,11 @@ private struct DoctorWalletView: View {
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle("Wallet")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await appViewModel.loadDoctorWithdrawals() }
+        .onAppear { showBalance = !isHidden }
+        .task {
+            await appViewModel.loadDoctorWallet(force: true)
+            await appViewModel.loadDoctorWithdrawals()
+        }
         .refreshable { await appViewModel.loadDoctorWithdrawals() }
         .alert("Withdrawal unavailable", isPresented: $showNoBalanceAlert) {
             Button("OK", role: .cancel) {}
@@ -1592,6 +1601,7 @@ struct DoctorDetailView: View {
                     Text(appViewModel.tr("book_appointment"))
                 }
                 .buttonStyle(PrimaryButtonStyle())
+                .frame(maxWidth: .infinity)
             }
             .padding(20)
         }
@@ -1717,7 +1727,7 @@ struct BookAppointmentView: View {
                     if requiresPayment {
                         showPaymentSheet = true
                     } else {
-                        submitAppointment()
+                        submitAppointment(paymentConfirmed: true)
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle())
@@ -1739,7 +1749,7 @@ struct BookAppointmentView: View {
                 amount: consultationFeeAmount,
                 initialMethod: paymentMethod,
                 onPaymentConfirmed: {
-                    submitAppointment()
+                    submitAppointment(paymentConfirmed: true)
                     showPaymentSheet = false
                 }
             )
@@ -1973,13 +1983,14 @@ struct BookAppointmentView: View {
         timeValue = now
     }
 
-    private func submitAppointment() {
+    private func submitAppointment(paymentConfirmed: Bool = false) {
         appViewModel.bookAppointment(
             doctor: doctor,
             date: selectedDate,
             time: selectedTime,
             reason: reason,
-            appointmentType: appointmentType
+            appointmentType: appointmentType,
+            paymentConfirmed: paymentConfirmed
         )
     }
 }
@@ -2278,9 +2289,17 @@ struct PaymentCheckoutView: View {
             statusMessage = appViewModel.tr("preparing_payment")
             canRetryStatus = false
         }
-        // Anonymous payment sessions are short-lived. Reuse the signed-in
-        // session for normal users, and mint an anonymous one for guest flows.
+        // Reuse the signed-in session so the authenticated Firebase user and
+        // payment payload user_id stay aligned. Doctor registration is the only
+        // guest flow and receives a short-lived anonymous session.
         if paymentAuthSession != nil {
+            await MainActor.run {
+                paymentSessionReady = true
+                statusMessage = ""
+            }
+            return
+        }
+        if sessionStore.loadSession() != nil {
             await MainActor.run {
                 paymentSessionReady = true
                 statusMessage = ""
@@ -2429,8 +2448,8 @@ struct PaymentCheckoutView: View {
             return
         }
         let user = appViewModel.currentUser ?? UserProfile(
-            userId: sessionStore.loadSession()?.userId ?? "",
-            email: "",
+            userId: paymentAuthSession?.userId ?? sessionStore.loadSession()?.userId ?? "",
+            email: doctor.email ?? "",
             fullName: doctor.name,
             phone: doctor.phoneNumber ?? "",
             role: .patient,
@@ -2685,6 +2704,92 @@ private struct DoctorPatientItem: Identifiable {
     let id: String
     let name: String
     let appointments: [AppointmentSummary]
+
+    var profileImage: String? { appointments.first?.profileImage }
+}
+
+private struct DoctorPatientDetailView: View {
+    let patient: DoctorPatientItem
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var showAllAppointments = false
+    @State private var loadedProfileImage = ""
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                CardContainer {
+                    VStack(spacing: 10) {
+                        ProfileAvatarView(
+                            imageSource: loadedProfileImage.isEmpty ? (patient.profileImage ?? "") : loadedProfileImage,
+                            initials: String(patient.name.prefix(1)).uppercased(),
+                            size: 92,
+                            fontSize: 32
+                        )
+                        Text(patient.name).font(HASETTheme.font(.medium, 22))
+                        Text("Patient").foregroundStyle(HASETTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+
+                if !patient.appointments.isEmpty {
+                    CardContainer {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { showAllAppointments.toggle() }
+                            } label: {
+                                HStack {
+                                    Text("All appointments").font(HASETTheme.font(.medium, 18))
+                                    Spacer()
+                                    Image(systemName: showAllAppointments ? "chevron.up" : "chevron.down")
+                                        .foregroundStyle(HASETTheme.greenPrimary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            if showAllAppointments {
+                                ForEach(patient.appointments.sorted { ($0.createdAt ?? 0) > ($1.createdAt ?? 0) }) { appointment in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    detailLine("Reason", appointment.subtitle)
+                                    detailLine("Type", appointment.appointmentType ?? "Visit")
+                                    detailLine("Date", appointment.dateText)
+                                    detailLine("Status", appointment.status.localizedLabel(languageCode: "en"))
+                                }
+                                if appointment.id != patient.appointments.last?.id { Divider() }
+                                }
+                            } else if let latest = patient.appointments.max(by: { ($0.createdAt ?? 0) < ($1.createdAt ?? 0) }) {
+                                detailLine("Latest", latest.dateText.isEmpty ? latest.subtitle : latest.dateText)
+                            }
+                        }
+                    }
+                }
+
+                CardContainer {
+                    Text("Medical information and profile details will appear here when the patient has provided them.")
+                        .font(HASETTheme.font(.regular, 14))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                }
+            }
+            .padding(20)
+        }
+        .background(HASETTheme.backgroundPrimary)
+        .navigationTitle("Patient details")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            if let image = await appViewModel.loadProfileImage(userId: patient.id), !image.isEmpty {
+                loadedProfileImage = image
+            }
+        }
+    }
+
+    private func detailLine(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .top) {
+            Text(title).font(HASETTheme.font(.medium, 14)).frame(width: 90, alignment: .leading)
+            Text(value.isEmpty ? "Not provided" : value)
+                .font(HASETTheme.font(.regular, 14))
+                .foregroundStyle(HASETTheme.textSecondary)
+            Spacer()
+        }
+    }
 }
 
 struct DoctorPatientsView: View {
@@ -2716,11 +2821,17 @@ struct DoctorPatientsView: View {
                     }
                 } else {
                     ForEach(patients) { patient in
-                        CardContainer {
+                        NavigationLink {
+                            DoctorPatientDetailView(patient: patient)
+                        } label: {
+                            CardContainer {
                             HStack(spacing: 14) {
-                                Image(systemName: "person.crop.circle.fill")
-                                    .font(.system(size: 42))
-                                    .foregroundStyle(HASETTheme.greenPrimary)
+                                ProfileAvatarView(
+                                    imageSource: patient.profileImage ?? "",
+                                    initials: String(patient.name.prefix(1)).uppercased(),
+                                    size: 48,
+                                    fontSize: 18
+                                )
                                 VStack(alignment: .leading, spacing: 5) {
                                     Text(patient.name)
                                         .font(HASETTheme.font(.medium, 16))
@@ -2731,7 +2842,9 @@ struct DoctorPatientsView: View {
                                 }
                                 Spacer()
                             }
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -2775,17 +2888,21 @@ struct AppointmentsOverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Picker(appViewModel.tr("status"), selection: Binding(
-                    get: { selectedStatus ?? .approved },
+                    get: { selectedStatus ?? .pending },
                     set: { selectedStatus = $0 }
                 )) {
-                    ForEach(role == .doctor ? AppointmentSummary.Status.allCases : [.approved, .pending, .cancelled], id: \.id) { status in
+                    ForEach([AppointmentSummary.Status.pending, .completed, .cancelled], id: \.id) { status in
                         Text(status.localizedLabel(languageCode: appViewModel.selectedLanguage)).tag(status)
                     }
                 }
                 .pickerStyle(.segmented)
                 .onAppear {
                     if selectedStatus == nil {
-                        selectedStatus = role == .doctor ? .pending : .approved
+                        // New bookings are created as pending and become
+                        // approved only after the doctor accepts them. Start
+                        // patients on the state where their new booking is
+                        // visible, matching Android's appointment flow.
+                        selectedStatus = .pending
                     }
                 }
 
@@ -2799,9 +2916,15 @@ struct AppointmentsOverviewView: View {
                     }
                 } else {
                     ForEach(visibleAppointments) { appointment in
-                        CardContainer {
+                            CardContainer {
                             VStack(alignment: .leading, spacing: 10) {
-                                HStack {
+                                HStack(spacing: 12) {
+                                    ProfileAvatarView(
+                                        imageSource: appointment.profileImage ?? "",
+                                        initials: String(appointment.title.prefix(1)).uppercased(),
+                                        size: 44,
+                                        fontSize: 17
+                                    )
                                     Text(appointment.title)
                                         .font(HASETTheme.font(.medium, 16))
                                     Spacer()
@@ -2976,6 +3099,8 @@ struct AppointmentsOverviewView: View {
             return .orange
         case .cancelled:
             return HASETTheme.redPrimary
+        case .declined:
+            return HASETTheme.redPrimary
         }
     }
 
@@ -3002,6 +3127,7 @@ struct AppointmentsOverviewView: View {
 
         return ConversationSummary(
             id: sortedChatRoomId(currentUser.userId, otherUserId),
+            otherUserId: otherUserId,
             name: otherUserName,
             lastMessage: "Chat appointment",
             lastMessageTimestamp: appointment.createdAt ?? Date().timeIntervalSince1970 * 1000,
@@ -3180,15 +3306,13 @@ struct ChatListScreen: View {
                             ChatThreadView(conversation: conversation, role: role)
                         } label: {
                             CardContainer {
-                                HStack {
-                                    Circle()
-                                        .fill(conversation.isOnline ? HASETTheme.greenPrimary.opacity(0.16) : HASETTheme.divider)
-                                        .frame(width: 48, height: 48)
-                                        .overlay(
-                                            Text(String(conversation.name.prefix(1)))
-                                                .font(HASETTheme.font(.medium, 18))
-                                                .foregroundStyle(HASETTheme.greenPrimary)
-                                        )
+                                    HStack {
+                                    ProfileAvatarView(
+                                        imageSource: conversation.profileImage ?? "",
+                                        initials: String(conversation.name.prefix(1)).uppercased(),
+                                        size: 48,
+                                        fontSize: 18
+                                    )
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(conversation.name)
@@ -3231,12 +3355,25 @@ struct ChatThreadView: View {
     @State private var messages: [ChatMessageSummary] = []
     @State private var draftMessage = ""
     @State private var isSending = false
+    @State private var selectedMessageIDs: Set<String> = []
+    @State private var isSelectingMessages = false
+    @State private var attachmentItem: PhotosPickerItem?
+    @State private var showAttachmentError = false
+    @State private var recorder: AVAudioRecorder?
+    @State private var isRecording = false
+    @State private var recordingSeconds = 0
+    @State private var recordingTimer: Timer?
+    @State private var audioPlayer: AVAudioPlayer?
+    @State private var showChatActions = false
+    @State private var replyMessage: ChatMessageSummary?
+    @State private var chatSendAccess = ChatSendAccessSummary(canSend: false, message: "Checking chat access...")
 
-    private var currentUserId: String { appViewModel.currentUser?.userId ?? "" }
+    private var currentUserId: String {
+        appViewModel.activeSession?.userId ?? appViewModel.currentUser?.userId ?? ""
+    }
 
     private var otherUserId: String {
-        let parts = conversation.id.split(separator: "_").map(String.init)
-        return parts.first(where: { $0 != currentUserId }) ?? conversation.id
+        conversation.otherUserId
     }
 
     private var chatRoomId: String {
@@ -3249,31 +3386,36 @@ struct ChatThreadView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if isSelectingMessages {
+                HStack {
+                    Button("Cancel") { selectedMessageIDs.removeAll(); isSelectingMessages = false }
+                    Spacer()
+                    Text("\(selectedMessageIDs.count) selected")
+                    Button(role: .destructive) {
+                        let ids = selectedMessageIDs
+                        Task {
+                            for id in ids { try? await appViewModel.deleteChatMessage(chatRoomId: chatRoomId, messageId: id) }
+                            selectedMessageIDs.removeAll(); isSelectingMessages = false
+                            await loadMessages()
+                        }
+                    } label: { Image(systemName: "trash") }
+                    .disabled(selectedMessageIDs.isEmpty)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(Color.white)
+            }
             ScrollView {
                 LazyVStack(spacing: 10) {
                     ForEach(messages) { message in
+                        let bodyView = AnyView(messageBody(message))
+                        let statusView = AnyView(messageStatus(message))
                         HStack {
                             if message.isOutgoing { Spacer(minLength: 32) }
                             HStack(alignment: .bottom, spacing: 8) {
-                                Text(message.message)
-                                    .font(HASETTheme.font(.regular, 15))
-                                    .foregroundStyle(message.isOutgoing ? .white : HASETTheme.textPrimary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                bodyView
 
-                                if message.isOutgoing {
-                                    ZStack(alignment: .trailing) {
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundStyle(message.isRead ? Color.blue : Color.gray.opacity(0.75))
-                                            .offset(x: -3, y: 0)
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 10, weight: .semibold))
-                                            .foregroundStyle(message.isRead ? Color.blue : Color.gray.opacity(0.75))
-                                            .offset(x: 2, y: 0)
-                                    }
-                                    .frame(width: 12, height: 12)
-                                    .padding(.leading, 4)
-                                }
+                                if message.isOutgoing { statusView }
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
@@ -3282,6 +3424,7 @@ struct ChatThreadView: View {
                                     .fill(message.isOutgoing ? HASETTheme.greenPrimary : Color.white)
                             )
                             .frame(maxWidth: 280, alignment: message.isOutgoing ? .trailing : .leading)
+                            .contextMenu { messageContextMenu(message) }
                             if !message.isOutgoing { Spacer(minLength: 32) }
                         }
                     }
@@ -3289,21 +3432,92 @@ struct ChatThreadView: View {
                 .padding(20)
             }
 
+            if let message = chatSendAccess.message, !chatSendAccess.canSend {
+                Text(message)
+                    .font(HASETTheme.font(.medium, 12))
+                    .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.orange.opacity(0.09))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+            }
+
             HStack(spacing: 10) {
+                Button { showChatActions.toggle() } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
+                }
+                .disabled(!chatSendAccess.canSend)
+                .confirmationDialog("Chat actions", isPresented: $showChatActions, titleVisibility: .visible) {
+                    if role == .doctor {
+                        Button("Send prescription") { draftMessage = "Prescription: please add medication details" }
+                        Button("Request service payment") { draftMessage = "Service payment request: please confirm the service and amount" }
+                    } else {
+                        Button("Request service payment") { draftMessage = "Service payment request: please confirm the service and amount" }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Choose an action to prepare a message for this conversation.")
+                }
+                PhotosPicker(selection: $attachmentItem, matching: .images) {
+                    Image(systemName: "paperclip")
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
+                }
+                .disabled(!chatSendAccess.canSend)
+                Button {
+                    if isRecording { stopRecording() } else { startRecording() }
+                } label: {
+                    if isRecording {
+                        Text(String(format: "%02d:%02d", recordingSeconds / 60, recordingSeconds % 60))
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.red)
+                    } else {
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 19, weight: .semibold))
+                            .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
+                    }
+                }
+                .disabled(!chatSendAccess.canSend)
                 TextField("Type a message", text: $draftMessage, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
+                    .disabled(!chatSendAccess.canSend)
                     .lineLimit(1...4)
+                    .font(HASETTheme.font(.regular, 15))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 11)
+                    .background(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(HASETTheme.backgroundPrimary)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(HASETTheme.divider, lineWidth: 1)
+                    )
                 Button {
                     sendMessage()
                 } label: {
                     Image(systemName: "paperplane.fill")
                         .foregroundStyle(.white)
-                        .frame(width: 42, height: 42)
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 48, height: 48)
                         .background(Circle().fill(HASETTheme.greenPrimary))
+                        .shadow(color: HASETTheme.greenPrimary.opacity(0.22), radius: 5, y: 3)
                 }
-                .disabled(draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+                .disabled(!chatSendAccess.canSend || draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background(Color.white)
         }
         .background(HASETTheme.backgroundPrimary)
@@ -3311,8 +3525,62 @@ struct ChatThreadView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadMessages()
+            await refreshChatSendAccess()
             await appViewModel.markChatMessagesRead(chatRoomId: chatRoomId)
             await appViewModel.loadConversations(force: true)
+        }
+        .onChange(of: attachmentItem) { item in
+            guard let item else { return }
+            Task {
+                guard chatSendAccess.canSend else {
+                    attachmentItem = nil
+                    return
+                }
+                guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+                do {
+                    let url = try await appViewModel.uploadChatAttachment(data, fileName: "image-\(UUID().uuidString).jpg", mimeType: "image/jpeg")
+                    try await appViewModel.sendChatMessage(chatRoomId: chatRoomId, receiverId: otherUserId, receiverName: otherUserName, message: "Image", messageType: "image", attachmentURL: url, attachmentFileName: "image.jpg")
+                    await loadMessages()
+                } catch { showAttachmentError = true }
+                attachmentItem = nil
+            }
+        }
+        .alert("Attachment failed", isPresented: $showAttachmentError) { Button("OK", role: .cancel) {} }
+    }
+
+    private func startRecording() {
+        guard chatSendAccess.canSend else { return }
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            guard granted else { return }
+            DispatchQueue.main.async {
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("voice-\(UUID().uuidString).m4a")
+                let settings: [String: Any] = [AVFormatIDKey: Int(kAudioFormatMPEG4AAC), AVSampleRateKey: 12_000, AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue]
+                do {
+                    let session = AVAudioSession.sharedInstance()
+                    try session.setCategory(.record, mode: .spokenAudio)
+                    try session.setActive(true)
+                    let recorder = try AVAudioRecorder(url: url, settings: settings)
+                    recorder.record(); self.recorder = recorder; isRecording = true; recordingSeconds = 0
+                    recordingTimer?.invalidate()
+                    recordingTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in recordingSeconds += 1 }
+                } catch { showAttachmentError = true }
+            }
+        }
+    }
+
+    private func stopRecording() {
+        guard let recorder else { return }
+        recorder.stop(); self.recorder = nil; isRecording = false
+        recordingTimer?.invalidate(); recordingTimer = nil
+        let url = recorder.url
+        Task {
+            do {
+                let data = try Data(contentsOf: url)
+                let remoteURL = try await appViewModel.uploadChatAttachment(data, fileName: url.lastPathComponent, mimeType: "audio/mp4")
+                try await appViewModel.sendChatMessage(chatRoomId: chatRoomId, receiverId: otherUserId, receiverName: otherUserName, message: "Voice message", messageType: "audio", attachmentURL: remoteURL, attachmentFileName: url.lastPathComponent)
+                await loadMessages()
+            } catch { showAttachmentError = true }
+            try? FileManager.default.removeItem(at: url)
         }
     }
 
@@ -3321,7 +3589,68 @@ struct ChatThreadView: View {
         messages = await appViewModel.loadChatMessages(chatRoomId: chatRoomId, currentUserId: currentUserId)
     }
 
+    private func refreshChatSendAccess() async {
+        guard !currentUserId.isEmpty else { return }
+        chatSendAccess = await appViewModel.loadChatSendAccess(
+            chatRoomId: chatRoomId,
+            otherUserId: otherUserId,
+            role: role
+        )
+    }
+
+    private func toggleSelection(_ id: String) {
+        if selectedMessageIDs.contains(id) { selectedMessageIDs.remove(id) }
+        else { selectedMessageIDs.insert(id) }
+    }
+
+    @ViewBuilder private func messageContextMenu(_ message: ChatMessageSummary) -> some View {
+        Button { isSelectingMessages = true; selectedMessageIDs.insert(message.id) } label: { Text("Select") }
+        Button { UIPasteboard.general.string = message.message } label: { Text("Copy") }
+        Button { replyMessage = message; draftMessage = "" } label: { Text("Reply") }
+        if message.isOutgoing {
+            Button(role: .destructive) {
+                Task { try? await appViewModel.deleteChatMessage(chatRoomId: chatRoomId, messageId: message.id); await loadMessages() }
+            } label: { Text("Delete") }
+        }
+    }
+
+    @ViewBuilder private func messageBody(_ message: ChatMessageSummary) -> some View {
+        if message.messageType == "image", let value = message.attachmentURL, let url = URL(string: value) {
+            AsyncImage(url: url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView() }
+                .frame(maxWidth: 180, maxHeight: 180)
+        } else if message.messageType == "audio", let value = message.attachmentURL, let url = URL(string: value) {
+            Button { playVoice(url) } label: { Label("Play voice message", systemImage: "play.circle.fill") }
+                .foregroundStyle(message.isOutgoing ? .white : HASETTheme.greenPrimary)
+        } else {
+            Text(message.message)
+                .font(HASETTheme.font(.regular, 15))
+                .foregroundStyle(message.isOutgoing ? .white : HASETTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func messageStatus(_ message: ChatMessageSummary) -> some View {
+        let color: Color = message.isRead ? .blue : Color.gray.opacity(0.75)
+        return ZStack(alignment: .trailing) {
+            Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(color).offset(x: -3)
+            Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(color).offset(x: 2)
+        }
+        .frame(width: 12, height: 12)
+        .padding(.leading, 4)
+    }
+
+    private func playVoice(_ url: URL) {
+        Task {
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                let player = try AVAudioPlayer(data: data)
+                await MainActor.run { audioPlayer = player; player.play() }
+            } catch { showAttachmentError = true }
+        }
+    }
+
     private func sendMessage() {
+        guard chatSendAccess.canSend else { return }
         let text = draftMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         isSending = true
@@ -3333,11 +3662,14 @@ struct ChatThreadView: View {
                     chatRoomId: chatRoomId,
                     receiverId: otherUserId,
                     receiverName: otherUserName,
-                    message: text
+                    message: text,
+                    messageType: text.hasPrefix("Prescription:") ? "prescription" : (text.hasPrefix("Service payment request:") ? "service_payment" : "text")
+                    , replyToMessageID: replyMessage?.id, replyToText: replyMessage?.message
                 )
                 await loadMessages()
                 await appViewModel.markChatMessagesRead(chatRoomId: chatRoomId)
                 await appViewModel.loadConversations(force: true)
+                replyMessage = nil
             } catch {
                 draftMessage = text
             }
@@ -3347,6 +3679,7 @@ struct ChatThreadView: View {
 
 struct ProfileScreen: View {
     @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -3398,39 +3731,17 @@ struct ProfileScreen: View {
                     .buttonStyle(PrimaryButtonStyle())
                 }
 
-                if let user = appViewModel.currentUser {
-                    sectionHeader(appViewModel.tr("basic"))
-                    CardContainer {
-                        VStack(spacing: 0) {
-                            NavigationLink { EditProfileView() } label: {
-                                ProfileValueRow(icon: "phone", title: appViewModel.tr("phone"), value: user.phone.isEmpty ? appViewModel.tr("not_set") : user.phone)
-                            }
-                            .buttonStyle(.plain)
-                            rowDivider()
-                            NavigationLink { EditProfileView() } label: {
-                                ProfileValueRow(icon: "calendar", title: appViewModel.tr("age"), value: user.age ?? appViewModel.tr("not_set"))
-                            }
-                            .buttonStyle(.plain)
-                            rowDivider()
-                            NavigationLink { EditProfileView() } label: {
-                                ProfileValueRow(icon: "person", title: appViewModel.tr("gender"), value: user.gender ?? appViewModel.tr("not_set"))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
                 sectionHeader(appViewModel.tr("general"))
                 CardContainer {
                     VStack(spacing: 0) {
-                        NavigationLink { AboutUsView() } label: {
-                            ProfileOptionRow(icon: "doc.text", title: appViewModel.tr("terms_of_use"), subtitle: appViewModel.tr("terms_of_use_desc"))
-                        }
+                            NavigationLink { InAppWebContentView(title: appViewModel.tr("terms_of_use"), url: URL(string: HASETConstants.termsURL)!) } label: {
+                                ProfileOptionRow(icon: "doc.text", title: appViewModel.tr("terms_of_use"), subtitle: appViewModel.tr("terms_of_use_desc"))
+                            }
                         .buttonStyle(.plain)
                         rowDivider()
-                        NavigationLink { AboutUsView() } label: {
-                            ProfileOptionRow(icon: "info.circle", title: appViewModel.tr("about"), subtitle: appViewModel.tr("about_desc"))
-                        }
+                            NavigationLink { InAppWebContentView(title: appViewModel.tr("about"), url: URL(string: HASETConstants.supportURL)!) } label: {
+                                ProfileOptionRow(icon: "info.circle", title: appViewModel.tr("about"), subtitle: appViewModel.tr("about_desc"))
+                            }
                         .buttonStyle(.plain)
                         rowDivider()
                         Button {} label: {
@@ -3459,7 +3770,7 @@ struct ProfileScreen: View {
                             NavigationLink {
                                 EditProfileView()
                             } label: {
-                                ProfileValueRow(icon: "coins", title: appViewModel.tr("consultation_fee"), value: user.consultationFee ?? appViewModel.tr("not_set"))
+                                ProfileValueRow(icon: "dollarsign.circle", title: appViewModel.tr("consultation_fee"), value: user.consultationFee ?? appViewModel.tr("not_set"))
                             }
                             .buttonStyle(.plain)
                             rowDivider()
@@ -3487,47 +3798,52 @@ struct ProfileScreen: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                        }
-                    }
-
-                    sectionHeader(appViewModel.tr("preferences"))
-                    CardContainer {
-                        VStack(spacing: 0) {
-                            NavigationLink {
-                                AboutUsView()
-                            } label: {
-                                ProfileOptionRow(icon: "doc.text", title: appViewModel.tr("privacy_policy"), subtitle: appViewModel.tr("privacy_policy"))
+                            rowDivider()
+                            NavigationLink { EditProfileView() } label: {
+                                ProfileOptionRow(icon: "pencil", title: "Edit professional information", subtitle: "Specialization, consultation fee, times and bio")
+                            }
+                            .buttonStyle(.plain)
+                            rowDivider()
+                            NavigationLink { DoctorPolicyView() } label: {
+                                ProfileOptionRow(icon: "checkmark.shield", title: "Doctor policy", subtitle: "Professional account and consultation policy")
                             }
                             .buttonStyle(.plain)
                         }
                     }
+
                 }
 
+                sectionHeader(appViewModel.tr("preferences"))
                 CardContainer {
-                    Button(role: .destructive) {
-                        appViewModel.deleteAccount()
-                    } label: {
-                        ProfileOptionRow(icon: "trash", title: appViewModel.tr("delete_account"), subtitle: "Delete your account and data")
+                    VStack(spacing: 0) {
+                        Button { showDeleteConfirmation = true } label: {
+                            ProfileOptionRow(icon: "trash.fill", title: appViewModel.tr("delete_account"), subtitle: "Delete your account and data", tint: .red)
+                        }
+                        .buttonStyle(.plain)
+                        rowDivider()
+                        Button { appViewModel.logout() } label: {
+                            ProfileOptionRow(icon: "rectangle.portrait.and.arrow.right.fill", title: appViewModel.tr("logout"), subtitle: "Sign out of this device", tint: .red)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
-
-                Button {
-                    appViewModel.logout()
-                } label: {
-                    ProfileOptionRow(icon: "rectangle.portrait.and.arrow.right", title: appViewModel.tr("logout"), subtitle: "Sign out of this device")
-                }
-                .buttonStyle(PrimaryButtonStyle())
             }
             .padding(20)
         }
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("Delete account?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+            Button("Delete permanently", role: .destructive) { appViewModel.deleteAccount() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently removes your account and data. Continue only if you really want to delete it.")
+        }
         .task {
             await appViewModel.refreshCurrentUser()
         }
     }
+
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
@@ -3577,11 +3893,12 @@ private struct ProfileOptionRow: View {
     let icon: String
     let title: String
     let subtitle: String
+    var tint: Color = HASETTheme.greenPrimary
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundStyle(HASETTheme.greenPrimary)
+                .foregroundStyle(tint)
                 .frame(width: 20)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -3632,6 +3949,10 @@ private struct ProfileAvatarView: View {
     let size: CGFloat
     let fontSize: CGFloat
 
+    private var normalizedImageSource: String {
+        imageSource.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
         Group {
             if isRemoteURL, let remoteURL {
@@ -3662,19 +3983,19 @@ private struct ProfileAvatarView: View {
     }
 
     private var decodedImage: UIImage? {
-        guard !imageSource.isEmpty else { return nil }
-        if let data = Data(base64Encoded: imageSource), let image = UIImage(data: data) {
+        guard !normalizedImageSource.isEmpty else { return nil }
+        if let data = Data(base64Encoded: normalizedImageSource), let image = UIImage(data: data) {
             return image
         }
         return nil
     }
 
     private var isRemoteURL: Bool {
-        imageSource.hasPrefix("http://") || imageSource.hasPrefix("https://")
+        normalizedImageSource.lowercased().hasPrefix("http://") || normalizedImageSource.lowercased().hasPrefix("https://")
     }
 
     private var remoteURL: URL? {
-        URL(string: imageSource)
+        URL(string: normalizedImageSource)
     }
 
     private var fallbackAvatar: some View {
@@ -4805,6 +5126,34 @@ private struct SupportSheet: View {
     }
 }
 
+struct InAppWebContentView: View {
+    let title: String
+    let url: URL
+    var body: some View {
+        HostedCheckoutWebView(url: url, onCallback: {})
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct DoctorPolicyView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Per Service Fee Policy").font(HASETTheme.font(.medium, 20)).foregroundStyle(HASETTheme.greenPrimary)
+                Text("The per service fee is a fixed amount charged for each consultation or procedure performed. This fee covers professional expertise, facility equipment and administrative costs.\n\nKey points:\n1. The fee is non-refundable once the service is rendered.\n2. Emergency services may incur additional charges.\n3. Cancellation less than 2 hours before an appointment may result in a partial fee charge.\n4. Payments are processed securely through HASET.")
+                    .font(HASETTheme.font(.regular, 14)).foregroundStyle(HASETTheme.textSecondary)
+                Text("Location Tracking & Access Policy").font(HASETTheme.font(.medium, 20)).foregroundStyle(HASETTheme.greenPrimary)
+                Text("Location is accessed only when you add or update your clinic address. HASET does not continuously track your location in the background. Your clinic location is shown to patients for navigation and appointment booking, and permission can be revoked in device settings.")
+                    .font(HASETTheme.font(.regular, 14)).foregroundStyle(HASETTheme.textSecondary)
+            }
+            .padding(20)
+        }
+        .background(HASETTheme.backgroundPrimary)
+        .navigationTitle("Doctor policy")
+    }
+}
+
 struct AboutUsView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     var body: some View {
@@ -5062,7 +5411,12 @@ struct EditProfileView: View {
                     .keyboardType(.phonePad)
                 TextField(appViewModel.tr("age"), text: $age)
                     .keyboardType(.numberPad)
-                TextField(appViewModel.tr("gender"), text: $gender)
+                Picker(appViewModel.tr("gender"), selection: $gender) {
+                    Text(appViewModel.tr("not_set")).tag("")
+                    Text("Female").tag("Female")
+                    Text("Male").tag("Male")
+                    Text("Other").tag("Other")
+                }
             }
 
             Section(appViewModel.tr("additional")) {

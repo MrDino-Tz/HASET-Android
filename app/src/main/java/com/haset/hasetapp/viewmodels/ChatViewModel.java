@@ -35,6 +35,13 @@ public class ChatViewModel extends AndroidViewModel {
         return messages;
     }
 
+    public LiveData<List<ChatMessage>> getMessages(String id, String currentUserId, String otherUserId) {
+        if (messages == null) {
+            messages = repository.loadMessages(id, currentUserId, otherUserId);
+        }
+        return messages;
+    }
+
     public String sendMessage(String id, ChatMessage message, String senderId, String receiverId, String senderName, String receiverName) {
         return repository.sendMessage(id, message, senderId, receiverId, senderName, receiverName);
     }
@@ -58,6 +65,10 @@ public class ChatViewModel extends AndroidViewModel {
 
     public void markAllAsRead(String id, String currentUserId) {
         repository.markAllMessagesAsRead(id, currentUserId);
+    }
+
+    public void markAllAsRead(String id, String currentUserId, String otherUserId) {
+        repository.markAllMessagesAsRead(id, currentUserId, otherUserId);
     }
 
     public void setTyping(String id, String userId, boolean isTyping) {

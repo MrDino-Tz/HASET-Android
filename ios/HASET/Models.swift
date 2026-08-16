@@ -41,6 +41,36 @@ struct RemoteAppConfig: Codable, Equatable {
     var updateUrl: String?
     var maintenanceMessage: String?
     var doctorRegistrationFee: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case maintenanceMode
+        case minVersionCode
+        case updateUrl
+        case maintenanceMessage
+        case doctorRegistrationFee
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        maintenanceMode = try container.decodeIfPresent(Bool.self, forKey: .maintenanceMode) ?? false
+        minVersionCode = try container.decodeIfPresent(Int.self, forKey: .minVersionCode) ?? 0
+        updateUrl = try container.decodeIfPresent(String.self, forKey: .updateUrl)
+        maintenanceMessage = try container.decodeIfPresent(String.self, forKey: .maintenanceMessage)
+        doctorRegistrationFee = Self.decodeDouble(container, forKey: .doctorRegistrationFee)
+    }
+
+    private static func decodeDouble(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Double? {
+        if let value = try? container.decode(Double.self, forKey: key) {
+            return value
+        }
+        if let value = try? container.decode(String.self, forKey: key) {
+            return Double(value.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
+    }
 }
 
 enum AppRoute: Equatable {
@@ -164,6 +194,7 @@ struct AppointmentSummary: Identifiable, Hashable {
         case approved = "Approved"
         case completed = "Completed"
         case cancelled = "Canceled"
+        case declined = "Declined"
 
         var id: String { rawValue }
     }
@@ -178,11 +209,13 @@ struct AppointmentSummary: Identifiable, Hashable {
     let dateText: String
     let status: Status
     let appointmentType: String?
+    let profileImage: String?
     let createdAt: TimeInterval?
 }
 
 struct ConversationSummary: Identifiable, Hashable {
     let id: String
+    let otherUserId: String
     let name: String
     let lastMessage: String
     let lastMessageTimestamp: TimeInterval
@@ -199,8 +232,20 @@ struct ChatMessageSummary: Identifiable, Hashable {
     let message: String
     let timestamp: TimeInterval
     let isRead: Bool
+    let messageType: String
+    let attachmentURL: String?
+    let attachmentFileName: String?
+    let replyToMessageID: String?
+    let replyToText: String?
 
     var isOutgoing: Bool = false
+}
+
+struct ChatSendAccessSummary: Hashable {
+    let canSend: Bool
+    let message: String?
+
+    static let allowed = ChatSendAccessSummary(canSend: true, message: nil)
 }
 
 struct NotificationSummary: Identifiable, Hashable {
@@ -285,22 +330,31 @@ struct PaymentInitiationResponse: Decodable {
         case paymentStatus = "payment_status"
         case paymentChannel = "payment_channel"
         case paymentUrl = "payment_url"
+        case checkoutUrl = "checkout_url"
+        case url
         case reference
         case data
     }
 
     private struct NestedData: Decodable {
         let transactionId: Int?
+        let paymentUrl: String?
 
         enum CodingKeys: String, CodingKey {
             case transactionId = "transaction_id"
             case id
+            case paymentUrl = "payment_url"
+            case checkoutUrl = "checkout_url"
+            case url
         }
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             transactionId = Self.decodeInt(container, key: .transactionId)
                 ?? Self.decodeInt(container, key: .id)
+            paymentUrl = try? container.decodeIfPresent(String.self, forKey: .paymentUrl)
+                ?? container.decodeIfPresent(String.self, forKey: .checkoutUrl)
+                ?? container.decodeIfPresent(String.self, forKey: .url)
         }
 
         private static func decodeInt(
@@ -319,14 +373,18 @@ struct PaymentInitiationResponse: Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let nestedData = try? container.decodeIfPresent(NestedData.self, forKey: .data)
         status = try container.decodeIfPresent(String.self, forKey: .status) ?? "error"
         message = try container.decodeIfPresent(String.self, forKey: .message)
         transactionId = Self.decodeInt(container, key: .transactionId)
-            ?? (try? container.decodeIfPresent(NestedData.self, forKey: .data))??.transactionId
+            ?? nestedData?.transactionId
         orderReference = try container.decodeIfPresent(String.self, forKey: .orderReference)
         paymentStatus = try container.decodeIfPresent(String.self, forKey: .paymentStatus)
         paymentChannel = try container.decodeIfPresent(String.self, forKey: .paymentChannel)
         paymentUrl = try container.decodeIfPresent(String.self, forKey: .paymentUrl)
+            ?? container.decodeIfPresent(String.self, forKey: .checkoutUrl)
+            ?? container.decodeIfPresent(String.self, forKey: .url)
+            ?? nestedData?.paymentUrl
         reference = try container.decodeIfPresent(String.self, forKey: .reference)
     }
 

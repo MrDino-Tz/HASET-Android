@@ -490,7 +490,7 @@ public class StylishQRCodeGenerator {
     public static Bitmap generateStylishQR(Context context, String content, 
             @DrawableRes int logoResId, DotStyle dotStyle) {
 
-        Bitmap logo = logoResId > 0 ? 
+        Bitmap logo = logoResId != 0 ?
             BitmapFactory.decodeResource(context.getResources(), logoResId) : null;
 
         return new Builder()

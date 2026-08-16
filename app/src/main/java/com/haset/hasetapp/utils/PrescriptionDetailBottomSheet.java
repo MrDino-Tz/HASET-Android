@@ -205,7 +205,10 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
 
         if (prescription.getImageUrl() != null && !prescription.getImageUrl().isEmpty()) {
             cardImage.setVisibility(View.VISIBLE);
-            Glide.with(this).load(prescription.getImageUrl()).into(ivPrescriptionImage);
+            Glide.with(this)
+                    .load(prescription.getImageUrl())
+                    .fitCenter()
+                    .into(ivPrescriptionImage);
         } else {
             cardImage.setVisibility(View.GONE);
         }

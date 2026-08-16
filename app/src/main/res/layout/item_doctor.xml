@@ -73,7 +73,7 @@
             android:id="@+id/layoutDoctorInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/ivDoctorImage"
+            android:layout_toEndOf="@id/layoutDoctorImage"
             android:layout_toStartOf="@id/ivFavorite"
             android:layout_marginStart="12dp"
             android:orientation="vertical">

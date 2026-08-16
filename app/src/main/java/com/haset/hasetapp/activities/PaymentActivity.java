@@ -65,6 +65,18 @@ public class PaymentActivity extends AppCompatActivity {
         com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_payment);
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (viewModel != null && viewModel.getProcessing().getValue() != null
+                        && viewModel.getProcessing().getValue()) {
+                    showAbortDialog();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
 
         // Get data from intent
         doctor = (Doctor) getIntent().getSerializableExtra("doctor");
@@ -351,15 +363,6 @@ public class PaymentActivity extends AppCompatActivity {
                 finish();
             }
         });
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (viewModel.getProcessing().getValue() != null && viewModel.getProcessing().getValue()) {
-            showAbortDialog();
-        } else {
-            super.onBackPressed();
-        }
     }
 
     private void setupViews() {

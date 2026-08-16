@@ -119,40 +119,65 @@ public class DoctorHomeRepository {
                             callback.onError(errorMessage(response, "Unable to load the doctor wallet."));
                             return;
                         }
-                        JsonObject envelope = response.body();
-                        if (!envelope.has("wallet") || envelope.get("wallet").isJsonNull()) {
-                            DoctorWalletEntity empty = new DoctorWalletEntity();
-                            empty.setDoctorId(doctorId);
-                            empty.setBalance(0);
-                            empty.setTotalEarnings(0);
-                            callback.onSuccess(empty);
-                            return;
-                        }
-                        JsonObject json = envelope.getAsJsonObject("wallet");
                         DoctorWalletEntity wallet = new DoctorWalletEntity();
-                        wallet.setDoctorId(jsonString(json, "doctor_id", doctorId));
-                        double available = jsonDouble(json, "available_balance");
-                        double reserved = jsonDouble(json, "reserved_balance");
-                        double paidOut = jsonDouble(json, "paid_out_balance");
-                        wallet.setBalance(available);
-                        wallet.setTotalEarnings(available + reserved + paidOut);
-                        wallet.setLastUpdated(parseIsoTimestamp(jsonString(json, "updated_at", null)));
-                        if (envelope.has("payout_destinations") && envelope.get("payout_destinations").isJsonObject()) {
-                            JsonObject destinations = envelope.getAsJsonObject("payout_destinations");
-                            JsonObject mobile = destinations.has("mobile_money") ? destinations.getAsJsonObject("mobile_money") : null;
-                            JsonObject bank = destinations.has("bank") ? destinations.getAsJsonObject("bank") : null;
-                            wallet.setMobileMoneyAvailable(mobile != null && mobile.has("available") && mobile.get("available").getAsBoolean());
-                            wallet.setBankAvailable(bank != null && bank.has("available") && bank.get("available").getAsBoolean());
+                        wallet.setDoctorId(doctorId);
+                        wallet.setBalance(0);
+                        wallet.setTotalEarnings(0);
+                        wallet.setLastUpdated(System.currentTimeMillis());
+                        JsonObject envelope = response.body();
+                        JsonObject data = jsonObject(envelope, "data");
+                        JsonObject json = firstJsonObject(
+                                jsonObject(envelope, "wallet"),
+                                jsonObject(data, "wallet"),
+                                envelope
+                        );
+                        if (json != null) {
+                            wallet.setDoctorId(jsonString(json, "doctor_id", doctorId));
+                            double available = jsonDouble(json, "available_balance");
+                            double reserved = jsonDouble(json, "reserved_balance");
+                            double paidOut = jsonDouble(json, "paid_out_balance");
+                            wallet.setBalance(available);
+                            wallet.setTotalEarnings(available + reserved + paidOut);
+                            wallet.setLastUpdated(parseIsoTimestamp(jsonString(json, "updated_at", null)));
+                        }
+                        JsonObject destinations = firstJsonObject(
+                                jsonObject(envelope, "payout_destinations"),
+                                jsonObject(envelope, "payoutDestinations"),
+                                jsonObject(data, "payout_destinations"),
+                                jsonObject(data, "payoutDestinations"),
+                                jsonObject(json, "payout_destinations"),
+                                jsonObject(json, "payoutDestinations")
+                        );
+                        if (destinations != null) {
+                            JsonObject mobile = firstJsonObject(
+                                    jsonObject(destinations, "mobile_money"),
+                                    jsonObject(destinations, "mobileMoney"),
+                                    jsonObject(destinations, "mobile")
+                            );
+                            JsonObject bank = jsonObject(destinations, "bank");
                             if (mobile != null) {
+                                String status = jsonString(mobile, "status", "");
+                                boolean destinationAvailable = jsonBoolean(mobile, "available", isAvailableStatus(status));
                                 String provider = jsonString(mobile, "provider", "");
-                                String account = jsonString(mobile, "masked_account", "");
+                                String account = firstString(mobile, "masked_account", "maskedAccount", "phone_number_masked", "phoneNumberMasked", "phone_number", "phoneNumber");
+                                wallet.setMobileMoneyAvailable(destinationAvailable);
+                                wallet.setMobileMoneyPending(!destinationAvailable
+                                        && ("pending".equalsIgnoreCase(status) || !provider.isEmpty() || !account.isEmpty()));
                                 if (!provider.isEmpty() || !account.isEmpty()) wallet.setMobileMoneyLabel((provider + "  " + account).trim());
                             }
                             if (bank != null) {
-                                String bankCode = jsonString(bank, "bank_code", "");
-                                String account = jsonString(bank, "masked_account", "");
+                                String status = jsonString(bank, "status", "");
+                                boolean destinationAvailable = jsonBoolean(bank, "available", isAvailableStatus(status));
+                                String bankCode = firstString(bank, "bank_code", "bankCode");
+                                String account = firstString(bank, "masked_account", "maskedAccount", "bank_account_masked", "bankAccountMasked", "bank_account", "bankAccount");
+                                wallet.setBankAvailable(destinationAvailable);
+                                wallet.setBankPending(!destinationAvailable
+                                        && ("pending".equalsIgnoreCase(status) || !bankCode.isEmpty() || !account.isEmpty()));
                                 if (!bankCode.isEmpty() || !account.isEmpty()) wallet.setBankLabel((bankCode + "  " + account).trim());
                             }
+                        }
+                        if (json != null) {
+                            applyFlatPayoutDestinationFields(wallet, json);
                         }
                         callback.onSuccess(wallet);
                     }
@@ -254,8 +279,15 @@ public class DoctorHomeRepository {
                     return;
                 }
                 List<WithdrawalRequest> list = new ArrayList<>();
-                if (response.body().has("withdrawals") && response.body().get("withdrawals").isJsonArray()) {
-                    for (com.google.gson.JsonElement element : response.body().getAsJsonArray("withdrawals")) {
+                JsonObject envelope = response.body();
+                JsonObject data = jsonObject(envelope, "data");
+                com.google.gson.JsonArray withdrawals = firstJsonArray(
+                        jsonArray(envelope, "withdrawals"),
+                        jsonArray(data, "withdrawals"),
+                        envelope.has("data") && envelope.get("data").isJsonArray() ? envelope.getAsJsonArray("data") : null
+                );
+                if (withdrawals != null) {
+                    for (com.google.gson.JsonElement element : withdrawals) {
                         JsonObject w = element.getAsJsonObject();
                         WithdrawalRequest item = new WithdrawalRequest();
                         item.setRequestId(w.has("request_id") ? w.get("request_id").getAsString() : "");
@@ -264,8 +296,11 @@ public class DoctorHomeRepository {
                         item.setStatus(w.has("status") ? w.get("status").getAsString() : "pending");
                         String payoutMethod = jsonString(w, "payout_method", "mobile_money");
                         item.setMethod("bank".equals(payoutMethod) ? WithdrawalRequest.METHOD_BANK : WithdrawalRequest.METHOD_MOBILE_MONEY);
-                        item.setAccountNumber("bank".equals(payoutMethod) ? jsonString(w, "bank_account_masked", "") : jsonString(w, "phone_number_masked", ""));
-                        item.setBankName("bank".equals(payoutMethod) ? jsonString(w, "bank_code", "") : jsonString(w, "provider", ""));
+                        boolean bank = "bank".equals(payoutMethod);
+                        item.setAccountNumber(bank
+                                ? firstString(w, "bank_account_masked", "bank_account", "masked_account", "account_number", "accountNumber")
+                                : firstString(w, "phone_number_masked", "phone_number", "masked_account", "account_number", "accountNumber"));
+                        item.setBankName(bank ? firstString(w, "bank_code", "bank_name", "bankName") : firstString(w, "provider", "payout_provider", "mobile_money_provider"));
                         item.setRequestedAt(parseIsoTimestamp(jsonString(w, "created_at", null)));
                         item.setRejectionReason(w.has("failure_reason") && !w.get("failure_reason").isJsonNull() ? w.get("failure_reason").getAsString() : null);
                         list.add(item);
@@ -294,6 +329,122 @@ public class DoctorHomeRepository {
 
     private static String jsonString(JsonObject json, String key, String fallback) {
         return json.has(key) && !json.get(key).isJsonNull() ? json.get(key).getAsString() : fallback;
+    }
+
+    private static String firstString(JsonObject json, String... keys) {
+        if (json == null) return "";
+        for (String key : keys) {
+            String value = jsonString(json, key, "");
+            if (!value.isEmpty()) return value;
+        }
+        return "";
+    }
+
+    private static JsonObject jsonObject(JsonObject json, String key) {
+        if (json == null || !json.has(key) || json.get(key).isJsonNull() || !json.get(key).isJsonObject()) return null;
+        return json.getAsJsonObject(key);
+    }
+
+    private static com.google.gson.JsonArray jsonArray(JsonObject json, String key) {
+        if (json == null || !json.has(key) || json.get(key).isJsonNull() || !json.get(key).isJsonArray()) return null;
+        return json.getAsJsonArray(key);
+    }
+
+    private static JsonObject firstJsonObject(JsonObject... objects) {
+        for (JsonObject object : objects) {
+            if (object != null) return object;
+        }
+        return null;
+    }
+
+    private static com.google.gson.JsonArray firstJsonArray(com.google.gson.JsonArray... arrays) {
+        for (com.google.gson.JsonArray array : arrays) {
+            if (array != null) return array;
+        }
+        return null;
+    }
+
+    private static boolean jsonBoolean(JsonObject json, String key, boolean fallback) {
+        try {
+            return json.has(key) && !json.get(key).isJsonNull() ? json.get(key).getAsBoolean() : fallback;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private static boolean firstBoolean(JsonObject json, boolean fallback, String... keys) {
+        if (json == null) return fallback;
+        for (String key : keys) {
+            if (json.has(key) && !json.get(key).isJsonNull()) {
+                try {
+                    return json.get(key).getAsBoolean();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return fallback;
+    }
+
+    private static boolean isAvailableStatus(String status) {
+        return "approved".equalsIgnoreCase(status)
+                || "verified".equalsIgnoreCase(status)
+                || "active".equalsIgnoreCase(status)
+                || "enabled".equalsIgnoreCase(status);
+    }
+
+    private static boolean isPendingDestination(String status, String labelOne, String labelTwo) {
+        return "pending".equalsIgnoreCase(status)
+                || "requested".equalsIgnoreCase(status)
+                || "review".equalsIgnoreCase(status)
+                || (!labelOne.isEmpty() || !labelTwo.isEmpty());
+    }
+
+    private static void applyFlatPayoutDestinationFields(DoctorWalletEntity wallet, JsonObject json) {
+        String mobileStatus = firstString(json,
+                "payout_mobile_status", "payoutMobileStatus",
+                "mobile_money_status", "mobileMoneyStatus",
+                "destination_status", "destinationStatus",
+                "payout_status", "payoutStatus");
+        String mobileProvider = firstString(json,
+                "payout_provider", "payoutProvider",
+                "mobile_money_provider", "mobileMoneyProvider",
+                "provider");
+        String mobileAccount = firstString(json,
+                "payout_phone_masked", "payoutPhoneMasked",
+                "phone_number_masked", "phoneNumberMasked",
+                "masked_phone_number", "maskedPhoneNumber",
+                "masked_account", "maskedAccount",
+                "phone_number", "phoneNumber",
+                "accountNumber", "account_number");
+        if (!mobileProvider.isEmpty() || !mobileAccount.isEmpty()) {
+            boolean mobileAvailable = firstBoolean(json, isAvailableStatus(mobileStatus),
+                    "payout_mobile_available", "payoutMobileAvailable",
+                    "mobile_money_available", "mobileMoneyAvailable",
+                    "destination_available", "destinationAvailable");
+            wallet.setMobileMoneyAvailable(mobileAvailable);
+            wallet.setMobileMoneyPending(!mobileAvailable && isPendingDestination(mobileStatus, mobileProvider, mobileAccount));
+            wallet.setMobileMoneyLabel((mobileProvider + "  " + mobileAccount).trim());
+        }
+
+        String bankStatus = firstString(json,
+                "payout_bank_status", "payoutBankStatus",
+                "bank_status", "bankStatus");
+        String bankCode = firstString(json,
+                "payout_bank_code", "payoutBankCode",
+                "bank_code", "bankCode");
+        String bankAccount = firstString(json,
+                "payout_bank_account_masked", "payoutBankAccountMasked",
+                "bank_account_masked", "bankAccountMasked",
+                "masked_bank_account", "maskedBankAccount",
+                "bank_account", "bankAccount");
+        if (!bankCode.isEmpty() || !bankAccount.isEmpty()) {
+            boolean bankAvailable = firstBoolean(json, isAvailableStatus(bankStatus),
+                    "payout_bank_available", "payoutBankAvailable",
+                    "bank_available", "bankAvailable");
+            wallet.setBankAvailable(bankAvailable);
+            wallet.setBankPending(!bankAvailable && isPendingDestination(bankStatus, bankCode, bankAccount));
+            wallet.setBankLabel((bankCode + "  " + bankAccount).trim());
+        }
     }
 
     private static double jsonDouble(JsonObject json, String key) {

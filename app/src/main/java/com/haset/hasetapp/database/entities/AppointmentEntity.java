@@ -24,6 +24,16 @@ public class AppointmentEntity {
     private long chatDuration; // Duration in milliseconds
     private boolean isChatActive; // Whether chat session is currently active
     private double amount; // Consultation fee for this appointment (used by admin revenue reports)
+    @androidx.room.Ignore
+    private String paymentStatus;
+    @androidx.room.Ignore
+    private long paidAt;
+    @androidx.room.Ignore
+    private String paymentTransactionId;
+    @androidx.room.Ignore
+    private long chatStartsAt;
+    @androidx.room.Ignore
+    private long chatExpiresAt;
 
     public AppointmentEntity() {
     }
@@ -111,4 +121,19 @@ public class AppointmentEntity {
 
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
+
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public long getPaidAt() { return paidAt; }
+    public void setPaidAt(long paidAt) { this.paidAt = paidAt; }
+
+    public String getPaymentTransactionId() { return paymentTransactionId; }
+    public void setPaymentTransactionId(String paymentTransactionId) { this.paymentTransactionId = paymentTransactionId; }
+
+    public long getChatStartsAt() { return chatStartsAt; }
+    public void setChatStartsAt(long chatStartsAt) { this.chatStartsAt = chatStartsAt; }
+
+    public long getChatExpiresAt() { return chatExpiresAt; }
+    public void setChatExpiresAt(long chatExpiresAt) { this.chatExpiresAt = chatExpiresAt; }
 }

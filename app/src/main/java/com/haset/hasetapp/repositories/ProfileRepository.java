@@ -132,9 +132,11 @@ public class ProfileRepository {
 
     public void updateUserInfo(UserEntity user, FirebaseHelper.OnCompleteListener<Void> callback) {
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("userId", user.getUserId());
         updates.put("fullName", user.getFullName());
         updates.put("email", user.getEmail());
         updates.put("phone", user.getPhone());
+        updates.put("role", user.getRole());
         updates.put("profileImage", user.getProfileImage() == null ? "" : user.getProfileImage());
         updates.put("age", user.getAge());
         updates.put("gender", user.getGender() == null ? "" : user.getGender());

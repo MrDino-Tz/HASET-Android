@@ -34,6 +34,17 @@ public class OnboardingActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_onboarding);
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (userInteracted) {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                } else {
+                    Toast.makeText(OnboardingActivity.this, R.string.please_complete_onboarding, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         viewPager = findViewById(R.id.onboarding_viewpager);
         btnNext = findViewById(R.id.btn_next);
@@ -150,15 +161,6 @@ public class OnboardingActivity extends BaseActivity {
             }
             return false;
         });
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (userInteracted) {
-            super.onBackPressed();
-        } else {
-            Toast.makeText(this, R.string.please_complete_onboarding, Toast.LENGTH_SHORT).show();
-        }
     }
 
     private void completeOnboarding() {

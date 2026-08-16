@@ -56,6 +56,7 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
     private List<String> patientNames = new ArrayList<>();
     private String selectedPatientId;
     private String selectedAppointmentId;
+    private String preferredAppointmentId;
     
     private Uri currentImageUri;
     private String currentImagePath;
@@ -81,6 +82,7 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
     private void checkArguments() {
         if (getArguments() != null) {
             selectedPatientId = getArguments().getString("patientId");
+            preferredAppointmentId = getArguments().getString("appointmentId");
             String patientName = getArguments().getString("patientName");
             if (selectedPatientId != null && patientName != null) {
                 actvPatient.setText(patientName);
@@ -193,8 +195,17 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
             
             ArrayAdapter<String> apptAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, apptDisplay);
             actvAppointment.setAdapter(apptAdapter);
-            actvAppointment.setText(apptDisplay.get(0), false);
-            selectedAppointmentId = appointments.get(0).getAppointmentId();
+            int selectedIndex = 0;
+            if (preferredAppointmentId != null) {
+                for (int i = 0; i < appointments.size(); i++) {
+                    if (preferredAppointmentId.equals(appointments.get(i).getAppointmentId())) {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            actvAppointment.setText(apptDisplay.get(selectedIndex), false);
+            selectedAppointmentId = appointments.get(selectedIndex).getAppointmentId();
             
             actvAppointment.setOnItemClickListener((parent, view, position, id) -> {
                 selectedAppointmentId = appointments.get(position).getAppointmentId();

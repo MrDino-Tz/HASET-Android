@@ -16,6 +16,8 @@ public class DoctorWalletEntity {
     private long lastUpdated;
     @androidx.room.Ignore private boolean mobileMoneyAvailable;
     @androidx.room.Ignore private boolean bankAvailable;
+    @androidx.room.Ignore private boolean mobileMoneyPending;
+    @androidx.room.Ignore private boolean bankPending;
     @androidx.room.Ignore private String mobileMoneyLabel;
     @androidx.room.Ignore private String bankLabel;
 
@@ -84,6 +86,10 @@ public class DoctorWalletEntity {
     public void setMobileMoneyAvailable(boolean value) { mobileMoneyAvailable = value; }
     public boolean isBankAvailable() { return bankAvailable; }
     public void setBankAvailable(boolean value) { bankAvailable = value; }
+    public boolean isMobileMoneyPending() { return mobileMoneyPending; }
+    public void setMobileMoneyPending(boolean value) { mobileMoneyPending = value; }
+    public boolean isBankPending() { return bankPending; }
+    public void setBankPending(boolean value) { bankPending = value; }
     public String getMobileMoneyLabel() { return mobileMoneyLabel; }
     public void setMobileMoneyLabel(String value) { mobileMoneyLabel = value; }
     public String getBankLabel() { return bankLabel; }

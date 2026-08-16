@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="app_name">HASET</string>
     <string name="tagline">Your Health, Our Priority</string>
 
@@ -52,6 +52,7 @@
     <string name="select_role">Select Your Role</string>
     <string name="i_am_patient">I\'m a Patient</string>
     <string name="i_am_doctor">I\'m a Doctor</string>
+    <string name="i_am_admin">I\'m an Admin</string>
     <string name="patient">Patient</string>
     <string name="doctor">Doctor</string>
     <string name="administrator">Administrator</string>
@@ -96,6 +97,7 @@
     <string name="canceled">Canceled</string>
     <string name="system">System</string>
     <string name="activity_logs">Activity Logs</string>
+    <string name="admin_notifications">Admin Notifications</string>
 
     <!-- Doctor Profile -->
     <string name="specialty">Specialty</string>
@@ -146,6 +148,11 @@
     <string name="appointment_with_patient">Appointment with %s</string>
     <string name="chat_session_available_for">Chat available for</string>
     <string name="session_expired">Session expired</string>
+    <string name="chat_session_expired_pay_again">Your active 24-hour chat session has ended. Please pay again to access and send messages.</string>
+    <string name="chat_session_ended_hint">24-hour session ended</string>
+    <string name="chat_payment_required">Payment is required before you can send messages in this chat.</string>
+    <string name="chat_no_appointment_found">No chat appointment was found for this conversation.</string>
+    <string name="chat_checking_access">Checking chat access...</string>
     <string name="appointment_declined_success">Appointment declined successfully</string>
     <string name="appointment_cancelled_success">Appointment cancelled successfully</string>
     <string name="failed_to_approve_appointment">Failed to approve appointment: %s</string>
@@ -204,6 +211,7 @@
     <string name="articles">Articles</string>
     <string name="my_posts">My Posts</string>
     <string name="all_users">All Users</string>
+    <string name="haset_admin">HASET Admin</string>
 <!--    <string name="doctors">Doctors</string>-->
     <string name="article_liked">Article liked</string>
     <string name="article_unliked">Article unliked</string>
@@ -698,8 +706,9 @@
     <string name="appointment">Appointment</string>
     <string name="payment">Payment</string>
     <string name="info">Info</string>
-    <string name="appointments_cleared">Appointments cleared</string>
-    <string name="failed_to_clear_appointments">Failed to clear appointments</string>
+    <string name="appointments_cleared">Appointment notifications cleared</string>
+    <string name="failed_to_clear_appointments">Failed to clear appointment notifications</string>
+    <string name="failed_to_clear_notifications">Failed to clear notifications: %s</string>
     <string name="clear_appointments">Clear Appointments</string>
     <string name="clear_all">Clear All</string>
     <string name="clear_pending_appointments">Clear Pending Appointments</string>
@@ -761,6 +770,7 @@
     <string name="camera_permission_required">Camera permission required to take photos</string>
     <string name="failed_create_image_file">Failed to create image file</string>
     <string name="no_camera_app">No camera app found</string>
+    <string name="access_denied_admin_only">Access denied. Only admins can write articles.</string>
 
     <!-- CreatePostWizard -->
     <string name="draft_saved">Draft saved successfully</string>
@@ -770,7 +780,7 @@
     <string name="tags_required">Tags are required</string>
     <string name="article_published">Article published successfully!</string>
 
-    <string name="feature_coming_soon">Coming soon</string>
+    <string name="feature_coming_soon">%s Coming soon</string>
 <!--    <string name="password_updated">Password updated successfully</string>-->
 <!--    <string name="update_failed">Update failed</string>-->
 <!--    <string name="insufficient_balance">Insufficient balance</string>-->

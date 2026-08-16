@@ -60,6 +60,9 @@ public class Constants {
     public static final String EXTRA_CHAT_USER_ID = "chatUserId";
     public static final String EXTRA_CHAT_USER_NAME = "chatUserName";
     public static final String EXTRA_CHAT_USER_IMAGE = "chatUserImage";
+    public static final String EXTRA_CHAT_LAST_MESSAGE = "chatLastMessage";
+    public static final String EXTRA_CHAT_LAST_MESSAGE_TIMESTAMP = "chatLastMessageTimestamp";
+    public static final String EXTRA_CHAT_LAST_MESSAGE_SENDER_ID = "chatLastMessageSenderId";
     public static final String EXTRA_IS_CALLER = "isCaller";
     public static final String EXTRA_APPOINTMENT_APPROVED_AT = "appointmentApprovedAt";
     public static final String EXTRA_IS_FROM_APPOINTMENT = "isFromAppointment";

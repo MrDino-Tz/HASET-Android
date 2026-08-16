@@ -64,14 +64,18 @@ public class ReportTypeAdapter extends RecyclerView.Adapter<ReportTypeAdapter.Re
         holder.bind(reportType, position == selectedPosition);
         
         holder.itemView.setOnClickListener(v -> {
+            int adapterPosition = holder.getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
+                return;
+            }
             int previousSelected = selectedPosition;
-            selectedPosition = position;
+            selectedPosition = adapterPosition;
             if (previousSelected >= 0) {
                 notifyItemChanged(previousSelected);
             }
             notifyItemChanged(selectedPosition);
             if (listener != null) {
-                listener.onReportTypeClick(reportType);
+                listener.onReportTypeClick(reportTypes.get(adapterPosition));
             }
         });
     }

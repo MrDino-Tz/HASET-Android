@@ -47,9 +47,16 @@ public class PrescriptionHelper {
      * Upload prescription image to Cloudinary
      */
     public void uploadPrescriptionImage(Uri imageUri, UploadCallback callback) {
+        String uploadPreset = CloudinaryUploadHelper.getUploadPreset();
+        if (uploadPreset == null || uploadPreset.trim().isEmpty()) {
+            Log.e(TAG, "Cloudinary upload preset is not initialized");
+            return;
+        }
+
         MediaManager.get().upload(imageUri)
             .option("folder", "prescriptions")
             .option("resource_type", "image")
+            .unsigned(uploadPreset)
             .callback(callback)
             .dispatch();
     }

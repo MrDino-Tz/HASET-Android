@@ -30,6 +30,7 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.viewmodels.ArticleViewModel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ArticleFragment extends Fragment {
@@ -325,14 +326,31 @@ public class ArticleFragment extends Fragment {
             String author = child.child("author").getValue(String.class);
             if (author == null || author.trim().isEmpty()) author = "HASET Hospital";
             Long timestamp = child.child("createdAt").getValue(Long.class);
-            if (timestamp == null) timestamp = child.child("timestamp").getValue(Long.class);
+            if (timestamp == null) {
+                long pushTimestamp = getFirebasePushIdTimestamp(child.getKey());
+                timestamp = pushTimestamp > 0 ? pushTimestamp : child.child("updatedAt").getValue(Long.class);
+            }
             tips.add(new HealthTip(child.getKey(), text.trim(), author.trim(), timestamp == null ? 0L : timestamp));
         }
+        Collections.sort(tips, (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
 
         if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
         healthTipAdapter.setTips(tips);
         layoutEmptyState.setVisibility(tips.isEmpty() ? View.VISIBLE : View.GONE);
         if (tips.isEmpty()) showEmptyState("Health Tips");
+    }
+
+    private long getFirebasePushIdTimestamp(String id) {
+        final String pushChars = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+        if (id == null || id.length() < 8) return 0L;
+
+        long timestamp = 0L;
+        for (int i = 0; i < 8; i++) {
+            int index = pushChars.indexOf(id.charAt(i));
+            if (index < 0) return 0L;
+            timestamp = timestamp * 64L + index;
+        }
+        return timestamp;
     }
 
     @Override

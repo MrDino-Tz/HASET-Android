@@ -52,6 +52,7 @@ public class DoctorWalletActivity extends BaseActivity {
     private boolean isBalanceVisible = false;
     private double balanceAmount = 0;
     private WithdrawalHistoryAdapter historyAdapter;
+    private List<WithdrawalRequest> latestWithdrawalRequests;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +108,8 @@ public class DoctorWalletActivity extends BaseActivity {
 
         viewModel.getWithdrawalRequests(preferenceManager.getUserId()).observe(this, requests -> {
             if (requests != null && historyAdapter != null) {
+                latestWithdrawalRequests = requests;
+                applyWithdrawalDestinationFallback();
                 historyAdapter.setRequests(requests);
             }
         });
@@ -165,6 +168,7 @@ public class DoctorWalletActivity extends BaseActivity {
                     shimmerBalance.setVisibility(View.GONE);
                 }
                 if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
+                applyWithdrawalDestinationFallback();
             } else {
                 balanceAmount = 0;
                 updateBalanceDisplay();
@@ -180,6 +184,35 @@ public class DoctorWalletActivity extends BaseActivity {
                 if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
             }
         });
+    }
+
+    private void applyWithdrawalDestinationFallback() {
+        if (currentWallet == null || latestWithdrawalRequests == null) return;
+        if (currentWallet.isMobileMoneyAvailable() || currentWallet.isBankAvailable()) return;
+
+        for (WithdrawalRequest request : latestWithdrawalRequests) {
+            if (request == null) continue;
+            String status = request.getStatus();
+            boolean usableStatus = WithdrawalRequest.STATUS_APPROVED.equalsIgnoreCase(status)
+                    || WithdrawalRequest.STATUS_COMPLETED.equalsIgnoreCase(status);
+            if (!usableStatus) continue;
+
+            String account = request.getAccountNumber();
+            if (TextUtils.isEmpty(account)) continue;
+
+            if (WithdrawalRequest.METHOD_BANK.equals(request.getMethod())) {
+                currentWallet.setBankAvailable(true);
+                currentWallet.setBankPending(false);
+                String bankName = TextUtils.isEmpty(request.getBankName()) ? "" : request.getBankName();
+                currentWallet.setBankLabel((bankName + "  " + account).trim());
+            } else {
+                currentWallet.setMobileMoneyAvailable(true);
+                currentWallet.setMobileMoneyPending(false);
+                String provider = TextUtils.isEmpty(request.getBankName()) ? "Mobile Money" : request.getBankName();
+                currentWallet.setMobileMoneyLabel((provider + "  " + account).trim());
+            }
+            return;
+        }
     }
     private void animateDisplay(TextView textView, ImageView toggleIcon, boolean isVisible, double amount) {
         if (textView == null || toggleIcon == null) return;
@@ -243,8 +276,8 @@ public class DoctorWalletActivity extends BaseActivity {
         tvAvailableBalance.setText(availableBalance);
 
         final String[] selectedMethod = {currentWallet.isMobileMoneyAvailable() ? "mobile_money" : (currentWallet.isBankAvailable() ? "bank" : "")};
-        tvMobileDestination.setText(currentWallet.getMobileMoneyLabel() == null ? getString(R.string.not_configured) : currentWallet.getMobileMoneyLabel());
-        tvBankDestination.setText(currentWallet.getBankLabel() == null ? getString(R.string.not_configured) : currentWallet.getBankLabel());
+        tvMobileDestination.setText(destinationLabel(currentWallet.getMobileMoneyLabel(), currentWallet.isMobileMoneyPending()));
+        tvBankDestination.setText(destinationLabel(currentWallet.getBankLabel(), currentWallet.isBankPending()));
         cvMobileMoney.setEnabled(currentWallet.isMobileMoneyAvailable());
         cvBank.setEnabled(currentWallet.isBankAvailable());
         Runnable renderSelection = () -> {
@@ -413,7 +446,7 @@ public class DoctorWalletActivity extends BaseActivity {
         TextInputEditText phone = view.findViewById(R.id.etPayoutPhone);
         TextInputEditText bankCode = view.findViewById(R.id.etBankCode);
         TextInputEditText bankAccount = view.findViewById(R.id.etBankAccount);
-        TextInputEditText mfaCode = view.findViewById(R.id.etDestinationMfaCode);
+        MfaCodeInputView mfaCode = view.findViewById(R.id.destinationMfaCodeInput);
         typeGroup.setOnCheckedChangeListener((group, checkedId) -> {
             boolean bank = checkedId == R.id.rbBank;
             mobileFields.setVisibility(bank ? View.GONE : View.VISIBLE);
@@ -428,8 +461,12 @@ public class DoctorWalletActivity extends BaseActivity {
                 .create();
         dialog.setOnShowListener(ignored -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             boolean bank = typeGroup.getCheckedRadioButtonId() == R.id.rbBank;
-            String code = text(mfaCode);
-            if (code.length() != 6) { mfaCode.setError("Enter your six-digit MFA code"); return; }
+            String code = mfaCode.getCode();
+            if (!mfaCode.isComplete()) {
+                mfaCode.setErrorState(true);
+                Toast.makeText(this, "Enter your six-digit MFA code", Toast.LENGTH_SHORT).show();
+                return;
+            }
             JsonObject body = new JsonObject();
             body.addProperty("destination_type", bank ? "bank" : "mobile_money");
             if (bank) {
@@ -443,6 +480,7 @@ public class DoctorWalletActivity extends BaseActivity {
             submitPayoutDestination(body, code, dialog);
         }));
         dialog.show();
+        mfaCode.focusFirst();
     }
 
     private String text(TextInputEditText field) {
@@ -467,7 +505,8 @@ public class DoctorWalletActivity extends BaseActivity {
                             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
                             if (r.isSuccessful()) {
                                 dialog.dismiss();
-                                Toast.makeText(DoctorWalletActivity.this, "Payout account submitted for finance approval.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(DoctorWalletActivity.this, "Payout account submitted. Waiting for finance approval before withdrawal.", Toast.LENGTH_LONG).show();
+                                viewModel.refreshWalletBalance(preferenceManager.getUserId());
                             } else Toast.makeText(DoctorWalletActivity.this, payoutErrorMessage(r), Toast.LENGTH_LONG).show();
                         }
                         @Override public void onFailure(Call<JsonObject> c, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(DoctorWalletActivity.this, "Network error while saving payout account.", Toast.LENGTH_LONG).show(); }
@@ -496,6 +535,13 @@ public class DoctorWalletActivity extends BaseActivity {
         return response.code() >= 500
                 ? "The payout service is temporarily unavailable. Please try again."
                 : "Could not save payout account. Check the details and try again.";
+    }
+
+    private String destinationLabel(String label, boolean pending) {
+        if (label == null || label.trim().isEmpty()) {
+            return pending ? "Pending finance approval" : getString(R.string.not_configured);
+        }
+        return pending ? "Pending finance approval: " + label.trim() : label.trim();
     }
 
     private void processWithdrawal(double amount, String payoutMethod, MaterialButton confirmBtn, String mfaCode) {

@@ -92,8 +92,6 @@
     <!-- TextInputEditText Style with Shadow -->
     <style name="TextInputEditTextStyle" parent="Widget.Material3.TextInputEditText.OutlinedBox">
         <item name="android:elevation">24dp</item>
-        <item name="android:outlineAmbientShadowColor">@color/chat_shadow_color</item>
-        <item name="android:outlineSpotShadowColor">@color/chat_shadow_color</item>
     </style>
     
     <!-- Card Style -->

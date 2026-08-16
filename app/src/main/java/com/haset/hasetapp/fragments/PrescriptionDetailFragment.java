@@ -137,6 +137,7 @@ public class PrescriptionDetailFragment extends Fragment {
             Glide.with(this)
                 .load(prescription.getImageUrl())
                 .placeholder(R.drawable.ic_prescription)
+                .fitCenter()
                 .into(ivPrescriptionImage);
         } else {
             viewImage(false);

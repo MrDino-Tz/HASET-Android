@@ -20,6 +20,7 @@ const otherPatient = testEnv.authenticatedContext("patient-b").database();
 const doctor = testEnv.authenticatedContext("doctor-a").database();
 const otherDoctor = testEnv.authenticatedContext("doctor-b").database();
 const admin = testEnv.authenticatedContext("admin-a").database();
+const superAdmin = testEnv.authenticatedContext("super-admin-a").database();
 const anonymous = testEnv.unauthenticatedContext().database();
 const newPatient = testEnv.authenticatedContext("new-patient").database();
 const newDoctor = testEnv.authenticatedContext("new-doctor").database();
@@ -49,6 +50,7 @@ test.before(async () => {
         "doctor-b": { userId: "doctor-b", email: "doctor-b@example.test", fullName: "Doctor B", role: "doctor" },
         "doctor-c": { userId: "doctor-c", email: "doctor-c@example.test", fullName: "Doctor C", role: "doctor" },
         "admin-a": { userId: "admin-a", email: "admin-a@example.test", fullName: "Admin A", role: "admin" },
+        "super-admin-a": { userId: "super-admin-a", email: "super-admin-a@example.test", fullName: "Super Admin A", role: "super_admin" },
       },
       doctors: {
         "doctor-a": { doctorId: "doctor-a", approved: true, verified: true },
@@ -68,6 +70,13 @@ test.before(async () => {
         "doctor-a": { doctorId: "doctor-a", balance: 125000, totalEarnings: 200000, lastUpdated: 1786500000000 },
         "doctor-b": { doctorId: "doctor-b", balance: 75000, totalEarnings: 90000, lastUpdated: 1786500000000 },
       },
+      app_config: {
+        maintenanceMode: false,
+        minVersionCode: 1,
+        updateUrl: "",
+        maintenanceMessage: "",
+        doctorRegistrationFee: 500,
+      },
       withdrawal_requests: {
         "withdrawal-a": {
           requestId: "withdrawal-a", doctorId: "doctor-a", amount: 25000,
@@ -76,6 +85,24 @@ test.before(async () => {
         "withdrawal-b": {
           requestId: "withdrawal-b", doctorId: "doctor-b", amount: 10000,
           status: "pending", requestedAt: 1786500000000,
+        },
+      },
+      chat_sessions: {
+        "patient-a_patient-b": {
+          appointmentId: "chat-test-patient",
+          patientId: "patient-a",
+          doctorId: "patient-b",
+          chatStartsAt: 1786500000000,
+          chatExpiresAt: 4102444800000,
+          isChatActive: true,
+        },
+        "patient-a_doctor-a": {
+          appointmentId: "chat-test-doctor",
+          patientId: "patient-a",
+          doctorId: "doctor-a",
+          chatStartsAt: 1786500000000,
+          chatExpiresAt: 4102444800000,
+          isChatActive: true,
         },
       },
       messages: {
@@ -137,6 +164,22 @@ test("allows safe doctor enrollment but protects approval fields", async () => {
   await assertSucceeds(update(ref(admin, "doctors/doctor-b"), { approved: true, verified: true }));
 });
 
+test("allows approved doctors to edit profile fields without changing approval flags", async () => {
+  await assertSucceeds(update(ref(doctor, "doctors/doctor-a"), {
+    specialty: "Dentist",
+    consultationFee: 1100,
+    availableTimes: "09:00-17:00",
+    location: "Dar es Salaam",
+    about: "Updated profile",
+    profileImage: "",
+    online: true,
+    onlineStatus: "online",
+    lastUpdated: 1786500002000,
+  }));
+  await assertFails(update(ref(doctor, "doctors/doctor-a"), { approved: false }));
+  await assertFails(update(ref(doctor, "doctors/doctor-a"), { verified: false }));
+});
+
 test("allows only the patient to create a pending appointment with an approved doctor", async () => {
   await assertFails(set(ref(otherPatient, "appointments/appointment-a"), appointment));
   await assertSucceeds(set(ref(patient, "appointments/appointment-a"), appointment));
@@ -193,6 +236,218 @@ test("isolates each doctor's wallet and withdrawal records", async () => {
 
   await assertFails(update(ref(doctor, "doctor_wallets/doctor-a"), { balance: 999999 }));
   await assertFails(update(ref(doctor, "withdrawal_requests/withdrawal-a"), { amount: 1 }));
+});
+
+test("allows public health tip reads but restricts writes to admins", async () => {
+  const tip = {
+    text: "Drink clean water daily.",
+    author: "HASET Hospital",
+    enabled: true,
+    createdAt: 1786500000000,
+    updatedAt: 1786500000000,
+    createdBy: "admin-a",
+  };
+
+  await assertSucceeds(set(ref(admin, "health_quotes/tip-a"), tip));
+  await assertSucceeds(get(ref(anonymous, "health_quotes/tip-a")));
+  await assertFails(set(ref(patient, "health_quotes/patient-tip"), tip));
+  await assertFails(update(ref(doctor, "health_quotes/tip-a"), { enabled: false }));
+  await assertSucceeds(update(ref(admin, "health_quotes/tip-a"), {
+    text: "Drink clean water every day.",
+    enabled: false,
+    updatedAt: 1786500001000,
+  }));
+  await assertSucceeds(set(ref(admin, "health_quotes/tip-a"), null));
+});
+
+test("allows only admin roles to edit app config", async () => {
+  await assertSucceeds(get(ref(anonymous, "app_config")));
+  await assertFails(update(ref(patient, "app_config"), { doctorRegistrationFee: 750 }));
+  await assertSucceeds(update(ref(admin, "app_config"), { doctorRegistrationFee: 750 }));
+  await assertSucceeds(update(ref(superAdmin, "app_config"), {
+    maintenanceMode: false,
+    minVersionCode: 1,
+    updateUrl: "https://hasethospital.or.tz",
+    maintenanceMessage: "Maintenance",
+    doctorRegistrationFee: 1000,
+  }));
+  await assertFails(update(ref(superAdmin, "app_config"), { doctorRegistrationFee: -1 }));
+});
+
+test("validates health tip shape", async () => {
+  await assertFails(set(ref(admin, "health_quotes/blank-tip"), {
+    text: "",
+    author: "HASET Hospital",
+    enabled: true,
+    createdAt: 1786500000000,
+  }));
+  await assertFails(set(ref(admin, "health_quotes/no-created-at"), {
+    text: "Valid text",
+    author: "HASET Hospital",
+    enabled: true,
+  }));
+  await assertFails(set(ref(admin, "health_quotes/bad-enabled"), {
+    text: "Valid text",
+    author: "HASET Hospital",
+    enabled: "yes",
+    createdAt: 1786500000000,
+  }));
+});
+
+test("requires paid approved appointment session before sending chat messages", async () => {
+  const appointmentId = "paid-chat-appointment";
+  const chatRoomId = "patient-a_doctor-a_paid";
+  const startsAt = Date.now();
+  const expiresAt = startsAt + 24 * 60 * 60 * 1000;
+  const message = {
+    messageId: "paid-chat-message",
+    senderId: "patient-a",
+    senderName: "Patient A",
+    receiverId: "doctor-a",
+    receiverName: "Doctor A",
+    message: "Paid chat message",
+    messageType: "text",
+    messageStatus: "sent",
+    timestamp: startsAt,
+    isRead: false,
+    deliveredTimestamp: 0,
+    readTimestamp: 0,
+  };
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database(), `appointments/${appointmentId}`), {
+      ...appointment,
+      appointmentId,
+      status: "approved",
+      paymentStatus: "paid",
+    });
+  });
+
+  await assertFails(set(ref(patient, `messages/${chatRoomId}/${message.messageId}`), message));
+  await assertSucceeds(set(ref(patient, `chat_sessions/${chatRoomId}`), {
+    appointmentId,
+    patientId: "patient-a",
+    doctorId: "doctor-a",
+    chatStartsAt: startsAt,
+    chatExpiresAt: expiresAt,
+    isChatActive: true,
+    createdAt: startsAt,
+  }));
+  await assertSucceeds(set(ref(patient, `messages/${chatRoomId}/${message.messageId}`), message));
+});
+
+test("blocks new chat messages after the paid chat window expires", async () => {
+  const room = "expired_paid_chat";
+  const message = {
+    messageId: "expired-message",
+    senderId: "patient-a",
+    senderName: "Patient A",
+    receiverId: "doctor-a",
+    receiverName: "Doctor A",
+    message: "Too late",
+    messageType: "text",
+    messageStatus: "sent",
+    timestamp: Date.now(),
+    isRead: false,
+    deliveredTimestamp: 0,
+    readTimestamp: 0,
+  };
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database(), `chat_sessions/${room}`), {
+      appointmentId: "expired-appointment",
+      patientId: "patient-a",
+      doctorId: "doctor-a",
+      chatStartsAt: 1000,
+      chatExpiresAt: 2000,
+      isChatActive: true,
+    });
+  });
+
+  await assertFails(set(ref(patient, `messages/${room}/${message.messageId}`), message));
+});
+
+test("allows doctors to deliver saved prescription cards to chat", async () => {
+  const prescriptionId = "prescription-card-a";
+  const room = "doctor-a_patient-a_prescription";
+  const prescriptionMessage = {
+    messageId: "prescription-message-a",
+    senderId: "doctor-a",
+    senderName: "Doctor A",
+    receiverId: "patient-a",
+    receiverName: "Patient A",
+    message: "New Prescription Issued",
+    messageType: "prescription",
+    messageStatus: "sent",
+    timestamp: Date.now(),
+    isRead: false,
+    deliveredTimestamp: 0,
+    readTimestamp: 0,
+    prescriptionId,
+  };
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database(), `prescriptions/${prescriptionId}`), {
+      prescriptionId,
+      appointmentId: "appointment-a",
+      patientId: "patient-a",
+      patientName: "Patient A",
+      doctorId: "doctor-a",
+      doctorName: "Doctor A",
+      medicines: [],
+      instructions: "",
+      createdAt: Date.now(),
+    });
+  });
+
+  await assertSucceeds(set(ref(doctor, `messages/${room}/${prescriptionMessage.messageId}`), prescriptionMessage));
+  await assertFails(set(ref(otherDoctor, `messages/${room}/wrong-prescription-card`), {
+    ...prescriptionMessage,
+    messageId: "wrong-prescription-card",
+    senderId: "doctor-b",
+  }));
+});
+
+test("allows a new paid appointment to replace an expired chat session", async () => {
+  const room = "patient-a_doctor-a_replace_expired";
+  const oldAppointmentId = "old-paid-chat-appointment";
+  const newAppointmentId = "new-paid-chat-appointment";
+  const startsAt = Date.now();
+  const expiresAt = startsAt + 24 * 60 * 60 * 1000;
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database(), `appointments/${oldAppointmentId}`), {
+      ...appointment,
+      appointmentId: oldAppointmentId,
+      status: "approved",
+      paymentStatus: "paid",
+    });
+    await set(ref(context.database(), `appointments/${newAppointmentId}`), {
+      ...appointment,
+      appointmentId: newAppointmentId,
+      status: "approved",
+      paymentStatus: "paid",
+    });
+    await set(ref(context.database(), `chat_sessions/${room}`), {
+      appointmentId: oldAppointmentId,
+      patientId: "patient-a",
+      doctorId: "doctor-a",
+      chatStartsAt: 1000,
+      chatExpiresAt: 2000,
+      isChatActive: false,
+      createdAt: 1000,
+    });
+  });
+
+  await assertSucceeds(set(ref(patient, `chat_sessions/${room}`), {
+    appointmentId: newAppointmentId,
+    patientId: "patient-a",
+    doctorId: "doctor-a",
+    chatStartsAt: startsAt,
+    chatExpiresAt: expiresAt,
+    isChatActive: true,
+    createdAt: startsAt,
+  }));
 });
 
 test("ties service payment completion to a matching backend transaction", async () => {

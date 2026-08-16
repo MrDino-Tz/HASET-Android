@@ -549,9 +549,11 @@ extension AppointmentSummary.Status {
         case .approved:
             return L10n.tr("approved", languageCode: languageCode)
         case .completed:
-            return L10n.tr("completed", languageCode: languageCode)
+            return languageCode == "sw" ? "Imekamilika" : "Complete"
         case .cancelled:
             return languageCode == "sw" ? "Imeghairiwa" : "Canceled"
+        case .declined:
+            return languageCode == "sw" ? "Imekataliwa" : "Declined"
         }
     }
 }

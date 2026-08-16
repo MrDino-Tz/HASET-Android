@@ -76,6 +76,8 @@ public class BookAppointmentActivity extends BaseActivity {
     private AppointmentBookingViewModel viewModel;
     private boolean isLaunchingPayment = false; // Guard against multiple activity launches
     private final android.os.Handler safetyHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private long paidAt = 0L;
+    private int paymentTransactionId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -301,6 +303,8 @@ public class BookAppointmentActivity extends BaseActivity {
                 .setTitle("Demo Doctor")
                 .setMessage("This is a free demo consultation. No payment required. Do you want to continue?")
                 .setPositiveButton("Continue", (dialog, which) -> {
+                    paidAt = System.currentTimeMillis();
+                    paymentTransactionId = 0;
                     proceedWithBooking();
                     isLaunchingPayment = false;
                 })
@@ -333,6 +337,8 @@ public class BookAppointmentActivity extends BaseActivity {
         if (requestCode == 100) {
             isLaunchingPayment = false; // Reset guard
             if (resultCode == RESULT_OK) {
+                paidAt = System.currentTimeMillis();
+                paymentTransactionId = data != null ? data.getIntExtra("transaction_id", -1) : -1;
                 proceedWithBooking();
             }
         }
@@ -353,6 +359,15 @@ public class BookAppointmentActivity extends BaseActivity {
         appointmentEntity.setAppointmentType(appointmentType);
         // Persist the consultation fee so admin revenue reports can read it
         appointmentEntity.setAmount(doctor != null && doctor.getConsultationFee() > 0 ? doctor.getConsultationFee() : 0.0);
+        if (paidAt > 0 || paymentTransactionId >= 0) {
+            long paymentTime = paidAt > 0 ? paidAt : System.currentTimeMillis();
+            appointmentEntity.setPaymentStatus("paid");
+            appointmentEntity.setPaidAt(paymentTime);
+            appointmentEntity.setPaymentTransactionId(String.valueOf(paymentTransactionId));
+            appointmentEntity.setChatStartsAt(0L);
+            appointmentEntity.setChatExpiresAt(0L);
+            appointmentEntity.setChatActive(false);
+        }
         
         // All appointments start as pending and require doctor approval
         appointmentEntity.setStatus(Constants.STATUS_PENDING);

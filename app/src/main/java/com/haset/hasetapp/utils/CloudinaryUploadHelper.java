@@ -262,4 +262,8 @@ public class CloudinaryUploadHelper {
         uploadPreset = preset;
         MediaManager.init(context, config);
     }
+
+    public static String getUploadPreset() {
+        return uploadPreset;
+    }
 }

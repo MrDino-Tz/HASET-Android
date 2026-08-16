@@ -389,12 +389,16 @@ final class AuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let body = "grant_type=refresh_token&refresh_token=\(refreshToken)"
-        request.httpBody = body.data(using: .utf8)
+        var bodyComponents = URLComponents()
+        bodyComponents.queryItems = [
+            URLQueryItem(name: "grant_type", value: "refresh_token"),
+            URLQueryItem(name: "refresh_token", value: refreshToken)
+        ]
+        request.httpBody = bodyComponents.percentEncodedQuery?.data(using: .utf8)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200 ... 299).contains(httpResponse.statusCode) {
-            return session
+            throw ServiceError.message("Authentication expired. Please sign in again.")
         }
 
         let refreshed = try decoder.decode(RefreshTokenResponse.self, from: data)
@@ -417,13 +421,51 @@ final class AuthService {
     }
 
     func restoreProfile(session: StoredSession) async throws -> UserProfile {
-        try await fetchUserProfile(
+        var profile = try await fetchUserProfile(
             userId: session.userId,
             idToken: session.idToken,
             fallbackEmail: session.email,
             fallbackName: session.userName,
             fallbackPhone: session.phone
         )
+        // Doctor professional fields are maintained under /doctors by the
+        // Android app/admin. Merge that authoritative record into the profile
+        // shown by iOS instead of displaying stale/missing /users values.
+        if profile.role == .doctor {
+            if let doctor = try? await fetchDoctorRecord(doctorId: session.userId, idToken: session.idToken) {
+                profile.specialization = stringValue(doctor["specialty"])?.nonEmpty
+                    ?? stringValue(doctor["specialization"])?.nonEmpty
+                    ?? stringValue(doctor["speciality"])?.nonEmpty
+                    ?? profile.specialization
+                profile.consultationFee = consultationFeeValue(doctor["consultationFee"])
+                    ?? consultationFeeValue(doctor["consultation_fee"])
+                    ?? consultationFeeValue(doctor["fee"])
+                    ?? profile.consultationFee
+                profile.availableTimes = stringArrayValue(doctor["availableTimes"])
+                    ?? stringArrayValue(doctor["available_times"])
+                    ?? stringArrayValue(doctor["availableTime"])
+                    ?? profile.availableTimes
+                profile.bio = stringValue(doctor["bio"])?.nonEmpty
+                    ?? stringValue(doctor["about"])?.nonEmpty
+                    ?? stringValue(doctor["description"])?.nonEmpty
+                    ?? profile.bio
+                profile.location = stringValue(doctor["location"])?.nonEmpty
+                    ?? stringValue(doctor["address"])?.nonEmpty
+                    ?? profile.location
+                profile.profileImage = profileImageValue(doctor) ?? profile.profileImage
+            }
+        }
+        return profile
+    }
+
+    private func fetchDoctorRecord(doctorId: String, idToken: String?) async throws -> [String: Any] {
+        let url = try databaseURL(path: "doctors/\(doctorId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let record = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ServiceError.invalidResponse
+        }
+        return record
     }
 
     func updateUserProfile(_ profile: UserProfile, idToken: String) async throws {
@@ -495,6 +537,12 @@ final class AuthService {
             try await delete(url: doctorURL)
             let walletURL = try databaseURL(path: "doctor_wallets/\(userId)", authToken: idToken)
             try await delete(url: walletURL)
+        }
+        if let idToken, !idToken.isEmpty {
+            _ = try await performIdentityRequest(
+                path: "accounts:delete",
+                payload: ["idToken": idToken]
+            )
         }
     }
 
@@ -690,7 +738,7 @@ final class AuthService {
     func addArticleComment(postId: String, user: UserProfile, text: String, idToken: String?) async throws -> ArticleComment {
         let commentId = UUID().uuidString
         let timestamp = Date().timeIntervalSince1970 * 1000
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "commentId": commentId,
             "userId": user.userId,
             "userName": user.fullName,
@@ -835,8 +883,7 @@ final class AuthService {
                 availableToday: boolValue(doctorNode?["isAvailable"]) ??
                     boolValue(user["isAvailable"]) ??
                     true,
-                profileImage: stringValue(user["profileImage"])?.nonEmpty ??
-                    stringValue(doctorNode?["profileImage"])?.nonEmpty,
+                profileImage: profileImageValue(user) ?? profileImageValue(doctorNode ?? [:]),
                 availableTimes: stringArrayValue(doctorNode?["availableTimes"]) ??
                     stringArrayValue(user["availableTimes"])
             )
@@ -860,7 +907,17 @@ final class AuthService {
                 idToken: idToken
             )
         } else {
-            do {
+            // Match Android's primary read path. The main collection query is
+            // covered by the deployed rules; indexed fan-out is only needed
+            // for legacy records/environments where that query returns null.
+            if let directRecords = try? await fetchAppointmentRecordsFromMainNode(
+                userId: userId,
+                role: role,
+                idToken: idToken
+            ), !directRecords.isEmpty {
+                appointmentRecords = directRecords
+            } else {
+              do {
                 let indexPath = role == .doctor ? "doctor_appointments/\(userId)" : "patient_appointments/\(userId)"
                 let indexURL = try databaseURL(path: indexPath, authToken: idToken)
                 let (indexData, indexResponse) = try await URLSession.shared.data(from: indexURL)
@@ -910,16 +967,28 @@ final class AuthService {
                         appointmentRecords = indexedRecords
                     }
                 }
-            } catch {
-                appointmentRecords = try await fetchAppointmentRecordsFromMainNode(
-                    userId: userId,
-                    role: role,
-                    idToken: idToken
-                )
+              } catch {
+                throw error
+              }
             }
         }
 
-        let appointments = appointmentRecords.compactMap { key, item -> AppointmentSummary? in
+        var enrichedRecords = appointmentRecords
+        for index in enrichedRecords.indices {
+            let (key, item) = enrichedRecords[index]
+            let participantId = role == .doctor
+                ? stringValue(item["patientId"])?.nonEmpty
+                : stringValue(item["doctorId"])?.nonEmpty
+            let imageKey = role == .doctor ? "patientProfileImage" : "doctorProfileImage"
+            guard stringValue(item[imageKey])?.nonEmpty == nil, let participantId else { continue }
+            if let image = try? await fetchUserProfileImage(userId: participantId, idToken: idToken), !image.isEmpty {
+                var updated = item
+                updated[imageKey] = image
+                enrichedRecords[index] = (key, updated)
+            }
+        }
+
+        let appointments = enrichedRecords.compactMap { key, item -> AppointmentSummary? in
             let doctorName = stringValue(item["doctorName"])?.nonEmpty ?? "Doctor"
             let patientName = stringValue(item["patientName"])?.nonEmpty ?? "Patient"
             let specialty = stringValue(item["doctorSpecialty"])?.nonEmpty
@@ -928,6 +997,11 @@ final class AuthService {
             let date = stringValue(item["date"])?.nonEmpty ?? ""
             let time = stringValue(item["time"])?.nonEmpty ?? ""
             let subtitle = role == .doctor ? (reason ?? appointmentType ?? "") : (specialty ?? reason ?? appointmentType ?? "")
+            let participantImage = profileImageValue([
+                "profileImage": item[role == .doctor ? "patientProfileImage" : "doctorProfileImage"] as Any,
+                "profilePhoto": item[role == .doctor ? "patientProfilePhoto" : "doctorProfilePhoto"] as Any,
+                "photoUrl": item[role == .doctor ? "patientPhotoUrl" : "doctorPhotoUrl"] as Any
+            ]) ?? profileImageValue(item)
 
             return AppointmentSummary(
                 id: stringValue(item["appointmentId"])?.nonEmpty ?? key,
@@ -938,8 +1012,11 @@ final class AuthService {
                 date: date,
                 time: time,
                 dateText: [date, time].filter { !$0.isEmpty }.joined(separator: ", "),
-                status: appointmentStatus(from: stringValue(item["status"])),
+                status: appointmentStatus(
+                    from: stringValue(item["status"]) ?? stringValue(item["appointmentStatus"])
+                ),
                 appointmentType: appointmentType,
+                profileImage: participantImage,
                 createdAt: timeIntervalValue(item["createdAt"])
             )
         }
@@ -948,6 +1025,39 @@ final class AuthService {
             if ($0.createdAt ?? 0) == ($1.createdAt ?? 0) { return $0.id > $1.id }
             return ($0.createdAt ?? 0) > ($1.createdAt ?? 0)
         }
+    }
+
+    func fetchProfileImage(userId: String, idToken: String?) async throws -> String? {
+        try await fetchUserProfileImage(userId: userId, idToken: idToken)
+    }
+
+    private func fetchUserProfileImage(userId: String, idToken: String?) async throws -> String? {
+        if let publicImage = try? await fetchPublicProfileImage(userId: userId, idToken: idToken),
+           !publicImage.isEmpty {
+            return publicImage
+        }
+        let url = try databaseURL(path: "users/\(userId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        if let image = profileImageValue(json) { return image }
+        // Legacy doctor records may have the image only under /doctors.
+        if stringValue(json["role"])?.lowercased() == "doctor" {
+            let doctorURL = try databaseURL(path: "doctors/\(userId)", authToken: idToken)
+            let (doctorData, doctorResponse) = try await URLSession.shared.data(from: doctorURL)
+            try validate(response: doctorResponse, data: doctorData)
+            let doctorJSON = (try? JSONSerialization.jsonObject(with: doctorData)) as? [String: Any]
+            return doctorJSON.flatMap(profileImageValue)
+        }
+        return nil
+    }
+
+    private func fetchPublicProfileImage(userId: String, idToken: String?) async throws -> String? {
+        let url = try databaseURL(path: "public_profiles/\(userId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return profileImageValue(json)
     }
 
     private func fetchAppointmentRecordsFromMainNode(
@@ -984,15 +1094,18 @@ final class AuthService {
         time: String,
         reason: String,
         appointmentType: String,
+        paymentConfirmed: Bool,
         idToken: String?
     ) async throws {
         let appointmentId = UUID().uuidString
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "appointmentId": appointmentId,
             "patientId": patient.userId,
             "doctorId": doctor.id,
             "patientName": patient.fullName,
+            "patientProfileImage": patient.profileImage,
             "doctorName": doctor.name,
+            "doctorProfileImage": doctor.profileImage ?? "",
             "doctorSpecialty": doctor.specialty,
             "date": date,
             "time": time,
@@ -1001,6 +1114,10 @@ final class AuthService {
             "appointmentType": appointmentType,
             "createdAt": Int(Date().timeIntervalSince1970 * 1000)
         ]
+        if paymentConfirmed {
+            payload["paymentStatus"] = "paid"
+            payload["paidAt"] = Int(Date().timeIntervalSince1970 * 1000)
+        }
         let url = try databaseURL(path: "appointments/\(appointmentId)", authToken: idToken)
         try await put(payload, url: url)
 
@@ -1099,7 +1216,9 @@ final class AuthService {
                 "name": user.fullName.isEmpty ? "HASET Customer" : user.fullName,
                 "firstname": nameParts.first ?? "HASET",
                 "lastname": nameParts.dropFirst().joined(separator: " ").isEmpty ? "Customer" : nameParts.dropFirst().joined(separator: " "),
-                "email": user.email,
+                "email": user.email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? "support@hasethospital.or.tz"
+                    : user.email.trimmingCharacters(in: .whitespacesAndNewlines),
                 "address": "HASET Hospital",
                 "city": "Dar es Salaam",
                 "state": "Dar es Salaam",
@@ -1301,21 +1420,23 @@ final class AuthService {
         }
 
         var conversations: [ConversationSummary] = []
-        for (otherUserId, value) in json {
+        for (key, value) in json {
             guard let item = value as? [String: Any] else { continue }
+            let otherUserId = stringValue(item["otherUserId"])?.nonEmpty ?? key
             let chatRoomId = generateChatRoomId(userId, otherUserId)
             let unreadCount = (try? await fetchUnreadMessageCount(chatRoomId: chatRoomId, currentUserId: userId, idToken: idToken)) ?? 0
             let timestamp = timeIntervalValue(item["lastMessageTimestamp"]) ?? 0
             conversations.append(
                 ConversationSummary(
                     id: chatRoomId,
+                    otherUserId: otherUserId,
                     name: stringValue(item["otherUserName"])?.nonEmpty ?? "Conversation",
                     lastMessage: stringValue(item["lastMessage"])?.nonEmpty ?? "",
                     lastMessageTimestamp: timestamp,
                     unreadCount: unreadCount,
                     isOnline: false,
                     archived: boolValue(item["archived"]) ?? false,
-                    profileImage: nil
+                    profileImage: profileImageValue(item)
                 )
             )
         }
@@ -1338,16 +1459,24 @@ final class AuthService {
 
         let messages = json.compactMap { key, value -> ChatMessageSummary? in
             guard let item = value as? [String: Any] else { return nil }
-            let senderId = stringValue(item["senderId"])?.nonEmpty ?? ""
-            let receiverId = stringValue(item["receiverId"])?.nonEmpty ?? ""
-            let text = stringValue(item["message"])?.nonEmpty ?? ""
+            let senderId = stringValue(item["senderId"])?.nonEmpty ?? stringValue(item["sender_id"])?.nonEmpty ?? ""
+            let receiverId = stringValue(item["receiverId"])?.nonEmpty ?? stringValue(item["receiver_id"])?.nonEmpty ?? ""
+            let text = stringValue(item["message"])?.nonEmpty
+                ?? stringValue(item["text"])?.nonEmpty
+                ?? stringValue(item["body"])?.nonEmpty
+                ?? ""
             return ChatMessageSummary(
                 id: stringValue(item["messageId"])?.nonEmpty ?? key,
                 senderId: senderId,
                 receiverId: receiverId,
                 message: text,
-                timestamp: timeIntervalValue(item["timestamp"]) ?? 0,
+                timestamp: timeIntervalValue(item["timestamp"]) ?? timeIntervalValue(item["createdAt"]) ?? 0,
                 isRead: boolValue(item["isRead"]) ?? false,
+                messageType: stringValue(item["messageType"]) ?? "text",
+                attachmentURL: stringValue(item["attachmentUrl"])?.nonEmpty,
+                attachmentFileName: stringValue(item["attachmentFileName"])?.nonEmpty,
+                replyToMessageID: stringValue(item["replyToMessageId"])?.nonEmpty,
+                replyToText: stringValue(item["replyToText"])?.nonEmpty,
                 isOutgoing: senderId == currentUserId
             )
         }
@@ -1357,10 +1486,37 @@ final class AuthService {
         return sorted
     }
 
-    func sendChatMessage(chatRoomId: String, sender: UserProfile, receiverId: String, receiverName: String, message: String, idToken: String?) async throws {
+    func fetchChatSendAccess(
+        chatRoomId: String,
+        currentUserId: String,
+        otherUserId: String,
+        role: UserRole,
+        idToken: String?
+    ) async throws -> ChatSendAccessSummary {
+        try await ensurePaidChatSession(
+            chatRoomId: chatRoomId,
+            currentUserId: currentUserId,
+            otherUserId: otherUserId,
+            role: role,
+            idToken: idToken
+        )
+    }
+
+    func sendChatMessage(chatRoomId: String, sender: UserProfile, receiverId: String, receiverName: String, message: String, messageType: String = "text", attachmentURL: String? = nil, attachmentFileName: String? = nil, replyToMessageID: String? = nil, replyToText: String? = nil, idToken: String?) async throws {
+        let access = try await ensurePaidChatSession(
+            chatRoomId: chatRoomId,
+            currentUserId: sender.userId,
+            otherUserId: receiverId,
+            role: sender.role,
+            idToken: idToken
+        )
+        guard access.canSend else {
+            throw ServiceError.message(access.message ?? "Chat sending is unavailable.")
+        }
+
         let messageId = UUID().uuidString
         let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "messageId": messageId,
             "senderId": sender.userId,
             "senderName": sender.fullName,
@@ -1369,30 +1525,45 @@ final class AuthService {
             "message": message,
             "timestamp": timestamp,
             "isRead": false,
-            "messageType": "text",
+            "messageType": messageType,
             "messageStatus": "sent"
         ]
+        if let attachmentURL { payload["attachmentUrl"] = attachmentURL }
+        if let attachmentFileName { payload["attachmentFileName"] = attachmentFileName }
+        if let replyToMessageID { payload["replyToMessageId"] = replyToMessageID }
+        if let replyToText { payload["replyToText"] = replyToText }
         let url = try databaseURL(path: "messages/\(chatRoomId)/\(messageId)", authToken: idToken)
         try await put(payload, url: url)
 
-        let conversationUpdate: [String: Any] = [
+        let receiverProfileImage = (try? await fetchUserProfileImage(userId: receiverId, idToken: idToken)) ?? ""
+        let senderConversationUpdate: [String: Any] = [
             "otherUserId": receiverId,
             "otherUserName": receiverName,
+            "profileImage": receiverProfileImage,
             "lastMessage": message,
             "lastMessageTimestamp": timestamp,
             "lastMessageSenderId": sender.userId,
             "archived": false
         ]
         let conversationsURL = try databaseURL(path: "user_conversations/\(sender.userId)/\(receiverId)", authToken: idToken)
-        try await patch(conversationUpdate, url: conversationsURL)
+        try? await patch(senderConversationUpdate, url: conversationsURL)
+        let receiverConversationUpdate: [String: Any] = [
+            "otherUserId": sender.userId,
+            "otherUserName": sender.fullName,
+            "profileImage": sender.profileImage,
+            "lastMessage": message,
+            "lastMessageTimestamp": timestamp,
+            "lastMessageSenderId": sender.userId,
+            "archived": false
+        ]
         let reverseURL = try databaseURL(path: "user_conversations/\(receiverId)/\(sender.userId)", authToken: idToken)
-        try await patch(conversationUpdate, url: reverseURL)
+        try? await patch(receiverConversationUpdate, url: reverseURL)
 
         // Persist a recipient-scoped notification as the durable fallback for
         // devices that are backgrounded or do not have push configured.
         let notificationId = UUID().uuidString
         let notificationURL = try databaseURL(path: "notifications/\(receiverId)/\(notificationId)", authToken: idToken)
-        try await put([
+        try? await put([
             "notificationId": notificationId,
             "userId": receiverId,
             "title": sender.fullName,
@@ -1402,6 +1573,120 @@ final class AuthService {
             "isRead": false,
             "relatedId": chatRoomId
         ], url: notificationURL)
+    }
+
+    private func ensurePaidChatSession(
+        chatRoomId: String,
+        currentUserId: String,
+        otherUserId: String,
+        role: UserRole,
+        idToken: String?
+    ) async throws -> ChatSendAccessSummary {
+        let records = try await fetchAppointmentRecordsFromMainNode(
+            userId: currentUserId,
+            role: role,
+            idToken: idToken
+        )
+        let chatAppointments = records.filter { _, item in
+            let appointmentType = stringValue(item["appointmentType"])?.lowercased()
+            guard appointmentType == "online chat" else { return false }
+            let patientId = stringValue(item["patientId"]) ?? ""
+            let doctorId = stringValue(item["doctorId"]) ?? ""
+            return (patientId == currentUserId && doctorId == otherUserId)
+                || (doctorId == currentUserId && patientId == otherUserId)
+        }
+
+        guard !chatAppointments.isEmpty else {
+            return ChatSendAccessSummary(canSend: false, message: "No chat appointment was found for this conversation.")
+        }
+
+        if !chatAppointments.contains(where: { _, item in
+            (stringValue(item["status"]) ?? stringValue(item["appointmentStatus"]) ?? "").lowercased() == "approved"
+        }) {
+            return ChatSendAccessSummary(canSend: false, message: "Access Denied: Your appointment is not approved yet.")
+        }
+
+        guard let approvedPaid = chatAppointments.first(where: { _, item in
+            let status = (stringValue(item["status"]) ?? stringValue(item["appointmentStatus"]) ?? "").lowercased()
+            let paymentStatus = (stringValue(item["paymentStatus"]) ?? stringValue(item["payment_status"]) ?? "").lowercased()
+            return status == "approved" && paymentStatus == "paid"
+        }) else {
+            return ChatSendAccessSummary(canSend: false, message: "Payment is required before you can send messages in this chat.")
+        }
+
+        let appointmentId = stringValue(approvedPaid.1["appointmentId"])?.nonEmpty ?? approvedPaid.0
+        let patientId = stringValue(approvedPaid.1["patientId"]) ?? ""
+        let doctorId = stringValue(approvedPaid.1["doctorId"]) ?? ""
+        let now = Int(Date().timeIntervalSince1970 * 1000)
+        let session = try? await fetchChatSession(chatRoomId: chatRoomId, idToken: idToken)
+        let existingStart = timeIntervalValue(session?["chatStartsAt"])
+            ?? timeIntervalValue(approvedPaid.1["chatStartsAt"])
+            ?? timeIntervalValue(approvedPaid.1["chatStartTime"])
+        let start = Int(existingStart ?? Double(now))
+        let existingExpires = timeIntervalValue(session?["chatExpiresAt"])
+            ?? timeIntervalValue(approvedPaid.1["chatExpiresAt"])
+        let expires = Int(existingExpires ?? Double(start + 86_400_000))
+
+        guard now <= expires else {
+            return ChatSendAccessSummary(
+                canSend: false,
+                message: "Your active 24-hour chat session has ended. Please pay again to access and send messages."
+            )
+        }
+
+        if session == nil {
+            let url = try databaseURL(path: "chat_sessions/\(chatRoomId)", authToken: idToken)
+            try await put([
+                "appointmentId": appointmentId,
+                "patientId": patientId,
+                "doctorId": doctorId,
+                "chatStartsAt": start,
+                "chatExpiresAt": expires,
+                "isChatActive": true,
+                "createdAt": now
+            ], url: url)
+
+            let appointmentURL = try databaseURL(path: "appointments/\(appointmentId)", authToken: idToken)
+            try? await patch([
+                "chatStartsAt": start,
+                "chatStartTime": start,
+                "chatExpiresAt": expires,
+                "isChatActive": true,
+                "updatedAt": now
+            ], url: appointmentURL)
+        }
+
+        return .allowed
+    }
+
+    private func fetchChatSession(chatRoomId: String, idToken: String?) async throws -> [String: Any]? {
+        let url = try databaseURL(path: "chat_sessions/\(chatRoomId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8) else { return nil }
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    func uploadChatAttachment(_ data: Data, fileName: String, mimeType: String) async throws -> String {
+        let boundary = "HASET-\(UUID().uuidString)"
+        let endpoint = "https://api.cloudinary.com/v1_1/\(HASETConstants.cloudinaryCloudName)/auto/upload"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        var body = Data()
+        func field(_ name: String, _ value: String) { body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".utf8)) }
+        field("upload_preset", HASETConstants.cloudinaryUploadPreset)
+        body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8)); body.append(data); body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        request.httpBody = body
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: responseData)
+        guard let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any], let url = stringValue(json["secure_url"])?.nonEmpty else { throw ServiceError.invalidResponse }
+        return url
+    }
+
+    func deleteChatMessage(chatRoomId: String, messageId: String, idToken: String?) async throws {
+        let url = try databaseURL(path: "messages/\(chatRoomId)/\(messageId)", authToken: idToken)
+        try await delete(url: url)
     }
 
     func markChatMessagesRead(chatRoomId: String, currentUserId: String, idToken: String?) async throws {
@@ -1487,6 +1772,15 @@ final class AuthService {
         fields["age"] = profile.age ?? NSNull()
         fields["gender"] = profile.gender ?? NSNull()
         try await patch(fields, url: url)
+
+        // Public projection used for avatars in appointment/chat lists. It
+        // avoids exposing private patient profile fields to doctors.
+        let publicURL = try databaseURL(path: "public_profiles/\(profile.userId)", authToken: idToken)
+        try? await patch([
+            "userId": profile.userId,
+            "fullName": profile.fullName,
+            "profileImage": profile.profileImage
+        ], url: publicURL)
     }
 
     private func saveDoctorBootstrap(profile: UserProfile, idToken: String) async throws {
@@ -1577,7 +1871,7 @@ final class AuthService {
         let email = stringValue(json["email"])?.nonEmpty ?? fallbackEmail?.nonEmpty
         let fullName = stringValue(json["fullName"])?.nonEmpty ?? fallbackName?.nonEmpty
         let phone = stringValue(json["phone"]) ?? fallbackPhone ?? ""
-        let role = UserRole(rawValue: stringValue(json["role"]) ?? "") ?? .patient
+        let role = UserRole(rawValue: stringValue(json["role"])?.lowercased() ?? "") ?? .patient
 
         guard let email, let fullName else {
             throw ServiceError.message("User profile is incomplete")
@@ -1589,16 +1883,20 @@ final class AuthService {
             fullName: fullName,
             phone: phone,
             role: role,
-            profileImage: stringValue(json["profileImage"]) ?? "",
+            profileImage: profileImageValue(json) ?? "",
             createdAt: timeIntervalValue(json["createdAt"]) ?? Date().timeIntervalSince1970 * 1000,
             regNo: stringValue(json["regNo"]),
             gender: stringValue(json["gender"]),
             age: stringValue(json["age"]),
             location: stringValue(json["location"]),
-            bio: stringValue(json["bio"]),
+            bio: stringValue(json["bio"])?.nonEmpty ?? stringValue(json["about"])?.nonEmpty ?? stringValue(json["description"])?.nonEmpty,
             specialization: stringValue(json["specialization"]) ?? stringValue(json["specialty"]),
-            consultationFee: consultationFeeValue(json["consultationFee"]),
-            availableTimes: stringArrayValue(json["availableTimes"]),
+            consultationFee: consultationFeeValue(json["consultationFee"])
+                ?? consultationFeeValue(json["consultation_fee"])
+                ?? consultationFeeValue(json["fee"]),
+            availableTimes: stringArrayValue(json["availableTimes"])
+                ?? stringArrayValue(json["available_times"])
+                ?? stringArrayValue(json["availableTime"]),
             verified: boolValue(json["verified"])
         )
     }
@@ -1612,6 +1910,12 @@ final class AuthService {
         default:
             return nil
         }
+    }
+
+    private func profileImageValue(_ json: [String: Any]) -> String? {
+        ["profileImage", "profilePhoto", "profilePhotoUrl", "photoUrl", "photoURL", "imageUrl", "imageURL", "avatarUrl", "avatarURL"]
+            .compactMap { stringValue(json[$0])?.nonEmpty }
+            .first
     }
 
     private func timeIntervalValue(_ value: Any?) -> TimeInterval? {
@@ -1699,6 +2003,23 @@ final class AuthService {
            let received = try JSONSerialization.jsonObject(with: receivedResult.0) as? [String: Any] {
             messages.merge(received) { _, new in new }
         }
+        // Some older Firebase rule deployments do not honor the filtered REST
+        // query consistently. Retry the room once and filter participants on
+        // the client so historical messages are still visible.
+        if messages.isEmpty {
+            let roomURL = try databaseURL(path: "messages/\(chatRoomId)", authToken: idToken)
+            if let (roomData, roomResponse) = try? await URLSession.shared.data(from: roomURL),
+               let httpResponse = roomResponse as? HTTPURLResponse,
+               (200 ... 299).contains(httpResponse.statusCode),
+               let room = try? JSONSerialization.jsonObject(with: roomData) as? [String: Any] {
+                for (key, value) in room {
+                    guard let item = value as? [String: Any] else { continue }
+                    let sender = stringValue(item["senderId"]) ?? stringValue(item["sender_id"])
+                    let receiver = stringValue(item["receiverId"]) ?? stringValue(item["receiver_id"])
+                    if sender == currentUserId || receiver == currentUserId { messages[key] = item }
+                }
+            }
+        }
         return messages
     }
 
@@ -1706,10 +2027,12 @@ final class AuthService {
         switch rawValue?.lowercased() {
         case "approved":
             return .approved
-        case "completed":
+        case "completed", "complete", "finished", "done":
             return .completed
-        case "cancelled", "canceled", "declined":
+        case "cancelled", "canceled":
             return .cancelled
+        case "declined", "rejected":
+            return .declined
         default:
             return .pending
         }
@@ -1821,6 +2144,7 @@ final class AuthService {
         var components = URLComponents(string: "\(HASETConstants.firebaseDatabaseURL)/\(path).json")
         var items = queryItems
         if let authToken {
+            // Firebase Realtime Database accepts Firebase ID tokens via auth.
             items.append(URLQueryItem(name: "auth", value: authToken))
         }
         if !items.isEmpty { components?.queryItems = items }

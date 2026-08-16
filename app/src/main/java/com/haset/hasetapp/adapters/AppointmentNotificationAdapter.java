@@ -38,6 +38,10 @@ public class AppointmentNotificationAdapter extends RecyclerView.Adapter<Appoint
         notifyDataSetChanged();
     }
 
+    public List<Appointment> getAppointments() {
+        return new ArrayList<>(appointments);
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

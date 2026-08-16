@@ -1,5 +1,7 @@
 package com.haset.hasetapp.models;
 
+import com.google.firebase.database.Exclude;
+
 public class ChatMessage {
     private String messageId;
     private String senderId;
@@ -26,6 +28,7 @@ public class ChatMessage {
     // Prescription and System fields
     private String prescriptionId;
     private java.util.Map<String, Object> metadata;
+    private String sourceRoomId;
 
     public String getAttachmentSize() { return attachmentSize; }
     public void setAttachmentSize(String attachmentSize) { this.attachmentSize = attachmentSize; }
@@ -131,4 +134,10 @@ public class ChatMessage {
 
     public java.util.Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(java.util.Map<String, Object> metadata) { this.metadata = metadata; }
+
+    @Exclude
+    public String getSourceRoomId() { return sourceRoomId; }
+
+    @Exclude
+    public void setSourceRoomId(String sourceRoomId) { this.sourceRoomId = sourceRoomId; }
 }

@@ -290,7 +290,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardImage"
                 android:layout_width="match_parent"
-                android:layout_height="110dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:visibility="gone"
                 app:cardCornerRadius="4dp"
@@ -302,9 +302,12 @@
                 <ImageView
                     android:id="@+id/ivPrescriptionImage"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
                     android:contentDescription="@string/prescription_details"
-                    android:scaleType="centerCrop"
+                    android:maxHeight="560dp"
+                    android:minHeight="160dp"
+                    android:scaleType="fitCenter"
                     tools:src="@drawable/ic_prescription" />
             </com.google.android.material.card.MaterialCardView>
 

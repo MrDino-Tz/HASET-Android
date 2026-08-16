@@ -706,11 +706,8 @@ public class FirebaseHelper {
     }
 
     public static void updateAppointment(AppointmentEntity appointment, OnCompleteListener<Void> listener) {
-        if (listener == null) {
-            return;
-        }
         if (appointment.getAppointmentId() == null || appointment.getAppointmentId().isEmpty()) {
-            listener.onError("Appointment ID is required for update.");
+            if (listener != null) listener.onError("Appointment ID is required for update.");
             return;
         }
         Map<String, Object> updates = new HashMap<>();
@@ -733,8 +730,12 @@ public class FirebaseHelper {
             putIfNotNull(updates, "isChatActive", appointment.isChatActive());
         }
         getAppointmentsRef().child(appointment.getAppointmentId()).updateChildren(updates)
-                .addOnSuccessListener(aVoid -> listener.onSuccess(null))
-                .addOnFailureListener(e -> listener.onError(e.getMessage()));
+                .addOnSuccessListener(aVoid -> {
+                    if (listener != null) listener.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    if (listener != null) listener.onError(e.getMessage());
+                });
     }
 
     private static void putIfNotNull(Map<String, Object> map, String key, Object value) {

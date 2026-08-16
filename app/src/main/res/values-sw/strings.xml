@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="ExtraTranslation">
     <string name="app_name">HASET+</string>
     <string name="tagline">Afya Yako, Kipaumbele Chetu</string>
 
@@ -511,6 +511,11 @@
     <string name="account_info_feature">Taarifa za akaunti</string>
     <string name="favorite_feature">Kipendwa</string>
     <string name="access_denied_appointment">Ufikiaji Umekataliwa: Miadi yako haijaidhinishwa bado.</string>
+    <string name="chat_session_expired_pay_again">Kipindi chako cha chat cha saa 24 kimeisha. Tafadhali lipa tena ili kuendelea na kutuma ujumbe.</string>
+    <string name="chat_session_ended_hint">Kipindi cha saa 24 kimeisha</string>
+    <string name="chat_payment_required">Malipo yanahitajika kabla ya kutuma ujumbe kwenye chat hii.</string>
+    <string name="chat_no_appointment_found">Hakuna miadi ya chat iliyopatikana kwa mazungumzo haya.</string>
+    <string name="chat_checking_access">Inaangalia ruhusa ya chat...</string>
     <string name="video_call">Simu ya Video</string>
     <string name="error_loading_contact">Haikuweza kupakia maelezo ya mawasiliano</string>
     <string name="contact_info_unavailable">Taarifa hazipatikani kwa mwasiliani huyu</string>
@@ -650,8 +655,9 @@
     <string name="appointment">Miadi</string>
     <string name="payment">Malipo</string>
     <string name="info">Taarifa</string>
-    <string name="appointments_cleared">Miadi imefutwa</string>
-    <string name="failed_to_clear_appointments">Imeshindwa kufuta miadi</string>
+    <string name="appointments_cleared">Arifa za miadi zimefutwa</string>
+    <string name="failed_to_clear_appointments">Imeshindwa kufuta arifa za miadi</string>
+    <string name="failed_to_clear_notifications">Imeshindwa kufuta arifa: %s</string>
     <string name="clear_appointments">Futa Miadi</string>
     <string name="clear_all">Futa Zote</string>
     <string name="clear_pending_appointments">Futa Miadi Inayosubiri</string>

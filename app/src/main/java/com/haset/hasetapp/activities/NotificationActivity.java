@@ -32,10 +32,14 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class NotificationActivity extends AppCompatActivity implements 
         AppointmentNotificationAdapter.OnNotificationClickListener {
+    private static final String PREF_NOTIFICATION_CLEAR_STATE = "notification_clear_state";
+    private static final String KEY_HIDDEN_APPOINTMENT_IDS = "hidden_appointment_ids";
 
     private ImageView btnBack;
     private ImageView btnClearNotifications;
@@ -186,11 +190,14 @@ public class NotificationActivity extends AppCompatActivity implements
             public void onSuccess(List<com.haset.hasetapp.database.entities.AppointmentEntity> appointmentEntities) {
                 hideAppointmentShimmer();
                 List<Appointment> appointments = new ArrayList<>();
+                Set<String> hiddenAppointmentIds = getHiddenAppointmentIds();
                 for (com.haset.hasetapp.database.entities.AppointmentEntity entity : appointmentEntities) {
-                    appointments.add(new Appointment(entity));
+                    if (entity != null && !hiddenAppointmentIds.contains(entity.getAppointmentId())) {
+                        appointments.add(new Appointment(entity));
+                    }
                 }
                 appointmentAdapter.setAppointments(appointments);
-                int unreadCount = getUnreadAppointmentsCount(appointmentEntities);
+                int unreadCount = getUnreadAppointmentsCount(appointmentEntities, hiddenAppointmentIds);
                 updateTabBadge(0, unreadCount);
                 if (badgeHelper != null) {
                     badgeHelper.setAppointmentsUnreadCount(unreadCount);
@@ -235,10 +242,14 @@ public class NotificationActivity extends AppCompatActivity implements
         });
     }
     
-    private int getUnreadAppointmentsCount(List<com.haset.hasetapp.database.entities.AppointmentEntity> appointments) {
+    private int getUnreadAppointmentsCount(
+            List<com.haset.hasetapp.database.entities.AppointmentEntity> appointments,
+            Set<String> hiddenAppointmentIds) {
         int count = 0;
         for (com.haset.hasetapp.database.entities.AppointmentEntity appointment : appointments) {
-            if (appointment != null && !"read".equalsIgnoreCase(appointment.getStatus())) {
+            if (appointment != null
+                    && !hiddenAppointmentIds.contains(appointment.getAppointmentId())
+                    && !"read".equalsIgnoreCase(appointment.getStatus())) {
                 count++;
             }
         }
@@ -289,26 +300,52 @@ public class NotificationActivity extends AppCompatActivity implements
     }
 
     private void clearAppointmentNotifications() {
-        String userId = preferenceManager.getUserId();
-        String role = preferenceManager.getUserRole();
-        
-        FirebaseHelper.clearAppointmentsForUser(userId, role, new FirebaseHelper.OnCompleteListener<Void>() {
-            @Override
-            public void onSuccess(Void result) {
-                appointmentAdapter.setAppointments(new ArrayList<>());
-                updateTabBadge(0, 0);
-                android.widget.Toast.makeText(NotificationActivity.this, R.string.appointments_cleared, android.widget.Toast.LENGTH_SHORT).show();
+        Set<String> hiddenIds = getHiddenAppointmentIds();
+        for (Appointment appointment : appointmentAdapter.getAppointments()) {
+            if (appointment != null && appointment.getAppointmentId() != null) {
+                hiddenIds.add(appointment.getAppointmentId());
             }
-
-            @Override
-            public void onError(String error) {
-                android.widget.Toast.makeText(NotificationActivity.this, R.string.failed_to_clear_appointments, android.widget.Toast.LENGTH_SHORT).show();
-            }
-        });
+        }
+        saveHiddenAppointmentIds(hiddenIds);
+        appointmentAdapter.setAppointments(new ArrayList<>());
+        updateTabBadge(0, 0);
+        if (badgeHelper != null) {
+            badgeHelper.setAppointmentsUnreadCount(0);
+            updateHomeBadge();
+        }
+        android.widget.Toast.makeText(this, R.string.appointments_cleared, android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private void clearAllNotifications() {
         clearAppointmentNotifications();
+        String userId = preferenceManager.getUserId();
+        FirebaseHelper.getNotificationsRef(userId)
+                .removeValue()
+                .addOnSuccessListener(aVoid -> {
+                    paymentAdapter.setNotifications(new ArrayList<>());
+                    updateTabBadge(1, 0);
+                    if (badgeHelper != null) {
+                        badgeHelper.setPaymentsUnreadCount(0);
+                        badgeHelper.markGeneralNotificationsAsRead();
+                        updateHomeBadge();
+                    }
+                })
+                .addOnFailureListener(error -> android.widget.Toast.makeText(
+                        this,
+                        getString(R.string.failed_to_clear_notifications, error.getMessage()),
+                        android.widget.Toast.LENGTH_SHORT).show());
+    }
+
+    private Set<String> getHiddenAppointmentIds() {
+        return new HashSet<>(getSharedPreferences(PREF_NOTIFICATION_CLEAR_STATE, MODE_PRIVATE)
+                .getStringSet(KEY_HIDDEN_APPOINTMENT_IDS, new HashSet<>()));
+    }
+
+    private void saveHiddenAppointmentIds(Set<String> hiddenIds) {
+        getSharedPreferences(PREF_NOTIFICATION_CLEAR_STATE, MODE_PRIVATE)
+                .edit()
+                .putStringSet(KEY_HIDDEN_APPOINTMENT_IDS, new HashSet<>(hiddenIds))
+                .apply();
     }
 
     private void showAppointmentShimmer() {

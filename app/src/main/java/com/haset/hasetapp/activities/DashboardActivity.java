@@ -44,6 +44,12 @@ public class DashboardActivity extends BaseActivity {
         preferenceManager = new PreferenceManager(this);
         
         setContentView(R.layout.activity_dashboard);
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                showExitDialog();
+            }
+        });
         
         // Configure status bar for better visibility
         StatusBarHelper.configureStatusBar(this);
@@ -272,12 +278,11 @@ public class DashboardActivity extends BaseActivity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
+    private void showExitDialog() {
         CustomDialog exitDialog = new CustomDialog(this)
                 .setDialogType(CustomDialog.DialogType.WARNING)
                 .setTitle(getString(R.string.exit_app))
-                .setMessage(String.valueOf(R.string.exit_app_confirm))
+                .setMessage(getString(R.string.exit_app_confirm))
                 .setPositiveButtonColor(R.color.colorError);
         
         exitDialog.setPositiveButton("Exit", v -> {

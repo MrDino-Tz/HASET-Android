@@ -176,6 +176,9 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
         Intent intent = new Intent(requireContext(), ChatActivity.class);
         intent.putExtra(Constants.EXTRA_CHAT_USER_ID, conversation.getOtherUserId());
         intent.putExtra(Constants.EXTRA_CHAT_USER_NAME, conversation.getOtherUserName());
+        intent.putExtra(Constants.EXTRA_CHAT_LAST_MESSAGE, conversation.getLastMessage());
+        intent.putExtra(Constants.EXTRA_CHAT_LAST_MESSAGE_TIMESTAMP, conversation.getLastMessageTimestamp());
+        intent.putExtra(Constants.EXTRA_CHAT_LAST_MESSAGE_SENDER_ID, conversation.getLastMessageSenderId());
         startActivity(intent);
     }
 

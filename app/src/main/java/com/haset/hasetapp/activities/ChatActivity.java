@@ -110,6 +110,9 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     private String chatUserName;
     private String currentUserId;
     private String chatRoomId;
+    private String fallbackLastMessage;
+    private long fallbackLastMessageTimestamp;
+    private String fallbackLastMessageSenderId;
     
     private PreferenceManager preferenceManager;
     private NotificationBadgeHelper notificationBadgeHelper;
@@ -141,6 +144,9 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     private boolean isChatSessionActive = false;
     private static final long CHAT_SESSION_DURATION = 24 * 60 * 60 * 1000L; // 24 hours
     private static final long[] NOTIFICATION_TIMES = {30 * 60 * 1000L, 10 * 60 * 1000L, 5 * 60 * 1000L}; // 30min, 10min, 5min before end
+    private long chatExpiresAt = 0L;
+    private boolean canSendInChat = false;
+    private String chatDisabledMessage;
     
     // Camera variables
     private Uri currentImageUri;
@@ -164,8 +170,21 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_chat);
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (messageSelectionActionMode != null) {
+                    messageSelectionActionMode.finish();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
 
         initViews();
+        chatDisabledMessage = getString(R.string.chat_checking_access);
+        setChatInputEnabled(false);
         preferenceManager = new PreferenceManager(this);
         notificationBadgeHelper = new NotificationBadgeHelper(this);
         
@@ -236,6 +255,9 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
         chatUserId = getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_ID);
         chatUserName = getIntent().getStringExtra(Constants.EXTRA_CHAT_USER_NAME);
+        fallbackLastMessage = getIntent().getStringExtra(Constants.EXTRA_CHAT_LAST_MESSAGE);
+        fallbackLastMessageTimestamp = getIntent().getLongExtra(Constants.EXTRA_CHAT_LAST_MESSAGE_TIMESTAMP, 0L);
+        fallbackLastMessageSenderId = getIntent().getStringExtra(Constants.EXTRA_CHAT_LAST_MESSAGE_SENDER_ID);
         // Firebase rules authorize messages with auth.uid. Preferences can be
         // stale after account switching or reinstalling, so never use them as
         // the chat participant identity when an authenticated UID is present.
@@ -279,9 +301,11 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
         chatRoomId = generateChatRoomId(currentUserId, chatUserId);
         
-        // Check if user is allowed to chat (only if patient)
-        if (Constants.ROLE_PATIENT.equals(preferenceManager.getUserRole())) {
+        if (Constants.ROLE_PATIENT.equals(preferenceManager.getUserRole())
+                || Constants.ROLE_DOCTOR.equals(preferenceManager.getUserRole())) {
             checkAppointmentStatus();
+        }
+        if (Constants.ROLE_PATIENT.equals(preferenceManager.getUserRole())) {
             fetchChatDoctorDetails();
         }
         
@@ -304,7 +328,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                boolean hasText = !s.toString().trim().isEmpty();
+                boolean hasText = !s.toString().trim().isEmpty() && canSendInChat;
                 
                 // Update Send Button status
                 btnSend.setEnabled(hasText);
@@ -327,6 +351,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
         // Set OnClickListener for file attachment
         ivAttach.setOnClickListener(v -> {
+            if (!ensureChatCanSend()) return;
             FileAttachmentBottomSheet attachmentBottomSheet = new FileAttachmentBottomSheet();
             
             // Show prescription and service options only for doctors
@@ -416,49 +441,227 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     private void checkAppointmentStatus() {
         if (chatUserId == null || currentUserId == null) return;
 
-        com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsByUser(currentUserId, Constants.ROLE_PATIENT, 
-            new com.haset.hasetapp.utils.FirebaseHelper.OnCompleteListener<List<com.haset.hasetapp.database.entities.AppointmentEntity>>() {
+        com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase()
+                .getReference("chat_sessions")
+                .child(chatRoomId)
+                .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                        if (activateExistingChatSession(snapshot)) {
+                            return;
+                        }
+                        queryAppointmentsForChatAccess();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                        Log.w("ChatActivity", "Unable to read chat session before appointment check",
+                                error.toException());
+                        queryAppointmentsForChatAccess();
+                    }
+                });
+    }
+
+    private boolean activateExistingChatSession(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+        if (!snapshot.exists()) return false;
+
+        String patientId = snapshot.child("patientId").getValue(String.class);
+        String doctorId = snapshot.child("doctorId").getValue(String.class);
+        boolean participantsMatch = (currentUserId.equals(patientId) && chatUserId.equals(doctorId))
+                || (currentUserId.equals(doctorId) && chatUserId.equals(patientId));
+        if (!participantsMatch) return false;
+
+        long startsAt = getLongChild(snapshot, "chatStartsAt", 0L);
+        long expiresAt = getLongChild(snapshot, "chatExpiresAt", 0L);
+        Boolean active = snapshot.child("isChatActive").getValue(Boolean.class);
+        if (Boolean.TRUE.equals(active) && expiresAt > System.currentTimeMillis()) {
+            chatStartTime = startsAt > 0 ? startsAt : Math.max(0L, expiresAt - CHAT_SESSION_DURATION);
+            chatExpiresAt = expiresAt;
+            String appointmentId = snapshot.child("appointmentId").getValue(String.class);
+            currentAppointment = new com.haset.hasetapp.database.entities.AppointmentEntity();
+            currentAppointment.setAppointmentId(appointmentId != null ? appointmentId : "");
+            currentAppointment.setPatientId(patientId);
+            currentAppointment.setDoctorId(doctorId);
+            currentAppointment.setChatStartTime(chatStartTime);
+            currentAppointment.setChatActive(true);
+            isChatSessionActive = true;
+            canSendInChat = true;
+            chatDisabledMessage = null;
+            setChatInputEnabled(true);
+            startChatDurationTracker();
+            return true;
+        }
+        return false;
+    }
+
+    private void queryAppointmentsForChatAccess() {
+        String role = preferenceManager.getUserRole();
+        String queryField = Constants.ROLE_DOCTOR.equals(role) ? "doctorId" : "patientId";
+        com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef()
+            .orderByChild(queryField)
+            .equalTo(currentUserId)
+            .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
                 @Override
-                public void onSuccess(List<com.haset.hasetapp.database.entities.AppointmentEntity> result) {
+                public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                    boolean hasChatAppointment = false;
                     boolean hasApproved = false;
-                    if (result != null) {
-                        for (com.haset.hasetapp.database.entities.AppointmentEntity appointment : result) {
-                            if (appointment.getDoctorId().equals(chatUserId) && 
-                                Constants.STATUS_APPROVED.equalsIgnoreCase(appointment.getStatus())) {
-                                hasApproved = true;
-                                currentAppointment = appointment;
-                                startChatSession(appointment);
-                                break;
-                            }
+                    boolean hasApprovedPaid = false;
+                    boolean onlyExpiredPaidSession = false;
+                    for (com.google.firebase.database.DataSnapshot child : snapshot.getChildren()) {
+                        String patientId = child.child("patientId").getValue(String.class);
+                        String doctorId = child.child("doctorId").getValue(String.class);
+                        String status = child.child("status").getValue(String.class);
+                        String paymentStatus = child.child("paymentStatus").getValue(String.class);
+                        String appointmentType = child.child("appointmentType").getValue(String.class);
+                        boolean otherUserMatches = Constants.ROLE_DOCTOR.equals(role)
+                                ? chatUserId.equals(patientId)
+                                : chatUserId.equals(doctorId);
+                        boolean isOnlineChat = appointmentType == null
+                                || "online chat".equalsIgnoreCase(appointmentType);
+                        if (!otherUserMatches || !isOnlineChat) {
+                            continue;
+                        }
+
+                        hasChatAppointment = true;
+                        if (!Constants.STATUS_APPROVED.equalsIgnoreCase(status)) {
+                            continue;
+                        }
+
+                        hasApproved = true;
+                        if (!"paid".equalsIgnoreCase(paymentStatus)) {
+                            continue;
+                        }
+
+                        hasApprovedPaid = true;
+                        long existingStart = getLongChild(child, "chatStartsAt", getLongChild(child, "chatStartTime", 0L));
+                        long existingExpires = getLongChild(child, "chatExpiresAt", 0L);
+                        if (existingExpires > 0 && System.currentTimeMillis() > existingExpires) {
+                            onlyExpiredPaidSession = true;
+                            continue;
+                        }
+
+                        com.haset.hasetapp.database.entities.AppointmentEntity appointment =
+                                child.getValue(com.haset.hasetapp.database.entities.AppointmentEntity.class);
+                        if (appointment != null) {
+                            appointment.setAppointmentId(child.getKey());
+                            appointment.setChatStartTime(existingStart);
+                            currentAppointment = appointment;
+                            startChatSession(appointment);
+                            break;
                         }
                     }
 
-                    if (!hasApproved) {
-                        Toast.makeText(ChatActivity.this, R.string.access_denied_appointment, Toast.LENGTH_LONG).show();
-                        finish();
+                    if (!hasApprovedPaid) {
+                        if (!hasChatAppointment) {
+                            disableChatSending(getString(R.string.chat_no_appointment_found));
+                        } else if (!hasApproved) {
+                            disableChatSending(getString(R.string.access_denied_appointment));
+                        } else {
+                            disableChatSending(getString(R.string.chat_payment_required));
+                        }
+                    } else if (!canSendInChat && onlyExpiredPaidSession) {
+                        disableChatSending(getString(R.string.chat_session_expired_pay_again));
                     }
                 }
 
                 @Override
-                public void onError(String error) {
-                    Log.e("ChatActivity", "Error checking appointment status: " + error);
+                public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                    Log.e("ChatActivity", "Error checking appointment status", error.toException());
                 }
             });
     }
+
+    private long getLongChild(com.google.firebase.database.DataSnapshot snapshot, String childName, long fallback) {
+        Long value = snapshot.child(childName).getValue(Long.class);
+        if (value != null) return value;
+        Integer intValue = snapshot.child(childName).getValue(Integer.class);
+        return intValue != null ? intValue.longValue() : fallback;
+    }
     
     private void startChatSession(com.haset.hasetapp.database.entities.AppointmentEntity appointment) {
-        chatStartTime = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        chatStartTime = appointment.getChatStartTime() > 0 ? appointment.getChatStartTime() : now;
+        chatExpiresAt = chatStartTime + CHAT_SESSION_DURATION;
+        if (now > chatExpiresAt) {
+            disableChatSending(getString(R.string.chat_session_expired_pay_again));
+            return;
+        }
+
         isChatSessionActive = true;
-        
-        // Update appointment with start time
+        canSendInChat = true;
+        chatDisabledMessage = null;
+        setChatInputEnabled(true);
+
         appointment.setChatStartTime(chatStartTime);
         appointment.setChatActive(true);
-        
-        // Save to Firebase
-        com.haset.hasetapp.utils.FirebaseHelper.updateAppointment(appointment, null);
-        
-        // Start duration tracking handler
+
+        java.util.Map<String, Object> appointmentUpdates = new java.util.HashMap<>();
+        appointmentUpdates.put("chatStartsAt", chatStartTime);
+        appointmentUpdates.put("chatStartTime", chatStartTime);
+        appointmentUpdates.put("chatExpiresAt", chatExpiresAt);
+        appointmentUpdates.put("isChatActive", true);
+        appointmentUpdates.put("updatedAt", now);
+        com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef()
+                .child(appointment.getAppointmentId())
+                .updateChildren(appointmentUpdates);
+
+        java.util.Map<String, Object> session = new java.util.HashMap<>();
+        session.put("appointmentId", appointment.getAppointmentId());
+        session.put("patientId", appointment.getPatientId());
+        session.put("doctorId", appointment.getDoctorId());
+        session.put("chatStartsAt", chatStartTime);
+        session.put("chatExpiresAt", chatExpiresAt);
+        session.put("isChatActive", true);
+        session.put("createdAt", now);
+        com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase()
+                .getReference("chat_sessions")
+                .child(chatRoomId)
+                .setValue(session)
+                .addOnFailureListener(error -> {
+                    Log.e("ChatActivity", "Unable to persist chat session", error);
+                    disableChatSending("Unable to verify chat session.");
+                });
+
         startChatDurationTracker();
+    }
+
+    private boolean ensureChatCanSend() {
+        if (chatExpiresAt > 0 && System.currentTimeMillis() > chatExpiresAt) {
+            disableChatSending(getString(R.string.chat_session_expired_pay_again));
+            return false;
+        }
+        if (!canSendInChat) {
+            Toast.makeText(this,
+                    chatDisabledMessage != null ? chatDisabledMessage : getString(R.string.chat_checking_access),
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
+    }
+
+    private void disableChatSending(String message) {
+        canSendInChat = false;
+        chatDisabledMessage = message;
+        setChatInputEnabled(false);
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    private void setChatInputEnabled(boolean enabled) {
+        if (etMessage != null) {
+            etMessage.setEnabled(enabled);
+            etMessage.setHint(enabled ? "" : (chatDisabledMessage != null
+                    ? chatDisabledMessage
+                    : getString(R.string.chat_session_ended_hint)));
+        }
+        if (btnSend != null) btnSend.setEnabled(enabled && etMessage != null && !etMessage.getText().toString().trim().isEmpty());
+        if (ivAttach != null) {
+            ivAttach.setEnabled(enabled);
+            ivAttach.setAlpha(enabled ? 1.0f : 0.45f);
+        }
+        if (ivMic != null) {
+            ivMic.setEnabled(enabled);
+            ivMic.setAlpha(enabled ? 1.0f : 0.45f);
+        }
     }
     
     private void startChatDurationTracker() {
@@ -531,10 +734,28 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                 currentAppointment.setStatus(com.haset.hasetapp.utils.Constants.STATUS_COMPLETED);
             }
             
-            com.haset.hasetapp.utils.FirebaseHelper.updateAppointment(currentAppointment, null);
+            java.util.Map<String, Object> updates = new java.util.HashMap<>();
+            updates.put("chatEndTime", chatEndTime);
+            updates.put("chatDuration", duration);
+            updates.put("isChatActive", false);
+            updates.put("updatedAt", chatEndTime);
+            if (forceEnd) {
+                updates.put("status", com.haset.hasetapp.utils.Constants.STATUS_COMPLETED);
+            }
+            com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef()
+                    .child(currentAppointment.getAppointmentId())
+                    .updateChildren(updates);
+            java.util.Map<String, Object> sessionUpdates = new java.util.HashMap<>();
+            sessionUpdates.put("isChatActive", false);
+            sessionUpdates.put("endedAt", chatEndTime);
+            com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase()
+                    .getReference("chat_sessions")
+                    .child(chatRoomId)
+                    .updateChildren(sessionUpdates);
         }
         
         if (forceEnd) {
+            disableChatSending("Your chat session has ended.");
             com.google.android.material.snackbar.Snackbar.make(
                 findViewById(android.R.id.content),
                 "Your chat session has ended. Thank you for using our service.",
@@ -595,11 +816,16 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         Bundle args = new Bundle();
         args.putString("patientId", chatUserId);
         args.putString("patientName", chatUserName);
+        if (currentAppointment != null && currentAppointment.getAppointmentId() != null
+                && !currentAppointment.getAppointmentId().trim().isEmpty()) {
+            args.putString("appointmentId", currentAppointment.getAppointmentId());
+        }
         prescriptionSheet.setArguments(args);
         prescriptionSheet.show(getSupportFragmentManager(), "AddPrescriptionBottomSheet");
     }
 
     private void openServiceSheet() {
+        if (!ensureChatCanSend()) return;
         // Get doctor info
         String doctorId = preferenceManager.getUserId();
         String doctorName = preferenceManager.getUserName();
@@ -613,6 +839,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     }
 
     private void sendServiceMessage(com.haset.hasetapp.models.Service service) {
+        if (!ensureChatCanSend()) return;
         String serviceJson = new com.google.gson.Gson().toJson(service);
         
         ChatMessage message = new ChatMessage(currentUserId, chatUserId, serviceJson);
@@ -948,24 +1175,17 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         }
     };
 
-    @Override
-    public void onBackPressed() {
-        if (messageSelectionActionMode != null) {
-            messageSelectionActionMode.finish();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
     private void setupObservers() {
         if (chatRoomId == null) return;
         
-        viewModel.getMessages(chatRoomId).observe(this, messages -> {
+        viewModel.getMessages(chatRoomId, currentUserId, chatUserId).observe(this, messages -> {
             if (messages != null) {
                 // Determine new messages and mark them read if necessary
                 for (ChatMessage message : messages) {
                     if (message.getReceiverId().equals(currentUserId) && !message.isRead()) {
-                        viewModel.markAsRead(chatRoomId, message.getMessageId());
+                        String sourceRoomId = message.getSourceRoomId() != null
+                                ? message.getSourceRoomId() : chatRoomId;
+                        viewModel.markAsRead(sourceRoomId, message.getMessageId());
                         
                         // Decrement unread count in SharedPreferences
                         if (notificationBadgeHelper != null) {
@@ -978,7 +1198,10 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                     }
                 }
                 
-                chatAdapter.setMessages(messages);
+                List<ChatMessage> displayMessages = messages.isEmpty()
+                        ? buildFallbackConversationMessage()
+                        : messages;
+                chatAdapter.setMessages(displayMessages);
                 
                 // Scroll to bottom on new messages
                 rvMessages.post(() -> {
@@ -1022,6 +1245,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     }
 
     private void finalizeFileMessage(String downloadUrl, String uploadedFileName, long fileSize, String messageType) {
+        if (!ensureChatCanSend()) return;
         String previewText = messageType.substring(0, 1).toUpperCase() + messageType.substring(1);
         if (messageType.equals("audio")) previewText = getString(R.string.voice_note);
         
@@ -1044,6 +1268,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
     private void sendMessage() {
         Log.d("ChatActivity", "sendMessage called");
+        if (!ensureChatCanSend()) return;
         String messageText = etMessage.getText().toString().trim();
         if (messageText.isEmpty()) {
             return;
@@ -1136,7 +1361,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     private void markAllMessagesAsRead() {
         if (chatRoomId == null || currentUserId == null) return;
         
-        viewModel.markAllAsRead(chatRoomId, currentUserId);
+        viewModel.markAllAsRead(chatRoomId, currentUserId, chatUserId);
         
         if (notificationBadgeHelper != null) {
             notificationBadgeHelper.markConversationAsRead(chatRoomId);
@@ -1305,6 +1530,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
     }
 
     private void sendFileMessage(Uri fileUri, String fileName, String messageType) {
+        if (!ensureChatCanSend()) return;
         if (fileUri == null) return;
         long fileSize = getFileSize(fileUri);
         
@@ -1336,6 +1562,42 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
     private void setupTypingIndicator() {
         // Handled by setupObservers() in MVVM
+    }
+
+    private List<ChatMessage> buildFallbackConversationMessage() {
+        String text = fallbackLastMessage != null ? fallbackLastMessage.trim() : "";
+        if (text.isEmpty() || isSystemConversationPreview(text)) {
+            return java.util.Collections.emptyList();
+        }
+
+        String senderId = fallbackLastMessageSenderId != null && !fallbackLastMessageSenderId.trim().isEmpty()
+                ? fallbackLastMessageSenderId
+                : chatUserId;
+        String receiverId = currentUserId != null && currentUserId.equals(senderId)
+                ? chatUserId
+                : currentUserId;
+        ChatMessage message = new ChatMessage(senderId, receiverId, text);
+        message.setMessageId("conversation-summary-" + Math.max(fallbackLastMessageTimestamp, 0L));
+        message.setSenderName(currentUserId != null && currentUserId.equals(senderId)
+                ? preferenceManager.getUserName()
+                : chatUserName);
+        message.setReceiverName(currentUserId != null && currentUserId.equals(senderId)
+                ? chatUserName
+                : preferenceManager.getUserName());
+        message.setMessageType("text");
+        message.setMessageStatus("sent");
+        message.setTimestamp(fallbackLastMessageTimestamp > 0
+                ? fallbackLastMessageTimestamp
+                : System.currentTimeMillis());
+        message.setRead(true);
+        return java.util.Collections.singletonList(message);
+    }
+
+    private boolean isSystemConversationPreview(String text) {
+        String normalized = text.trim().toLowerCase(java.util.Locale.US);
+        return normalized.equals("chat appointment")
+                || normalized.equals("chat appointment booked")
+                || normalized.equals("appointment booked");
     }
 
     /**
@@ -1532,6 +1794,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
      * Start voice recording - Bottom Sheet UI
      */
     private void startVoiceRecording() {
+        if (!ensureChatCanSend()) return;
         // Check permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
                 != PackageManager.PERMISSION_GRANTED) {
@@ -1563,6 +1826,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
      */
     private void sendVoiceMessage(String audioFilePath, long duration) {
         android.util.Log.d("ChatActivity", "sendVoiceMessage called with: " + audioFilePath);
+        if (!ensureChatCanSend()) return;
         
         if (audioFilePath == null || audioFilePath.isEmpty()) {
             Log.e("ChatActivity", "Invalid audio file path");

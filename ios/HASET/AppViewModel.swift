@@ -121,7 +121,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func refreshCurrentUser() async {
-        guard let session = sessionStore.loadSession() else { return }
+        guard let session = activeSession ?? sessionStore.loadSession() else { return }
         do {
             currentUser = try await authService.restoreProfile(session: session)
         } catch {
@@ -377,7 +377,7 @@ final class AppViewModel: ObservableObject {
             alertState = AlertState(title: tr("error"), message: tr("name_required"))
             return false
         }
-        guard ValidationService.isValidPhone(trimmedPhone) else {
+        guard trimmedPhone.isEmpty || ValidationService.isValidPhone(trimmedPhone) else {
             alertState = AlertState(title: tr("error"), message: tr("valid_phone_required"))
             return false
         }
@@ -387,6 +387,8 @@ final class AppViewModel: ObservableObject {
         }
 
         profile.fullName = trimmedName
+        // Phone is optional for existing profiles; changing age or professional
+        // fields must not fail just because the legacy record has no phone.
         profile.phone = trimmedPhone
         profile.age = trimmedAge.isEmpty ? nil : trimmedAge
         profile.gender = trimmedGender.isEmpty ? nil : trimmedGender
@@ -403,16 +405,32 @@ final class AppViewModel: ObservableObject {
         }
 
         do {
-            let session = try await authService.refreshSessionIfNeeded(storedSession)
-            sessionStore.saveSession(session)
-            activeSession = session
+            // Prefer the session already used by the running app. Refreshing on
+            // every profile edit can reject an otherwise valid active token.
+            var session = activeSession ?? storedSession
             if let profileImageData {
                 profile.profileImage = try await authService.uploadProfileImage(
                     profileImageData,
                     userId: profile.userId
                 )
+            } else if profile.profileImage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                      let existingImage = try? await authService.fetchProfileImage(userId: profile.userId, idToken: session.idToken),
+                      !existingImage.isEmpty {
+                // Do not erase a previously uploaded avatar when editing an
+                // unrelated field such as age or phone.
+                profile.profileImage = existingImage
             }
-            try await authService.updateUserProfile(profile, idToken: session.idToken)
+            do {
+                try await authService.updateUserProfile(profile, idToken: session.idToken)
+            } catch {
+                // If the active token really expired, refresh once and retry the
+                // exact same write before asking the user to sign in again.
+                let refreshed = try await authService.refreshSessionIfNeeded(storedSession)
+                session = refreshed
+                sessionStore.saveSession(refreshed)
+                activeSession = refreshed
+                try await authService.updateUserProfile(profile, idToken: refreshed.idToken)
+            }
             currentUser = profile
             sessionStore.saveSession(
                 StoredSession(
@@ -447,7 +465,8 @@ final class AppViewModel: ObservableObject {
         date: String,
         time: String,
         reason: String,
-        appointmentType: String
+        appointmentType: String,
+        paymentConfirmed: Bool = false
     ) {
         guard let currentUser else { return }
         let trimmedDate = date.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -480,6 +499,7 @@ final class AppViewModel: ObservableObject {
                     time: trimmedTime,
                     reason: trimmedReason,
                     appointmentType: appointmentType,
+                    paymentConfirmed: paymentConfirmed,
                     idToken: session.idToken
                 )
                 await loadAppointments(force: true)
@@ -554,17 +574,22 @@ final class AppViewModel: ObservableObject {
     func setDoctorPresence(online: Bool) async {
         guard currentUser?.role == .doctor else { return }
 
-        guard let storedSession = sessionStore.loadSession() else {
+        guard let storedSession = activeSession ?? sessionStore.loadSession() else {
             alertState = AlertState(title: tr("error"), message: "Authentication expired. Please sign in again.")
             return
         }
         do {
-            let session = try await authService.refreshSessionIfNeeded(storedSession)
-            sessionStore.saveSession(session)
-            activeSession = session
-            try await authService.updateDoctorPresence(doctorId: currentUser?.userId ?? "", online: online, idToken: session.idToken)
+            let userId = storedSession.userId
+            do {
+                try await authService.updateDoctorPresence(doctorId: userId, online: online, idToken: storedSession.idToken)
+            } catch {
+                let refreshed = try await authService.refreshSessionIfNeeded(storedSession)
+                sessionStore.saveSession(refreshed)
+                activeSession = refreshed
+                try await authService.updateDoctorPresence(doctorId: userId, online: online, idToken: refreshed.idToken)
+            }
             doctorPresence = DoctorPresenceSummary(
-                doctorId: currentUser?.userId ?? "",
+                doctorId: userId,
                 online: online,
                 lastUpdated: Date().timeIntervalSince1970 * 1000
             )
@@ -600,18 +625,24 @@ final class AppViewModel: ObservableObject {
         didLoadAppointments = true
         do {
             let idToken: String?
-            if let storedSession = sessionStore.loadSession() {
-                let session = try await authService.refreshSessionIfNeeded(storedSession)
-                sessionStore.saveSession(session)
-                activeSession = session
+            // The Firebase auth UID is authoritative for database rules. Older
+            // profile records can contain a stale userId, which causes REST
+            // appointment queries to be rejected with Permission denied.
+            let authenticatedUserId: String
+            if let session = activeSession ?? sessionStore.loadSession() {
+                // Use the token obtained by the current login. Refreshing it
+                // again immediately can replace a valid token with a failed
+                // refresh response and makes Firebase reject the query.
                 idToken = session.idToken
+                authenticatedUserId = session.userId
             } else {
                 idToken = nil
+                authenticatedUserId = currentUser.userId
             }
             let result = try await withThrowingTaskGroup(of: [AppointmentSummary].self) { group in
                 group.addTask {
                     try await self.authService.fetchAppointments(
-                        userId: currentUser.userId,
+                        userId: authenticatedUserId,
                         role: currentUser.role,
                         idToken: idToken
                     )
@@ -684,9 +715,11 @@ final class AppViewModel: ObservableObject {
         guard let currentUser else { return }
         if didLoadConversations && !force { return }
         didLoadConversations = true
-        let idToken = sessionStore.loadSession()?.idToken
+        let session = activeSession ?? sessionStore.loadSession()
+        let userId = session?.userId ?? currentUser.userId
+        let idToken = session?.idToken
         do {
-            let result = try await authService.fetchConversations(userId: currentUser.userId, idToken: idToken)
+            let result = try await authService.fetchConversations(userId: userId, idToken: idToken)
             conversations = result
         } catch {
             conversations = []
@@ -694,7 +727,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func loadChatMessages(chatRoomId: String, currentUserId: String) async -> [ChatMessageSummary] {
-        let idToken = sessionStore.loadSession()?.idToken
+        let idToken = (activeSession ?? sessionStore.loadSession())?.idToken
         do {
             return try await authService.fetchChatMessages(chatRoomId: chatRoomId, currentUserId: currentUserId, idToken: idToken)
         } catch {
@@ -702,17 +735,58 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    func sendChatMessage(chatRoomId: String, receiverId: String, receiverName: String, message: String) async throws {
+    func loadChatSendAccess(chatRoomId: String, otherUserId: String, role: UserRole) async -> ChatSendAccessSummary {
+        let session = activeSession ?? sessionStore.loadSession()
+        let currentUserId = session?.userId ?? currentUser?.userId ?? ""
+        guard !currentUserId.isEmpty else {
+            return ChatSendAccessSummary(canSend: false, message: "Authentication expired. Please sign in again.")
+        }
+        do {
+            return try await authService.fetchChatSendAccess(
+                chatRoomId: chatRoomId,
+                currentUserId: currentUserId,
+                otherUserId: otherUserId,
+                role: role,
+                idToken: session?.idToken
+            )
+        } catch {
+            return ChatSendAccessSummary(canSend: false, message: error.localizedDescription)
+        }
+    }
+
+    func loadProfileImage(userId: String) async -> String? {
+        let session = activeSession ?? sessionStore.loadSession()
+        guard let session else { return nil }
+        return try? await authService.fetchProfileImage(userId: userId, idToken: session.idToken)
+    }
+
+    func sendChatMessage(chatRoomId: String, receiverId: String, receiverName: String, message: String, messageType: String = "text", attachmentURL: String? = nil, attachmentFileName: String? = nil, replyToMessageID: String? = nil, replyToText: String? = nil) async throws {
         guard let currentUser else { return }
-        let idToken = sessionStore.loadSession()?.idToken
+        guard let session = activeSession ?? sessionStore.loadSession() else {
+            throw ServiceError.message("Authentication expired. Please sign in again.")
+        }
+        // Use the authenticated UID for the sender field. Firebase rules
+        // reject writes when an old profile record contains a stale userId.
+        var sender = currentUser
+        sender.userId = session.userId
+        let idToken = session.idToken
         try await authService.sendChatMessage(
             chatRoomId: chatRoomId,
-            sender: currentUser,
+            sender: sender,
             receiverId: receiverId,
             receiverName: receiverName,
             message: message,
+            messageType: messageType,
+            attachmentURL: attachmentURL,
+            attachmentFileName: attachmentFileName,
+            replyToMessageID: replyToMessageID,
+            replyToText: replyToText,
             idToken: idToken
         )
+    }
+
+    func uploadChatAttachment(_ data: Data, fileName: String, mimeType: String) async throws -> String {
+        try await authService.uploadChatAttachment(data, fileName: fileName, mimeType: mimeType)
     }
 
     func markChatMessagesRead(chatRoomId: String) async {
@@ -723,6 +797,13 @@ final class AppViewModel: ObservableObject {
         } catch {
             // Ignore read-receipt sync failures.
         }
+    }
+
+    func deleteChatMessage(chatRoomId: String, messageId: String) async throws {
+        guard let session = activeSession ?? sessionStore.loadSession() else {
+            throw ServiceError.message("Authentication expired. Please sign in again.")
+        }
+        try await authService.deleteChatMessage(chatRoomId: chatRoomId, messageId: messageId, idToken: session.idToken)
     }
 
     func loadNotifications(force: Bool) async {
@@ -768,10 +849,10 @@ final class AppViewModel: ObservableObject {
         Task {
             do {
                 try await authService.deleteCurrentAccount(userId: user.userId, role: user.role, idToken: idToken)
+                logout()
             } catch {
                 alertState = AlertState(title: tr("error"), message: "Unable to delete account.")
             }
-            logout()
         }
     }
 }
