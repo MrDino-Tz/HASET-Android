@@ -86,12 +86,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Bank code or bank name">
-                <com.google.android.material.textfield.TextInputEditText
+                android:hint="Bank"
+                app:endIconMode="dropdown_menu">
+                <AutoCompleteTextView
                     android:id="@+id/etBankCode"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapCharacters" />
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:completionThreshold="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout

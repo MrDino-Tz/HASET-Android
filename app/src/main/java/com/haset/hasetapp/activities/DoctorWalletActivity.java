@@ -452,11 +452,13 @@ public class DoctorWalletActivity extends BaseActivity {
         LinearLayout bankFields = view.findViewById(R.id.bankFields);
         AutoCompleteTextView provider = view.findViewById(R.id.etPayoutProvider);
         TextInputEditText phone = view.findViewById(R.id.etPayoutPhone);
-        TextInputEditText bankCode = view.findViewById(R.id.etBankCode);
+        AutoCompleteTextView bankCode = view.findViewById(R.id.etBankCode);
         TextInputEditText bankAccount = view.findViewById(R.id.etBankAccount);
         MfaCodeInputView mfaCode = view.findViewById(R.id.destinationMfaCodeInput);
         String[] providers = {"Vodacom M-Pesa", "Airtel Money", "Tigo Pesa", "Halotel", "Mixx by Yas"};
         provider.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, providers));
+        String[] banks = {"CRDB", "NMB", "TCB", "AKIBA Bank", "DTB", "KCB", "Azania Bank", "Mwanga Bank", "Selcom MF Bank"};
+        bankCode.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, banks));
         typeGroup.setOnCheckedChangeListener((group, checkedId) -> {
             boolean bank = checkedId == R.id.rbBank;
             mobileFields.setVisibility(bank ? View.GONE : View.VISIBLE);
