@@ -194,20 +194,25 @@ public class DoctorWalletActivity extends BaseActivity {
             if (request == null) continue;
             String status = request.getStatus();
             boolean usableStatus = WithdrawalRequest.STATUS_APPROVED.equalsIgnoreCase(status)
-                    || WithdrawalRequest.STATUS_COMPLETED.equalsIgnoreCase(status);
+                    || WithdrawalRequest.STATUS_COMPLETED.equalsIgnoreCase(status)
+                    || WithdrawalRequest.STATUS_PENDING.equalsIgnoreCase(status);
             if (!usableStatus) continue;
 
             String account = request.getAccountNumber();
             if (TextUtils.isEmpty(account)) continue;
 
+            boolean approved = WithdrawalRequest.STATUS_APPROVED.equalsIgnoreCase(status)
+                    || WithdrawalRequest.STATUS_COMPLETED.equalsIgnoreCase(status);
+            boolean pending = WithdrawalRequest.STATUS_PENDING.equalsIgnoreCase(status);
+
             if (WithdrawalRequest.METHOD_BANK.equals(request.getMethod())) {
-                currentWallet.setBankAvailable(true);
-                currentWallet.setBankPending(false);
+                currentWallet.setBankAvailable(approved);
+                currentWallet.setBankPending(pending);
                 String bankName = TextUtils.isEmpty(request.getBankName()) ? "" : request.getBankName();
                 currentWallet.setBankLabel((bankName + "  " + account).trim());
             } else {
-                currentWallet.setMobileMoneyAvailable(true);
-                currentWallet.setMobileMoneyPending(false);
+                currentWallet.setMobileMoneyAvailable(approved);
+                currentWallet.setMobileMoneyPending(pending);
                 String provider = TextUtils.isEmpty(request.getBankName()) ? "Mobile Money" : request.getBankName();
                 currentWallet.setMobileMoneyLabel((provider + "  " + account).trim());
             }
