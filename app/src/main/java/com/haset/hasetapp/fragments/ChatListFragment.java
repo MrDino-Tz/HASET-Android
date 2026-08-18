@@ -153,6 +153,14 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
         }, 3000);
         
         viewModel.getConversations(currentUserId).observe(getViewLifecycleOwner(), conversations -> {
+            List<Conversation> previous = conversationAdapter != null
+                    ? conversationAdapter.getConversations() : null;
+            if (previous != null && !previous.isEmpty()
+                    && (conversations == null || conversations.isEmpty())) {
+                Log.w("ChatListFragment", "Conversations wiped: was " + previous.size()
+                        + ", now " + (conversations == null ? "null" : conversations.size()),
+                        new RuntimeException("trace"));
+            }
             hideShimmerLoading();
             filterAndDisplay(conversations);
 

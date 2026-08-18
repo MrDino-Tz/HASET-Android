@@ -50,11 +50,13 @@ public class ChatRepository {
 
     public LiveData<List<Conversation>> getConversations(String userId) {
         MutableLiveData<List<Conversation>> conversationsLiveData = new MutableLiveData<>();
-        
+        final boolean[] postedOnce = {false};
+
         firebaseHelper.getUserConversationsRef().child(userId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<Conversation> conversations = new ArrayList<>();
+                int deserializationFails = 0;
                 for (DataSnapshot conversationSnapshot : snapshot.getChildren()) {
                     Conversation conversation = conversationSnapshot.getValue(Conversation.class);
                     if (conversation != null) {
@@ -63,19 +65,35 @@ public class ChatRepository {
                         // Room ID logic is usually duplicated, could be helperized
                         conversation.setConversationId(generateChatRoomId(userId, otherUserId));
                         conversations.add(conversation);
+                    } else {
+                        deserializationFails++;
+                        if (deserializationFails <= 5) {
+                            Log.w("ChatRepository", "Conversation child failed to deserialize. key="
+                                    + conversationSnapshot.getKey() + " raw="
+                                    + (conversationSnapshot.getValue() == null
+                                        ? "null" : conversationSnapshot.getValue().toString()));
+                        }
                     }
                 }
                 Collections.sort(conversations, (c1, c2) -> Long.compare(c2.getLastMessageTimestamp(), c1.getLastMessageTimestamp()));
+                Log.d("ChatRepository", "Conversations for " + userId + ": exists=" + snapshot.exists()
+                        + " children=" + snapshot.getChildrenCount() + " usable=" + conversations.size()
+                        + " deserializationFails=" + deserializationFails);
+                postedOnce[0] = true;
                 conversationsLiveData.postValue(conversations);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Resolve the LiveData instead of leaving the caller's shimmer
-                // loading state hanging (denied reads, offline, etc.).
+                // Resolve an initial failure instead of leaving the caller's
+                // shimmer loading state hanging (denied reads, offline, etc.).
+                // Never wipe already-loaded data: a transient re-read failure
+                // must not make conversations load and then disappear.
                 Log.w("ChatRepository", "Failed to load conversations for " + userId + ": "
                         + error.getMessage());
-                conversationsLiveData.postValue(new ArrayList<>());
+                if (!postedOnce[0]) {
+                    conversationsLiveData.postValue(new ArrayList<>());
+                }
             }
         });
 
