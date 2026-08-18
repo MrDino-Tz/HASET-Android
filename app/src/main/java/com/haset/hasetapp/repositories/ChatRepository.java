@@ -71,7 +71,11 @@ public class ChatRepository {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Handle error
+                // Resolve the LiveData instead of leaving the caller's shimmer
+                // loading state hanging (denied reads, offline, etc.).
+                Log.w("ChatRepository", "Failed to load conversations for " + userId + ": "
+                        + error.getMessage());
+                conversationsLiveData.postValue(new ArrayList<>());
             }
         });
 
