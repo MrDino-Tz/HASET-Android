@@ -48,7 +48,18 @@ public class HomeRepository {
                     // Fallback to users path if empty
                     loadDoctorsFromUsersPath(doctorsLiveData);
                 } else {
-                    sortAndPostDoctors(doctors, doctorsLiveData);
+                    // Best-effort enrichment of names/contact details from /users
+                    FirebaseHelper.mergeDoctorNamesFromUsers(doctors, new FirebaseHelper.OnCompleteListener<List<Doctor>>() {
+                        @Override
+                        public void onSuccess(List<Doctor> merged) {
+                            sortAndPostDoctors(merged, doctorsLiveData);
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            sortAndPostDoctors(doctors, doctorsLiveData);
+                        }
+                    });
                 }
             }
 
@@ -62,19 +73,17 @@ public class HomeRepository {
     }
 
     private void loadDoctorsFromUsersPath(MutableLiveData<List<Doctor>> liveData) {
-        firebaseHelper.getUsersRef().addListenerForSingleValueEvent(new ValueEventListener() {
+        Query query = firebaseHelper.getUsersRef().orderByChild("role").equalTo(Constants.ROLE_DOCTOR);
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<Doctor> doctors = new ArrayList<>();
                 if (snapshot.exists()) {
                     for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                        String role = userSnapshot.child("role").getValue(String.class);
-                        if ("doctor".equalsIgnoreCase(role)) {
-                            Doctor doctor = parseDoctor(userSnapshot);
-                            Boolean isApproved = userSnapshot.child("approved").getValue(Boolean.class);
-                            if (Boolean.TRUE.equals(isApproved)) {
-                                doctors.add(doctor);
-                            }
+                        Doctor doctor = parseDoctor(userSnapshot);
+                        Boolean isApproved = userSnapshot.child("approved").getValue(Boolean.class);
+                        if (Boolean.TRUE.equals(isApproved)) {
+                            doctors.add(doctor);
                         }
                     }
                 }
