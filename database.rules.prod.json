@@ -3,31 +3,30 @@
     ".read": false,
     ".write": false,
     "users": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (query.orderByChild === 'role' && query.equalTo === 'doctor'))",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
       "$uid": {
-        ".read": "auth != null && ($uid === auth.uid || data.child('role').val() === 'doctor' || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
         ".write": "auth != null && (($uid === auth.uid && ((!data.exists() && (!newData.child('role').exists() || newData.child('role').val() === 'patient') && !newData.child('adminRole').exists() && !newData.child('admin_role').exists()) || (data.exists() && newData.child('role').val() === data.child('role').val() && newData.child('adminRole').val() === data.child('adminRole').val() && newData.child('admin_role').val() === data.child('admin_role').val()))) || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')"
-      },
-      ".indexOn": [
-        "role"
-      ]
+      }
     },
     "doctors": {
       ".read": true,
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')"
     },
     "appointments": {
+      ".read": "auth != null",
+      ".write": false,
       ".indexOn": [
         "createdAt",
         "patientId",
-        "doctorId"
+        "patient_id",
+        "user_id",
+        "doctorId",
+        "doctor_id"
       ],
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (query.orderByChild === 'patientId' && query.equalTo === auth.uid) || (query.orderByChild === 'doctorId' && query.equalTo === auth.uid))",
       "$appointmentId": {
-        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (!data.exists() && newData.exists() && newData.child('patientId').val() === auth.uid && newData.child('appointmentId').val() === $appointmentId && newData.child('status').val() === 'pending' && root.child('doctors').child(newData.child('doctorId').val()).child('approved').val() === true) || (data.exists() && !newData.exists() && (data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid)) || (data.exists() && newData.exists() && newData.child('appointmentId').val() === data.child('appointmentId').val() && newData.child('patientId').val() === data.child('patientId').val() && newData.child('doctorId').val() === data.child('doctorId').val() && newData.child('createdAt').val() === data.child('createdAt').val() && ((data.child('patientId').val() === auth.uid && newData.child('patientName').val() === data.child('patientName').val() && newData.child('doctorName').val() === data.child('doctorName').val() && newData.child('reason').val() === data.child('reason').val() && newData.child('appointmentType').val() === data.child('appointmentType').val() && ((newData.child('status').val() === 'pending' && (data.child('status').val() === 'pending' || data.child('status').val() === 'approved')) || (newData.child('status').val() === 'cancelled' && (data.child('status').val() === 'pending' || data.child('status').val() === 'approved')))) || (data.child('doctorId').val() === auth.uid && newData.child('patientName').val() === data.child('patientName').val() && newData.child('doctorName').val() === data.child('doctorName').val() && newData.child('date').val() === data.child('date').val() && newData.child('time').val() === data.child('time').val() && newData.child('reason').val() === data.child('reason').val() && newData.child('appointmentType').val() === data.child('appointmentType').val() && (newData.child('status').val() === data.child('status').val() || (data.child('status').val() === 'pending' && (newData.child('status').val() === 'approved' || newData.child('status').val() === 'declined')) || (data.child('status').val() === 'approved' && (newData.child('status').val() === 'completed' || newData.child('status').val() === 'cancelled')))))))",
-        ".validate": "!newData.exists() || (newData.child('appointmentId').val() === $appointmentId && newData.child('patientId').isString() && newData.child('doctorId').isString() && newData.child('patientName').isString() && newData.child('doctorName').isString() && newData.child('date').isString() && newData.child('time').isString() && newData.child('status').isString() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'declined' || newData.child('status').val() === 'completed' || newData.child('status').val() === 'cancelled') && newData.child('createdAt').isNumber())"
+        ".write": "auth != null"
       }
     },
     "departments": {
@@ -97,7 +96,7 @@
       }
     },
     "withdrawal_requests": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+      ".read": "auth != null && (root.child(\"users\").child(auth.uid).child(\"role\").val() === \"admin\" || root.child(\"users\").child(auth.uid).child(\"adminRole\").val() === \"super_admin\" || root.child(\"users\").child(auth.uid).child(\"admin_role\").val() === \"super_admin\" || (query.orderByChild === \"doctorId\" && query.equalTo === auth.uid))",
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
       ".indexOn": [
         "createdAt",
