@@ -1,0 +1,190 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:processDebugResources
+
+> Task :app:compileDebugJavaWithJavac
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:566: error: cannot find symbol
+                if (post.getMusic() == null) {
+                        ^
+  symbol:   method getMusic()
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:567: error: cannot find symbol
+                    post.setMusic("");
+                        ^
+  symbol:   method setMusic(String)
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:610: error: cannot find symbol
+                if (post.getMusic() == null) {
+                        ^
+  symbol:   method getMusic()
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:611: error: cannot find symbol
+                    post.setMusic("");
+                        ^
+  symbol:   method setMusic(String)
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/ArticleAdapter.java:73: error: cannot find symbol
+                    .inflate(R.layout.item_post, parent, false);
+                                     ^
+  symbol:   variable item_post
+  location: class layout
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/ArticlePostAdapter.java:84: error: cannot find symbol
+                tvStatus.setBackgroundResource(R.drawable.bg_status_published);
+                                                         ^
+  symbol:   variable bg_status_published
+  location: class drawable
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/ArticlePostAdapter.java:87: error: cannot find symbol
+                tvStatus.setBackgroundResource(R.drawable.bg_status_draft);
+                                                         ^
+  symbol:   variable bg_status_draft
+  location: class drawable
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/PostFeedAdapter.java:174: error: cannot find symbol
+        if (post.getMusic() != null && !post.getMusic().isEmpty()) {
+                ^
+  symbol:   method getMusic()
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/PostFeedAdapter.java:174: error: cannot find symbol
+        if (post.getMusic() != null && !post.getMusic().isEmpty()) {
+                                            ^
+  symbol:   method getMusic()
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/PostFeedAdapter.java:175: error: cannot find symbol
+            holder.tvMusic.setText(post.getMusic());
+                                       ^
+  symbol:   method getMusic()
+  location: variable post of type ArticlePostEntity
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/fragments/PostCommentsBottomSheet.java:47: error: cannot find symbol
+        return inflater.inflate(R.layout.bottom_sheet_post_comments, container, false);
+                                        ^
+  symbol:   variable bottom_sheet_post_comments
+  location: class layout
+/home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/fragments/ArticleCenterMyPostsFragment.java:121: error: cannot find symbol
+                        AuditLogger.getInstance(requireContext()).logPostDeleted(post.getPostId(), post.getTitle(), post.getType());
+                        ^
+  symbol: variable AuditLogger
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+12 errors
+
+> Task :app:compileDebugJavaWithJavac FAILED
+
+[Incubating] Problems report is available at: file:///home/mrdinotz/AndroidStudioProjects/HASETApp/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugJavaWithJavac'.
+> Compilation failed; see the compiler output below.
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:566: error: cannot find symbol
+                  if (post.getMusic() == null) {
+                          ^
+    symbol:   method getMusic()
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:567: error: cannot find symbol
+                      post.setMusic("");
+                          ^
+    symbol:   method setMusic(String)
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:610: error: cannot find symbol
+                  if (post.getMusic() == null) {
+                          ^
+    symbol:   method getMusic()
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/database/LocalStorageHelper.java:611: error: cannot find symbol
+                      post.setMusic("");
+                          ^
+    symbol:   method setMusic(String)
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/ArticleAdapter.java:73: error: cannot find symbol
+                      .inflate(R.layout.item_post, parent, false);
+                                       ^
+    symbol:   variable item_post
+    location: class layout
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/ArticlePostAdapter.java:84: error: cannot find symbol
+                  tvStatus.setBackgroundResource(R.drawable.bg_status_published);
+                                                           ^
+    symbol:   variable bg_status_published
+    location: class drawable
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/ArticlePostAdapter.java:87: error: cannot find symbol
+                  tvStatus.setBackgroundResource(R.drawable.bg_status_draft);
+                                                           ^
+    symbol:   variable bg_status_draft
+    location: class drawable
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/PostFeedAdapter.java:174: error: cannot find symbol
+          if (post.getMusic() != null && !post.getMusic().isEmpty()) {
+                  ^
+    symbol:   method getMusic()
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/PostFeedAdapter.java:174: error: cannot find symbol
+          if (post.getMusic() != null && !post.getMusic().isEmpty()) {
+                                              ^
+    symbol:   method getMusic()
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/adapters/PostFeedAdapter.java:175: error: cannot find symbol
+              holder.tvMusic.setText(post.getMusic());
+                                         ^
+    symbol:   method getMusic()
+    location: variable post of type ArticlePostEntity
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/fragments/PostCommentsBottomSheet.java:47: error: cannot find symbol
+          return inflater.inflate(R.layout.bottom_sheet_post_comments, container, false);
+                                          ^
+    symbol:   variable bottom_sheet_post_comments
+    location: class layout
+  /home/mrdinotz/AndroidStudioProjects/HASETApp/app/src/main/java/com/haset/hasetapp/fragments/ArticleCenterMyPostsFragment.java:121: error: cannot find symbol
+                          AuditLogger.getInstance(requireContext()).logPostDeleted(post.getPostId(), post.getTitle(), post.getType());
+                          ^
+    symbol: variable AuditLogger
+  Note: Some input files use or override a deprecated API.
+  Note: Recompile with -Xlint:deprecation for details.
+  Note: Some input files use unchecked or unsafe operations.
+  Note: Recompile with -Xlint:unchecked for details.
+  12 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 31s
+33 actionable tasks: 5 executed, 28 up-to-date
