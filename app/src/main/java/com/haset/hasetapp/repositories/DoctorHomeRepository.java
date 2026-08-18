@@ -237,7 +237,12 @@ public class DoctorHomeRepository {
                         if (json != null) {
                             applyFlatPayoutDestinationFields(wallet, json);
                         }
-                        callback.onSuccess(wallet);
+                        if (wallet.getMobileMoneyLabel() == null && wallet.getBankLabel() == null) {
+                            Log.d("HASET_WALLET", "API returned no payout destinations, falling back to Firebase");
+                            applyFirebaseDestinationFallback(wallet, doctorId, callback);
+                        } else {
+                            callback.onSuccess(wallet);
+                        }
                     }
 
                     @Override
@@ -246,6 +251,54 @@ public class DoctorHomeRepository {
                     }
                 })
         ).addOnFailureListener(error -> callback.onError("Authentication expired. Please sign in again."));
+    }
+
+    private void applyFirebaseDestinationFallback(DoctorWalletEntity wallet, String doctorId,
+            FirebaseHelper.OnCompleteListener<DoctorWalletEntity> callback) {
+        FirebaseHelper.getDoctorWalletsRef().child(doctorId).child("payout_destinations")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            for (DataSnapshot typeSnapshot : dataSnapshot.getChildren()) {
+                                applyFirebaseDestinationType(wallet, typeSnapshot);
+                            }
+                        }
+                        callback.onSuccess(wallet);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        Log.d("HASET_WALLET", "Firebase destination fallback failed: " + databaseError.getMessage());
+                        callback.onSuccess(wallet);
+                    }
+                });
+    }
+
+    private static void applyFirebaseDestinationType(DoctorWalletEntity wallet, DataSnapshot snapshot) {
+        String type = snapshot.getKey();
+        String status = snapshot.child("status").getValue(String.class);
+        String masked = snapshot.child("masked_account").getValue(String.class);
+        String provider = snapshot.child("provider").getValue(String.class);
+        String bankCode = snapshot.child("bank_code").getValue(String.class);
+        if (status == null && masked == null) return;
+        boolean available = isAvailableStatus(status)
+                || (snapshot.hasChild("available") && Boolean.TRUE.equals(snapshot.child("available").getValue(Boolean.class)));
+        boolean pending = !available && isPendingDestination(status, provider == null ? "" : provider,
+                masked == null ? "" : masked);
+        if ("bank".equals(type)) {
+            if (bankCode != null || masked != null) {
+                wallet.setBankAvailable(available);
+                wallet.setBankPending(pending);
+                wallet.setBankLabel(((bankCode == null ? "" : bankCode) + "  " + (masked == null ? "" : masked)).trim());
+            }
+        } else {
+            if (provider != null || masked != null) {
+                wallet.setMobileMoneyAvailable(available);
+                wallet.setMobileMoneyPending(pending);
+                wallet.setMobileMoneyLabel(((provider == null ? "" : provider) + "  " + (masked == null ? "" : masked)).trim());
+            }
+        }
     }
 
     public void updateAppointmentStatus(Appointment appointment, String status, FirebaseHelper.OnCompleteListener<Void> callback) {

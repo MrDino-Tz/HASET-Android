@@ -110,4 +110,5 @@
     
     <color name="withdrawal_icon_bg">#2D442D</color>
     <color name="surface">#222222</color>
+    <color name="chat_bubble_border">#444444</color>
 </resources>

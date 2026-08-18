@@ -749,6 +749,76 @@ public class FirebaseHelper {
         return getFirebaseDatabase().getReference("doctor_wallets");
     }
 
+    public static DatabaseReference getPayoutDestinationRequestsRef() {
+        return getFirebaseDatabase().getReference("payout_destination_requests");
+    }
+
+    /**
+     * Persist a submitted payout destination as a pending record that finance
+     * admins review. Mirrors the destination into the doctor's wallet node so
+     * the admin wallets page can show it. Only masked account values are stored.
+     */
+    public static void submitPayoutDestinationForApproval(String doctorId, String destinationType,
+            String provider, String bankCode, String phoneNumber, String bankAccount,
+            OnCompleteListener<Boolean> listener) {
+        if (doctorId == null || doctorId.isEmpty()) {
+            if (listener != null) listener.onError("Missing doctor id.");
+            return;
+        }
+        boolean bank = "bank".equalsIgnoreCase(destinationType);
+        String maskedAccount = bank ? maskAccount(bankAccount) : maskAccount(phoneNumber);
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("doctor_id", doctorId);
+        request.put("destination_type", bank ? "bank" : "mobile_money");
+        request.put("provider", bank ? bankCode : provider);
+        if (bank && bankCode != null) request.put("bank_code", bankCode);
+        request.put("masked_account", maskedAccount);
+        request.put("status", "pending");
+        request.put("submitted_by", doctorId);
+        request.put("created_at", System.currentTimeMillis());
+        request.put("can_review", true);
+
+        Map<String, Object> walletDestination = new HashMap<>();
+        walletDestination.put("status", "pending");
+        walletDestination.put("available", false);
+        walletDestination.put("masked_account", maskedAccount);
+        walletDestination.put("created_at", System.currentTimeMillis());
+        if (bank) {
+            walletDestination.put("bank_code", bankCode);
+            walletDestination.put("provider", bankCode);
+        } else {
+            walletDestination.put("provider", provider);
+        }
+
+        DatabaseReference requestRef = getPayoutDestinationRequestsRef().child(doctorId);
+        DatabaseReference walletTypeRef = getDoctorWalletsRef().child(doctorId)
+                .child("payout_destinations").child(bank ? "bank" : "mobile_money");
+
+        requestRef.setValue(request, (error, ref) -> {
+            if (error != null) {
+                Log.e("FirebaseHelper", "Failed to write pending payout destination: " + error.getMessage());
+                if (listener != null) listener.onError(error.getMessage());
+                return;
+            }
+            walletTypeRef.setValue(walletDestination, (walletError, walletRef) -> {
+                if (walletError != null) {
+                    Log.e("FirebaseHelper", "Failed to write wallet payout_destinations: " + walletError.getMessage());
+                    if (listener != null) listener.onError(walletError.getMessage());
+                    return;
+                }
+                if (listener != null) listener.onSuccess(true);
+            });
+        });
+    }
+
+    private static String maskAccount(String value) {
+        if (value == null) return "";
+        String digits = value.replaceAll("[^0-9]", "");
+        if (digits.length() <= 6) return "****";
+        return digits.substring(0, 2) + "****" + digits.substring(digits.length() - 4);
+    }
+
     // Withdrawal Request Operations
     public static DatabaseReference getWithdrawalRequestsRef() {
         return getFirebaseDatabase().getReference(Constants.WITHDRAWAL_REQUESTS_PATH);

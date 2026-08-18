@@ -5,8 +5,11 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
@@ -447,11 +450,13 @@ public class DoctorWalletActivity extends BaseActivity {
         RadioGroup typeGroup = view.findViewById(R.id.rgDestinationType);
         LinearLayout mobileFields = view.findViewById(R.id.mobileFields);
         LinearLayout bankFields = view.findViewById(R.id.bankFields);
-        TextInputEditText provider = view.findViewById(R.id.etPayoutProvider);
+        AutoCompleteTextView provider = view.findViewById(R.id.etPayoutProvider);
         TextInputEditText phone = view.findViewById(R.id.etPayoutPhone);
         TextInputEditText bankCode = view.findViewById(R.id.etBankCode);
         TextInputEditText bankAccount = view.findViewById(R.id.etBankAccount);
         MfaCodeInputView mfaCode = view.findViewById(R.id.destinationMfaCodeInput);
+        String[] providers = {"Vodacom M-Pesa", "Airtel Money", "Tigo Pesa", "Halotel", "Mixx by Yas"};
+        provider.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, providers));
         typeGroup.setOnCheckedChangeListener((group, checkedId) -> {
             boolean bank = checkedId == R.id.rbBank;
             mobileFields.setVisibility(bank ? View.GONE : View.VISIBLE);
@@ -488,7 +493,7 @@ public class DoctorWalletActivity extends BaseActivity {
         mfaCode.focusFirst();
     }
 
-    private String text(TextInputEditText field) {
+    private String text(android.widget.EditText field) {
         return field.getText() == null ? "" : field.getText().toString().trim();
     }
 
@@ -505,6 +510,21 @@ public class DoctorWalletActivity extends BaseActivity {
                         Toast.makeText(DoctorWalletActivity.this, "Invalid or expired MFA code.", Toast.LENGTH_LONG).show(); return;
                     }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
+                    FirebaseHelper.submitPayoutDestinationForApproval(
+                            user.getUid(),
+                            destination.has("destination_type") ? destination.get("destination_type").getAsString() : "",
+                            destination.has("provider") ? destination.get("provider").getAsString() : "",
+                            destination.has("bank_code") ? destination.get("bank_code").getAsString() : "",
+                            destination.has("phone_number") ? destination.get("phone_number").getAsString() : "",
+                            destination.has("bank_account") ? destination.get("bank_account").getAsString() : "",
+                            new FirebaseHelper.OnCompleteListener<Boolean>() {
+                                @Override public void onSuccess(Boolean result) {
+                                    Log.d("HASET_WALLET", "Pending payout destination written to Firebase for admin review");
+                                }
+                                @Override public void onError(String error) {
+                                    Log.d("HASET_WALLET", "Failed to write pending payout destination to Firebase: " + error);
+                                }
+                            });
                     RetrofitClient.getInstance().getDoctorPayoutApiService().updatePayoutDestination(bearer, actionToken, destination).enqueue(new Callback<JsonObject>() {
                         @Override public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
                             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
