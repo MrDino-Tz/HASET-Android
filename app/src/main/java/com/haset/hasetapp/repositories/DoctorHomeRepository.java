@@ -241,7 +241,7 @@ public class DoctorHomeRepository {
                             Log.d("HASET_WALLET", "API returned no payout destinations, falling back to Firebase");
                             applyFirebaseDestinationFallback(wallet, doctorId, callback);
                         } else {
-                            callback.onSuccess(wallet);
+                            finishWithApprovalOverride(wallet, doctorId, callback);
                         }
                     }
 
@@ -264,12 +264,42 @@ public class DoctorHomeRepository {
                                 applyFirebaseDestinationType(wallet, typeSnapshot);
                             }
                         }
-                        callback.onSuccess(wallet);
+                        finishWithApprovalOverride(wallet, doctorId, callback);
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
                         Log.d("HASET_WALLET", "Firebase destination fallback failed: " + databaseError.getMessage());
+                        finishWithApprovalOverride(wallet, doctorId, callback);
+                    }
+                });
+    }
+
+    private void finishWithApprovalOverride(DoctorWalletEntity wallet, String doctorId,
+            FirebaseHelper.OnCompleteListener<DoctorWalletEntity> callback) {
+        FirebaseHelper.getPayoutDestinationRequestsRef().child(doctorId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            String status = dataSnapshot.child("status").getValue(String.class);
+                            if (isAvailableStatus(status)) {
+                                String type = dataSnapshot.child("destination_type").getValue(String.class);
+                                if ("bank".equalsIgnoreCase(type)) {
+                                    wallet.setBankAvailable(true);
+                                    wallet.setBankPending(false);
+                                } else {
+                                    wallet.setMobileMoneyAvailable(true);
+                                    wallet.setMobileMoneyPending(false);
+                                }
+                                Log.d("HASET_WALLET", "Payout destination marked available (approved: " + status + ")");
+                            }
+                        }
+                        callback.onSuccess(wallet);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
                         callback.onSuccess(wallet);
                     }
                 });
