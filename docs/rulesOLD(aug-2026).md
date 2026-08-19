@@ -15,7 +15,11 @@
     },
     "doctors": {
       ".read": true,
-      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')"
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+      "$doctorId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || ($doctorId === auth.uid && root.child('users').child(auth.uid).child('role').val() === 'doctor'))",
+        ".validate": "!newData.exists() || (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (newData.child('isApproved').val() === data.child('isApproved').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('averageRating').val() === data.child('averageRating').val() && newData.child('isDemo').val() === data.child('isDemo').val() && newData.child('patientsTreated').val() === data.child('patientsTreated').val()))"
+      }
     },
     "appointments": {
       ".read": "auth != null",
@@ -104,7 +108,8 @@
       ".indexOn": [
         "createdAt",
         "created_at",
-        "status"
+        "status",
+        "doctorId"
       ]
     },
     "payout_destination_requests": {
