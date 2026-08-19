@@ -15,7 +15,11 @@ import androidx.annotation.Nullable;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.slider.Slider;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Service;
 import com.haset.hasetapp.utils.PreferenceManager;
@@ -77,6 +81,7 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
         
         initViews(view);
         setupListeners();
+        loadDoctorConsultationFee();
     }
     
     private void initViews(View view) {
@@ -95,6 +100,15 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
             int percentage = (int) value;
             tvPercentage.setText(percentage + "%");
             updateCalculatedAmount();
+            if (fromUser) {
+                double calculatedAmount = getCalculatedAmount();
+                if (calculatedAmount > 0 && calculatedAmount < Constants.MIN_PAYMENT_AMOUNT) {
+                    Snackbar.make(requireView(),
+                            getString(R.string.error_service_payment_minimum,
+                                    formatCurrency(Constants.MIN_PAYMENT_AMOUNT)),
+                            Snackbar.LENGTH_LONG).show();
+                }
+            }
         });
 
         etAppointmentFee.addTextChangedListener(new TextWatcher() {
@@ -112,16 +126,74 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
         btnSend.setOnClickListener(v -> sendService());
         updateCalculatedAmount();
     }
-    
+
+    private void loadDoctorConsultationFee() {
+        if (doctorId == null || doctorId.isEmpty()) return;
+        FirebaseHelper.getDoctorsNodeRef().child(doctorId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            double fee = toDouble(snapshot.child("consultationFee").getValue());
+                            if (fee > 0) {
+                                etAppointmentFee.setText(formatCurrency(fee));
+                                updateCalculatedAmount();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        // Fee stays empty; the doctor can enter it manually.
+                    }
+                });
+    }
+
+    private double toDouble(Object value) {
+        if (value instanceof Number) return ((Number) value).doubleValue();
+        if (value != null) {
+            try {
+                return Double.parseDouble(String.valueOf(value));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return 0.0;
+    }
+
     private void updateCalculatedAmount() {
         try {
-            double fee = parseFee();
-            int percentage = (int) sliderPercentage.getValue();
-            
-            double calculatedAmount = (fee * percentage) / 100.0;
+            double calculatedAmount = getCalculatedAmount();
             tvCalculatedAmount.setText(formatCurrency(calculatedAmount) + " TZS");
+            syncSliderState(calculatedAmount);
         } catch (NumberFormatException e) {
             tvCalculatedAmount.setText("0 TZS");
+        }
+    }
+
+    private double getCalculatedAmount() {
+        double fee = parseFee();
+        int percentage = (int) sliderPercentage.getValue();
+        return (fee * percentage) / 100.0;
+    }
+
+    private void syncSliderState(double calculatedAmount) {
+        double fee = parseFee();
+        // When the fee equals the minimum, only 100% keeps the patient share
+        // at or above the floor, so lock the slider at 100%.
+        boolean lockAtHundred = fee == Constants.MIN_PAYMENT_AMOUNT;
+        if (lockAtHundred) {
+            if (sliderPercentage.getValue() != 100f) {
+                sliderPercentage.setValue(100f);
+            }
+            if (sliderPercentage.isEnabled()) {
+                sliderPercentage.setEnabled(false);
+            }
+        } else if (calculatedAmount > 0 && calculatedAmount < Constants.MIN_PAYMENT_AMOUNT) {
+            if (sliderPercentage.isEnabled()) {
+                sliderPercentage.setEnabled(false);
+            }
+        } else if (!sliderPercentage.isEnabled()) {
+            sliderPercentage.setEnabled(true);
         }
     }
     

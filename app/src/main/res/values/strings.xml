@@ -804,6 +804,7 @@
     <string name="voice_note_label">Voice Note</string>
     <string name="payment_paid">PAID</string>
     <string name="payment_pending">PENDING</string>
+    <string name="payment_complete">COMPLETE</string>
 
     <!-- Pharmacy / Stock -->
     <string name="in_stock">In Stock</string>

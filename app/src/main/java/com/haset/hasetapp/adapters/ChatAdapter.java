@@ -1,6 +1,8 @@
 package com.haset.hasetapp.adapters;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -776,18 +779,31 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         private void renderPaymentState(ChatMessage message, Service service, boolean isSent, boolean paid) {
                     if (paid) {
-                        tvPaymentStatus.setText(itemView.getContext().getString(R.string.payment_paid));
+                        tvPaymentStatus.setText(itemView.getContext().getString(R.string.payment_complete));
                         tvPaymentStatus.setTextColor(itemView.getContext().getResources().getColor(R.color.green_primary, null));
                         tvPaymentStatus.setBackgroundResource(R.drawable.bg_badge_green);
-                        btnPay.setVisibility(View.GONE);
+                        btnPay.setVisibility(View.VISIBLE);
+                        btnPay.setText(R.string.payment_paid);
+                        btnPay.setEnabled(false);
+                        btnPay.setBackgroundTintList(ColorStateList.valueOf(
+                                ContextCompat.getColor(itemView.getContext(), R.color.grey_light)));
+                        btnPay.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.text_secondary));
+                        btnPay.setIconTint(ColorStateList.valueOf(
+                                ContextCompat.getColor(itemView.getContext(), R.color.text_secondary)));
                     } else {
                         tvPaymentStatus.setText(itemView.getContext().getString(R.string.payment_pending));
                         tvPaymentStatus.setTextColor(itemView.getContext().getResources().getColor(R.color.orange_primary, null));
                         tvPaymentStatus.setBackgroundResource(R.drawable.bg_badge_orange);
-                        
+
                         // Show pay button only for patient (not for doctor who sent it)
                         if (!isSent) {
                             btnPay.setVisibility(View.VISIBLE);
+                            btnPay.setEnabled(true);
+                            btnPay.setText("PAY NOW");
+                            btnPay.setBackgroundTintList(ColorStateList.valueOf(
+                                    ContextCompat.getColor(itemView.getContext(), R.color.green_primary)));
+                            btnPay.setTextColor(Color.WHITE);
+                            btnPay.setIconTint(ColorStateList.valueOf(Color.WHITE));
                             btnPay.setOnClickListener(v -> {
                                 if (serviceClickListener != null) {
                                     serviceClickListener.onServicePayClick(message.getMessageId(), service);
