@@ -119,16 +119,32 @@ public class DoctorWalletActivity extends BaseActivity {
     }
 
     private com.facebook.shimmer.ShimmerFrameLayout shimmerBalance;
+    private com.facebook.shimmer.ShimmerFrameLayout shimmerTotalEarnings;
+    private View headerBar;
 
     private void initViews() {
         tvBalance = findViewById(R.id.tvBalance);
         llBalanceContainer = findViewById(R.id.llBalanceContainer);
         shimmerBalance = findViewById(R.id.shimmerBalance);
+        shimmerTotalEarnings = findViewById(R.id.shimmerTotalEarnings);
         tvTotalEarnings = findViewById(R.id.tvTotalEarnings);
         rvTransactions = findViewById(R.id.rvTransactions);
         btnWithdraw = findViewById(R.id.btnWithdraw);
         btnPayoutAccounts = findViewById(R.id.btnPayoutAccounts);
         ivToggleBalance = findViewById(R.id.ivToggleBalance);
+        
+        // Frosted header: transparent at rest, fades in a scrim as content scrolls under it.
+        headerBar = findViewById(R.id.headerBar);
+        androidx.core.widget.NestedScrollView scrollView = findViewById(R.id.scrollView);
+        if (headerBar != null && headerBar.getBackground() != null) {
+            headerBar.getBackground().mutate().setAlpha(0);
+        }
+        scrollView.setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            float fraction = Math.min(1f, scrollY / 400f);
+            if (headerBar != null && headerBar.getBackground() != null) {
+                headerBar.getBackground().mutate().setAlpha((int) (fraction * 235));
+            }
+        });
         
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         
@@ -170,6 +186,11 @@ public class DoctorWalletActivity extends BaseActivity {
                     shimmerBalance.stopShimmer();
                     shimmerBalance.setVisibility(View.GONE);
                 }
+                if (shimmerTotalEarnings != null) {
+                    shimmerTotalEarnings.stopShimmer();
+                    shimmerTotalEarnings.setVisibility(View.GONE);
+                }
+                if (tvTotalEarnings != null) tvTotalEarnings.setVisibility(View.VISIBLE);
                 if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
                 applyWithdrawalDestinationFallback();
             } else {
@@ -184,6 +205,11 @@ public class DoctorWalletActivity extends BaseActivity {
                     shimmerBalance.stopShimmer();
                     shimmerBalance.setVisibility(View.GONE);
                 }
+                if (shimmerTotalEarnings != null) {
+                    shimmerTotalEarnings.stopShimmer();
+                    shimmerTotalEarnings.setVisibility(View.GONE);
+                }
+                if (tvTotalEarnings != null) tvTotalEarnings.setVisibility(View.VISIBLE);
                 if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
             }
         });
