@@ -1,37 +1,3 @@
-# Firebase Realtime Database Rules — Corrected Full Set
-
-**Project:** hasetapp-4eeba
-**Purpose:** Replace the current (incomplete) deployed rules with a complete set that includes article **likes** and **comments** permissions, plus the other app-critical nodes that were missing.
-
-## Summary of corrections
-
-The deployed rules were missing these nodes (blocked by the root `.read`/`.write` deny), which broke features:
-
-| Node | Feature |
-|---|---|
-| `post_likes` | Article like toggle (`post_likes/$postId/$uid`, write = `$uid === auth.uid`) |
-| `post_comments` | Article comments |
-| `saved_articles` | Bookmark/save articles |
-| `messages` | Chat |
-| `user_conversations` | Conversation list |
-| `typing` | Typing indicators |
-| `prescriptions` | Prescriptions |
-| `doctor_ratings` | Doctor ratings |
-| `patient_appointments` / `doctor_appointments` | Appointment status helper nodes |
-| `payment_transactions` | Payment records (server-written) |
-| `service_payment_requests` | Payment requests |
-| `chat_sessions` | Active chat session (participants read/write; server-written `chat_sessions/$chatRoomId`) |
-| `Hospitals` | Hospital directory |
-| `app_settings` | App settings |
-
-All existing nodes were left **unchanged** (preserving the production admin model including the `adminRole` / `admin_role` super-admin checks).
-
-## How to deploy
-
-1. Open Firebase console → project **hasetapp-4eeba** → **Build → Realtime Database → Rules**.
-2. Replace everything in the editor with the JSON below.
-3. Click **Publish**.
-
 ## Full rules JSON
 
 ```json
@@ -194,12 +160,6 @@ All existing nodes were left **unchanged** (preserving the production admin mode
         ".validate": "!newData.exists() || (newData.child('serviceId').val() === $serviceId && newData.child('messageId').isString() && newData.child('chatRoomId').isString() && newData.child('doctorId').isString() && newData.child('patientId').isString() && newData.child('serviceName').isString() && newData.child('appointmentFee').isNumber() && newData.child('appointmentFee').val() > 0 && newData.child('patientPercentage').isNumber() && newData.child('patientPercentage').val() >= 0 && newData.child('patientPercentage').val() <= 100 && newData.child('patientPayAmount').isNumber() && newData.child('patientPayAmount').val() >= 500 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'paid') && newData.child('createdAt').isNumber())"
       }
     },
-    "chat_sessions": {
-      "$chatRoomId": {
-        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
-        ".write": "auth != null && (newData.child('patientId').val() === auth.uid || newData.child('doctorId').val() === auth.uid || data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')"
-      }
-    },
     "saved_articles": {
       "$uid": {
         ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
@@ -351,4 +311,6 @@ All existing nodes were left **unchanged** (preserving the production admin mode
     }
   }
 }
+
+
 ```

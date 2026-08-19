@@ -157,6 +157,12 @@
         ".validate": "!newData.exists() || (newData.child('serviceId').val() === $serviceId && newData.child('messageId').isString() && newData.child('chatRoomId').isString() && newData.child('doctorId').isString() && newData.child('patientId').isString() && newData.child('serviceName').isString() && newData.child('appointmentFee').isNumber() && newData.child('appointmentFee').val() > 0 && newData.child('patientPercentage').isNumber() && newData.child('patientPercentage').val() >= 0 && newData.child('patientPercentage').val() <= 100 && newData.child('patientPayAmount').isNumber() && newData.child('patientPayAmount').val() >= 500 && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'paid') && newData.child('createdAt').isNumber())"
       }
     },
+    "chat_sessions": {
+      "$chatRoomId": {
+        ".read": "auth != null && (data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".write": "auth != null && (newData.child('patientId').val() === auth.uid || newData.child('doctorId').val() === auth.uid || data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')"
+      }
+    },
     "saved_articles": {
       "$uid": {
         ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
