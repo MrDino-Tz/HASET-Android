@@ -907,6 +907,40 @@ public class FirebaseHelper {
         loadDoctorsFromDoctorsNode(listener);
     }
 
+    /**
+     * Attaches a real-time listener on the /doctors node so the patient-facing
+     * doctors list (including consultation fee) stays in sync whenever a doctor
+     * updates their record. Returns the listener so callers can detach it.
+     */
+    public static com.google.firebase.database.ValueEventListener observeDoctorsForPatients(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
+        com.google.firebase.database.ValueEventListener valueEventListener = new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                List<com.haset.hasetapp.models.Doctor> doctors = new ArrayList<>();
+                if (dataSnapshot.exists()) {
+                    for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
+                        com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
+                        if (doctorEntity != null && doctorEntity.isApproved()) {
+                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
+                        }
+                    }
+                }
+                if (doctors.isEmpty()) {
+                    loadDoctorsFromUsersForPatients(listener);
+                } else {
+                    mergeDoctorNamesFromUsers(doctors, listener);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
+                loadDoctorsFromUsersForPatients(listener);
+            }
+        };
+        getDoctorsNodeRef().addValueEventListener(valueEventListener);
+        return valueEventListener;
+    }
+
     private static void loadDoctorsFromDoctorsNode(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
         getDoctorsNodeRef().addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override

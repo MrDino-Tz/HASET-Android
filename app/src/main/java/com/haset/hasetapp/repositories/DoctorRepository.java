@@ -64,10 +64,32 @@ public class DoctorRepository {
     }
 
     private final MutableLiveData<List<Doctor>> allDoctorsLiveData = new MutableLiveData<>();
+    private com.google.firebase.database.ValueEventListener doctorsRealtimeListener;
 
     public LiveData<List<Doctor>> getAllDoctors() {
-        refreshDoctors();
+        attachRealtimeDoctorsListener();
         return allDoctorsLiveData;
+    }
+
+    private void attachRealtimeDoctorsListener() {
+        if (doctorsRealtimeListener != null) {
+            return;
+        }
+        doctorsRealtimeListener = com.haset.hasetapp.utils.FirebaseHelper.observeDoctorsForPatients(new com.haset.hasetapp.utils.FirebaseHelper.OnCompleteListener<List<Doctor>>() {
+            @Override
+            public void onSuccess(List<Doctor> doctors) {
+                if (doctors != null && !doctors.isEmpty()) {
+                    allDoctorsLiveData.postValue(doctors);
+                } else {
+                    loadAllDoctorsFromUsersPath(allDoctorsLiveData);
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                loadAllDoctorsFromUsersPath(allDoctorsLiveData);
+            }
+        });
     }
 
     private void loadAllDoctorsFromUsersPath(MutableLiveData<List<Doctor>> liveData) {
@@ -192,20 +214,10 @@ public class DoctorRepository {
     }
     
     public void refreshDoctors() {
-        com.haset.hasetapp.utils.FirebaseHelper.getDoctorsForPatients(new com.haset.hasetapp.utils.FirebaseHelper.OnCompleteListener<List<Doctor>>() {
-            @Override
-            public void onSuccess(List<Doctor> doctors) {
-                if (doctors != null && !doctors.isEmpty()) {
-                    allDoctorsLiveData.postValue(doctors);
-                } else {
-                    loadAllDoctorsFromUsersPath(allDoctorsLiveData);
-                }
-            }
-
-            @Override
-            public void onError(String error) {
-                loadAllDoctorsFromUsersPath(allDoctorsLiveData);
-            }
-        });
+        if (doctorsRealtimeListener != null) {
+            com.haset.hasetapp.utils.FirebaseHelper.getDoctorsNodeRef().removeEventListener(doctorsRealtimeListener);
+            doctorsRealtimeListener = null;
+        }
+        attachRealtimeDoctorsListener();
     }
 }

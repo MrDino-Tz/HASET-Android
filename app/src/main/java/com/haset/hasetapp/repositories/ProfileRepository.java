@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.FirebaseHelper;
@@ -69,8 +70,19 @@ public class ProfileRepository {
     }
 
     public LiveData<Doctor> getDoctorProfessionalInfo(String doctorId) {
-        MutableLiveData<Doctor> doctorLiveData = new MutableLiveData<>();
-        firebaseHelper.getDoctorsNodeRef().child(doctorId).addListenerForSingleValueEvent(new ValueEventListener() {
+        return new DoctorRealtimeLiveData(firebaseHelper.getDoctorsNodeRef().child(doctorId), doctorId);
+    }
+
+    /**
+     * Lifecycle-aware LiveData that mirrors a doctor record in real time.
+     * Attaches a persistent ValueEventListener only while there are active
+     * observers, so consultation fee / specialty / times / bio / location all
+     * update live whenever the doctor's /doctors/{id} node changes.
+     */
+    private static class DoctorRealtimeLiveData extends LiveData<Doctor> {
+        private final DatabaseReference ref;
+        private final String doctorId;
+        private final ValueEventListener listener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -89,7 +101,7 @@ public class ProfileRepository {
                             verified = snapshot.child("isApproved").getValue(Boolean.class);
                         }
                         doctor.setVerified(verified != null && verified);
-                        
+
                         Object availableTimesObj = snapshot.child("availableTimes").getValue();
                         if (availableTimesObj instanceof List) {
                             doctor.setAvailableTimes((List<String>) availableTimesObj);
@@ -107,23 +119,37 @@ public class ProfileRepository {
                             }
                             doctor.setAvailableTimes(timesList);
                         }
-                        
-                        doctorLiveData.postValue(doctor);
+
+                        postValue(doctor);
                     } catch (Exception e) {
                         Log.e("ProfileRepository", "Error parsing doctor data", e);
-                        doctorLiveData.postValue(null);
+                        postValue(null);
                     }
                 } else {
-                    doctorLiveData.postValue(null);
+                    postValue(null);
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                doctorLiveData.postValue(null);
+                postValue(null);
             }
-        });
-        return doctorLiveData;
+        };
+
+        DoctorRealtimeLiveData(DatabaseReference ref, String doctorId) {
+            this.ref = ref;
+            this.doctorId = doctorId;
+        }
+
+        @Override
+        protected void onActive() {
+            ref.addValueEventListener(listener);
+        }
+
+        @Override
+        protected void onInactive() {
+            ref.removeEventListener(listener);
+        }
     }
 
     public void deleteAccount(String userId, FirebaseHelper.OnCompleteListener<Void> callback) {
