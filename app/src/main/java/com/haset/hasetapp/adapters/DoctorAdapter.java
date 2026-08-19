@@ -113,7 +113,7 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     }
 
     class DoctorViewHolder extends RecyclerView.ViewHolder {
-        private CardView cardRoot;
+        private View cardRoot;
         private TextView tvInitials;
         private ImageView ivProfileImage, ivVerified;
         private TextView tvName, tvSpecialty, tvRating, tvExperience, tvFee, tvStatus, tvAvailableTime;
@@ -256,7 +256,7 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             // Handle card highlighting
             if (isSelected) {
                 // Highlighted card - green background
-                cardRoot.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.green_light));
+                cardRoot.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.green_light));
                 tvName.setTextColor(Color.WHITE);
                 if (tvSpecialty != null) tvSpecialty.setTextColor(Color.WHITE);
                 if (tvExperience != null) tvExperience.setTextColor(Color.WHITE);
@@ -273,7 +273,7 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 // Use theme attributes for background and text
                 android.util.TypedValue typedValue = new android.util.TypedValue();
                 itemView.getContext().getTheme().resolveAttribute(R.attr.colorCardBackground, typedValue, true);
-                cardRoot.setCardBackgroundColor(typedValue.data);
+                cardRoot.setBackgroundColor(typedValue.data);
 
                 itemView.getContext().getTheme().resolveAttribute(R.attr.colorPrimaryText, typedValue, true);
                 tvName.setTextColor(typedValue.data);
