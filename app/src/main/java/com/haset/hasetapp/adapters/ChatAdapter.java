@@ -519,7 +519,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             Glide.with(itemView.getContext())
                     .load(message.getAttachmentUrl())
-                    .placeholder(R.drawable.ic_gallery)
+                    .placeholder(R.drawable.ic_image_icon)
                     .error(R.drawable.ic_error_outline)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(ivChatImage);
@@ -570,7 +570,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             Glide.with(itemView.getContext())
                     .load(message.getAttachmentUrl())
-                    .placeholder(R.drawable.ic_video_outlined)
+                    .placeholder(R.drawable.ic_video_icon)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(ivVideoThumbnail);
 
