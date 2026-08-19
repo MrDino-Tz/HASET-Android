@@ -177,16 +177,6 @@
 <!--                    android:textSize="14sp"-->
 <!--                    android:fontFamily="@font/poppins_medium"-->
 <!--                    android:layout_marginStart="4dp"/>-->
-
-                <TextView
-                    android:id="@+id/tvReviewCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" (100 Reviews)"
-                    android:textColor="#888888"
-                    android:textSize="13sp"
-                    android:fontFamily="@font/poppins_regular"
-                    android:layout_marginStart="4dp"/>
             </LinearLayout>
             
              <TextView

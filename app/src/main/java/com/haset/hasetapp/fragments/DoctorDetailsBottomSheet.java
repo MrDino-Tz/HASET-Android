@@ -22,13 +22,9 @@ import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
 
-import de.hdodenhof.circleimageview.CircleImageView;
-
 import java.util.List;
 import java.util.Locale;
 
-import com.haset.hasetapp.fragments.DoctorReviewsFragment;
-import androidx.lifecycle.ViewModelProvider;
 // DISABLED FOR V1 - RATING SYSTEM COMING IN VERSION 2.0
 // import com.haset.hasetapp.viewmodels.ReviewsViewModel;
 
@@ -42,10 +38,12 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
     
     // UI Components
     private MaterialToolbar toolbar;
-    private CircleImageView ivDoctorImage;
-    private TextView tvDoctorName, tvSpecialty, tvPhoneNumber, tvEmail, tvAddress, tvAvailableTime, tvConsultationFee, tvBio, tvUserInitials, tvDetailsRating, tvDetailsReviewsCount;
+    private ImageView ivDoctorImage;
+    private TextView tvDoctorName, tvSpecialty, tvPhoneNumber, tvEmail, tvAddress, tvAvailableTime, tvConsultationFee, tvBio, tvUserInitials;
     private MaterialButton btnBookAppointment;
     private ImageView ivVerified;
+    private ImageView ivVerifiedImage;
+    private TextView tvDemoBadge;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerDoctorImage;
 
     public static DoctorDetailsBottomSheet newInstance(Doctor doctor) {
@@ -84,11 +82,11 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
         tvConsultationFee = view.findViewById(R.id.tvConsultationFee);
         btnBookAppointment = view.findViewById(R.id.btnBookAppointment);
         ivVerified = view.findViewById(R.id.ivVerified);
+        ivVerifiedImage = view.findViewById(R.id.ivVerifiedImage);
+        tvDemoBadge = view.findViewById(R.id.tvDemoBadge);
         tvBio = view.findViewById(R.id.tvBio);
         tvUserInitials = view.findViewById(R.id.tvUserInitials);
         shimmerDoctorImage = view.findViewById(R.id.shimmerDoctorImage);
-        tvDetailsRating = view.findViewById(R.id.tvDetailsRating);
-        tvDetailsReviewsCount = view.findViewById(R.id.tvDetailsReviewsCount);
 
         // Pre-populate with passed object if available
         if (doctor != null) {
@@ -128,6 +126,12 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
         if (ivVerified != null) {
             ivVerified.setVisibility(doctor.isVerified() ? View.VISIBLE : View.GONE);
         }
+        if (ivVerifiedImage != null) {
+            ivVerifiedImage.setVisibility(doctor.isVerified() ? View.VISIBLE : View.GONE);
+        }
+        if (tvDemoBadge != null) {
+            tvDemoBadge.setVisibility(doctor.isDemo() ? View.VISIBLE : View.GONE);
+        }
 
         // Format available times
         if (tvAvailableTime != null) {
@@ -138,26 +142,6 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
                 tvAvailableTime.setText(firstTime + " - " + lastTime);
             } else {
                 tvAvailableTime.setText(R.string.contact_for_availability);
-            }
-        }
-        
-        // Rating and reviews logic
-        if (tvDetailsRating != null) {
-            float rating = doctor.getRating();
-            tvDetailsRating.setText(String.format(java.util.Locale.getDefault(), "%.1f", rating > 0 ? rating : 0.0f));
-        }
-        
-        if (tvDetailsReviewsCount != null) {
-            long diff = System.currentTimeMillis() - doctor.getCreatedAt();
-            long daysSinceJoined = diff / (1000L * 60 * 60 * 24);
-            int treated = doctor.getPatientsTreated();
-
-            if (daysSinceJoined <= com.haset.hasetapp.utils.Constants.NEW_DOCTOR_THRESHOLD_DAYS) {
-                tvDetailsReviewsCount.setText(R.string.new_doctor_label);
-            } else if (treated > 0) {
-                tvDetailsReviewsCount.setText(getResources().getQuantityString(R.plurals.patients_treated, treated, treated));
-            } else {
-                tvDetailsReviewsCount.setText("(0 Reviews)");
             }
         }
 
@@ -192,44 +176,4 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
             }
         });
     }
-
-    /* DISABLED FOR V1 - RATING SYSTEM COMING IN VERSION 2.0
-    private void refreshLatestStats() {
-        if (doctor == null || viewModel == null) return;
-        
-        String doctorId = doctor.getDoctorId();
-        
-        // Observe average rating
-        viewModel.getAverageRating(doctorId).observe(this, average -> {
-            if (average != null && average > 0) {
-                tvDetailsRating.setText(String.format(java.util.Locale.getDefault(), "%.1f", average));
-                doctor.setRating(average.floatValue());
-            } else {
-                tvDetailsRating.setText(R.string.na);
-            }
-        });
-
-        // Observe rating count
-        viewModel.getRatingCount(doctorId).observe(this, count -> {
-            if (count != null && count > 0) {
-                tvDetailsReviewsCount.setText(getResources().getQuantityString(R.plurals.patients_treated, count, count));
-                doctor.setPatientsTreated(count);
-            } else {
-                tvDetailsReviewsCount.setText(getString(R.string.new_doctor_label));
-            }
-        });
-        
-        // Setup reviews click
-        tvDetailsReviewsCount.setOnClickListener(v -> {
-            dismiss();
-            
-            // Navigate to reviews fragment
-            DoctorReviewsFragment fragment = DoctorReviewsFragment.newInstance(doctorId);
-            requireActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit();
-        });
-    }
-    */
 }

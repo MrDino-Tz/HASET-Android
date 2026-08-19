@@ -1005,60 +1005,56 @@ public class FirebaseHelper {
     }
 
     public static void mergeDoctorNamesFromUsers(List<com.haset.hasetapp.models.Doctor> doctors, OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
-        getUsersRef().orderByChild("role").equalTo(Constants.ROLE_DOCTOR).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    java.util.Map<String, String> nameMap = new java.util.HashMap<>();
-                    java.util.Map<String, String> emailMap = new java.util.HashMap<>();
-                    java.util.Map<String, String> phoneMap = new java.util.HashMap<>();
-                    java.util.Map<String, String> imageMap = new java.util.HashMap<>();
-                    for (com.google.firebase.database.DataSnapshot userSnapshot : dataSnapshot.getChildren()) {
+        if (doctors == null || doctors.isEmpty()) {
+            listener.onSuccess(doctors);
+            return;
+        }
+        // Read each doctor's /users/{uid} record individually. A single
+        // orderByChild("role") query on /users requires list read permission,
+        // which patients/doctors don't have. The rules allow reading a
+        // specific user's record when that user is a doctor.
+        final int total = doctors.size();
+        final int[] processed = {0};
+        final java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean(false);
+        for (com.haset.hasetapp.models.Doctor doctor : doctors) {
+            final com.haset.hasetapp.models.Doctor targetDoctor = doctor;
+            getUsersRef().child(doctor.getDoctorId()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot userSnapshot) {
+                    if (userSnapshot.exists()) {
                         String fullName = userSnapshot.child("fullName").getValue(String.class);
                         if (fullName != null && !fullName.isEmpty()) {
-                            nameMap.put(userSnapshot.getKey(), fullName);
+                            targetDoctor.setFullName(fullName);
                         }
                         String email = userSnapshot.child("email").getValue(String.class);
                         if (email != null) {
-                            emailMap.put(userSnapshot.getKey(), email);
+                            targetDoctor.setEmail(email);
                         }
                         Object phoneValue = userSnapshot.child("phone").getValue();
                         if (phoneValue != null) {
-                            phoneMap.put(userSnapshot.getKey(), String.valueOf(phoneValue));
+                            targetDoctor.setPhone(String.valueOf(phoneValue));
                         }
                         String profileImage = userSnapshot.child("profileImage").getValue(String.class);
                         if (profileImage != null) {
-                            imageMap.put(userSnapshot.getKey(), profileImage);
+                            targetDoctor.setProfileImage(profileImage);
                         }
                     }
-                    for (com.haset.hasetapp.models.Doctor doctor : doctors) {
-                        String id = doctor.getDoctorId();
-                        String name = nameMap.get(id);
-                        if (name != null) {
-                            doctor.setFullName(name);
-                        }
-                        String email = emailMap.get(id);
-                        if (email != null) {
-                            doctor.setEmail(email);
-                        }
-                        String phone = phoneMap.get(id);
-                        if (phone != null) {
-                            doctor.setPhone(phone);
-                        }
-                        String image = imageMap.get(id);
-                        if (image != null) {
-                            doctor.setProfileImage(image);
-                        }
+                    finish();
+                }
+
+                @Override
+                public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
+                    finish();
+                }
+
+                private void finish() {
+                    processed[0]++;
+                    if (processed[0] == total && done.compareAndSet(false, true)) {
+                        listener.onSuccess(doctors);
                     }
                 }
-                listener.onSuccess(doctors);
-            }
-
-            @Override
-            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
-                listener.onSuccess(doctors);
-            }
-        });
+            });
+        }
     }
 
     private static void loadDoctorsFromUsersForPatients(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {

@@ -116,7 +116,7 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         private CardView cardRoot;
         private TextView tvInitials;
         private ImageView ivProfileImage, ivVerified;
-        private TextView tvName, tvSpecialty, tvRating, tvReviewCount, tvExperience, tvFee, tvStatus, tvAvailableTime;
+        private TextView tvName, tvSpecialty, tvRating, tvExperience, tvFee, tvStatus, tvAvailableTime;
         private ImageView ivAction;
         private com.facebook.shimmer.ShimmerFrameLayout shimmerProfile;
         private TextView tvDemoBadge;
@@ -130,7 +130,6 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             tvName = itemView.findViewById(R.id.tvName);
             tvSpecialty = itemView.findViewById(R.id.tvSpecialty);
 //            tvRating = itemView.findViewById(R.id.tvRating);
-            tvReviewCount = itemView.findViewById(R.id.tvReviewCount);
 //            tvExperience = itemView.findViewById(R.id.tvExperience);
             tvFee = itemView.findViewById(R.id.tvFee);
             ivAction = itemView.findViewById(R.id.ivAction);
@@ -173,22 +172,6 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 } else {
                     tvRating.setText("0.0");
                 }
-            }
-
-            // Set review count (using time-based "New" label + patientsTreated)
-            if (tvReviewCount != null) {
-                long diff = System.currentTimeMillis() - doctor.getCreatedAt();
-                long daysSinceJoined = diff / (1000L * 60 * 60 * 24);
-                int treated = doctor.getPatientsTreated();
-
-                if (daysSinceJoined <= com.haset.hasetapp.utils.Constants.NEW_DOCTOR_THRESHOLD_DAYS) {
-                    tvReviewCount.setText(itemView.getContext().getString(R.string.new_doctor));
-                } else if (treated > 0) {
-                    tvReviewCount.setText("(" + treated + " Reviews)");
-                } else {
-                    tvReviewCount.setText("(0 Reviews)");
-                }
-                tvReviewCount.setVisibility(View.VISIBLE);
             }
 
             // Load doctor profile photo directly from URL (already loaded in Doctor model)
@@ -276,7 +259,6 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 cardRoot.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.green_light));
                 tvName.setTextColor(Color.WHITE);
                 if (tvSpecialty != null) tvSpecialty.setTextColor(Color.WHITE);
-                if (tvReviewCount != null) tvReviewCount.setTextColor(Color.WHITE);
                 if (tvExperience != null) tvExperience.setTextColor(Color.WHITE);
                 if (tvFee != null) tvFee.setTextColor(Color.WHITE);
                 if (tvStatus != null) tvStatus.setTextColor(Color.WHITE);
@@ -299,7 +281,6 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 if (tvSpecialty != null) tvSpecialty.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.green_light));
 
                 itemView.getContext().getTheme().resolveAttribute(R.attr.colorSecondaryText, typedValue, true);
-                if (tvReviewCount != null) tvReviewCount.setTextColor(typedValue.data);
                 if (tvExperience != null) tvExperience.setTextColor(typedValue.data);
 
                 if (tvFee != null) tvFee.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.green_primary));
