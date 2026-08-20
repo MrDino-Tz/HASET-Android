@@ -8,8 +8,11 @@ import androidx.annotation.NonNull;
 @Entity(tableName = "withdrawal_requests")
 public class WithdrawalRequest {
     
+    public static final String STATUS_REQUESTED = "requested";
     public static final String STATUS_PENDING = "pending";
     public static final String STATUS_APPROVED = "approved";
+    public static final String STATUS_PROCESSING = "processing";
+    public static final String STATUS_PAID = "paid";
     public static final String STATUS_REJECTED = "rejected";
     public static final String STATUS_COMPLETED = "completed";
     
@@ -28,7 +31,7 @@ public class WithdrawalRequest {
     private String accountNumber; // mobile number or bank account
     private String accountName; // bank account name (optional)
     private String bankName; // bank name (optional)
-    private String status; // pending, approved, rejected, completed
+    private String status; // requested, approved, processing, paid, rejected
     private long requestedAt;
     private long processedAt;
     private String processedBy; // admin user id who processed
@@ -47,7 +50,7 @@ public class WithdrawalRequest {
         this.amount = amount;
         this.method = method;
         this.accountNumber = accountNumber;
-        this.status = STATUS_PENDING;
+        this.status = STATUS_REQUESTED;
         this.requestedAt = System.currentTimeMillis();
     }
     

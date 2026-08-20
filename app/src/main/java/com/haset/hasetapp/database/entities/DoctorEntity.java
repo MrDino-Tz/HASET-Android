@@ -82,10 +82,12 @@ public class DoctorEntity implements Serializable {
         this.location = location;
     }
 
+    @com.google.firebase.database.PropertyName("approved")
     public boolean isApproved() {
         return isApproved;
     }
 
+    @com.google.firebase.database.PropertyName("approved")
     public void setApproved(boolean approved) {
         isApproved = approved;
     }

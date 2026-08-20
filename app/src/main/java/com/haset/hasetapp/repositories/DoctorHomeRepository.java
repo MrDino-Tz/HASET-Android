@@ -241,6 +241,10 @@ public class DoctorHomeRepository {
     }
 
     public void requestWithdrawalSecure(double amount, String reason, String payoutMethod, String mfaCode, FirebaseHelper.OnCompleteListener<Boolean> callback) {
+        requestWithdrawalSecure(amount, 0, reason, payoutMethod, mfaCode, callback);
+    }
+
+    public void requestWithdrawalSecure(double amount, double feeAmount, String reason, String payoutMethod, String mfaCode, FirebaseHelper.OnCompleteListener<Boolean> callback) {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) { callback.onError("Authentication expired. Please sign in again."); return; }
         user.getIdToken(true).addOnSuccessListener(result -> {
@@ -250,7 +254,17 @@ public class DoctorHomeRepository {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) { callback.onError(response.code() == 429 ? "Too many MFA attempts. Please wait and retry." : "Invalid or expired MFA code."); return; }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
-                    JsonObject body = new JsonObject(); body.addProperty("request_id", "WR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24)); body.addProperty("amount", Math.round(amount)); body.addProperty("reason", reason); body.addProperty("payout_method", payoutMethod);
+                    long payoutAmount = Math.round(amount);
+                    long roundedFeeAmount = Math.round(Math.max(0, feeAmount));
+                    long totalDeductionAmount = payoutAmount + roundedFeeAmount;
+                    JsonObject body = new JsonObject();
+                    body.addProperty("request_id", "WR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+                    body.addProperty("amount", payoutAmount);
+                    body.addProperty("payout_amount", payoutAmount);
+                    body.addProperty("fee_amount", roundedFeeAmount);
+                    body.addProperty("total_deduction_amount", totalDeductionAmount);
+                    body.addProperty("reason", reason);
+                    body.addProperty("payout_method", payoutMethod);
                     RetrofitClient.getInstance().getDoctorPayoutApiService().requestWithdrawal(bearer, actionToken, body).enqueue(new Callback<JsonObject>() {
                         public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
                             if (r.isSuccessful()) callback.onSuccess(true);
@@ -293,7 +307,7 @@ public class DoctorHomeRepository {
                         item.setRequestId(w.has("request_id") ? w.get("request_id").getAsString() : "");
                         item.setDoctorId(doctorId); item.setAmount(w.has("amount") ? w.get("amount").getAsDouble() : 0);
                         item.setFeeAmount(w.has("fee_amount") && !w.get("fee_amount").isJsonNull() ? w.get("fee_amount").getAsDouble() : 0);
-                        item.setStatus(w.has("status") ? w.get("status").getAsString() : "pending");
+                        item.setStatus(w.has("status") ? w.get("status").getAsString() : WithdrawalRequest.STATUS_REQUESTED);
                         String payoutMethod = jsonString(w, "payout_method", "mobile_money");
                         item.setMethod("bank".equals(payoutMethod) ? WithdrawalRequest.METHOD_BANK : WithdrawalRequest.METHOD_MOBILE_MONEY);
                         boolean bank = "bank".equals(payoutMethod);

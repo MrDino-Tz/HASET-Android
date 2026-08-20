@@ -100,9 +100,13 @@ public class DoctorHomeViewModel extends AndroidViewModel {
     }
 
     public void requestWithdrawalSecure(double amount, String reason, String payoutMethod, String mfaCode) {
+        requestWithdrawalSecure(amount, 0, reason, payoutMethod, mfaCode);
+    }
+
+    public void requestWithdrawalSecure(double amount, double feeAmount, String reason, String payoutMethod, String mfaCode) {
         loading.setValue(true);
         error.setValue(null);
-        repository.requestWithdrawalSecure(amount, reason, payoutMethod, mfaCode, new FirebaseHelper.OnCompleteListener<Boolean>() {
+        repository.requestWithdrawalSecure(amount, feeAmount, reason, payoutMethod, mfaCode, new FirebaseHelper.OnCompleteListener<Boolean>() {
             public void onSuccess(Boolean result) {
                 loading.postValue(false);
                 withdrawSuccess.postValue(Boolean.TRUE.equals(result));

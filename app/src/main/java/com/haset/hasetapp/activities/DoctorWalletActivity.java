@@ -40,6 +40,7 @@ import retrofit2.Response;
 
 public class DoctorWalletActivity extends BaseActivity {
     private static final int MFA_ENROLLMENT_REQUEST = 1703;
+    private static final double DEFAULT_WITHDRAWAL_FEE = 1500.0;
     private TextView tvBalance, tvTotalEarnings;
     private RecyclerView rvTransactions;
     private PreferenceManager preferenceManager;
@@ -51,6 +52,7 @@ public class DoctorWalletActivity extends BaseActivity {
     private View llBalanceContainer;
     private boolean isBalanceVisible = false;
     private double balanceAmount = 0;
+    private double withdrawalFee = DEFAULT_WITHDRAWAL_FEE;
     private WithdrawalHistoryAdapter historyAdapter;
     private List<WithdrawalRequest> latestWithdrawalRequests;
 
@@ -65,6 +67,7 @@ public class DoctorWalletActivity extends BaseActivity {
         viewModel = new ViewModelProvider(this).get(DoctorHomeViewModel.class);
         setupObservers();
         loadWalletData();
+        loadWithdrawalFee();
     }
 
     private void setupObservers() {
@@ -148,7 +151,18 @@ public class DoctorWalletActivity extends BaseActivity {
         if (doctorId == null || doctorId.isEmpty()) return;
 
         viewModel.getWalletBalance(doctorId).observe(this, wallet -> {
+            DoctorWalletEntity previous = currentWallet;
             currentWallet = wallet;
+            if (wallet != null && previous != null) {
+                if (!wallet.isMobileMoneyAvailable() && previous.isMobileMoneyPending() && !TextUtils.isEmpty(previous.getMobileMoneyLabel())) {
+                    wallet.setMobileMoneyPending(true);
+                    wallet.setMobileMoneyLabel(previous.getMobileMoneyLabel());
+                }
+                if (!wallet.isBankAvailable() && previous.isBankPending() && !TextUtils.isEmpty(previous.getBankLabel())) {
+                    wallet.setBankPending(true);
+                    wallet.setBankLabel(previous.getBankLabel());
+                }
+            }
             if (wallet != null) {
                 balanceAmount = wallet.getBalance();
                 updateBalanceDisplay();
@@ -184,6 +198,32 @@ public class DoctorWalletActivity extends BaseActivity {
                 if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
             }
         });
+    }
+
+    private void loadWithdrawalFee() {
+        FirebaseHelper.getAppConfigRef().get()
+                .addOnSuccessListener(snapshot -> {
+                    Double parsed = firstAmount(
+                            snapshot.child("withdrawalFee").getValue(),
+                            snapshot.child("withdrawal_fee").getValue());
+                    if (parsed != null && parsed >= 0) {
+                        withdrawalFee = parsed;
+                    } else {
+                        loadWithdrawalFeeFromAppSettings();
+                    }
+                })
+                .addOnFailureListener(error -> loadWithdrawalFeeFromAppSettings());
+    }
+
+    private void loadWithdrawalFeeFromAppSettings() {
+        FirebaseHelper.getAppSettingsRef().get()
+                .addOnSuccessListener(snapshot -> {
+                    Double parsed = firstAmount(
+                            snapshot.child("withdrawalFee").getValue(),
+                            snapshot.child("withdrawal_fee").getValue());
+                    withdrawalFee = parsed != null && parsed >= 0 ? parsed : DEFAULT_WITHDRAWAL_FEE;
+                })
+                .addOnFailureListener(error -> withdrawalFee = DEFAULT_WITHDRAWAL_FEE);
     }
 
     private void applyWithdrawalDestinationFallback() {
@@ -261,6 +301,9 @@ public class DoctorWalletActivity extends BaseActivity {
 
         TextView tvAvailableBalance = view.findViewById(R.id.tvAvailableBalance);
         TextInputEditText etWithdrawAmount = view.findViewById(R.id.etAmount);
+        TextView tvPayoutAmount = view.findViewById(R.id.tvPayoutAmount);
+        TextView tvWithdrawalFee = view.findViewById(R.id.tvWithdrawalFee);
+        TextView tvTotalDeduction = view.findViewById(R.id.tvTotalDeduction);
         com.google.android.material.card.MaterialCardView cvMobileMoney = view.findViewById(R.id.llMobileMoney);
         com.google.android.material.card.MaterialCardView cvBank = view.findViewById(R.id.llBank);
         TextView tvMobileDestination = view.findViewById(R.id.tvMobileDestination);
@@ -274,6 +317,7 @@ public class DoctorWalletActivity extends BaseActivity {
         // Set available balance
         String availableBalance = String.format(Locale.getDefault(), getString(R.string.available_balance_format), currentWallet.getBalance());
         tvAvailableBalance.setText(availableBalance);
+        updateWithdrawalBreakdown(0, tvPayoutAmount, tvWithdrawalFee, tvTotalDeduction);
 
         final String[] selectedMethod = {currentWallet.isMobileMoneyAvailable() ? "mobile_money" : (currentWallet.isBankAvailable() ? "bank" : "")};
         tvMobileDestination.setText(destinationLabel(currentWallet.getMobileMoneyLabel(), currentWallet.isMobileMoneyPending()));
@@ -317,6 +361,8 @@ public class DoctorWalletActivity extends BaseActivity {
                 // Keep the action responsive for invalid amounts so the click handler
                 // can explain the gateway minimum or insufficient balance.
                 btnConfirmWithdraw.setEnabled(!TextUtils.isEmpty(amountStr));
+                Double amount = parseAmount(amountStr);
+                updateWithdrawalBreakdown(amount != null ? amount : 0, tvPayoutAmount, tvWithdrawalFee, tvTotalDeduction);
             }
         });
 
@@ -347,15 +393,21 @@ public class DoctorWalletActivity extends BaseActivity {
                 return;
             }
 
-            if (amount > currentWallet.getBalance()) {
-                Toast.makeText(this, R.string.insufficient_balance, Toast.LENGTH_SHORT).show();
+            double feeAmount = Math.max(0, withdrawalFee);
+            double totalDeduction = amount + feeAmount;
+            if (totalDeduction > currentWallet.getBalance()) {
+                Toast.makeText(this,
+                        String.format(Locale.getDefault(),
+                                getString(R.string.insufficient_withdrawal_balance_with_fee),
+                                totalDeduction, amount),
+                        Toast.LENGTH_LONG).show();
                 return;
             }
 
             // Process withdrawal
             if (!mfaCodeInput.isComplete()) { mfaCodeInput.setErrorState(true); Toast.makeText(this, "Enter the six-digit MFA code", Toast.LENGTH_SHORT).show(); return; }
             if (selectedMethod[0].isEmpty()) { Toast.makeText(this, R.string.no_verified_payout_destination, Toast.LENGTH_LONG).show(); return; }
-            processWithdrawal(amount, selectedMethod[0], btnConfirmWithdraw, mfaCodeInput.getCode());
+            processWithdrawal(amount, feeAmount, selectedMethod[0], btnConfirmWithdraw, mfaCodeInput.getCode());
         });
 
         withdrawDialog.setContentView(view);
@@ -506,6 +558,19 @@ public class DoctorWalletActivity extends BaseActivity {
                             if (r.isSuccessful()) {
                                 dialog.dismiss();
                                 Toast.makeText(DoctorWalletActivity.this, "Payout account submitted. Waiting for finance approval before withdrawal.", Toast.LENGTH_LONG).show();
+                                boolean bank = "bank".equals(destination.get("destination_type").getAsString());
+                                if (currentWallet == null) {
+                                    currentWallet = new DoctorWalletEntity(preferenceManager.getUserId(), 0);
+                                }
+                                if (bank) {
+                                    currentWallet.setBankAvailable(false);
+                                    currentWallet.setBankPending(true);
+                                    currentWallet.setBankLabel((destination.get("bank_code").getAsString() + "  " + destination.get("bank_account").getAsString()).trim());
+                                } else {
+                                    currentWallet.setMobileMoneyAvailable(false);
+                                    currentWallet.setMobileMoneyPending(true);
+                                    currentWallet.setMobileMoneyLabel((destination.get("provider").getAsString() + "  " + destination.get("phone_number").getAsString()).trim());
+                                }
                                 viewModel.refreshWalletBalance(preferenceManager.getUserId());
                             } else Toast.makeText(DoctorWalletActivity.this, payoutErrorMessage(r), Toast.LENGTH_LONG).show();
                         }
@@ -544,12 +609,47 @@ public class DoctorWalletActivity extends BaseActivity {
         return pending ? "Pending finance approval: " + label.trim() : label.trim();
     }
 
-    private void processWithdrawal(double amount, String payoutMethod, MaterialButton confirmBtn, String mfaCode) {
+    private void updateWithdrawalBreakdown(double payoutAmount, TextView tvPayoutAmount, TextView tvWithdrawalFee, TextView tvTotalDeduction) {
+        double safePayout = Math.max(0, payoutAmount);
+        double feeAmount = Math.max(0, withdrawalFee);
+        double totalDeduction = safePayout + feeAmount;
+        tvPayoutAmount.setText(formatTzs(safePayout));
+        tvWithdrawalFee.setText(formatTzs(feeAmount));
+        tvTotalDeduction.setText(formatTzs(totalDeduction));
+    }
+
+    private String formatTzs(double amount) {
+        return String.format(Locale.getDefault(), "TZS %,.0f", amount);
+    }
+
+    private Double parseAmount(Object rawValue) {
+        if (rawValue instanceof Number) {
+            return ((Number) rawValue).doubleValue();
+        }
+        if (rawValue instanceof String) {
+            try {
+                return Double.parseDouble(((String) rawValue).trim().replace(",", ""));
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private Double firstAmount(Object... values) {
+        for (Object value : values) {
+            Double parsed = parseAmount(value);
+            if (parsed != null) return parsed;
+        }
+        return null;
+    }
+
+    private void processWithdrawal(double amount, double feeAmount, String payoutMethod, MaterialButton confirmBtn, String mfaCode) {
         confirmBtn.setEnabled(false);
         confirmBtn.setText(R.string.processing);
 
         // The backend uses the independently verified payout destination stored on the wallet.
-        viewModel.requestWithdrawalSecure(amount, "Doctor payout request", payoutMethod, mfaCode);
+        viewModel.requestWithdrawalSecure(amount, feeAmount, "Doctor payout request", payoutMethod, mfaCode);
     }
 
     @Override

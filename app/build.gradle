@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
-    id 'com.google.gms.google-services' version '4.4.0'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -78,12 +78,13 @@ dependencies {
     implementation libs.lifecycle.livedata.ktx
     implementation libs.lifecycle.viewmodel.ktx
     implementation libs.androidx.browser
+    implementation 'androidx.print:print:1.0.0'
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
     
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation platform('com.google.firebase:firebase-bom:34.17.0')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-database'
     implementation 'com.google.firebase:firebase-messaging'

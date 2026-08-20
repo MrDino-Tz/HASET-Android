@@ -1,6 +1,8 @@
 package com.haset.hasetapp.activities;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.content.ClipData;
@@ -32,6 +34,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 public class MfaEnrollmentActivity extends BaseActivity {
+    private static final long CLIPBOARD_CLEAR_DELAY_MS = 60_000L;
     private TextView manualKey, recoveryCodes;
     private ImageView qrCode;
     private ProgressBar qrProgress;
@@ -84,7 +87,16 @@ public class MfaEnrollmentActivity extends BaseActivity {
     private void copySetupKey() {
         if(secret==null||secret.isEmpty())return;
         ClipboardManager clipboard=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
-        clipboard.setPrimaryClip(ClipData.newPlainText("Authenticator setup key",secret));
+        String copiedSecret = secret;
+        clipboard.setPrimaryClip(ClipData.newPlainText("Authenticator setup key", copiedSecret));
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            ClipData currentClip = clipboard.getPrimaryClip();
+            if (currentClip != null
+                    && currentClip.getItemCount() > 0
+                    && copiedSecret.contentEquals(currentClip.getItemAt(0).coerceToText(this))) {
+                clipboard.setPrimaryClip(ClipData.newPlainText("", ""));
+            }
+        }, CLIPBOARD_CLEAR_DELAY_MS);
         Toast.makeText(this,"Setup key copied",Toast.LENGTH_SHORT).show();
     }
     private void confirmCode(){ if(busy)return; if(!codeInput.isComplete()){codeInput.setErrorState(true);return;} FirebaseUser u=FirebaseHelper.getFirebaseAuth().getCurrentUser(); if(u==null){fail("Authentication expired.");return;} busy=true;confirm.setEnabled(false);u.getIdToken(true).addOnSuccessListener(t->{JsonObject b=new JsonObject();b.addProperty("code",codeInput.getCode());RetrofitClient.getInstance().getMobileMfaApiService().confirm("Bearer "+t.getToken(),b).enqueue(new Callback<JsonObject>(){public void onResponse(Call<JsonObject> c,Response<JsonObject> r){busy=false;if(!r.isSuccessful()){confirm.setEnabled(true);codeInput.setErrorState(true);fail(r.code()==429?"Too many attempts. Try later.":"Invalid or expired code.");return;} recoveryCodes.setText(recoveryCodesRaw);recoveryCodes.setVisibility(View.VISIBLE);saved.setVisibility(View.VISIBLE);continueButton.setVisibility(View.VISIBLE);confirm.setVisibility(View.GONE);codeInput.setVisibility(View.GONE);qrCard.setVisibility(View.GONE);manualToggle.setVisibility(View.GONE);manualContainer.setVisibility(View.GONE);codeInput.clearCode();}public void onFailure(Call<JsonObject> c,Throwable x){busy=false;confirm.setEnabled(true);fail("Network error. Retry.");}});}).addOnFailureListener(e->{busy=false;confirm.setEnabled(true);fail("Authentication expired.");}); }

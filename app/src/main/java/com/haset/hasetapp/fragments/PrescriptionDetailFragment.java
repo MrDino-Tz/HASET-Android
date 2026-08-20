@@ -290,21 +290,16 @@ public class PrescriptionDetailFragment extends Fragment {
     }
 
     /**
-     * Paginates the bitmap into A4-sized PDF pages and saves to a dedicated
-     * "HASET/Prescriptions/" folder — similar to how WhatsApp stores its files
-     * under "WhatsApp/Media/..." — so all prescription PDFs are organized in one
-     * branded location visible in the device Files app.
+     * Paginates the bitmap into A4-sized PDF pages.
      *
      * Save paths:
      *   Android 10+  → Internal Storage/HASET/Prescriptions/<filename>.pdf  (MediaStore)
-     *   Android 9-   → /sdcard/HASET/Prescriptions/<filename>.pdf
+     *   Android 9-   → app-private Documents/HASET/Prescriptions/<filename>.pdf
      */
-    private static final String HASET_FOLDER        = "HASET";
     // Android 10+: MediaStore.Downloads enforces "Download/" as the required root.
     // The branded subfolder lives inside it: Download/HASET/Prescriptions/
     private static final String PRESCRIPTION_FOLDER_Q      = "Download/HASET/Prescriptions";
-    // Android 9-: Free to create any folder under external storage root.
-    private static final String PRESCRIPTION_FOLDER_LEGACY = "HASET/Prescriptions";
+    private static final String PRESCRIPTION_FOLDER_LEGACY = "Documents/HASET/Prescriptions";
 
     private void writePdfFromBitmap(Bitmap bitmap) {
         final int pageWidth     = 595;   // A4 @ 72 dpi
@@ -359,18 +354,12 @@ public class PrescriptionDetailFragment extends Fragment {
                 }
             }
         } else {
-            // Android 9 and below: legacy external storage with explicit directory creation.
-            File dir = new File(Environment.getExternalStorageDirectory(), PRESCRIPTION_FOLDER_LEGACY);
+            // Android 9 and below: use app-private external files, not public /sdcard.
+            File baseDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+            File dir = new File(baseDir != null ? baseDir : requireContext().getFilesDir(), "HASET/Prescriptions");
             if (!dir.exists() && !dir.mkdirs()) {
-                // Fallback: create a .nomedia file to keep it tidy
-                dir = new File(Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_DOWNLOADS), HASET_FOLDER + "/Prescriptions");
+                dir = new File(requireContext().getFilesDir(), "prescriptions");
                 dir.mkdirs();
-            }
-            // Place a .nomedia file so the folder doesn't pollute the Gallery
-            File noMedia = new File(dir.getParentFile(), ".nomedia");
-            if (!noMedia.exists()) {
-                try { noMedia.createNewFile(); } catch (IOException ignored) {}
             }
             File file = new File(dir, fileName);
             try (FileOutputStream fos = new FileOutputStream(file)) {

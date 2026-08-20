@@ -80,14 +80,14 @@ public class WithdrawalHistoryAdapter extends RecyclerView.Adapter<WithdrawalHis
             
             switch (status.toLowerCase()) {
                 case WithdrawalRequest.STATUS_PENDING:
-                case "requested":
+                case WithdrawalRequest.STATUS_REQUESTED:
                     tvStatus.setBackgroundResource(R.drawable.bg_status_pending);
                     tvStatus.setTextColor(ContextCompat.getColor(context, R.color.orange_primary));
                     break;
                 case WithdrawalRequest.STATUS_APPROVED:
                 case WithdrawalRequest.STATUS_COMPLETED:
-                case "processing":
-                case "paid":
+                case WithdrawalRequest.STATUS_PROCESSING:
+                case WithdrawalRequest.STATUS_PAID:
                     tvStatus.setBackgroundResource(R.drawable.bg_status_approved);
                     tvStatus.setTextColor(ContextCompat.getColor(context, R.color.green_primary));
                     break;

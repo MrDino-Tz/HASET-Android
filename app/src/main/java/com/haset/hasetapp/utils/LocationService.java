@@ -63,7 +63,7 @@ public class LocationService {
             fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                     .addOnSuccessListener(location -> {
                         if (location != null) {
-                            Log.d(TAG, "Location received: " + location.getLatitude() + ", " + location.getLongitude());
+                            Log.d(TAG, "Location received");
                             callback.onLocationReceived(location);
                         } else {
                             Log.w(TAG, "Location is null");
@@ -90,7 +90,7 @@ public class LocationService {
             fusedLocationClient.getLastLocation()
                     .addOnSuccessListener(location -> {
                         if (location != null) {
-                            Log.d(TAG, "Last known location: " + location.getLatitude() + ", " + location.getLongitude());
+                            Log.d(TAG, "Last known location received");
                             callback.onLocationReceived(location);
                         } else {
                             Log.w(TAG, "No last known location available");

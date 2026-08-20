@@ -8,6 +8,10 @@
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="error_generic">Something went wrong</string>
+    <string name="withdrawal_you_will_receive">You will receive</string>
+    <string name="withdrawal_fee">Withdrawal fee</string>
+    <string name="withdrawal_total_deducted">Total deducted from wallet</string>
+    <string name="insufficient_withdrawal_balance_with_fee">Insufficient balance. You need TZS %1$,.0f to withdraw TZS %2$,.0f.</string>
 
     <!-- Authentication -->
     <string name="login">Login</string>

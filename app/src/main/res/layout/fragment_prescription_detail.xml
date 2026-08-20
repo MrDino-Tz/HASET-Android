@@ -23,16 +23,11 @@
             <ImageView
                 android:id="@+id/ivPrescriptionImage"
                 android:layout_width="match_parent"
-<<<<<<< HEAD
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
                 android:maxHeight="620dp"
                 android:minHeight="220dp"
                 android:scaleType="fitCenter"
-=======
-                android:layout_height="250dp"
-                android:scaleType="center"
->>>>>>> 33ad001670668d63bc26d19c8f4435572d9d52ea
                 android:contentDescription="@string/prescription_details"
                 tools:src="@drawable/ic_prescription" />
 

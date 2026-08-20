@@ -66,7 +66,7 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
 
     // Save paths (mirrors PrescriptionDetailFragment constants)
     private static final String PRESCRIPTION_FOLDER_Q      = "Download/HASET/Prescriptions";
-    private static final String PRESCRIPTION_FOLDER_LEGACY = "HASET/Prescriptions";
+    private static final String PRESCRIPTION_FOLDER_LEGACY = "Documents/HASET/Prescriptions";
 
     private String prescriptionId;
     private Prescription prescription;
@@ -347,19 +347,12 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
                 }
             }
         } else {
-            // Android 9 and below — legacy external storage.
-            File dir = new File(Environment.getExternalStorageDirectory(), PRESCRIPTION_FOLDER_LEGACY);
+            // Android 9 and below: use app-private external files, not public /sdcard.
+            File baseDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+            File dir = new File(baseDir != null ? baseDir : requireContext().getFilesDir(), "HASET/Prescriptions");
             if (!dir.exists() && !dir.mkdirs()) {
-                // Fallback inside system Downloads
-                dir = new File(
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                        "HASET/Prescriptions");
+                dir = new File(requireContext().getFilesDir(), "prescriptions");
                 dir.mkdirs();
-            }
-            // .nomedia prevents the folder from polluting the Gallery
-            File noMedia = new File(dir.getParentFile(), ".nomedia");
-            if (!noMedia.exists()) {
-                try { noMedia.createNewFile(); } catch (IOException ignored) {}
             }
             File file = new File(dir, fileName);
             try (FileOutputStream fos = new FileOutputStream(file)) {
