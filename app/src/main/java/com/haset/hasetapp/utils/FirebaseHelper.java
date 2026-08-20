@@ -749,6 +749,76 @@ public class FirebaseHelper {
         return getFirebaseDatabase().getReference("doctor_wallets");
     }
 
+    public static DatabaseReference getPayoutDestinationRequestsRef() {
+        return getFirebaseDatabase().getReference("payout_destination_requests");
+    }
+
+    /**
+     * Persist a submitted payout destination as a pending record that finance
+     * admins review. Mirrors the destination into the doctor's wallet node so
+     * the admin wallets page can show it. Only masked account values are stored.
+     */
+    public static void submitPayoutDestinationForApproval(String doctorId, String destinationType,
+            String provider, String bankCode, String phoneNumber, String bankAccount,
+            OnCompleteListener<Boolean> listener) {
+        if (doctorId == null || doctorId.isEmpty()) {
+            if (listener != null) listener.onError("Missing doctor id.");
+            return;
+        }
+        boolean bank = "bank".equalsIgnoreCase(destinationType);
+        String maskedAccount = bank ? maskAccount(bankAccount) : maskAccount(phoneNumber);
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("doctor_id", doctorId);
+        request.put("destination_type", bank ? "bank" : "mobile_money");
+        request.put("provider", bank ? bankCode : provider);
+        if (bank && bankCode != null) request.put("bank_code", bankCode);
+        request.put("masked_account", maskedAccount);
+        request.put("status", "pending");
+        request.put("submitted_by", doctorId);
+        request.put("created_at", System.currentTimeMillis());
+        request.put("can_review", true);
+
+        Map<String, Object> walletDestination = new HashMap<>();
+        walletDestination.put("status", "pending");
+        walletDestination.put("available", false);
+        walletDestination.put("masked_account", maskedAccount);
+        walletDestination.put("created_at", System.currentTimeMillis());
+        if (bank) {
+            walletDestination.put("bank_code", bankCode);
+            walletDestination.put("provider", bankCode);
+        } else {
+            walletDestination.put("provider", provider);
+        }
+
+        DatabaseReference requestRef = getPayoutDestinationRequestsRef().child(doctorId);
+        DatabaseReference walletTypeRef = getDoctorWalletsRef().child(doctorId)
+                .child("payout_destinations").child(bank ? "bank" : "mobile_money");
+
+        requestRef.setValue(request, (error, ref) -> {
+            if (error != null) {
+                Log.e("FirebaseHelper", "Failed to write pending payout destination: " + error.getMessage());
+                if (listener != null) listener.onError(error.getMessage());
+                return;
+            }
+            walletTypeRef.setValue(walletDestination, (walletError, walletRef) -> {
+                if (walletError != null) {
+                    Log.e("FirebaseHelper", "Failed to write wallet payout_destinations: " + walletError.getMessage());
+                    if (listener != null) listener.onError(walletError.getMessage());
+                    return;
+                }
+                if (listener != null) listener.onSuccess(true);
+            });
+        });
+    }
+
+    private static String maskAccount(String value) {
+        if (value == null) return "";
+        String digits = value.replaceAll("[^0-9]", "");
+        if (digits.length() <= 6) return "****";
+        return digits.substring(0, 2) + "****" + digits.substring(digits.length() - 4);
+    }
+
     // Withdrawal Request Operations
     public static DatabaseReference getWithdrawalRequestsRef() {
         return getFirebaseDatabase().getReference(Constants.WITHDRAWAL_REQUESTS_PATH);
@@ -830,8 +900,198 @@ public class FirebaseHelper {
         });
     }
 
-    // Method to get a list of Doctor objects for patients (approved doctors)
+    // Method to get a list of Doctor objects for patients (approved doctors).
+    // Primary source: the public /doctors node (works without /users read permission).
+    // Names/email/phone are enriched from /users via a best-effort query.
     public static void getDoctorsForPatients(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
+        loadDoctorsFromDoctorsNode(listener);
+    }
+
+    /**
+     * Attaches a real-time listener on the /doctors node so the patient-facing
+     * doctors list (including consultation fee) stays in sync whenever a doctor
+     * updates their record. Returns the listener so callers can detach it.
+     */
+    public static com.google.firebase.database.ValueEventListener observeDoctorsForPatients(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
+        com.google.firebase.database.ValueEventListener valueEventListener = new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                List<com.haset.hasetapp.models.Doctor> doctors = new ArrayList<>();
+                if (dataSnapshot.exists()) {
+                    for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
+                        com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
+                        if (doctorEntity != null && doctorEntity.isApproved()) {
+                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
+                        }
+                    }
+                }
+                if (doctors.isEmpty()) {
+                    loadDoctorsFromUsersForPatients(listener);
+                } else {
+                    mergeDoctorNamesFromUsers(doctors, listener);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
+                loadDoctorsFromUsersForPatients(listener);
+            }
+        };
+        getDoctorsNodeRef().addValueEventListener(valueEventListener);
+        return valueEventListener;
+    }
+
+    private static void loadDoctorsFromDoctorsNode(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
+        getDoctorsNodeRef().addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {
+                List<com.haset.hasetapp.models.Doctor> doctors = new ArrayList<>();
+                if (dataSnapshot.exists()) {
+                    for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
+                        com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
+                        if (doctorEntity != null && doctorEntity.isApproved()) {
+                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
+                        }
+                    }
+                }
+                if (doctors.isEmpty()) {
+                    loadDoctorsFromUsersForPatients(listener);
+                } else {
+                    mergeDoctorNamesFromUsers(doctors, listener);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
+                loadDoctorsFromUsersForPatients(listener);
+            }
+        });
+    }
+
+    private static com.haset.hasetapp.models.Doctor buildDoctorFromEntity(String doctorId, com.haset.hasetapp.database.entities.DoctorEntity doctorEntity) {
+        com.haset.hasetapp.models.Doctor doctor = new com.haset.hasetapp.models.Doctor();
+        doctor.setDoctorId(doctorId);
+        doctor.setUserId(doctorId);
+        doctor.setProfileImage(doctorEntity.getProfileImage());
+
+        String specialty = doctorEntity.getSpecialty();
+        if (specialty == null || specialty.isEmpty()) {
+            specialty = "Medical Doctor";
+        }
+        doctor.setSpecialty(specialty);
+
+        if (doctorEntity.getConsultationFee() > 0) {
+            doctor.setConsultationFee(doctorEntity.getConsultationFee());
+        }
+
+        if (doctorEntity.getAvailableTimes() != null && !doctorEntity.getAvailableTimes().isEmpty()) {
+            String timesStr = doctorEntity.getAvailableTimes();
+            List<String> timeList = new ArrayList<>();
+            if (timesStr.contains("-")) {
+                String[] range = timesStr.split("-");
+                if (range.length == 2) {
+                    try {
+                        int fromHour = Integer.parseInt(range[0].trim().split(":")[0]);
+                        int fromMinute = Integer.parseInt(range[0].trim().split(":")[1]);
+                        int toHour = Integer.parseInt(range[1].trim().split(":")[0]);
+                        int toMinute = Integer.parseInt(range[1].trim().split(":")[1]);
+
+                        java.util.Calendar cal = java.util.Calendar.getInstance();
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, fromHour);
+                        cal.set(java.util.Calendar.MINUTE, fromMinute);
+
+                        java.util.Calendar endCal = java.util.Calendar.getInstance();
+                        endCal.set(java.util.Calendar.HOUR_OF_DAY, toHour);
+                        endCal.set(java.util.Calendar.MINUTE, toMinute);
+
+                        while (!cal.after(endCal)) {
+                            int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+                            int minute = cal.get(java.util.Calendar.MINUTE);
+                            timeList.add(String.format(java.util.Locale.getDefault(), "%02d:%02d", hour, minute));
+                            cal.add(java.util.Calendar.MINUTE, 30);
+                        }
+                    } catch (Exception e) {
+                        timeList.add(range[0].trim());
+                        timeList.add(range[1].trim());
+                    }
+                }
+            } else {
+                String[] times = timesStr.split(",");
+                for (String time : times) {
+                    timeList.add(time.trim());
+                }
+            }
+            doctor.setAvailableTimes(timeList);
+        }
+
+        doctor.setRating(doctorEntity.getAverageRating() > 0 ? doctorEntity.getAverageRating().floatValue() : 4.5f);
+        doctor.setExperience(doctorEntity.getExperience() > 0 ? doctorEntity.getExperience() : 5);
+        doctor.setAbout(doctorEntity.getAbout() != null ? doctorEntity.getAbout() : "");
+        String location = doctorEntity.getLocation();
+        doctor.setLocation(location != null ? location : "");
+        doctor.setVerified(doctorEntity.isApproved());
+        doctor.setOnline(doctorEntity.isOnline());
+        doctor.setOnlineStatus(doctorEntity.getOnlineStatus() != null ? doctorEntity.getOnlineStatus() : "offline");
+        doctor.setPatientsTreated(doctorEntity.getPatientsTreated());
+        doctor.setCreatedAt(doctorEntity.getCreatedAt());
+        doctor.setDemo(doctorEntity.isDemo());
+        return doctor;
+    }
+
+    public static void mergeDoctorNamesFromUsers(List<com.haset.hasetapp.models.Doctor> doctors, OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
+        if (doctors == null || doctors.isEmpty()) {
+            listener.onSuccess(doctors);
+            return;
+        }
+        // Read each doctor's /users/{uid} record individually. A single
+        // orderByChild("role") query on /users requires list read permission,
+        // which patients/doctors don't have. The rules allow reading a
+        // specific user's record when that user is a doctor.
+        final int total = doctors.size();
+        final int[] processed = {0};
+        final java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean(false);
+        for (com.haset.hasetapp.models.Doctor doctor : doctors) {
+            final com.haset.hasetapp.models.Doctor targetDoctor = doctor;
+            getUsersRef().child(doctor.getDoctorId()).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot userSnapshot) {
+                    if (userSnapshot.exists()) {
+                        String fullName = userSnapshot.child("fullName").getValue(String.class);
+                        if (fullName != null && !fullName.isEmpty()) {
+                            targetDoctor.setFullName(fullName);
+                        }
+                        String email = userSnapshot.child("email").getValue(String.class);
+                        if (email != null) {
+                            targetDoctor.setEmail(email);
+                        }
+                        Object phoneValue = userSnapshot.child("phone").getValue();
+                        if (phoneValue != null) {
+                            targetDoctor.setPhone(String.valueOf(phoneValue));
+                        }
+                        String profileImage = userSnapshot.child("profileImage").getValue(String.class);
+                        if (profileImage != null) {
+                            targetDoctor.setProfileImage(profileImage);
+                        }
+                    }
+                    finish();
+                }
+
+                @Override
+                public void onCancelled(@NonNull com.google.firebase.database.DatabaseError databaseError) {
+                    finish();
+                }
+
+                private void finish() {
+                    processed[0]++;
+                    if (processed[0] == total && done.compareAndSet(false, true)) {
+                        listener.onSuccess(doctors);
+                    }
+                }
+            });
+        }
+    }
+
+    private static void loadDoctorsFromUsersForPatients(OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
         getUsersRef().orderByChild("role").equalTo(Constants.ROLE_DOCTOR).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot dataSnapshot) {

@@ -170,6 +170,8 @@
 
                         </LinearLayout>
 
+
+
                         <!-- Animated Wave View (shown when playing) -->
                         <com.haset.hasetapp.views.VoiceWaveView
                             android:id="@+id/voiceWaveView"

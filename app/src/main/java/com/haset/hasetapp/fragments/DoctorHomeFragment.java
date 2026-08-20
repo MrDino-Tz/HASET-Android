@@ -431,6 +431,13 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             layoutHomeContent.setVisibility(View.GONE);
         }
 
+        // Never leave the user on the loading shimmer indefinitely. Reveal the
+        // page after a short grace period; each section still fills in as its
+        // data arrives (appointments, wallet, rating, notifications).
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (isAdded()) hidePageShimmer();
+        }, 2500);
+
         // Observe Appointments
         viewModel.getAppointments(doctorId).observe(getViewLifecycleOwner(), appointments -> {
             if (appointments != null) {

@@ -102,7 +102,7 @@
                     android:layout_marginTop="8dp"
                     android:text="Document"
                     android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:fontFamily="@font/poppins_medium" />
 
             </LinearLayout>
@@ -142,7 +142,7 @@
                     android:layout_marginTop="8dp"
                     android:text="Gallery"
                     android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:fontFamily="@font/poppins_medium" />
 
             </LinearLayout>
@@ -183,7 +183,7 @@
                     android:layout_marginTop="8dp"
                     android:text="Video"
                     android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:fontFamily="@font/poppins_medium" />
 
             </LinearLayout>

@@ -2,6 +2,8 @@ package com.haset.hasetapp.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -142,8 +144,23 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
         if (currentUserId == null) return;
         
         showShimmerLoading();
+
+        // Safety net: never leave the user on the loading shimmer if the
+        // conversations read stalls or is denied. The list still updates when
+        // data arrives.
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (isAdded()) hideShimmerLoading();
+        }, 3000);
         
         viewModel.getConversations(currentUserId).observe(getViewLifecycleOwner(), conversations -> {
+            List<Conversation> previous = conversationAdapter != null
+                    ? conversationAdapter.getConversations() : null;
+            if (previous != null && !previous.isEmpty()
+                    && (conversations == null || conversations.isEmpty())) {
+                Log.w("ChatListFragment", "Conversations wiped: was " + previous.size()
+                        + ", now " + (conversations == null ? "null" : conversations.size()),
+                        new RuntimeException("trace"));
+            }
             hideShimmerLoading();
             filterAndDisplay(conversations);
 

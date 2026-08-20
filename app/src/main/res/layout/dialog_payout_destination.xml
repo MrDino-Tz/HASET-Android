@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -49,12 +50,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Provider (M-Pesa, Airtel Money, Mixx by Yas)">
-                <com.google.android.material.textfield.TextInputEditText
+                android:hint="Mobile Money Provider"
+                app:endIconMode="dropdown_menu">
+                <AutoCompleteTextView
                     android:id="@+id/etPayoutProvider"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapWords" />
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:completionThreshold="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -81,12 +86,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Bank code or bank name">
-                <com.google.android.material.textfield.TextInputEditText
+                android:hint="Bank"
+                app:endIconMode="dropdown_menu">
+                <AutoCompleteTextView
                     android:id="@+id/etBankCode"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapCharacters" />
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:completionThreshold="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout

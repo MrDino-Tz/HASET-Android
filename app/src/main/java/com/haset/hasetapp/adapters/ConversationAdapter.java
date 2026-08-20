@@ -121,7 +121,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
                 String msg = lastMessage.toLowerCase();
                 
                 if (msg.contains("image") || msg.contains("photo") || msg.contains("pic")) {
-                    icon = context.getDrawable(R.drawable.ic_gallery);
+                    icon = context.getDrawable(R.drawable.ic_image_icon);
                     if (icon != null) icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
                     tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
                     tvLastMessage.setText("Photo");
