@@ -134,8 +134,8 @@ public class Constants {
     // ========================
     // Legal & Support URLs
     // ========================
-    public static final String PRIVACY_POLICY_URL = "https://hasethospital.or.tz/legal/privacy-policy";
-    public static final String TERMS_CONDITIONS_URL = "https://hasethospital.or.tz/legal/terms";
+    public static final String PRIVACY_POLICY_URL = "https://hasethospital.or.tz/legal/hasetapp/privacy-policy";
+    public static final String TERMS_CONDITIONS_URL = "https://hasethospital.or.tz/legal/hasetapp/terms";
     public static final String SUPPORT_URL = "https://hasethospital.or.tz/contact";
     
     // ========================

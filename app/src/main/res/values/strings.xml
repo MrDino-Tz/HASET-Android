@@ -283,6 +283,7 @@
     <string name="location_permission_denied">Location permission denied</string>
     <string name="terms_of_use">Terms of Use</string>
     <string name="terms_of_use_desc">Protect your account now</string>
+    <string name="privacy_policy">Privacy Policy</string>
     <!-- Doctor Edit Hints -->
 
     <string name="specialty_label">Specialty</string>

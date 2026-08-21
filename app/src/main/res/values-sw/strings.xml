@@ -257,6 +257,7 @@
     <string name="location_permission_denied">Ruhusa ya mahali imkanwa</string>
     <string name="terms_of_use">Masharti ya Matumizi</string>
     <string name="terms_of_use_desc">Linda akaunti yako sasa</string>
+    <string name="privacy_policy">Sera ya Faragha</string>
 <!--    <string name="professional_info">Taarifa za Kitaaluma</string>-->
     <string name="specialty_label">Utaalamu</string>
     <string name="consultation_fee_label">Ada ya Ushauri</string>
