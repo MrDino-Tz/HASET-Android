@@ -274,3 +274,22 @@ The app implements all listed security best practices. No critical vulnerabiliti
 - **Internal**: Unit tests for repository layers; UI tests for login/registration flows
 - **Closed**: Closed alpha testing with selected doctors/patients
 - **Production**: Production release after rules publishing and payment flow validation
+
+## VERSIONING
+Decide the versioning strategy from day one.
+
+**Current app configuration** (`app/build.gradle`): `versionCode 1`, `versionName "1.0.0.DTC"`
+
+Format: `MAJOR.MINOR.PATCH.DTC`
+
+| Change type | Version | Example |
+|---|---|---|
+| Bug fix | PATCH bump | 1.0.1.DTC |
+| New features | MINOR bump | 1.1.0.DTC |
+| Major changes | MAJOR bump | 2.0.0.DTC |
+
+Rules:
+- `versionName` is user-facing (shown on Play Store)
+- Android requires an increasing integer `versionCode` for every release submitted to Google Play (e.g., 1 → 2 → 3); it is never shown to users
+- Bump both fields in `app/build.gradle` before each release build
+- Never reuse or decrease a `versionCode`, even for a rollback upload
