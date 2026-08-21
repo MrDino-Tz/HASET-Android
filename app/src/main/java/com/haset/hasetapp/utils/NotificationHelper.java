@@ -123,7 +123,7 @@ public class NotificationHelper {
 
         // Build Notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID_MESSAGES)
-                .setSmallIcon(R.drawable.h_10_icon_notification)
+                .setSmallIcon(R.drawable.haset_logo_icon)
                 .setContentTitle(senderName)
                 .setContentText(messageBody)
                 .setStyle(messagingStyle)
@@ -157,7 +157,7 @@ public class NotificationHelper {
             }
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
-                    .setSmallIcon(R.drawable.h_10_icon_notification)
+                    .setSmallIcon(R.drawable.haset_logo_icon)
                     .setContentTitle(title)
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)

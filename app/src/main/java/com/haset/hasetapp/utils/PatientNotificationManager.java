@@ -346,7 +346,7 @@ public class PatientNotificationManager {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_HEALTH_TIPS)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo_icon)
                 .setContentTitle(title)
                 .setContentText("Hiki hapa kikumbusho chako cha afya!")
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -433,7 +433,7 @@ public class PatientNotificationManager {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_HEALTH_TIPS)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo_icon)
                 .setContentTitle(title)
                 .setContentText("Muda wako wa kujijali kiafya!")
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -626,7 +626,7 @@ public class PatientNotificationManager {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_APPOINTMENTS)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo_icon)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message))

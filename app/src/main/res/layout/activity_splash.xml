@@ -15,7 +15,7 @@
             android:layout_width="140dp"
             android:layout_height="140dp"
             android:contentDescription="@string/app_name"
-            android:src="@drawable/app_logo_icon" />
+            android:src="@drawable/haset_logo" />
 
         <TextView
             android:id="@+id/tvAppName"
