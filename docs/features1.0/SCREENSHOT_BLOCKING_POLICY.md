@@ -23,6 +23,9 @@ SensitiveActivityHelper.blockScreenshots(activity);
 
 // Allow screenshots for public content
 SensitiveActivityHelper.allowScreenshots(activity);
+
+// Check whether screenshots are currently blocked for an activity
+boolean blocked = SensitiveActivityHelper.areScreenshotsBlocked(activity);
 ```
 
 ---
@@ -39,6 +42,8 @@ These areas contain private/financial data and screenshots are blocked:
 | Chat | `ChatActivity` | Private conversations |
 | Prescriptions | `PrescriptionDetailBottomSheet` | Medical information |
 | Profile | `ProfileFragment` | Personal health info |
+| Hosted checkout | `HostedCheckoutActivity` | Web-based payment flow |
+| MFA enrollment | `MfaEnrollmentActivity` | Security codes / 2FA setup |
 
 ### PUBLIC AREAS (Screenshots Allowed)
 
@@ -114,6 +119,8 @@ public void onCreate(@Nullable Bundle savedInstanceState) {
 ### Activities Updated
 - `PaymentActivity.java` - Added screenshot blocking
 - `ChatActivity.java` - Added screenshot blocking
+- `HostedCheckoutActivity.java` - Added screenshot blocking
+- `MfaEnrollmentActivity.java` - Added screenshot blocking (direct FLAG_SECURE)
 
 ### Fragments/Components Updated
 - `ProfileFragment.java` - Added screenshot blocking
@@ -155,6 +162,7 @@ To verify screenshot blocking works correctly:
 |------|--------|
 | Apr 5, 2026 | Implemented selective screenshot blocking |
 | Apr 5, 2026 | Documented policy |
+| Aug 22, 2026 | Added HostedCheckoutActivity & MfaEnrollmentActivity to sensitive list; documented areScreenshotsBlocked() |
 
 ---
 
