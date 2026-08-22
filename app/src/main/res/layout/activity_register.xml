@@ -300,7 +300,7 @@
                 android:focusable="true"
                 android:fontFamily="@font/poppins_regular"
                 android:padding="8dp"
-                android:text="Privacy Policy"
+                android:text="@string/privacy_policy"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -321,7 +321,7 @@
                 android:focusable="true"
                 android:fontFamily="@font/poppins_regular"
                 android:padding="8dp"
-                android:text="Terms &amp; Conditions"
+                android:text="@string/terms_and_conditions"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>

@@ -47,6 +47,18 @@
     <string name="other">Other</string>
     <string name="confirm_password">Confirm Password</string>
     <string name="forgot_password">Forgot Password?</string>
+    <!-- In-app password reset -->
+    <string name="reset_password_title">Reset Password</string>
+    <string name="reset_password_sheet_description">Open the link we emailed you — it opens this app automatically. You can also copy the link from the email and paste it below, then set a new password.</string>
+    <string name="paste_reset_link_hint">Paste reset link from email</string>
+    <string name="new_password_hint">New Password</string>
+    <string name="confirm_new_password_hint">Confirm New Password</string>
+    <string name="btn_reset_password">Reset Password</string>
+    <string name="invalid_reset_code">Invalid or expired reset code. Request a new email.</string>
+    <string name="weak_password_error">Password too weak — use at least 6 characters.</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="password_reset_success">Password reset successfully. Please sign in.</string>
+    <string name="reset_code_verified_as">Code verified for: %1$s</string>
     <string name="dont_have_account">Don\'t have an account?</string>
     <string name="already_have_account">Already have an account?</string>
     <string name="sign_up">Sign Up</string>
@@ -297,8 +309,8 @@
 <!--    <string name="edit_professional_info">Edit Professional Info</string>-->
     <string name="edit_professional_info_desc">Change specialty, fee, etc.</string>
     <string name="current_password_hint">Current Password</string>
-    <string name="new_password_hint">New Password</string>
-    <string name="confirm_new_password_hint">Confirm New Password</string>
+<!--    <string name="new_password_hint">New Password</string>-->
+<!--    <string name="confirm_new_password_hint">Confirm New Password</string>-->
     <string name="update_btn">Update</string>
     <string name="cancel_btn">Cancel</string>
     <string name="select_theme">Select Theme</string>
@@ -964,7 +976,7 @@
     <string name="status_pending">Pending</string>
     <string name="status_approved">Approved</string>
     <string name="status_cancelled">Cancelled</string>
-    <string name="passwords_do_not_match">Passwords do not match</string>
+<!--    <string name="passwords_do_not_match">Passwords do not match</string>-->
     <string name="mct_reg_required">MCT Registration Number is required</string>
 
     <!-- SearchActivity -->
@@ -1002,4 +1014,8 @@
     <string name="withdraw_reason_backend_status">Configured, but backend status is %1$s.</string>
     <string name="withdraw_reason_configured_not_ready">Configured, but the backend has not marked it ready for withdrawal yet.</string>
     <string name="withdraw_reason_no_payout_account">Add a payout account before withdrawing.</string>
+    <string name="terms_and_conditions">Terms &amp; Conditions</string>
+    <string name="service_agreement">Service Agreement</string>
+    <string name="privacy_policy_desc">Protect your personal information</string>
+    <string name="review_terms_desc">Review our terms of service</string>
 </resources>
