@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">HASET</string>
+    <string name="app_name">HASET APP</string>
     <string name="tagline">Your Health, Our Priority</string>
 
     <!-- Common -->
@@ -284,6 +284,7 @@
     <string name="location_permission_denied">Location permission denied</string>
     <string name="terms_of_use">Terms of Use</string>
     <string name="terms_of_use_desc">Protect your account now</string>
+    <string name="privacy_policy">Privacy Policy</string>
     <!-- Doctor Edit Hints -->
 
     <string name="specialty_label">Specialty</string>
