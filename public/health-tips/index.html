@@ -364,11 +364,17 @@
     }
 
     async function isAdmin(uid) {
-      const userRef = ref(db, `users/${uid}/role`);
+      const userRef = ref(db, `users/${uid}`);
       return new Promise((resolve) => {
         const off = onValue(userRef, (snapshot) => {
           off();
-          resolve(snapshot.val() === "admin");
+          const user = snapshot.val() || {};
+          resolve(
+            user.role === "admin" ||
+            user.role === "super_admin" ||
+            user.adminRole === "super_admin" ||
+            user.admin_role === "super_admin"
+          );
         }, () => {
           off();
           resolve(false);

@@ -2,8 +2,6 @@ package com.haset.hasetapp.repositories;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.gson.JsonObject;
@@ -23,7 +21,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class PaymentRepository {
-    private static final String TAG = "PaymentRepository";
     private static final int STATUS_CHECK_INTERVAL = 6000;
     private static final int MAX_STATUS_CHECKS = 60;
 
@@ -64,7 +61,6 @@ public class PaymentRepository {
             if (callback != null) callback.onError("No previous transaction to check");
             return;
         }
-        Log.d(TAG, "Manual retry for transaction: " + currentTransactionId);
         pendingFinalCallback = callback;
         isProcessingPayment = true;
         startStatusPolling(currentTransactionId, currentDoctorId, currentAmount, callback);
@@ -94,7 +90,6 @@ public class PaymentRepository {
                                FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
 
         if (isProcessingPayment) {
-            Log.w(TAG, "Payment already in progress, ignoring duplicate request");
             if (initiationCallback != null) {
                 initiationCallback.onError("Payment already in progress");
             }
@@ -113,9 +108,6 @@ public class PaymentRepository {
         // Stay comfortably below Snippe's 30-character gateway limit. Some downstream
         // card processors reject boundary-length keys with PAY_001.
         String idempotencyKey = UUID.randomUUID().toString().replace("-", "").substring(0, 24);
-
-        Log.d(TAG, "=== PAYMENT REQUEST ===");
-        Log.d(TAG, "Submitting mobile payment request");
 
         withFirebaseAuthHeader(new AuthHeaderCallback() {
             @Override
@@ -224,7 +216,6 @@ public class PaymentRepository {
     private void pollPaymentStatus(int transactionId, String doctorId, double amount,
                                    int attemptCount, FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
         if (attemptCount >= MAX_STATUS_CHECKS) {
-            Log.w(TAG, "Max status check attempts reached for transaction " + transactionId);
             isProcessingPayment = false;
             if (finalCallback != null) {
                 finalCallback.onError("Payment is taking longer than expected. Transaction #" +
@@ -239,8 +230,6 @@ public class PaymentRepository {
                 public void onSuccess(PaymentStatusResponse result) {
                     if (result != null && result.getTransaction() != null) {
                         PaymentStatusResponse.Transaction transaction = result.getTransaction();
-                        Log.d(TAG, "Transaction " + transactionId + " status: " + transaction.getStatus());
-
                         if (transaction.isSuccess()) {
                             handlePaymentSuccess(transactionId, doctorId, amount, finalCallback);
                         } else if (transaction.isFailed()) {
@@ -283,7 +272,6 @@ public class PaymentRepository {
 
     public void checkPaymentStatus(int transactionId,
                                    FirebaseHelper.OnCompleteListener<PaymentStatusResponse> callback) {
-        Log.d(TAG, "Checking payment status for transaction: " + transactionId);
         withFirebaseAuthHeader(new AuthHeaderCallback() {
             @Override
             public void onSuccess(String authHeader) {
@@ -296,13 +284,6 @@ public class PaymentRepository {
                         untrackCall(call);
                         if (response.isSuccessful() && response.body() != null) {
                             PaymentStatusResponse body = response.body();
-                            Log.d(TAG, "Response status: " + body.getStatus());
-                            Log.d(TAG, "Response message: " + body.getMessage());
-                            if (body.getTransaction() != null) {
-                                Log.d(TAG, "Transaction status: " + body.getTransaction().getStatus());
-                                Log.d(TAG, "Transaction amount: " + body.getTransaction().getAmount());
-                                Log.d(TAG, "Transaction provider: " + body.getTransaction().getProvider());
-                            }
                             if (callback != null) callback.onSuccess(body);
                         } else {
                             String error = "Status check failed: " + response.code();

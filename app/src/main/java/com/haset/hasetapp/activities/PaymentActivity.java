@@ -380,11 +380,8 @@ public class PaymentActivity extends AppCompatActivity {
                         .into(ivDoctorPhoto);
             }
             
-            // Show verified badge if doctor is verified
-            android.util.Log.d("PaymentActivity", "Doctor verified status: " + doctor.isVerified());
             if (doctor.isVerified()) {
                 ivVerifiedBadge.setVisibility(View.VISIBLE);
-                android.util.Log.d("PaymentActivity", "Verified badge shown");
             } else {
                 ivVerifiedBadge.setVisibility(View.GONE);
             }
@@ -419,7 +416,6 @@ public class PaymentActivity extends AppCompatActivity {
                     try {
                         parsedFee = Double.parseDouble(((String) rawValue).trim());
                     } catch (NumberFormatException ignored) {
-                        android.util.Log.w("PaymentActivity", "Invalid registration fee value: " + rawValue);
                     }
                 }
                 boolean processing = viewModel != null
@@ -440,8 +436,6 @@ public class PaymentActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(DatabaseError error) {
-                android.util.Log.w("PaymentActivity", "Registration fee listener cancelled: "
-                        + error.getMessage());
             }
         };
         registrationFeeRef.addValueEventListener(registrationFeeListener);
@@ -449,12 +443,9 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnPayNow.setOnClickListener(v -> {
-            android.util.Log.d("PaymentActivity", "=== PAY NOW BUTTON CLICKED ===");
-            
             // Prevent duplicate clicks by disabling button immediately and debouncing
             long currentTime = System.currentTimeMillis();
             if (!btnPayNow.isEnabled() || (currentTime - lastClickTime < 2000)) {
-                android.util.Log.w("PaymentActivity", "Button disabled or debounced, ignoring click");
                 return;
             }
             lastClickTime = currentTime;
@@ -475,7 +466,6 @@ public class PaymentActivity extends AppCompatActivity {
             }
             
             // Disable button and show processing state
-            android.util.Log.d("PaymentActivity", "Disabling button and calling processPayment()");
             btnPayNow.setEnabled(false);
             btnPayNow.setAlpha(0.5f);
             
@@ -877,11 +867,8 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private void processPayment() {
-        android.util.Log.d("PaymentActivity", "=== processPayment() CALLED ===");
-        
         // Absolute guard against duplicate payment initiation
         if (paymentInitiated) {
-            android.util.Log.w("PaymentActivity", "Payment already initiated in this session, blocking duplicate call");
             return;
         }
         
@@ -910,7 +897,6 @@ public class PaymentActivity extends AppCompatActivity {
             if (doctorId != null) {
                 // Mark payment as initiated
                 paymentInitiated = true;
-                android.util.Log.d("PaymentActivity", "Calling viewModel.processPayment() - Amount: " + consultationFee + ", Provider: " + paymentProvider);
                 
                 // Call backend API with the documented mobile payment payload
                 com.google.firebase.auth.FirebaseUser firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();

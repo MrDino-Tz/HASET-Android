@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -44,7 +43,7 @@ import retrofit2.Response;
 public class DoctorWalletActivity extends BaseActivity {
     private static final int MFA_ENROLLMENT_REQUEST = 1703;
     private static final double DEFAULT_WITHDRAWAL_FEE = 1500.0;
-    private TextView tvBalance, tvTotalEarnings;
+    private TextView tvBalance, tvTotalEarnings, tvWithdrawReadiness;
     private RecyclerView rvTransactions;
     private PreferenceManager preferenceManager;
     private DoctorWalletEntity currentWallet;
@@ -97,17 +96,17 @@ public class DoctorWalletActivity extends BaseActivity {
                 if (withdrawDialog != null && withdrawDialog.isShowing()) {
                     withdrawDialog.dismiss();
                 }
-                Toast.makeText(this, getString(R.string.operation_failed, error), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.operation_failed, walletErrorMessage(error)), Toast.LENGTH_LONG).show();
             }
         });
 
         viewModel.getLoading().observe(this, isLoading -> {
             if (isLoading != null) {
-                btnWithdraw.setEnabled(!isLoading);
                 if (isLoading) {
-                    btnWithdraw.setText("Processing...");
+                    btnWithdraw.setEnabled(false);
+                    btnWithdraw.setText(R.string.processing);
                 } else {
-                    btnWithdraw.setText("Withdraw");
+                    updateWithdrawButtonState();
                 }
             }
         });
@@ -131,6 +130,7 @@ public class DoctorWalletActivity extends BaseActivity {
         shimmerBalance = findViewById(R.id.shimmerBalance);
         shimmerTotalEarnings = findViewById(R.id.shimmerTotalEarnings);
         tvTotalEarnings = findViewById(R.id.tvTotalEarnings);
+        tvWithdrawReadiness = findViewById(R.id.tvWithdrawReadiness);
         rvTransactions = findViewById(R.id.rvTransactions);
         btnWithdraw = findViewById(R.id.btnWithdraw);
         btnPayoutAccounts = findViewById(R.id.btnPayoutAccounts);
@@ -256,6 +256,10 @@ public class DoctorWalletActivity extends BaseActivity {
 
     private void applyWithdrawalDestinationFallback() {
         if (currentWallet == null || latestWithdrawalRequests == null) return;
+        // The payment backend is authoritative. Legacy Firebase withdrawal records
+        // must not turn a backend cooling-off destination back into an available one.
+        if (!TextUtils.isEmpty(currentWallet.getMobileMoneyStatus())
+                || !TextUtils.isEmpty(currentWallet.getBankStatus())) return;
         if (currentWallet.isMobileMoneyAvailable() || currentWallet.isBankAvailable()) return;
 
         for (WithdrawalRequest request : latestWithdrawalRequests) {
@@ -465,7 +469,7 @@ public class DoctorWalletActivity extends BaseActivity {
             return;
         }
         if (!hasApprovedPayoutDestination()) {
-            Toast.makeText(this, R.string.no_verified_payout_destination, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, payoutDestinationUnavailableMessage(), Toast.LENGTH_LONG).show();
             return;
         }
         com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
@@ -479,7 +483,7 @@ public class DoctorWalletActivity extends BaseActivity {
                 .status("Bearer " + token.getToken())
                 .enqueue(new Callback<JsonObject>() {
                     @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                        btnWithdraw.setEnabled(true);
+                        updateWithdrawButtonState();
                         boolean enabled = response.isSuccessful() && response.body() != null
                                 && response.body().has("two_factor_enabled")
                                 && response.body().get("two_factor_enabled").getAsBoolean();
@@ -488,13 +492,13 @@ public class DoctorWalletActivity extends BaseActivity {
                     }
 
                     @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
-                        btnWithdraw.setEnabled(true);
+                        updateWithdrawButtonState();
                         Toast.makeText(DoctorWalletActivity.this,
                                 R.string.mfa_status_unavailable, Toast.LENGTH_LONG).show();
                     }
                 })
         ).addOnFailureListener(error -> {
-            btnWithdraw.setEnabled(true);
+            updateWithdrawButtonState();
             Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
         });
     }
@@ -504,13 +508,69 @@ public class DoctorWalletActivity extends BaseActivity {
                 && (currentWallet.isMobileMoneyAvailable() || currentWallet.isBankAvailable());
     }
 
+    private String payoutDestinationUnavailableMessage() {
+        if (currentWallet != null && (currentWallet.isMobileMoneyPending() || currentWallet.isBankPending())) {
+            return getString(R.string.payout_destination_pending_security_hold);
+        }
+        return getString(R.string.no_verified_payout_destination);
+    }
+
+    private String walletErrorMessage(String error) {
+        if (error == null) return "";
+        String normalized = error.toLowerCase(Locale.US);
+        if (normalized.contains("cooling-off") || normalized.contains("cooling off") || normalized.contains("cooldown")) {
+            return getString(R.string.payout_destination_cooling_off);
+        }
+        if (normalized.contains("security") || normalized.contains("hold") || normalized.contains("payout destination")) {
+            return getString(R.string.payout_destination_pending_security_hold);
+        }
+        return error;
+    }
+
     private void updateWithdrawButtonState() {
         if (btnWithdraw == null) return;
         boolean hasBalance = currentWallet != null && currentWallet.getBalance() > 0;
         boolean hasApprovedDestination = hasApprovedPayoutDestination();
-        boolean enabled = hasBalance;
+        boolean hasPendingDestination = currentWallet != null
+                && (currentWallet.isMobileMoneyPending() || currentWallet.isBankPending());
+        boolean enabled = hasBalance && hasApprovedDestination;
         btnWithdraw.setEnabled(enabled);
-        btnWithdraw.setAlpha(hasBalance && hasApprovedDestination ? 1.0f : 0.55f);
+        btnWithdraw.setAlpha(enabled ? 1.0f : 0.55f);
+        if (tvWithdrawReadiness != null) {
+            String readiness = withdrawalReadinessMessage(hasBalance, hasApprovedDestination, hasPendingDestination);
+            tvWithdrawReadiness.setText(readiness);
+            tvWithdrawReadiness.setVisibility(readiness.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+        if (!hasBalance) {
+            btnWithdraw.setText(R.string.btn_withdraw);
+        } else if (hasApprovedDestination) {
+            btnWithdraw.setText(R.string.btn_withdraw);
+        } else if (hasPendingDestination) {
+            btnWithdraw.setText(R.string.payout_not_ready_button);
+        } else {
+            btnWithdraw.setText(R.string.add_payout_account_button);
+        }
+    }
+
+    private String withdrawalReadinessMessage(boolean hasBalance, boolean hasApprovedDestination,
+                                              boolean hasPendingDestination) {
+        if (!hasBalance || hasApprovedDestination) return "";
+        if (!hasPendingDestination) return getString(R.string.withdraw_reason_no_payout_account);
+        String status = "";
+        if (currentWallet != null) {
+            status = currentWallet.isMobileMoneyPending()
+                    ? currentWallet.getMobileMoneyStatus()
+                    : currentWallet.getBankStatus();
+        }
+        if (!TextUtils.isEmpty(status)) {
+            if ("cooling_off".equalsIgnoreCase(status)
+                    || "cooling-off".equalsIgnoreCase(status)
+                    || "cooldown".equalsIgnoreCase(status)) {
+                return getString(R.string.payout_destination_cooling_off);
+            }
+            return getString(R.string.withdraw_reason_backend_status, status);
+        }
+        return getString(R.string.withdraw_reason_configured_not_ready);
     }
 
     private void showMfaRequiredDialog() {
@@ -657,11 +717,9 @@ public class DoctorWalletActivity extends BaseActivity {
                 destination.has("bank_account") ? destination.get("bank_account").getAsString() : "",
                 new FirebaseHelper.OnCompleteListener<Boolean>() {
                     @Override public void onSuccess(Boolean result) {
-                        Log.d("HASET_WALLET", "Pending payout destination mirrored to Firebase after backend submission");
                     }
 
                     @Override public void onError(String error) {
-                        Log.d("HASET_WALLET", "Failed to mirror pending payout destination to Firebase: " + error);
                     }
                 });
     }

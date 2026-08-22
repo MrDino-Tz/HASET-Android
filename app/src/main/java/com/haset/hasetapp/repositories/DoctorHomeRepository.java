@@ -16,7 +16,6 @@ import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import android.content.Context;
-import android.util.Log;
 import com.google.gson.JsonObject;
 import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.api.DoctorPayoutApiService;
@@ -152,7 +151,6 @@ public class DoctorHomeRepository {
                         wallet.setTotalEarnings(0);
                         wallet.setLastUpdated(System.currentTimeMillis());
                         JsonObject envelope = response.body();
-                        Log.d("HASET_WALLET", "wallet raw response: " + envelope);
                         JsonObject data = jsonObject(envelope, "data");
                         JsonObject json = firstJsonObject(
                                 jsonObject(envelope, "wallet"),
@@ -195,7 +193,9 @@ public class DoctorHomeRepository {
                             JsonObject bank = jsonObject(destinations, "bank");
                             if (mobile != null) {
                                 String status = jsonString(mobile, "status", "");
-                                boolean destinationAvailable = jsonBoolean(mobile, "available", isAvailableStatus(status));
+                                wallet.setMobileMoneyStatus(status);
+                                boolean destinationAvailable = !isHeldStatus(status)
+                                        && jsonBoolean(mobile, "available", isAvailableOrUnspecifiedStatus(status));
                                 String provider = jsonString(mobile, "provider", "");
                                 String account = firstString(mobile, "masked_account", "maskedAccount", "phone_number_masked", "phoneNumberMasked", "phone_number", "phoneNumber");
                                 wallet.setMobileMoneyAvailable(destinationAvailable);
@@ -205,7 +205,9 @@ public class DoctorHomeRepository {
                             }
                             if (bank != null) {
                                 String status = jsonString(bank, "status", "");
-                                boolean destinationAvailable = jsonBoolean(bank, "available", isAvailableStatus(status));
+                                wallet.setBankStatus(status);
+                                boolean destinationAvailable = !isHeldStatus(status)
+                                        && jsonBoolean(bank, "available", isAvailableOrUnspecifiedStatus(status));
                                 String bankCode = firstString(bank, "bank_code", "bankCode");
                                 String account = firstString(bank, "masked_account", "maskedAccount", "bank_account_masked", "bankAccountMasked", "bank_account", "bankAccount");
                                 wallet.setBankAvailable(destinationAvailable);
@@ -246,11 +248,10 @@ public class DoctorHomeRepository {
                             applyFlatPayoutDestinationFields(wallet, json);
                         }
                         if (!hasPayoutDestinationState(wallet)) {
-                            Log.d("HASET_WALLET", "API returned no payout destinations, falling back to Firebase");
                             applyFirebaseDestinationFallback(wallet, doctorId, callback);
                         } else {
                             normalizeApprovedDestinationLabels(wallet);
-                            finishWithApprovalOverride(wallet, doctorId, callback);
+                            callback.onSuccess(wallet);
                         }
                     }
 
@@ -282,7 +283,6 @@ public class DoctorHomeRepository {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
-                        Log.d("HASET_WALLET", "Firebase destination fallback failed: " + databaseError.getMessage());
                         finishWithApprovalOverride(wallet, doctorId, callback);
                     }
                 });
@@ -290,12 +290,9 @@ public class DoctorHomeRepository {
 
     private void finishWithApprovalOverride(DoctorWalletEntity wallet, String doctorId,
             FirebaseHelper.OnCompleteListener<DoctorWalletEntity> callback) {
-        Log.d("HASET_WALLET", "Checking Firebase approval override for doctorId=" + doctorId);
         FirebaseHelper.getPayoutDestinationRequestsRef().child(doctorId)
                 .get()
                 .addOnSuccessListener(dataSnapshot -> {
-                    Log.d("HASET_WALLET", "Direct payout request exists=" + dataSnapshot.exists()
-                            + " status=" + dataSnapshot.child("status").getValue(String.class));
                     if (applyApprovedDestinationRequest(wallet, dataSnapshot)) {
                         normalizeApprovedDestinationLabels(wallet);
                         callback.onSuccess(wallet);
@@ -304,7 +301,6 @@ public class DoctorHomeRepository {
                     queryApprovedDestinationByDoctorId(wallet, doctorId, callback, "doctor_id");
                 })
                 .addOnFailureListener(error -> {
-                    Log.d("HASET_WALLET", "Direct payout request read failed: " + error.getMessage());
                     queryApprovedDestinationByDoctorId(wallet, doctorId, callback, "doctor_id");
                 });
     }
@@ -316,11 +312,7 @@ public class DoctorHomeRepository {
                 .equalTo(doctorId)
                 .get()
                 .addOnSuccessListener(dataSnapshot -> {
-                    Log.d("HASET_WALLET", "Payout request query by " + doctorIdField
-                            + " count=" + dataSnapshot.getChildrenCount());
                     for (DataSnapshot requestSnapshot : dataSnapshot.getChildren()) {
-                        Log.d("HASET_WALLET", "Payout request query match key=" + requestSnapshot.getKey()
-                                + " status=" + requestSnapshot.child("status").getValue(String.class));
                         if (applyApprovedDestinationRequest(wallet, requestSnapshot)) {
                             normalizeApprovedDestinationLabels(wallet);
                             callback.onSuccess(wallet);
@@ -330,17 +322,13 @@ public class DoctorHomeRepository {
                     if ("doctor_id".equals(doctorIdField)) {
                         queryApprovedDestinationByDoctorId(wallet, doctorId, callback, "doctorId");
                     } else {
-                        Log.d("HASET_WALLET", "No approved Firebase payout destination found for doctorId=" + doctorId);
                         callback.onSuccess(wallet);
                     }
                 })
                 .addOnFailureListener(error -> {
-                    Log.d("HASET_WALLET", "Payout request query by " + doctorIdField
-                            + " failed: " + error.getMessage());
                     if ("doctor_id".equals(doctorIdField)) {
                         queryApprovedDestinationByDoctorId(wallet, doctorId, callback, "doctorId");
                     } else {
-                        Log.d("HASET_WALLET", "No approved Firebase payout destination found for doctorId=" + doctorId);
                         callback.onSuccess(wallet);
                     }
                 });
@@ -350,7 +338,6 @@ public class DoctorHomeRepository {
         if (snapshot == null || !snapshot.exists()) return false;
         String status = snapshot.child("status").getValue(String.class);
         if (!isAvailableStatus(status)) {
-            Log.d("HASET_WALLET", "Payout destination request is not approved: " + status);
             return false;
         }
 
@@ -366,7 +353,6 @@ public class DoctorHomeRepository {
             wallet.setMobileMoneyAvailable(true);
             wallet.setMobileMoneyPending(false);
         }
-        Log.d("HASET_WALLET", "Payout destination marked available (approved: " + status + ")");
         return true;
     }
 
@@ -382,12 +368,14 @@ public class DoctorHomeRepository {
         boolean pending = !available && isPendingDestination(status, provider == null ? "" : provider,
                 masked == null ? "" : masked);
         if ("bank".equals(type)) {
+            wallet.setBankStatus(status);
             if (bankCode != null || masked != null) {
                 wallet.setBankAvailable(available);
                 wallet.setBankPending(pending);
                 wallet.setBankLabel(((bankCode == null ? "" : bankCode) + "  " + (masked == null ? "" : masked)).trim());
             }
         } else {
+            wallet.setMobileMoneyStatus(status);
             if (provider != null || masked != null) {
                 wallet.setMobileMoneyAvailable(available);
                 wallet.setMobileMoneyPending(pending);
@@ -488,7 +476,11 @@ public class DoctorHomeRepository {
             JsonObject codeBody = new JsonObject(); codeBody.addProperty("code", mfaCode);
             RetrofitClient.getInstance().getMobileMfaApiService().verify(bearer, codeBody).enqueue(new Callback<JsonObject>() {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                    if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) { callback.onError(response.code() == 429 ? "Too many MFA attempts. Please wait and retry." : "Invalid or expired MFA code."); return; }
+                    if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) {
+                        String message = response.code() == 429 ? "Too many MFA attempts. Please wait and retry." : errorMessage(response, "Invalid or expired MFA code.");
+                        callback.onError(message);
+                        return;
+                    }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
                     long payoutAmount = Math.round(amount);
                     long roundedFeeAmount = Math.round(Math.max(0, feeAmount));
@@ -504,14 +496,21 @@ public class DoctorHomeRepository {
                     RetrofitClient.getInstance().getDoctorPayoutApiService().requestWithdrawal(bearer, actionToken, body).enqueue(new Callback<JsonObject>() {
                         public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
                             if (r.isSuccessful()) callback.onSuccess(true);
-                            else callback.onError(r.code() == 429
-                                    ? "Too many requests. Please retry later."
-                                    : errorMessage(r, "Payout request failed."));
+                            else {
+                                String message = r.code() == 429
+                                        ? "Too many requests. Please retry later."
+                                        : errorMessage(r, "Payout request failed.");
+                                callback.onError(message);
+                            }
                         }
-                        public void onFailure(Call<JsonObject> c, Throwable t) { callback.onError("Network error while submitting payout request."); }
+                        public void onFailure(Call<JsonObject> c, Throwable t) {
+                            callback.onError("Network error while submitting payout request.");
+                        }
                     });
                 }
-                public void onFailure(Call<JsonObject> call, Throwable t) { callback.onError("Network error while verifying MFA."); }
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+                    callback.onError("Network error while verifying MFA.");
+                }
             });
         }).addOnFailureListener(e -> callback.onError("Authentication expired. Please sign in again."));
     }
@@ -567,14 +566,44 @@ public class DoctorHomeRepository {
     private static String errorMessage(Response<?> response, String fallback) {
         try {
             if (response.errorBody() != null) {
-                JsonObject error = com.google.gson.JsonParser.parseString(response.errorBody().string()).getAsJsonObject();
-                if (error.has("message") && !error.get("message").isJsonNull()) {
-                    return error.get("message").getAsString();
-                }
+                String raw = response.errorBody().string();
+                String parsed = parseErrorMessage(raw);
+                return parsed.isEmpty() ? fallback : parsed;
             }
         } catch (Exception ignored) {
         }
         return fallback;
+    }
+
+    private static String parseErrorMessage(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "";
+        try {
+            com.google.gson.JsonElement parsed = com.google.gson.JsonParser.parseString(raw);
+            if (parsed != null && parsed.isJsonObject()) {
+                JsonObject error = parsed.getAsJsonObject();
+                String message = firstString(error, "message", "error", "detail", "reason");
+                if (!message.isEmpty()) return message;
+
+                JsonObject data = jsonObject(error, "data");
+                message = firstString(data, "message", "error", "detail", "reason");
+                if (!message.isEmpty()) return message;
+
+                JsonObject errors = jsonObject(error, "errors");
+                if (errors != null) {
+                    for (String key : errors.keySet()) {
+                        com.google.gson.JsonElement value = errors.get(key);
+                        if (value == null || value.isJsonNull()) continue;
+                        if (value.isJsonArray() && value.getAsJsonArray().size() > 0) {
+                            com.google.gson.JsonElement first = value.getAsJsonArray().get(0);
+                            if (first != null && !first.isJsonNull()) return first.getAsString();
+                        }
+                        if (value.isJsonPrimitive()) return value.getAsString();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return raw.trim().length() > 240 ? raw.trim().substring(0, 240) : raw.trim();
     }
 
     private static String jsonString(JsonObject json, String key, String fallback) {
@@ -642,6 +671,20 @@ public class DoctorHomeRepository {
                 || "enabled".equalsIgnoreCase(status);
     }
 
+    private static boolean isAvailableOrUnspecifiedStatus(String status) {
+        return status == null || status.trim().isEmpty() || isAvailableStatus(status);
+    }
+
+    private static boolean isHeldStatus(String status) {
+        if (status == null) return false;
+        String normalized = status.trim().toLowerCase(Locale.US);
+        return normalized.contains("hold")
+                || normalized.contains("cooldown")
+                || normalized.contains("security")
+                || normalized.contains("review")
+                || normalized.contains("pending");
+    }
+
     private static boolean isPendingDestination(String status, String labelOne, String labelTwo) {
         return "pending".equalsIgnoreCase(status)
                 || "requested".equalsIgnoreCase(status)
@@ -655,19 +698,23 @@ public class DoctorHomeRepository {
         String status = firstString(destination, "status", "state");
         boolean statusApproved = isAvailableStatus(status);
         if ("bank".equalsIgnoreCase(type)) {
+            wallet.setBankStatus(status);
             String bankCode = firstString(destination, "bank_code", "bankCode", "bank_name", "bankName");
             String account = firstString(destination, "masked_account", "maskedAccount", "bank_account_masked", "bankAccountMasked", "bank_account", "bankAccount", "account_number", "accountNumber");
             if (!bankCode.isEmpty() || !account.isEmpty()) {
-                boolean available = firstBoolean(destination, statusApproved, "available", "is_approved", "approved", "verified", "is_verified");
+                boolean available = !isHeldStatus(status)
+                        && firstBoolean(destination, isAvailableOrUnspecifiedStatus(status), "available", "is_approved", "approved", "verified", "is_verified");
                 wallet.setBankAvailable(available);
                 wallet.setBankPending(!available && isPendingDestination(status, bankCode, account));
                 wallet.setBankLabel((bankCode + "  " + account).trim());
             }
         } else if ("mobile_money".equalsIgnoreCase(type) || "mobile".equalsIgnoreCase(type) || "mobileMoney".equalsIgnoreCase(type)) {
+            wallet.setMobileMoneyStatus(status);
             String provider = firstString(destination, "provider", "mobile_money_provider", "mobileMoneyProvider", "payout_provider", "payoutProvider");
             String account = firstString(destination, "masked_account", "maskedAccount", "phone_number_masked", "phoneNumberMasked", "phone_number", "phoneNumber", "account_number", "accountNumber");
             if (!provider.isEmpty() || !account.isEmpty()) {
-                boolean available = firstBoolean(destination, statusApproved, "available", "is_approved", "approved", "verified", "is_verified");
+                boolean available = !isHeldStatus(status)
+                        && firstBoolean(destination, isAvailableOrUnspecifiedStatus(status), "available", "is_approved", "approved", "verified", "is_verified");
                 wallet.setMobileMoneyAvailable(available);
                 wallet.setMobileMoneyPending(!available && isPendingDestination(status, provider, account));
                 wallet.setMobileMoneyLabel((provider + "  " + account).trim());
@@ -693,7 +740,8 @@ public class DoctorHomeRepository {
                 "phone_number", "phoneNumber",
                 "accountNumber", "account_number");
         if (!mobileProvider.isEmpty() || !mobileAccount.isEmpty()) {
-            boolean mobileAvailable = firstBoolean(json, isAvailableStatus(mobileStatus),
+            wallet.setMobileMoneyStatus(mobileStatus);
+            boolean mobileAvailable = !isHeldStatus(mobileStatus) && firstBoolean(json, isAvailableOrUnspecifiedStatus(mobileStatus),
                     "payout_mobile_available", "payoutMobileAvailable",
                     "mobile_money_available", "mobileMoneyAvailable",
                     "destination_available", "destinationAvailable");
@@ -714,7 +762,8 @@ public class DoctorHomeRepository {
                 "masked_bank_account", "maskedBankAccount",
                 "bank_account", "bankAccount");
         if (!bankCode.isEmpty() || !bankAccount.isEmpty()) {
-            boolean bankAvailable = firstBoolean(json, isAvailableStatus(bankStatus),
+            wallet.setBankStatus(bankStatus);
+            boolean bankAvailable = !isHeldStatus(bankStatus) && firstBoolean(json, isAvailableOrUnspecifiedStatus(bankStatus),
                     "payout_bank_available", "payoutBankAvailable",
                     "bank_available", "bankAvailable");
             wallet.setBankAvailable(bankAvailable);

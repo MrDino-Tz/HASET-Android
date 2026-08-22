@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
-import com.haset.hasetapp.utils.CustomDialog;
 // import com.google.android.gms.auth.api.signin.GoogleSignIn;
 // import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 // import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -25,7 +24,6 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.CustomDialog;
-import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.Constants;
@@ -37,8 +35,6 @@ import com.haset.hasetapp.viewmodels.AuthViewModel;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.models.AppConfig;
 import com.haset.hasetapp.utils.FirebaseHelper;
-
-import android.util.Log;
 
 public class RegisterActivity extends BaseActivity {
     private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo;
@@ -58,6 +54,7 @@ public class RegisterActivity extends BaseActivity {
     private String pendingDoctorEmail;
     private String pendingDoctorPassword;
     private boolean pendingDoctorPaymentRequiresAnonymousAuth = false;
+    private FirebaseUser pendingAnonymousPaymentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -330,6 +327,7 @@ public class RegisterActivity extends BaseActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             pendingDoctorPaymentRequiresAnonymousAuth = currentUser.isAnonymous();
+            pendingAnonymousPaymentUser = currentUser.isAnonymous() ? currentUser : null;
             showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             return;
         }
@@ -337,6 +335,7 @@ public class RegisterActivity extends BaseActivity {
         FirebaseAuth.getInstance().signInAnonymously()
             .addOnSuccessListener(result -> {
                 pendingDoctorPaymentRequiresAnonymousAuth = true;
+                pendingAnonymousPaymentUser = result.getUser();
                 showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             })
             .addOnFailureListener(error -> {
@@ -372,19 +371,17 @@ public class RegisterActivity extends BaseActivity {
         doctorPaymentLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                if (pendingDoctorPaymentRequiresAnonymousAuth
-                        && currentUser != null
-                        && currentUser.isAnonymous()) {
-                    FirebaseAuth.getInstance().signOut();
-                }
-
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
                     // A successful payment must still result in a normal credential-backed
                     // account. Never promote an anonymous Firebase session to a doctor.
+                    UserEntity doctorUser = pendingDoctorUser;
+                    String doctorEmail = pendingDoctorEmail;
+                    String doctorPassword = pendingDoctorPassword;
                     CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
-                    authViewModel.register(pendingDoctorEmail, pendingDoctorPassword, pendingDoctorUser);
+                    cleanupAnonymousPaymentSession(() ->
+                        authViewModel.register(doctorEmail, doctorPassword, doctorUser));
                 } else {
+                    cleanupAnonymousPaymentSession(null);
                     CustomDialog.hideLoading();
                     resetRegisterButton();
                 }
@@ -393,8 +390,43 @@ public class RegisterActivity extends BaseActivity {
                 pendingDoctorEmail = null;
                 pendingDoctorPassword = null;
                 pendingDoctorPaymentRequiresAnonymousAuth = false;
+                pendingAnonymousPaymentUser = null;
             }
         );
+    }
+
+    private void cleanupAnonymousPaymentSession(@androidx.annotation.Nullable Runnable onComplete) {
+        FirebaseUser anonymousUser = pendingAnonymousPaymentUser;
+        if (!pendingDoctorPaymentRequiresAnonymousAuth
+                || anonymousUser == null
+                || !anonymousUser.isAnonymous()) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
+        String anonymousUid = anonymousUser.getUid();
+        java.util.Map<String, Object> cleanupUpdates = new java.util.HashMap<>();
+        cleanupUpdates.put("users/" + anonymousUid, null);
+        cleanupUpdates.put("doctors/" + anonymousUid, null);
+        cleanupUpdates.put("notifications/" + anonymousUid, null);
+        cleanupUpdates.put("saved_articles/" + anonymousUid, null);
+
+        FirebaseHelper.getDatabaseReference().updateChildren(cleanupUpdates)
+            .addOnCompleteListener(ignored -> deleteAnonymousUser(anonymousUser, onComplete));
+    }
+
+    private void deleteAnonymousUser(FirebaseUser anonymousUser,
+                                     @androidx.annotation.Nullable Runnable onComplete) {
+        anonymousUser.delete()
+            .addOnCompleteListener(task -> {
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                FirebaseUser currentUser = auth.getCurrentUser();
+                if (currentUser != null && currentUser.isAnonymous()
+                        && currentUser.getUid().equals(anonymousUser.getUid())) {
+                    auth.signOut();
+                }
+                if (onComplete != null) onComplete.run();
+            });
     }
 
     private void resetRegisterButton() {

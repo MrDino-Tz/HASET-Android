@@ -22,6 +22,9 @@ const otherDoctor = testEnv.authenticatedContext("doctor-b").database();
 const admin = testEnv.authenticatedContext("admin-a").database();
 const superAdmin = testEnv.authenticatedContext("super-admin-a").database();
 const anonymous = testEnv.unauthenticatedContext().database();
+const anonymousAuth = testEnv.authenticatedContext("anon-temp", {
+  firebase: { sign_in_provider: "anonymous" },
+}).database();
 const newPatient = testEnv.authenticatedContext("new-patient").database();
 const newDoctor = testEnv.authenticatedContext("new-doctor").database();
 
@@ -51,10 +54,12 @@ test.before(async () => {
         "doctor-c": { userId: "doctor-c", email: "doctor-c@example.test", fullName: "Doctor C", role: "doctor" },
         "admin-a": { userId: "admin-a", email: "admin-a@example.test", fullName: "Admin A", role: "admin" },
         "super-admin-a": { userId: "super-admin-a", email: "super-admin-a@example.test", fullName: "Super Admin A", role: "super_admin" },
+        "anon-temp": { userId: "anon-temp", email: "pending@example.test", fullName: "Pending Doctor", role: "doctor" },
       },
       doctors: {
         "doctor-a": { doctorId: "doctor-a", approved: true, verified: true },
         "doctor-c": { doctorId: "doctor-c", approved: false, verified: false },
+        "anon-temp": { doctorId: "anon-temp", regNo: "PENDING-001", approved: false, verified: false },
       },
       payment_transactions: {
         "9001": {
@@ -151,6 +156,17 @@ test("allows patient and doctor registration without allowing admin registration
   await assertFails(set(ref(newPatient, "users/new-patient"), {
     userId: "new-patient", email: "new-patient@example.test", fullName: "New Patient", role: "admin",
   }));
+});
+
+test("allows anonymous registration cleanup only for its own temporary records", async () => {
+  await assertSucceeds(update(ref(anonymousAuth), {
+    "users/anon-temp": null,
+    "doctors/anon-temp": null,
+    "notifications/anon-temp": null,
+    "saved_articles/anon-temp": null,
+  }));
+  await assertFails(set(ref(anonymousAuth, "users/patient-a"), null));
+  await assertFails(set(ref(anonymousAuth, "doctors/doctor-a"), null));
 });
 
 test("allows safe doctor enrollment but protects approval fields", async () => {

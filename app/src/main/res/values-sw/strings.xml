@@ -531,6 +531,14 @@
     <string name="no_balance_withdrawal">Hakuna salio la kutoa</string>
     <string name="available_balance_format">Inapatikana: %,.0f TZS</string>
     <string name="available_balance_with_max_format">Inapatikana: %1$,.0f TZS - Kiwango cha juu: %2$,.0f TZS</string>
+    <string name="no_verified_payout_destination">Hakuna akaunti ya malipo iliyoidhinishwa na tayari. Wasilisha akaunti kwanza ili iidhinishwe.</string>
+    <string name="payout_destination_pending_security_hold">Akaunti yako ya malipo bado inasubiri idhini ya msimamizi au muda wa ulinzi wa usalama. Utoaji pesa utawezekana baada ya kuidhinishwa kikamilifu.</string>
+    <string name="payout_pending_button">Malipo yanasubiri</string>
+    <string name="payout_not_ready_button">Haiko tayari</string>
+    <string name="add_payout_account_button">Ongeza akaunti</string>
+    <string name="withdraw_reason_backend_status">Imesanidiwa, lakini hali ya mfumo ni %1$s.</string>
+    <string name="withdraw_reason_configured_not_ready">Imesanidiwa, lakini mfumo bado haujaiweka tayari kwa utoaji pesa.</string>
+    <string name="withdraw_reason_no_payout_account">Ongeza akaunti ya malipo kabla ya kutoa pesa.</string>
     <string name="currency_format">%,.0f TZS</string>
     <string name="enter_withdrawal_amount">Tafadhali ingiza kiasi cha kutoa</string>
     <string name="enter_valid_amount_msg">Tafadhali ingiza kiasi halali</string>

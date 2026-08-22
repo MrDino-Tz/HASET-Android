@@ -20,6 +20,8 @@ public class DoctorWalletEntity {
     @androidx.room.Ignore private boolean bankPending;
     @androidx.room.Ignore private String mobileMoneyLabel;
     @androidx.room.Ignore private String bankLabel;
+    @androidx.room.Ignore private String mobileMoneyStatus;
+    @androidx.room.Ignore private String bankStatus;
     @androidx.room.Ignore private Double withdrawalFeeAmount;
 
     public DoctorWalletEntity() {
@@ -95,6 +97,10 @@ public class DoctorWalletEntity {
     public void setMobileMoneyLabel(String value) { mobileMoneyLabel = value; }
     public String getBankLabel() { return bankLabel; }
     public void setBankLabel(String value) { bankLabel = value; }
+    public String getMobileMoneyStatus() { return mobileMoneyStatus; }
+    public void setMobileMoneyStatus(String value) { mobileMoneyStatus = value; }
+    public String getBankStatus() { return bankStatus; }
+    public void setBankStatus(String value) { bankStatus = value; }
     public Double getWithdrawalFeeAmount() { return withdrawalFeeAmount; }
     public void setWithdrawalFeeAmount(Double value) { withdrawalFeeAmount = value; }
 }

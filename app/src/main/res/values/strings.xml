@@ -993,5 +993,13 @@
     <string name="ticket_open">Open</string>
     <string name="bank_account">Bank Account</string>
     <string name="not_configured">Not configured</string>
-    <string name="no_verified_payout_destination">No approved payout account is available. Contact admin support.</string>
+    <string name="no_verified_payout_destination">No payout account is approved and ready yet. Submit one for approval first.</string>
+    <string name="payout_destination_pending_security_hold">Your payout account is still pending admin approval or security hold. Withdrawals will be available after it is fully approved.</string>
+    <string name="payout_destination_cooling_off">Your payout account is approved, but it is still in the security cooling-off period. Withdrawals will be available after the wait period ends.</string>
+    <string name="payout_pending_button">Payout pending</string>
+    <string name="payout_not_ready_button">Payout not ready</string>
+    <string name="add_payout_account_button">Add payout account</string>
+    <string name="withdraw_reason_backend_status">Configured, but backend status is %1$s.</string>
+    <string name="withdraw_reason_configured_not_ready">Configured, but the backend has not marked it ready for withdrawal yet.</string>
+    <string name="withdraw_reason_no_payout_account">Add a payout account before withdrawing.</string>
 </resources>
