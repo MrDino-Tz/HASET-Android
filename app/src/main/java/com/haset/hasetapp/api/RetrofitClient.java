@@ -14,6 +14,7 @@ public class RetrofitClient {
     private Retrofit paymentRetrofit;
     private Retrofit mobileMfaRetrofit;
     private Retrofit doctorPayoutRetrofit;
+    private Retrofit adminPayoutRetrofit;
     
     private RetrofitClient() {
         OkHttpClient client = buildSecureClient();
@@ -35,6 +36,11 @@ public class RetrofitClient {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         doctorPayoutRetrofit = new Retrofit.Builder()
+                .baseUrl(Constants.PAYMENT_API_BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        adminPayoutRetrofit = new Retrofit.Builder()
                 .baseUrl(Constants.PAYMENT_API_BASE_URL)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -72,5 +78,9 @@ public class RetrofitClient {
 
     public DoctorPayoutApiService getDoctorPayoutApiService() {
         return doctorPayoutRetrofit.create(DoctorPayoutApiService.class);
+    }
+
+    public AdminPayoutApiService getAdminPayoutApiService() {
+        return adminPayoutRetrofit.create(AdminPayoutApiService.class);
     }
 }

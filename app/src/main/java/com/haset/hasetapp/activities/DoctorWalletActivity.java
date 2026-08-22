@@ -183,6 +183,9 @@ public class DoctorWalletActivity extends BaseActivity {
                 }
             }
             if (wallet != null) {
+                if (wallet.getWithdrawalFeeAmount() != null && wallet.getWithdrawalFeeAmount() >= 0) {
+                    withdrawalFee = wallet.getWithdrawalFeeAmount();
+                }
                 balanceAmount = wallet.getBalance();
                 updateBalanceDisplay();
                 
@@ -190,10 +193,8 @@ public class DoctorWalletActivity extends BaseActivity {
                 String formattedEarnings = String.format(Locale.getDefault(), getString(R.string.currency_format), wallet.getTotalEarnings());
                 tvTotalEarnings.setText(formattedEarnings);
                 
-                // Keep the action responsive. The click handler explains why a
-                // zero-balance wallet cannot submit a withdrawal.
-                btnWithdraw.setEnabled(true);
-                btnWithdraw.setAlpha(1.0f);
+                applyWithdrawalDestinationFallback();
+                updateWithdrawButtonState();
                 
                 // Stop shimmer and show content
                 if (shimmerBalance != null) {
@@ -206,13 +207,11 @@ public class DoctorWalletActivity extends BaseActivity {
                 }
                 if (tvTotalEarnings != null) tvTotalEarnings.setVisibility(View.VISIBLE);
                 if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
-                applyWithdrawalDestinationFallback();
             } else {
                 balanceAmount = 0;
                 updateBalanceDisplay();
                 tvTotalEarnings.setText("0 TZS");
-                btnWithdraw.setEnabled(true);
-                btnWithdraw.setAlpha(1.0f);
+                updateWithdrawButtonState();
                 
                 // Stop shimmer and show default content
                 if (shimmerBalance != null) {
@@ -348,16 +347,25 @@ public class DoctorWalletActivity extends BaseActivity {
         MaterialButton btnConfirmWithdraw = view.findViewById(R.id.btnConfirmWithdraw);
         MfaCodeInputView mfaCodeInput = view.findViewById(R.id.mfaCodeInput);
 
+        double feeAmountForLimit = Math.max(0, withdrawalFee);
+        double maxPayoutAmount = Math.max(0, currentWallet.getBalance() - feeAmountForLimit);
+
         // Set available balance
-        String availableBalance = String.format(Locale.getDefault(), getString(R.string.available_balance_format), currentWallet.getBalance());
+        String availableBalance = String.format(Locale.getDefault(), getString(R.string.available_balance_with_max_format),
+                currentWallet.getBalance(), maxPayoutAmount);
         tvAvailableBalance.setText(availableBalance);
         updateWithdrawalBreakdown(0, tvPayoutAmount, tvWithdrawalFee, tvTotalDeduction);
 
         final String[] selectedMethod = {currentWallet.isMobileMoneyAvailable() ? "mobile_money" : (currentWallet.isBankAvailable() ? "bank" : "")};
+        boolean hasApprovedDestination = !selectedMethod[0].isEmpty();
         tvMobileDestination.setText(destinationLabel(currentWallet.getMobileMoneyLabel(), currentWallet.isMobileMoneyPending()));
         tvBankDestination.setText(destinationLabel(currentWallet.getBankLabel(), currentWallet.isBankPending()));
         cvMobileMoney.setEnabled(currentWallet.isMobileMoneyAvailable());
         cvBank.setEnabled(currentWallet.isBankAvailable());
+        etWithdrawAmount.setEnabled(hasApprovedDestination);
+        etWithdrawAmount.setFocusable(hasApprovedDestination);
+        etWithdrawAmount.setFocusableInTouchMode(hasApprovedDestination);
+        btnConfirmWithdraw.setEnabled(hasApprovedDestination);
         Runnable renderSelection = () -> {
             boolean mobile = "mobile_money".equals(selectedMethod[0]);
             boolean bank = "bank".equals(selectedMethod[0]);
@@ -394,7 +402,7 @@ public class DoctorWalletActivity extends BaseActivity {
                 String amountStr = s.toString().trim();
                 // Keep the action responsive for invalid amounts so the click handler
                 // can explain the gateway minimum or insufficient balance.
-                btnConfirmWithdraw.setEnabled(!TextUtils.isEmpty(amountStr));
+                btnConfirmWithdraw.setEnabled(hasApprovedDestination && !TextUtils.isEmpty(amountStr));
                 Double amount = parseAmount(amountStr);
                 updateWithdrawalBreakdown(amount != null ? amount : 0, tvPayoutAmount, tvWithdrawalFee, tvTotalDeduction);
             }
@@ -432,8 +440,8 @@ public class DoctorWalletActivity extends BaseActivity {
             if (totalDeduction > currentWallet.getBalance()) {
                 Toast.makeText(this,
                         String.format(Locale.getDefault(),
-                                getString(R.string.insufficient_withdrawal_balance_with_fee),
-                                totalDeduction, amount),
+                                getString(R.string.withdrawal_amount_exceeds_available_after_fee),
+                                Math.max(0, currentWallet.getBalance() - feeAmount), feeAmount),
                         Toast.LENGTH_LONG).show();
                 return;
             }
@@ -454,6 +462,10 @@ public class DoctorWalletActivity extends BaseActivity {
     private void checkMfaThenShowWithdrawal() {
         if (currentWallet == null || currentWallet.getBalance() <= 0) {
             Toast.makeText(this, R.string.no_balance_withdrawal, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!hasApprovedPayoutDestination()) {
+            Toast.makeText(this, R.string.no_verified_payout_destination, Toast.LENGTH_LONG).show();
             return;
         }
         com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
@@ -485,6 +497,20 @@ public class DoctorWalletActivity extends BaseActivity {
             btnWithdraw.setEnabled(true);
             Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private boolean hasApprovedPayoutDestination() {
+        return currentWallet != null
+                && (currentWallet.isMobileMoneyAvailable() || currentWallet.isBankAvailable());
+    }
+
+    private void updateWithdrawButtonState() {
+        if (btnWithdraw == null) return;
+        boolean hasBalance = currentWallet != null && currentWallet.getBalance() > 0;
+        boolean hasApprovedDestination = hasApprovedPayoutDestination();
+        boolean enabled = hasBalance;
+        btnWithdraw.setEnabled(enabled);
+        btnWithdraw.setAlpha(hasBalance && hasApprovedDestination ? 1.0f : 0.55f);
     }
 
     private void showMfaRequiredDialog() {
@@ -590,27 +616,13 @@ public class DoctorWalletActivity extends BaseActivity {
                         Toast.makeText(DoctorWalletActivity.this, "Invalid or expired MFA code.", Toast.LENGTH_LONG).show(); return;
                     }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
-                    FirebaseHelper.submitPayoutDestinationForApproval(
-                            user.getUid(),
-                            destination.has("destination_type") ? destination.get("destination_type").getAsString() : "",
-                            destination.has("provider") ? destination.get("provider").getAsString() : "",
-                            destination.has("bank_code") ? destination.get("bank_code").getAsString() : "",
-                            destination.has("phone_number") ? destination.get("phone_number").getAsString() : "",
-                            destination.has("bank_account") ? destination.get("bank_account").getAsString() : "",
-                            new FirebaseHelper.OnCompleteListener<Boolean>() {
-                                @Override public void onSuccess(Boolean result) {
-                                    Log.d("HASET_WALLET", "Pending payout destination written to Firebase for admin review");
-                                }
-                                @Override public void onError(String error) {
-                                    Log.d("HASET_WALLET", "Failed to write pending payout destination to Firebase: " + error);
-                                }
-                            });
                     RetrofitClient.getInstance().getDoctorPayoutApiService().updatePayoutDestination(bearer, actionToken, destination).enqueue(new Callback<JsonObject>() {
                         @Override public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
                             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
                             if (r.isSuccessful()) {
+                                mirrorPendingPayoutDestination(destination, user.getUid());
                                 dialog.dismiss();
-                                Toast.makeText(DoctorWalletActivity.this, "Payout account submitted. Waiting for finance approval before withdrawal.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(DoctorWalletActivity.this, "Payout account submitted. Waiting for admin approval before withdrawal.", Toast.LENGTH_LONG).show();
                                 boolean bank = "bank".equals(destination.get("destination_type").getAsString());
                                 if (currentWallet == null) {
                                     currentWallet = new DoctorWalletEntity(preferenceManager.getUserId(), 0);
@@ -635,6 +647,25 @@ public class DoctorWalletActivity extends BaseActivity {
         }).addOnFailureListener(error -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true));
     }
 
+    private void mirrorPendingPayoutDestination(JsonObject destination, String doctorId) {
+        FirebaseHelper.submitPayoutDestinationForApproval(
+                doctorId,
+                destination.has("destination_type") ? destination.get("destination_type").getAsString() : "",
+                destination.has("provider") ? destination.get("provider").getAsString() : "",
+                destination.has("bank_code") ? destination.get("bank_code").getAsString() : "",
+                destination.has("phone_number") ? destination.get("phone_number").getAsString() : "",
+                destination.has("bank_account") ? destination.get("bank_account").getAsString() : "",
+                new FirebaseHelper.OnCompleteListener<Boolean>() {
+                    @Override public void onSuccess(Boolean result) {
+                        Log.d("HASET_WALLET", "Pending payout destination mirrored to Firebase after backend submission");
+                    }
+
+                    @Override public void onError(String error) {
+                        Log.d("HASET_WALLET", "Failed to mirror pending payout destination to Firebase: " + error);
+                    }
+                });
+    }
+
     private String payoutErrorMessage(Response<JsonObject> response) {
         try {
             if (response.errorBody() != null) {
@@ -657,9 +688,9 @@ public class DoctorWalletActivity extends BaseActivity {
 
     private String destinationLabel(String label, boolean pending) {
         if (label == null || label.trim().isEmpty()) {
-            return pending ? "Pending finance approval" : getString(R.string.not_configured);
+            return pending ? "Pending admin approval" : getString(R.string.not_configured);
         }
-        return pending ? "Pending finance approval: " + label.trim() : label.trim();
+        return pending ? "Pending admin approval: " + label.trim() : label.trim();
     }
 
     private void updateWithdrawalBreakdown(double payoutAmount, TextView tvPayoutAmount, TextView tvWithdrawalFee, TextView tvTotalDeduction) {

@@ -754,8 +754,8 @@ public class FirebaseHelper {
     }
 
     /**
-     * Persist a submitted payout destination as a pending record that finance
-     * admins review. Mirrors the destination into the doctor's wallet node so
+     * Persist a submitted payout destination as a pending record that admins
+     * review. Mirrors the destination into the doctor's wallet node so
      * the admin wallets page can show it. Only masked account values are stored.
      */
     public static void submitPayoutDestinationForApproval(String doctorId, String destinationType,

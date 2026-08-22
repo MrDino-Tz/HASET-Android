@@ -12,6 +12,7 @@
     <string name="withdrawal_fee">Withdrawal fee</string>
     <string name="withdrawal_total_deducted">Total deducted from wallet</string>
     <string name="insufficient_withdrawal_balance_with_fee">Insufficient balance. You need TZS %1$,.0f to withdraw TZS %2$,.0f.</string>
+    <string name="withdrawal_amount_exceeds_available_after_fee">Maximum payout amount is TZS %1$,.0f after the TZS %2$,.0f withdrawal fee.</string>
 
     <!-- Authentication -->
     <string name="login">Login</string>
@@ -598,6 +599,7 @@
     <string name="select_an_image">Please select an image</string>
     <string name="no_balance_withdrawal">No balance available for withdrawal</string>
     <string name="available_balance_format">Available: %,.0f TZS</string>
+    <string name="available_balance_with_max_format">Available: %1$,.0f TZS - Max payout: %2$,.0f TZS</string>
     <string name="currency_format">%,.0f TZS</string>
     <string name="enter_withdrawal_amount">Please enter withdrawal amount</string>
     <string name="enter_valid_amount_msg">Please enter a valid amount</string>
@@ -990,5 +992,5 @@
     <string name="ticket_open">Open</string>
     <string name="bank_account">Bank Account</string>
     <string name="not_configured">Not configured</string>
-    <string name="no_verified_payout_destination">No approved payout account is available. Contact finance support.</string>
+    <string name="no_verified_payout_destination">No approved payout account is available. Contact admin support.</string>
 </resources>

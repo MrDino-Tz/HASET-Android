@@ -529,6 +529,7 @@
     <string name="select_an_image">Tafadhali chagua picha</string>
     <string name="no_balance_withdrawal">Hakuna salio la kutoa</string>
     <string name="available_balance_format">Inapatikana: %,.0f TZS</string>
+    <string name="available_balance_with_max_format">Inapatikana: %1$,.0f TZS - Kiwango cha juu: %2$,.0f TZS</string>
     <string name="currency_format">%,.0f TZS</string>
     <string name="enter_withdrawal_amount">Tafadhali ingiza kiasi cha kutoa</string>
     <string name="enter_valid_amount_msg">Tafadhali ingiza kiasi halali</string>
@@ -833,6 +834,7 @@
     <string name="minimum_withdrawal_amount">Kiasi cha chini cha kutoa ni TZS 5,000</string>
     <string name="minimum_withdrawal_notice">Kiasi cha chini cha malipo ni TZS 5,000. Ada za mtoa huduma zinaweza kutumika.</string>
     <string name="minimum_withdrawal_missing_amount">Kiasi cha chini ni TZS 5,000. Unahitaji TZS %1$,.0f zaidi.</string>
+    <string name="withdrawal_amount_exceeds_available_after_fee">Kiwango cha juu cha kupokea ni TZS %1$,.0f baada ya ada ya kutoa ya TZS %2$,.0f.</string>
     <string name="authentication_expired">Muda wa uthibitishaji umeisha. Tafadhali ingia tena.</string>
     <string name="mfa_status_unavailable">Imeshindikana kuthibitisha hali ya MFA. Jaribu tena.</string>
     <string name="mfa_required_for_withdrawal_title">Washa MFA ili kutoa pesa</string>

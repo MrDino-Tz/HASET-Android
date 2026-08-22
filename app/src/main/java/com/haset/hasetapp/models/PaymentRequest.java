@@ -57,9 +57,8 @@ public class PaymentRequest {
         this.consultation_id = safeString(consultationId, "unknown_consultation");
         this.amount = Math.round(amount);
         String requestedMethod = safeString(paymentMethod, "mobile_money");
-        // Cards are collected through a unique Snippe hosted session. The app
-        // still presents this as Card Payment to the patient.
-        this.payment_method = "card".equals(requestedMethod) ? "checkout" : requestedMethod;
+        // Card and checkout payments are both collected through a Snippe hosted session.
+        this.payment_method = requestedMethod;
         if ("mobile_money".equals(this.payment_method)) {
             this.provider = safeString(provider, "unknown");
             this.payment_account = safeString(paymentAccount, "unknown");
@@ -80,7 +79,7 @@ public class PaymentRequest {
                     ? "https://hasethospital.or.tz/payment"
                     : redirectBaseUrl;
             this.redirect_url = base + "/success";
-            this.cancel_url = "card".equals(this.payment_method) ? base + "/cancel" : null;
+            this.cancel_url = null;
         }
     }
 

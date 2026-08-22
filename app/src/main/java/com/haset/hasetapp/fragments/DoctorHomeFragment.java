@@ -42,7 +42,6 @@ import com.haset.hasetapp.activities.DoctorPatientsActivity;
 import com.haset.hasetapp.adapters.AppointmentAdapter;
 import com.haset.hasetapp.adapters.RecentAppointmentAdapter;
 import com.haset.hasetapp.database.entities.AppointmentEntity; 
-import com.haset.hasetapp.database.entities.DoctorWalletEntity; 
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.utils.Constants;
@@ -52,12 +51,10 @@ import com.haset.hasetapp.utils.AuditLogger;
 import android.util.Log;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.DoctorHomeViewModel;
-import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.OnAppointmentActionListener {
     private TextView tvGreeting, tvDoctorName, tvPendingCount, tvApprovedCount, tvCancelledCount, tvWalletBalance, tvQuickRatingCount, tvTodayDate;
@@ -774,37 +771,6 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
                         Log.e("DoctorHomeFragment", "Failed to load notification count: " + error.getMessage());
-                    }
-                });
-    }
-
-    private void loadWalletBalance() {
-        String doctorId = preferenceManager.getUserId();
-        if (doctorId == null) return;
-        
-        FirebaseDatabase.getInstance().getReference("doctor_wallets")
-                .child(doctorId)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (snapshot.exists()) {
-                            Double balance = snapshot.child("balance").getValue(Double.class);
-                            if (balance != null && tvWalletBalance != null) {
-                                tvWalletBalance.setText(String.format(Locale.getDefault(), getString(R.string.currency_format), balance));
-                            }
-                        } else {
-                            if (tvWalletBalance != null) {
-                                tvWalletBalance.setText(R.string.balance_default);
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Log.e("DoctorHomeFragment", "Failed to load wallet balance: " + error.getMessage());
-                        if (tvWalletBalance != null) {
-                            tvWalletBalance.setText(R.string.balance_default);
-                        }
                     }
                 });
     }

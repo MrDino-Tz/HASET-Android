@@ -46,7 +46,7 @@ public class PaymentRequestTest {
         );
 
         JsonObject json = new Gson().toJsonTree(request).getAsJsonObject();
-        assertEquals("checkout", json.get("payment_method").getAsString());
+        assertEquals("card", json.get("payment_method").getAsString());
         org.junit.Assert.assertFalse(json.has("provider"));
         org.junit.Assert.assertFalse(json.has("payment_account"));
         assertEquals("https://hasethospital.or.tz/payment/success",

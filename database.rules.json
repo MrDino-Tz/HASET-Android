@@ -110,12 +110,14 @@
       ]
     },
     "payout_destination_requests": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (query.orderByChild === 'doctor_id' && query.equalTo === auth.uid) || (query.orderByChild === 'doctorId' && query.equalTo === auth.uid))",
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
       ".indexOn": [
         "createdAt",
         "created_at",
-        "status"
+        "status",
+        "doctor_id",
+        "doctorId"
       ],
       "$doctorId": {
         ".read": "auth != null && ($doctorId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
