@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="ExtraTranslation">
     <string name="app_name">AfyaHASET</string>
-    <string name="tagline">Afya Yako, Kipaumbele Chetu</string>
+    <string name="tagline">Huduma ya afya kiganja mwako</string>
 
     <!-- Common -->
     <string name="yes">Ndiyo</string>
