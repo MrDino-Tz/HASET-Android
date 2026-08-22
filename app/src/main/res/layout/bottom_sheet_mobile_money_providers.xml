@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Choose Provider"
+        android:text="@string/choose_provider"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -30,7 +30,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sent to `provider` in the payment request"
+        android:text="@string/sent_to_provider_in_the_payment_request"
         android:textColor="@color/text_secondary"
         android:textSize="12sp"
         android:fontFamily="@font/poppins_regular"
@@ -84,7 +84,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Mpesa"
+                        android:text="@string/mpesa"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium" />
@@ -139,7 +139,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Mixx By Yas"
+                        android:text="@string/mixx_by_yas"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium" />
@@ -194,7 +194,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Halopesa"
+                        android:text="@string/halopesa"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium" />
@@ -249,7 +249,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Airtel Money"
+                        android:text="@string/airtel_money"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium" />
@@ -304,7 +304,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="T-Pesa"
+                        android:text="@string/tpesa"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_medium" />

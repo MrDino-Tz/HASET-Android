@@ -87,7 +87,7 @@
             android:id="@+id/btnMarkResolved"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mark Resolved"
+            android:text="@string/mark_resolved"
             android:textSize="12sp"
             style="@style/ButtonSecondary" />
     </LinearLayout>

@@ -33,7 +33,7 @@
                 android:backgroundTint="#8BC34A"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
-                android:text="free"
+                android:text="@string/free"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -52,7 +52,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/poppins_medium"
                 android:maxLines="2"
-                android:text="Article Title"
+                android:text="@string/article_title"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:padding="0dp"
-                android:text="Read More"
+                android:text="@string/read_more"
                 android:textAllCaps="false"
                 android:textColor="@color/green_primary"
                 android:textSize="12sp"

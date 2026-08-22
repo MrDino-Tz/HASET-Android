@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="More Options"
+        android:text="@string/more_options"
         android:textColor="?attr/colorOnSurface"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -48,7 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="Delete Messages"
+            android:text="@string/delete_messages"
             android:textColor="?attr/colorOnSurface"
             android:textSize="16sp" />
     </LinearLayout>
@@ -75,7 +75,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="Search Messages"
+            android:text="@string/search_messages_option"
             android:textColor="?attr/colorOnSurface"
             android:textSize="16sp" />
     </LinearLayout>
@@ -102,7 +102,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="Simulate Incoming Call"
+            android:text="@string/simulate_incoming_call"
             android:textColor="?attr/colorOnSurface"
             android:textSize="16sp" />
     </LinearLayout>

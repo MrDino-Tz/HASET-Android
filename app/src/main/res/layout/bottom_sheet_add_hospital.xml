@@ -49,7 +49,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Tap to upload image"
+                    android:text="@string/tap_to_upload_image"
                     android:textColor="@color/text_primary"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -69,7 +69,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add New Hospital"
+        android:text="@string/add_new_hospital"
         android:textColor="@color/text_primary"
         android:textSize="22sp"
         android:textStyle="bold"
@@ -90,7 +90,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:hint="Hospital Name"
+                android:hint="@string/hospital_name"
                 android:layout_marginBottom="16dp"
                 app:boxStrokeColor="@color/green_primary"
                 app:hintTextColor="@color/green_primary">
@@ -110,7 +110,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:hint="Address (eg. Nairobi, Kenya)"
+                android:hint="@string/address_eg_nairobi_kenya"
                 android:layout_marginBottom="16dp"
                 app:boxStrokeColor="@color/green_primary"
                 app:hintTextColor="@color/green_primary">
@@ -130,7 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:hint="Description (About the hospital)"
+                android:hint="@string/description_about_the_hospital"
                 android:layout_marginBottom="24dp"
                 app:boxStrokeColor="@color/green_primary"
                 app:hintTextColor="@color/green_primary">
@@ -151,7 +151,7 @@
                 android:id="@+id/btnSave"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Save Hospital"
+                android:text="@string/save_hospital"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_medium"

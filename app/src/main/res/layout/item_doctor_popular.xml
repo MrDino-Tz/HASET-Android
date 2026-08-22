@@ -69,7 +69,7 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:visibility="gone"
-                android:text="DR" />
+                android:text="@string/dr" />
 
             <!-- Demo Badge -->
             <TextView
@@ -81,7 +81,7 @@
                 android:background="@drawable/bg_demo_badge"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
-                android:text="FREE"
+                android:text="@string/free"
                 android:textColor="@android:color/white"
                 android:textSize="8sp"
                 android:textStyle="bold"
@@ -129,7 +129,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:fontFamily="@font/poppins"
-            android:text="Dr. Sarah Smith"
+            android:text="@string/dr_sarah_smith"
             android:textColor="?attr/colorPrimaryText"
             android:textSize="14sp"
             android:textStyle="bold"
@@ -144,7 +144,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:fontFamily="@font/poppins_regular"
-            android:text="Cardiologist"
+            android:text="@string/cardiologist"
             android:textColor="@color/green_light"
             android:textSize="11sp"
             android:maxLines="2"
@@ -161,7 +161,7 @@
             android:paddingVertical="4dp"
             android:background="@drawable/bg_fee_pill"
             android:fontFamily="@font/poppins_medium"
-            android:text="50,000 TSH"
+            android:text="@string/str_50000_tsh"
             android:textColor="@color/green_primary"
             android:textSize="10sp"
             app:layout_constraintTop_toBottomOf="@+id/tvSpecialty"

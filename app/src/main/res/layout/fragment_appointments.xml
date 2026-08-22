@@ -33,7 +33,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="My Appointments"
+                    android:text="@string/my_appointments"
                     android:textSize="20sp"
                     android:textColor="@color/green_primary"
                     android:fontFamily="@font/poppins_medium"
@@ -66,15 +66,15 @@
                 <com.google.android.material.tabs.TabItem
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Pending" />
+                    android:text="@string/status_pending" />
                 <com.google.android.material.tabs.TabItem
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Completed" />
+                    android:text="@string/completed" />
                 <com.google.android.material.tabs.TabItem
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Canceled" />
+                    android:text="@string/canceled" />
             </com.google.android.material.tabs.TabLayout>
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>

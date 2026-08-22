@@ -79,7 +79,7 @@
                         android:stateListAnimator="@animator/press_scale"
                         android:fontFamily="@font/poppins"
                         android:gravity="center"
-                        android:text="PF"
+                        android:text="@string/pf"
                         android:textColor="@color/green_primary"
                         android:textSize="18sp" />
                 </FrameLayout>
@@ -108,7 +108,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="Davis"
+                        android:text="@string/davis"
                         android:textColor="@color/green_primary"
                         android:textSize="15sp"
                         android:layout_marginTop="-2dp"/>
@@ -243,7 +243,7 @@
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="24dp"
                     android:fontFamily="@font/poppins"
-                    android:text="Services"
+                    android:text="@string/services"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
@@ -289,7 +289,7 @@
                             android:layout_marginTop="6dp"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
-                            android:text="Popular Doctors"
+                            android:text="@string/popular_doctors"
                             android:textColor="@color/text_primary"
                             android:textSize="10sp"
                             android:clipChildren="false"
@@ -327,7 +327,7 @@
                             android:layout_marginTop="6dp"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
-                            android:text="Children's Corner"
+                            android:text="@string/childrens_corner"
                             android:textColor="@color/text_primary"
                             android:textSize="10sp"
                             android:clipChildren="false"
@@ -365,7 +365,7 @@
                             android:layout_marginTop="6dp"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
-                            android:text="Articles"
+                            android:text="@string/articles"
                             android:textColor="@color/text_primary"
                             android:textSize="10sp"
                             android:clipChildren="false"
@@ -403,7 +403,7 @@
                             android:layout_marginTop="6dp"
                             android:fontFamily="@font/poppins_regular"
                             android:gravity="center"
-                            android:text="Find Hospital"
+                            android:text="@string/find_hospital"
                             android:textColor="@color/text_primary"
                             android:textSize="10sp"
                             android:clipChildren="false"
@@ -423,7 +423,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins"
-                        android:text="Popular Articles"
+                        android:text="@string/popular_articles"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
@@ -438,7 +438,7 @@
                         android:clickable="true"
                         android:focusable="true"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="View All >"
+                        android:text="@string/view_all_1"
                         android:textColor="@color/green_primary"
                         android:textSize="12sp" />
                 </RelativeLayout>
@@ -496,7 +496,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:fontFamily="@font/poppins_regular"
-                            android:text="Chat Doctor"
+                            android:text="@string/chat_doctor"
                             android:textColor="@color/text_primary"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -525,7 +525,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:fontFamily="@font/poppins_regular"
-                            android:text="News"
+                            android:text="@string/news"
                             android:textColor="@color/text_primary"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -554,7 +554,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:fontFamily="@font/poppins_regular"
-                            android:text="Children's"
+                            android:text="@string/childrens_1"
                             android:textColor="@color/text_primary"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -577,7 +577,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_regular"
-                        android:text="&quot;Afya ni mali yenye thamani kuliko fedha zote.&quot;"
+                        android:text="@string/quotafya_ni_mali_yenye_thamani_kuliko_fe"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:gravity="center"
@@ -589,7 +589,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="— HASET Hospital"
+                        android:text="@string/haset_hospital_1"
                         android:textColor="@color/green_primary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -663,7 +663,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:backgroundTint="@color/background_primary"
-        android:hint="Search doctors, articles, or services..."
+        android:hint="@string/search_doctors_articles_or_services"
         app:layout_anchor="@id/searchBarHome">
 
         <androidx.recyclerview.widget.RecyclerView

@@ -13,7 +13,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Choose the account that should receive your payouts. Finance approval is required before use."
+            android:text="@string/choose_the_account_that_should_receive_y"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
@@ -30,14 +30,14 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:checked="true"
-                android:text="Mobile Money" />
+                android:text="@string/payment_mobile_money" />
 
             <RadioButton
                 android:id="@+id/rbBank"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Bank Account" />
+                android:text="@string/bank_account" />
         </RadioGroup>
 
         <LinearLayout
@@ -50,7 +50,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Mobile Money Provider"
+                android:hint="@string/mobile_money_provider"
                 app:endIconMode="dropdown_menu">
                 <AutoCompleteTextView
                     android:id="@+id/etPayoutProvider"
@@ -66,7 +66,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:hint="Mobile number">
+                android:hint="@string/mobile_number">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etPayoutPhone"
                     android:layout_width="match_parent"
@@ -86,7 +86,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Bank"
+                android:hint="@string/bank"
                 app:endIconMode="dropdown_menu">
                 <AutoCompleteTextView
                     android:id="@+id/etBankCode"
@@ -102,7 +102,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:hint="Bank account number">
+                android:hint="@string/bank_account_number">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etBankAccount"
                     android:layout_width="match_parent"
@@ -115,7 +115,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Six-digit MFA code"
+            android:text="@string/sixdigit_mfa_code"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 

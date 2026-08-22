@@ -21,7 +21,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Messages are end-to-end encrypted. Only people in this chat read, listen to, or share them."
+        android:text="@string/messages_are_endtoend_encrypted_only_peo"
         android:textColor="#F57F17"
         android:textSize="11sp"
         android:textAlignment="center"

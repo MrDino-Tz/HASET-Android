@@ -34,7 +34,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Withdraw Money"
+                android:text="@string/withdraw_money"
                 android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:textStyle="bold"
@@ -46,7 +46,7 @@
                 android:id="@+id/tvAvailableBalance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Available: 0 TZS"
+                android:text="@string/available_0_tzs"
                 android:textColor="@color/green_primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
@@ -57,7 +57,7 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Withdrawal Amount"
+                android:hint="@string/withdrawal_amount"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 app:startIconDrawable="@drawable/ic_money"
                 app:startIconTint="@color/green_primary"
@@ -118,7 +118,7 @@
                             android:id="@+id/tvPayoutAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="TZS 0"
+                            android:text="@string/tzs_0"
                             android:textColor="@color/text_primary"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -141,7 +141,7 @@
                             android:id="@+id/tvWithdrawalFee"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="TZS 1,500"
+                            android:text="@string/tzs_1500"
                             android:textColor="@color/text_primary"
                             android:textSize="13sp"
                             android:textStyle="bold" />
@@ -170,7 +170,7 @@
                             android:id="@+id/tvTotalDeduction"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="TZS 1,500"
+                            android:text="@string/tzs_1500"
                             android:textColor="@color/green_primary"
                             android:textSize="14sp"
                             android:textStyle="bold" />
@@ -235,7 +235,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Mobile Money"
+                            android:text="@string/payment_mobile_money"
                             android:textColor="@color/text_primary"
                             android:textSize="16sp"
                             android:textStyle="bold"
@@ -296,7 +296,7 @@
                     android:id="@+id/tilMobileNumber"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Mobile Number"
+                    android:hint="@string/mobile_number"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     app:startIconDrawable="@drawable/ic_phone"
                     app:startIconTint="@color/green_primary"
@@ -362,7 +362,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Enter your six-digit authenticator code"
+                android:text="@string/enter_your_sixdigit_authenticator_code"
                 android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
@@ -382,7 +382,7 @@
                     android:id="@+id/btnConfirmWithdraw"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="Confirm Withdrawal"
+                    android:text="@string/confirm_withdrawal"
                     android:textStyle="bold"
                     android:textColor="@color/white"
                     android:fontFamily="@font/poppins_medium"
@@ -397,7 +397,7 @@
                     android:id="@+id/btnCancel"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="Dismiss"
+                    android:text="@string/dismiss"
                     android:textColor="@color/text_secondary"
                     android:fontFamily="@font/poppins_medium"
                     app:backgroundTint="@android:color/transparent"

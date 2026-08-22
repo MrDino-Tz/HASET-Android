@@ -34,7 +34,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No products found"
+            android:text="@string/no_products_found"
             android:textColor="@color/text_secondary"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -44,7 +44,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Try adjusting your search or filters"
+            android:text="@string/try_adjusting_your_search_or_filters"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:fontFamily="@font/poppins_regular"

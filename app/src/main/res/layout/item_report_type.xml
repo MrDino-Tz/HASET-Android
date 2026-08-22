@@ -20,7 +20,7 @@
             android:id="@+id/tvReportTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Users List"
+            android:text="@string/users_list"
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -31,7 +31,7 @@
             android:id="@+id/tvReportDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Export list of all users with details"
+            android:text="@string/export_list_of_all_users_with_details"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:fontFamily="@font/poppins_regular" />

@@ -31,7 +31,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Prescription Report"
+            android:text="@string/prescription_report"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/green_primary"
@@ -111,7 +111,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="HASET Telemedicine"
+                        android:text="@string/haset_telemedicine"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
@@ -119,7 +119,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_regular"
-                        android:text="Official Medical Prescription"
+                        android:text="@string/official_medical_prescription"
                         android:textColor="@color/text_secondary"
                         android:textSize="10sp" />
                 </LinearLayout>
@@ -131,7 +131,7 @@
                     android:fontFamily="@font/poppins_medium"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="5dp"
-                    android:text="VERIFIED ✓"
+                    android:text="@string/verified"
                     android:textColor="@color/green_primary"
                     android:textSize="9sp" />
             </LinearLayout>
@@ -160,7 +160,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="REFERENCE NO."
+                        android:text="@string/reference_no"
                         android:textColor="@color/text_secondary"
                         android:textSize="8sp" />
 
@@ -185,7 +185,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="DATE ISSUED"
+                        android:text="@string/date_issued"
                         android:textColor="@color/text_secondary"
                         android:textSize="8sp" />
 
@@ -226,7 +226,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="PATIENT"
+                        android:text="@string/patient"
                         android:textColor="@color/green_primary"
                         android:textSize="9sp" />
 
@@ -254,7 +254,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="PRESCRIBED BY"
+                        android:text="@string/prescribed_by"
                         android:textColor="@color/green_primary"
                         android:textSize="9sp" />
 
@@ -273,7 +273,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/poppins_regular"
-                        android:text="Prescribing clinician"
+                        android:text="@string/prescribing_clinician"
                         android:textColor="@color/text_secondary"
                         android:textSize="10sp" />
                 </LinearLayout>
@@ -323,7 +323,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/poppins_medium"
                     android:paddingBottom="6dp"
-                    android:text="PRESCRIBED MEDICATIONS"
+                    android:text="@string/prescribed_medications"
                     android:textColor="@color/text_primary"
                     android:textSize="10sp" />
 
@@ -341,7 +341,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="2"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="MEDICATION"
+                        android:text="@string/medication"
                         android:textColor="@color/prescription_table_header_text"
                         android:textSize="9sp" />
 
@@ -350,7 +350,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="DOSAGE"
+                        android:text="@string/dosage"
                         android:textColor="@color/prescription_table_header_text"
                         android:textSize="9sp" />
 
@@ -359,7 +359,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1.5"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="FREQUENCY"
+                        android:text="@string/frequency"
                         android:textColor="@color/prescription_table_header_text"
                         android:textSize="9sp" />
 
@@ -368,7 +368,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="DAYS"
+                        android:text="@string/days"
                         android:textColor="@color/prescription_table_header_text"
                         android:textSize="9sp" />
                 </LinearLayout>
@@ -400,7 +400,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/poppins_medium"
-                    android:text="SPECIAL INSTRUCTIONS"
+                    android:text="@string/special_instructions"
                     android:textColor="@color/text_primary"
                     android:textSize="9sp" />
 
@@ -429,7 +429,7 @@
                 android:layout_marginTop="6dp"
                 android:fontFamily="@font/poppins_regular"
                 android:gravity="center"
-                android:text="VERIFIED · Generated securely by HASET Telemedicine · Valid for 30 days from issue date"
+                android:text="@string/verified_generated_securely_by_haset_tel"
                 android:textColor="@color/text_secondary"
                 android:textSize="8sp" />
 
@@ -453,7 +453,7 @@
             android:layout_height="52dp"
             android:layout_weight="1"
             android:fontFamily="@font/poppins_medium"
-            android:text="Download PDF"
+            android:text="@string/download_pdf"
             android:textColor="@color/green_primary"
             app:cornerRadius="10dp"
             app:icon="@drawable/ic_download"
@@ -468,7 +468,7 @@
             android:layout_weight="1"
             android:backgroundTint="@color/green_primary"
             android:fontFamily="@font/poppins_medium"
-            android:text="Print"
+            android:text="@string/print"
             android:textColor="@color/white"
             app:cornerRadius="10dp"
             app:icon="@drawable/print_24"

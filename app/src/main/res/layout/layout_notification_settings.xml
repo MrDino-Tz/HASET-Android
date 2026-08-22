@@ -17,7 +17,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Notifications Settings"
+        android:text="@string/notifications_settings"
         android:textColor="@color/green_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -39,14 +39,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="New Articles"
+                android:text="@string/new_articles"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_medium" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Get notified on new published articles"
+                android:text="@string/get_notified_on_new_published_articles"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -77,14 +77,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Daily Health Tips"
+                android:text="@string/daily_health_tips"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_medium" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Daily wellness reminders and tips"
+                android:text="@string/daily_wellness_reminders_and_tips"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -104,7 +104,7 @@
         android:id="@+id/btnSaveSettings"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Save Preferences"
+        android:text="@string/save_preferences"
         android:layout_marginTop="16dp"
         app:cornerRadius="12dp"
         android:textAllCaps="false"

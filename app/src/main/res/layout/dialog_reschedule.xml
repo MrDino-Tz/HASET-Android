@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Reschedule Appointment"
+        android:text="@string/reschedule_appointment"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"
@@ -28,7 +28,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select New Date"
+        android:text="@string/select_new_date"
         android:textSize="14sp"
         android:textColor="@color/text_primary"
         android:fontFamily="@font/poppins_medium"
@@ -38,7 +38,7 @@
         android:id="@+id/btnSelectDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Date"
+        android:text="@string/hint_select_date"
         android:textSize="14sp"
         style="@style/Widget.Material3.Button.OutlinedButton"
         app:icon="@drawable/ic_calendar"
@@ -49,7 +49,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select New Time"
+        android:text="@string/select_new_time"
         android:textSize="14sp"
         android:textColor="@color/text_primary"
         android:fontFamily="@font/poppins_medium"
@@ -59,7 +59,7 @@
         android:id="@+id/btnSelectTime"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Time"
+        android:text="@string/hint_select_time"
         android:textSize="14sp"
         style="@style/Widget.Material3.Button.OutlinedButton"
         app:icon="@drawable/ic_schedule"
@@ -92,7 +92,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:enabled="false"
-            android:text="Confirm Reschedule"
+            android:text="@string/confirm_reschedule"
             android:backgroundTint="@color/green_primary"
             app:cornerRadius="12dp" />
     </LinearLayout>

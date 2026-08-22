@@ -50,7 +50,7 @@
                     android:id="@+id/tvToolbarTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Articles"
+                    android:text="@string/articles"
                     android:textColor="@color/green_primary"
                     android:textSize="22sp"
                     android:fontFamily="@font/poppins_medium"
@@ -83,7 +83,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginBottom="8dp"
-            android:hint="Search health articles..."
+            android:hint="@string/search_health_articles"
             app:backgroundTint="@color/background_card"
             app:navigationIconTint="@color/green_primary"
             app:layout_scrollFlags="noScroll" />
@@ -120,7 +120,7 @@
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:hint="Search articles, tags, authors..."
+        android:hint="@string/search_articles_tags_authors"
         android:backgroundTint="@color/background_primary"
         app:layout_anchor="@id/searchBar">
         

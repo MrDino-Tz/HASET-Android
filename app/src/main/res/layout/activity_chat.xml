@@ -86,7 +86,7 @@
                     android:id="@+id/tvChatName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Johnathan Doe"
+                    android:text="@string/johnathan_doe"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="15sp" />
 
@@ -94,7 +94,7 @@
                     android:id="@+id/tvOnlineStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Online"
+                    android:text="@string/status_online"
                     android:textColor="@color/green_primary"
                     android:textSize="12sp" />
 
@@ -155,7 +155,7 @@
             android:layout_height="40dp"
             android:layout_weight="1"
             android:background="@drawable/rounded_edittext_background"
-            android:hint="Search messages..."
+            android:hint="@string/search_messages_1"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:textSize="14sp"
@@ -213,7 +213,7 @@
             android:id="@+id/tvTypingText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="is typing..."
+            android:text="@string/is_typing"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             android:fontFamily="@font/poppins_medium" />
@@ -338,7 +338,7 @@
                 android:minHeight="38dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
-                android:hint="Type message"
+                android:hint="@string/type_message_1"
                 android:inputType="textMultiLine"
                 android:maxLines="6"
                 android:textColor="?attr/colorOnSurface"

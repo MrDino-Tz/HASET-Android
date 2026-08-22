@@ -21,7 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Set up two-factor authentication"
+            android:text="@string/set_up_twofactor_authentication"
             android:textColor="@color/text_primary"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:gravity="center"
-            android:text="Scan this QR code with Google Authenticator, Microsoft Authenticator, or another authenticator app."
+            android:text="@string/scan_this_qr_code_with_google_authentica"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
@@ -73,7 +73,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Can’t scan? Use a setup key"
+            android:text="@string/cant_scan_use_a_setup_key"
             android:textAllCaps="false" />
 
         <LinearLayout
@@ -89,7 +89,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Manual setup key"
+                android:text="@string/manual_setup_key"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -109,7 +109,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Copy setup key"
+                android:text="@string/copy_setup_key"
                 android:textAllCaps="false" />
         </LinearLayout>
 
@@ -124,7 +124,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Confirm code"
+            android:text="@string/confirm_code"
             android:textAllCaps="false" />
 
         <TextView
@@ -138,13 +138,13 @@
             android:id="@+id/mfaSaved"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="I saved my recovery codes" />
+            android:text="@string/i_saved_my_recovery_codes" />
 
         <Button
             android:id="@+id/mfaContinue"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Continue"
+            android:text="@string/continue_btn"
             android:textAllCaps="false" />
     </LinearLayout>
 </ScrollView>

@@ -36,7 +36,7 @@
                 android:id="@+id/tvNotificationTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Medicine Reminder"
+                android:text="@string/medicine_reminder"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -47,7 +47,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Time to take your prescribed medicine: Paracetamol 500mg"
+                android:text="@string/time_to_take_your_prescribed_medicine_pa"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 android:fontFamily="@font/poppins_regular" />
@@ -57,7 +57,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="5 minutes ago"
+                android:text="@string/str_5_minutes_ago"
                 android:textColor="@color/text_hint"
                 android:textSize="12sp"
                 android:fontFamily="@font/poppins_regular" />
@@ -70,7 +70,7 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_gravity="center_vertical"
-            android:text="Take"
+            android:text="@string/take"
             android:textSize="12sp"
             style="@style/ButtonPrimary"
             app:cornerRadius="12dp" />

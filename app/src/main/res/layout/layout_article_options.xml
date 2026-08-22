@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Feed Options"
+        android:text="@string/feed_options"
         android:textColor="@color/green_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -46,7 +46,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Search Articles"
+            android:text="@string/search_articles"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:layout_marginStart="16dp" />
@@ -73,7 +73,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Filter by Category"
+            android:text="@string/filter_by_category"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:layout_marginStart="16dp" />
@@ -100,7 +100,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Health Alerts Settings"
+            android:text="@string/health_alerts_settings"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:layout_marginStart="16dp" />
@@ -133,7 +133,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="About HASET Articles"
+            android:text="@string/about_haset_articles"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:layout_marginStart="16dp" />

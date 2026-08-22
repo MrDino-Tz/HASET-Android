@@ -27,7 +27,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="0 TZS"
+                android:text="@string/balance_default"
                 android:textColor="@color/green_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -39,7 +39,7 @@
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
-                android:text="PENDING"
+                android:text="@string/status_pending"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
@@ -56,7 +56,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Method: "
+                android:text="@string/method"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 android:fontFamily="@font/poppins_regular" />
@@ -65,7 +65,7 @@
                 android:id="@+id/tvWithdrawMethod"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mobile Money"
+                android:text="@string/payment_mobile_money"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:fontFamily="@font/poppins_medium" />
@@ -75,7 +75,7 @@
             android:id="@+id/tvWithdrawDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Requested on: 12 Oct 2023"
+            android:text="@string/requested_on_12_oct_2023"
             android:textColor="@color/text_hint"
             android:textSize="12sp"
             android:fontFamily="@font/poppins_regular"
@@ -94,7 +94,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Rejection Reason:"
+                android:text="@string/rejection_reason"
                 android:textColor="@color/red_light"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -105,7 +105,7 @@
                 android:id="@+id/tvRejectionReason"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Insufficient documentation provided."
+                android:text="@string/insufficient_documentation_provided"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:fontFamily="@font/poppins_regular" />

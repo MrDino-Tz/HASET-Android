@@ -34,7 +34,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="50dp"
-            android:text="Skip"
+            android:text="@string/skip"
             style="@style/Widget.Material3.Button.TextButton" />
 
 
@@ -48,7 +48,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="50dp"
-            android:text="Next"
+            android:text="@string/next"
             app:cornerRadius="12dp"/>
     </LinearLayout>
 </LinearLayout>

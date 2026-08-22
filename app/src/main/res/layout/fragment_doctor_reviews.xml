@@ -35,7 +35,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Doctor Reviews"
+            android:text="@string/doctor_reviews"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="?attr/colorOnSurface"
@@ -82,7 +82,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="No reviews yet"
+                android:text="@string/no_reviews_yet"
                 android:textSize="18sp"
                 android:fontFamily="@font/poppins_medium"
                 android:textColor="@color/text_secondary" />

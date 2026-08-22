@@ -186,7 +186,7 @@
                         android:id="@+id/tvAudioDuration"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0:12"
+                        android:text="@string/str_012"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="11sp"
                         android:fontFamily="@font/poppins_medium" />

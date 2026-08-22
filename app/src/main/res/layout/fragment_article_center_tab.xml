@@ -10,7 +10,7 @@
         android:id="@+id/tvInfo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tap the + button to create a new post"
+        android:text="@string/tap_the_button_to_create_a_new_post"
         android:textColor="@color/text_secondary"
         android:textSize="16sp"
         android:gravity="center" />

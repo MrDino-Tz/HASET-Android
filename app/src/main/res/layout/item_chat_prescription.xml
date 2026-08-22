@@ -65,7 +65,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="Prescription Issued"
+                        android:text="@string/prescription_issued"
                         android:textColor="@color/white"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -83,7 +83,7 @@
                         android:id="@+id/tvPrescriptionInfo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="A new prescription has been issued for you. Click below to view details."
+                        android:text="@string/a_new_prescription_has_been_issued_for_y"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="13sp"
                         android:fontFamily="@font/poppins" />
@@ -95,7 +95,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:backgroundTint="@color/green_light"
-                        android:text="VIEW DETAILS"
+                        android:text="@string/view_details"
                         android:textSize="12sp"
                         app:cornerRadius="12dp"
                         android:fontFamily="@font/poppins_regular" />

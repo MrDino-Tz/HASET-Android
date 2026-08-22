@@ -21,7 +21,7 @@
             android:id="@+id/tvApptMain"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Doctor Name • Specialty"
+            android:text="@string/doctor_name_specialty"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#222" />
@@ -29,7 +29,7 @@
             android:id="@+id/tvApptDetails"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Date &amp; Time"
+            android:text="@string/date_amp_time"
             android:textSize="14sp"
             android:textColor="#444"
             android:layout_marginTop="2dp"/>
@@ -39,7 +39,7 @@
         android:id="@+id/tvApptStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="STATUS"
+        android:text="@string/status"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="@color/green_primary"

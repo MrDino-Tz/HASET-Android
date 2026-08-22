@@ -35,7 +35,7 @@
         android:id="@+id/tvPayoutTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Confirm Payout"
+        android:text="@string/confirm_payout"
         android:textColor="@color/green_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -46,7 +46,7 @@
         android:id="@+id/tvPayoutMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="You are about to release funds via Zeno. This action cannot be undone."
+        android:text="@string/you_are_about_to_release_funds_via_zeno_"
         android:textColor="@color/text_primary"
         android:textSize="14sp"
         android:gravity="center"
@@ -104,7 +104,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Release Funds"
+            android:text="@string/release_funds"
             android:backgroundTint="@color/green_primary"
             app:cornerRadius="12dp" />
 

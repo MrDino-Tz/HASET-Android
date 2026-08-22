@@ -18,7 +18,7 @@
 <!--        android:id="@+id/tvTitle"-->
 <!--        android:layout_width="wrap_content"-->
 <!--        android:layout_height="wrap_content"-->
-<!--        android:text="Coming Soon!"-->
+<!--        android:text="@string/coming_soon"-->
 <!--        android:textSize="22sp"-->
 <!--        android:textStyle="bold"-->
 <!--        android:textColor="?attr/colorPrimaryText"-->
@@ -29,7 +29,7 @@
         android:id="@+id/tvMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="We're working hard to bring this feature to you soon. Stay tuned for exciting updates!"
+        android:text="@string/were_working_hard_to_bring_this_feature_"
         android:textSize="14sp"
         android:textColor="?attr/colorSecondaryText"
         android:fontFamily="@font/poppins_medium"
@@ -40,7 +40,7 @@
         android:id="@+id/btnOk"
         android:layout_width="match_parent"
         android:layout_height="54dp"
-        android:text="Sounds Good"
+        android:text="@string/sounds_good"
         android:textAllCaps="false"
         android:textSize="16sp"
         app:cornerRadius="12dp"

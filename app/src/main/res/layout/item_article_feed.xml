@@ -162,7 +162,7 @@
             android:id="@+id/tvViewCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=" • 0 views"
+            android:text="@string/str_0_views_1"
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
             android:singleLine="true"
@@ -173,7 +173,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
-            android:text=" • 0 comments"
+            android:text="@string/str_0_comments_1"
             android:textColor="@color/text_secondary"
             android:textSize="13sp"
             android:singleLine="true" />

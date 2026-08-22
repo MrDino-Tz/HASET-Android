@@ -43,7 +43,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/poppins_medium"
                 android:maxLines="2"
-                android:text="The Importance of Regular Checkups"
+                android:text="@string/the_importance_of_regular_checkups"
                 android:textColor="@color/white"
                 android:textSize="13sp" />
 
@@ -66,7 +66,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:fontFamily="@font/poppins_medium"
-                    android:text="1.2k views"
+                    android:text="@string/str_12k_views"
                     android:textColor="@color/white"
                     android:textSize="10sp" />
             </LinearLayout>

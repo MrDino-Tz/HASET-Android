@@ -175,7 +175,7 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="MCT Registration Number"
+                    android:hint="@string/mct_registration_number"
                     style="@style/EditTextStyle"
                     app:startIconDrawable="@drawable/ic_id_badge_24"
                     app:startIconTint="@color/text_secondary"

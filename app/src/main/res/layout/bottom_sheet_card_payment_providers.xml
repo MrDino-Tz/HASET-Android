@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Bank Provider"
+        android:text="@string/bank_provider"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -30,7 +30,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Maps to the payment `provider` field"
+        android:text="@string/maps_to_the_payment_provider_field"
         android:textColor="@color/text_secondary"
         android:textSize="12sp"
         android:fontFamily="@font/poppins_regular"
@@ -77,7 +77,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="AKIBA"
+                    android:text="@string/akiba"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -114,7 +114,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="CRDB"
+                    android:text="@string/crdb"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -151,7 +151,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="TCB"
+                    android:text="@string/tcb"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -188,7 +188,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="NMB"
+                    android:text="@string/nmb"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:fontFamily="@font/poppins_medium" />

@@ -41,7 +41,7 @@
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Select Patient"
+                android:hint="@string/select_patient"
                 app:startIconDrawable="@drawable/ic_profile"
                 app:startIconTint="@color/green_primary"
                 app:boxCornerRadiusTopStart="12dp"
@@ -63,7 +63,7 @@
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Select Appointment"
+                android:hint="@string/select_appointment"
                 app:startIconDrawable="@drawable/ic_empty_appointments"
                 app:startIconTint="@color/green_primary"
                 app:boxCornerRadiusTopStart="12dp"
@@ -96,7 +96,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Medicines"
+                    android:text="@string/medicines"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:fontFamily="@font/poppins_medium" />
@@ -106,7 +106,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Add Row"
+                    android:text="@string/add_row"
                     app:icon="@drawable/ic_add" />
             </LinearLayout>
 
@@ -122,7 +122,7 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Instructions / Notes"
+                android:hint="@string/instructions_notes"
                 app:startIconDrawable="@drawable/ic_text_box_edit_24"
                 app:startIconTint="@color/green_primary"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -144,7 +144,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Attachments (Optional)"
+                android:text="@string/attachments_optional"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
@@ -193,7 +193,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Add Photo"
+                                android:text="@string/add_photo"
                                 android:textSize="12sp"
                                 android:layout_marginTop="4dp" />
                         </LinearLayout>
@@ -216,7 +216,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:layout_gravity="center_vertical"
-                    android:text="Upload a photo of the signed prescription if available."
+                    android:text="@string/upload_a_photo_of_the_signed_prescriptio"
                     android:textSize="12sp"
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
@@ -225,7 +225,7 @@
                 android:id="@+id/btnSubmitPrescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Issue Prescription"
+                android:text="@string/issue_prescription"
                 android:textSize="16sp"
                 app:cornerRadius="12dp"
                 android:layout_marginBottom="16dp" />
@@ -263,7 +263,7 @@
                 android:id="@+id/tvProgressStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Uploading..."
+                android:text="@string/uploading"
                 android:layout_marginTop="16dp"
                 android:textStyle="bold" />
         </LinearLayout>

@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Rate Doctor"
+        android:text="@string/rate_doctor"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -31,7 +31,7 @@
         android:id="@+id/tvDoctorName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Dr. John Doe"
+        android:text="@string/dr_john_doe"
         android:textColor="@color/text_secondary"
         android:textSize="16sp"
         android:fontFamily="@font/poppins_medium"
@@ -109,7 +109,7 @@
         android:id="@+id/tvRatingText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tap to rate"
+        android:text="@string/tap_to_rate"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:fontFamily="@font/poppins_medium"
@@ -120,7 +120,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Write a review (optional)"
+        android:hint="@string/write_a_review_optional"
         app:boxStrokeColor="@color/green_primary"
         android:layout_marginBottom="24dp">
 
@@ -147,7 +147,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:stateListAnimator="@animator/press_scale"
-            android:text="Cancel"
+            android:text="@string/cancel_btn"
             android:textColor="@color/text_secondary"
             android:fontFamily="@font/poppins_medium"
             app:backgroundTint="@android:color/transparent"
@@ -162,7 +162,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:stateListAnimator="@animator/press_scale"
-            android:text="Submit"
+            android:text="@string/submit"
             android:textColor="@color/white"
             android:fontFamily="@font/poppins_medium"
             app:backgroundTint="@color/green_primary"

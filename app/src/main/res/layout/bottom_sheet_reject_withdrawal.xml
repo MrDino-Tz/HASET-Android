@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Reject Withdrawal"
+        android:text="@string/reject_withdrawal"
         android:textSize="18sp"
         android:textColor="@color/text_primary"
         android:fontFamily="@font/poppins_medium" />
@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Please provide a reason for rejecting this withdrawal request."
+        android:text="@string/please_provide_a_reason_for_rejecting_th"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:layout_marginTop="8dp" />
@@ -33,7 +33,7 @@
             android:id="@+id/etRejectionReason"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Rejection Reason"
+            android:hint="@string/rejection_reason_1"
             android:inputType="textMultiLine"
             android:minLines="3"
             android:gravity="top" />
@@ -50,7 +50,7 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="Cancel"
+            android:text="@string/cancel_btn"
             android:textAllCaps="false"
             app:cornerRadius="12dp"
             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -61,7 +61,7 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="Reject"
+            android:text="@string/reject"
             android:textAllCaps="false"
             app:cornerRadius="12dp"
             app:backgroundTint="@color/red_primary" />

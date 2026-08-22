@@ -21,7 +21,7 @@
 <!--            android:layout_hei ght="?attr/actionBarSize"-->
 <!--            android:background="@color/green_primary"-->
 <!--            app:navigationIcon="@android:drawable/ic_menu_revert"-->
-<!--            app:title="Edit Profile"-->
+<!--            app:title="@string/edit_profile"-->
 <!--            app:titleTextColor="@color/white" />-->
 
         <LinearLayout
@@ -122,7 +122,7 @@
                     android:id="@+id/tvChangePhoto"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tap to change photo"
+                    android:text="@string/tap_to_change_photo"
                     android:textColor="@color/green_primary"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_medium"/>
@@ -134,7 +134,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Personal Information"
+            android:text="@string/personal_information"
             android:textColor="@color/green_primary"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -174,7 +174,7 @@
                         android:id="@+id/etFullName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Full Name"
+                        android:hint="@string/full_name"
                         android:inputType="textPersonName"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_regular"
@@ -201,7 +201,7 @@
                         android:id="@+id/etEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Email Address"
+                        android:hint="@string/email_address_1"
                         android:inputType="textEmailAddress"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_regular"
@@ -228,7 +228,7 @@
                         android:id="@+id/etPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Phone Number"
+                        android:hint="@string/phone"
                         android:inputType="phone"
                         android:textSize="14sp"
                         android:fontFamily="@font/poppins_regular"
@@ -300,7 +300,7 @@
                         android:id="@+id/etRole"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Role"
+                        android:hint="@string/role"
                         android:enabled="false"
                         android:focusable="false"
                         android:inputType="none"
@@ -325,7 +325,7 @@
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:stateListAnimator="@animator/press_scale"
-                android:text="Cancel"
+                android:text="@string/cancel_btn"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
@@ -342,7 +342,7 @@
                 android:layout_marginStart="8dp"
                 android:stateListAnimator="@animator/press_scale"
                 android:layout_weight="1"
-                android:text="Save Changes"
+                android:text="@string/save_changes"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/white_primary"
@@ -369,7 +369,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Saving profile..."
+                android:text="@string/saving_profile"
                 android:textColor="@color/green_primary" />
 
         </LinearLayout>

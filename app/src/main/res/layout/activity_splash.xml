@@ -55,7 +55,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="From"
+                android:text="@string/from"
                 android:textColor="@color/text_secondary"
                 android:textSize="15sp"
                 android:fontFamily="@font/poppins_regular" />
@@ -73,7 +73,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:text="HASET Hospital"
+                android:text="@string/haset_hospital"
                 android:textColor="@color/text_secondary"
                 android:textSize="15sp"
                 android:fontFamily="@font/poppins_regular" />

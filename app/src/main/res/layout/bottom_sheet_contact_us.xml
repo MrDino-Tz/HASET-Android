@@ -28,7 +28,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Contact Us"
+            android:text="@string/contact_us"
             android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:fontFamily="@font/poppins_medium"
@@ -73,7 +73,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Email Support"
+                    android:text="@string/email_support"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -81,7 +81,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="info@hasethospital.or.tz"
+                    android:text="@string/infohasethospitalortz"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -123,7 +123,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Phone Support"
+                    android:text="@string/phone_support"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -131,7 +131,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="+255 754 501 671"
+                    android:text="@string/str_255_754_501_671"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -173,7 +173,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="WhatsApp Support"
+                    android:text="@string/whatsapp_support"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -181,7 +181,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Chat with us on WhatsApp"
+                    android:text="@string/chat_with_us_on_whatsapp"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -222,7 +222,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Visit Website"
+                    android:text="@string/visit_website"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -230,7 +230,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="www.hasethospital.or.tz"
+                    android:text="@string/wwwhasethospitalortz"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 

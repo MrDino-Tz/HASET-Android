@@ -168,7 +168,7 @@
                 android:id="@+id/etRegNo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tanzanian Medical Council (MCT) Reg. No. (e.g. MCT3625)"
+                android:hint="@string/tanzanian_medical_council_mct_reg_no_eg_"
                 android:inputType="textCapCharacters"
                 android:textSize="14sp"
                 android:paddingTop="16dp"

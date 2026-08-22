@@ -39,7 +39,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:fontFamily="@font/poppins_medium"
-            android:text="Find Hospital"
+            android:text="@string/find_hospital"
             android:textColor="@color/green_primary"
             android:textSize="20sp"
             android:layout_marginStart="16dp" />

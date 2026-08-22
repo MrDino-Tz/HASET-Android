@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
         android:paddingVertical="12dp"
-        android:text="09:00 AM"
+        android:text="@string/str_0900_am"
         android:textColor="@color/text_primary"
         android:textSize="14sp"
         android:fontFamily="@font/poppins_medium"/>

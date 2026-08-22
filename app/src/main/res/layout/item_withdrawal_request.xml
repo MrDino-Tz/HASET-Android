@@ -25,7 +25,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Doctor Name"
+                android:text="@string/doctor_name"
                 android:textSize="16sp"
                 android:textColor="@color/text_primary"
                 android:fontFamily="@font/poppins_medium" />
@@ -34,7 +34,7 @@
                 android:id="@+id/tvAmount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0 TZS"
+                android:text="@string/balance_default"
                 android:textSize="16sp"
                 android:textColor="@color/green_primary"
                 android:fontFamily="@font/poppins_regular" />
@@ -44,7 +44,7 @@
             android:id="@+id/tvMethod"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Method: Mobile"
+            android:text="@string/method_mobile"
             android:textSize="12sp"
             android:textColor="@color/text_secondary"
             android:layout_marginTop="4dp" />
@@ -53,7 +53,7 @@
             android:id="@+id/tvAccount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Account: 255xxxxxxxxx"
+            android:text="@string/account_255xxxxxxxxx"
             android:textSize="12sp"
             android:textColor="@color/text_secondary"
             android:layout_marginTop="2dp" />
@@ -62,7 +62,7 @@
             android:id="@+id/tvDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Requested: 01/01/2024 12:00"
+            android:text="@string/requested_01012024_1200"
             android:textSize="12sp"
             android:textColor="@color/text_secondary"
             android:layout_marginTop="4dp" />

@@ -17,7 +17,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose Content Type"
+        android:text="@string/choose_content_type"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="@color/black"
@@ -26,7 +26,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select how you want to share your health news"
+        android:text="@string/select_how_you_want_to_share_your_health"
         android:textSize="14sp"
         android:textColor="#757575"
         android:layout_marginBottom="24dp"/>
@@ -35,7 +35,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SHORTS"
+        android:text="@string/shorts"
         android:textSize="12sp"
         android:textStyle="bold"
         android:textColor="@color/red_primary"
@@ -61,7 +61,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Record Video Short"
+            android:text="@string/record_video_short"
             android:textSize="16sp"
             android:textColor="@color/black"
             android:layout_marginStart="16dp"/>
@@ -86,7 +86,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Upload Video from Gallery"
+            android:text="@string/upload_video_from_gallery"
             android:textSize="16sp"
             android:textColor="@color/black"
             android:layout_marginStart="16dp"/>
@@ -102,7 +102,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="STANDARD POST"
+        android:text="@string/standard_post"
         android:textSize="12sp"
         android:textStyle="bold"
         android:textColor="@color/blue_primary"
@@ -128,7 +128,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Take Photo Post"
+            android:text="@string/take_photo_post"
             android:textSize="16sp"
             android:textColor="@color/black"
             android:layout_marginStart="16dp"/>
@@ -153,7 +153,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Upload Image from Gallery"
+            android:text="@string/upload_image_from_gallery"
             android:textSize="16sp"
             android:textColor="@color/black"
             android:layout_marginStart="16dp"/>
@@ -178,7 +178,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Text Only Article"
+            android:text="@string/text_only_article"
             android:textSize="16sp"
             android:textColor="@color/black"
             android:layout_marginStart="16dp"/>

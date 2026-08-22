@@ -17,7 +17,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Create Content"
+        android:text="@string/create_content"
         android:textSize="18sp"
         android:textColor="@color/black"
         android:layout_marginBottom="2dp"/>
@@ -50,7 +50,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Upload Short"
+                android:text="@string/upload_short"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/black"/>
@@ -58,7 +58,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Share a short video"
+                android:text="@string/share_a_short_video"
                 android:textSize="12sp"
                 android:textColor="#757575"/>
         </LinearLayout>
@@ -104,7 +104,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Create Post"
+                android:text="@string/create_post"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/black"/>
@@ -112,7 +112,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Share photos and thoughts"
+                android:text="@string/share_photos_and_thoughts"
                 android:textSize="12sp"
                 android:textColor="#757575"/>
         </LinearLayout>

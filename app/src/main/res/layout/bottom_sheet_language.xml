@@ -93,7 +93,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="English"
+                    android:text="@string/english"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -164,7 +164,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Swahili"
+                    android:text="@string/swahili"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins_medium" />

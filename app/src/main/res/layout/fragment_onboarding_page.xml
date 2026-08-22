@@ -19,7 +19,7 @@
         android:id="@+id/onboarding_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Title"
+        android:text="@string/title"
         android:textStyle="bold"
         android:textSize="24sp"
         android:layout_marginTop="24dp"
@@ -29,7 +29,7 @@
         android:id="@+id/onboarding_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Description text"
+        android:text="@string/description_text"
         android:textSize="16sp"
         android:layout_marginTop="12dp"
         android:layout_gravity="center_horizontal" />
