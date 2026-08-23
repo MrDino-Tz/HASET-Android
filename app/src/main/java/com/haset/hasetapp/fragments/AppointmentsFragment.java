@@ -1,6 +1,5 @@
     package com.haset.hasetapp.fragments;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,7 +13,6 @@ import androidx.core.content.FileProvider;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 import android.os.Bundle;
@@ -36,7 +34,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.haset.hasetapp.R;
 import android.app.Dialog;
-import android.content.Context;
+
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -287,10 +285,10 @@ public class AppointmentsFragment extends Fragment {
         try {
             Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.haset_logo);
             if (bitmap == null) {
-                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.haset_logo2);
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.haset_logo);
             }
             if (bitmap == null) {
-                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.haset_logo_icon);
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.notification_icon);
             }
             if (bitmap != null) {
                 int maxSize = 50;

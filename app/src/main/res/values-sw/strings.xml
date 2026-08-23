@@ -18,7 +18,7 @@
     <string name="onboarding_desc1">Weka miadi na madaktari papo hapo na kwa urahisi.</string>
     <string name="onboarding_title2">Chat kwa Usalama</string>
     <string name="onboarding_desc2">Chat ya muda halisi na ujumbe wa faragha.</string>
-    <string name="onboarding_title3">HASET</string>
+    <string name="onboarding_title3">AfyaHASET</string>
     <string name="onboarding_desc3">Fuatilia miadi na maelezo ya dawa.</string>
     <string name="remember_me">Nikumbuke</string>
     <string name="sign_up_here">Jisajili hapa</string>
@@ -334,7 +334,7 @@
     <string name="onboarding_desc_1">Weka miadi na madaktari mara moja na kwa urahisi.</string>
     <string name="onboarding_title_2">Soga kwa Usalama</string>
     <string name="onboarding_desc_2">Soga ya wakati halisi na ujumbe wa faragha.</string>
-    <string name="onboarding_title_3">HASET</string>
+    <string name="onboarding_title_3">AfyaHASET</string>
     <string name="onboarding_desc_3">Fuatilia miadi na maelekezo ya dawa.</string>
     <string name="get_started">Anza Sasa</string>
     <string name="next">Inayofuata</string>
@@ -460,7 +460,7 @@
     <string name="dosage">Kipimo</string>
     <string name="frequency">Mara kwa Mara</string>
     <string name="duration">Muda (siku)</string>
-    <string name="share_app">Sambaza Programu ya HASET</string>
+    <string name="share_app">Sambaza Programu ya AfyaHASET</string>
     <string name="recommend_app">Pendekeza programu hii kwa marafiki</string>
     <string name="share_app_text">Pakua Programu ya H-Care - Mshirika wako unayeaminika kwa huduma ya afya inayopatikana: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
     <string name="delete">Futa</string>
@@ -580,9 +580,9 @@
     <string name="user_1">Mtumiaji 1</string>
     <string name="user_2">Mtumiaji 2</string>
     <string name="payment_card_payment">Malipo ya Kadi</string>
-    <string name="email_support_body">Habari Timu ya Msaada ya HASET,\n\nNahitaji msaada kuhusu...</string>
+    <string name="email_support_body">Habari Timu ya Msaada ya AfyaHASET,\n\nNahitaji msaada kuhusu...</string>
     <string name="send_email_via">Tuma barua pepe kupitia</string>
-    <string name="whatsapp_support_msg">Habari Msaada wa HASET</string>
+    <string name="whatsapp_support_msg">Habari Msaada wa AfyaHASET</string>
     
     <plurals name="patients_treated">
         <item quantity="one">(Mgonjwa %d)</item>
@@ -915,9 +915,9 @@
     <string name="exit_app">Toka Programu</string>
     <string name="exit_app_confirm">Je, una uhakika unataka kutoka?</string>
     <string name="notification_permission_title">Ruhusa ya Arifa Inahitajika</string>
-    <string name="notification_permission_message">HASET inahitaji ruhusa ya arifa kukutumia vikumbusho muhimu vya miadi na ujumbe wa karibu. Tafadhali wezesha arifa katika mipangilio.</string>
-    <string name="rate_haset_title">Kadiria HASET Health</string>
-    <string name="rate_haset_message">Je, unafurahia HASET Health? Tungependa kusikia maoni yako!</string>
+    <string name="notification_permission_message">AfyaHASET inahitaji ruhusa ya arifa kukutumia vikumbusho muhimu vya miadi na ujumbe wa karibu. Tafadhali wezesha arifa katika mipangilio.</string>
+    <string name="rate_haset_title">Kadiria AfyaHASET Health</string>
+    <string name="rate_haset_message">Je, unafurahia AfyaHASET Health? Tungependa kusikia maoni yako!</string>
     <string name="verify_payment_title">Thibitisha Malipo</string>
     <string name="leave_blank_password">Acha wazi kutunza nenosiri la sasa</string>
     <string name="status_pending">Inasubiri</string>
@@ -973,7 +973,7 @@ Weka maandishi na kitufe cha hatua</string>
     <string name="good_afternoon">Mchana Mwema,</string>
     <string name="good_evening">Jioni Njema,</string>
     <string name="good_night">Usiku Mwema,</string>
-    <string name="health_quote_author_default">HASET</string>
+    <string name="health_quote_author_default">AfyaHASET</string>
     <string name="health_quotes">Nukuu za Afya</string>
     <string name="health_tip_author_format">— %1</string>
     <string name="health_tips">Dondoo za Afya</string>
@@ -991,7 +991,7 @@ Pakia bango kamili la picha</string>
     <string name="invalid_image_format">Muundo usio sahihi wa picha. Tumia JPG, PNG, au WebP.</string>
     <string name="ive_paid">Nimeshalipa</string>
     <string name="learn_more">Jifunze Zaidi</string>
-    <string name="learn_more_explanation">Ujumbe na media zote zinazoshirikiwa katika mazungumzo haya zinalindwa kwa usimbaji wa ncha-hadi-ncha. Hii ina maana hakuna mtu mwingine, hata HASET, anayeweza kusoma au kusikiliza. Watu walio kwenye mazungumzo haya pekee ndio wanaoweza kuona au kusikia.</string>
+    <string name="learn_more_explanation">Ujumbe na media zote zinazoshirikiwa katika mazungumzo haya zinalindwa kwa usimbaji wa ncha-hadi-ncha. Hii ina maana hakuna mtu mwingine, hata AfyaHASET, anayeweza kusoma au kusikiliza. Watu walio kwenye mazungumzo haya pekee ndio wanaoweza kuona au kusikia.</string>
     <string name="learn_more_title">Imesimbwa Ncha-hadi-Ncha</string>
     <string name="liked">Imependwa</string>
     <string name="likes">vilivyopendwa</string>
@@ -1071,11 +1071,11 @@ Pakia bango kamili la picha</string>
     <string name="author_eg_haset_hospital">Author (e.g., HASET Hospital)</string>
     <string name="haset_hospital">HASET Hospital</string>
     <string name="about_us">Kuhusu Sisi</string>
-    <string name="haset_is_a_digital_health_app_designed_t">HASET is a digital health app designed to make healthcare simple and accessible.</string>
+    <string name="haset_is_a_digital_health_app_designed_t">AfyaHASET is a digital health app designed to make healthcare simple and accessible.</string>
     <string name="the_app_connects_patients_with_qualified">The app connects patients with qualified doctors for easy appointment booking, helps users find medicines in nearby pharmacies, and promotes health awareness through educational content and preventive care information.</string>
     <string name="our_goal_is_to_improve_healthcare_access">Our goal is to improve healthcare access through technology and support healthier communities.</string>
     <string name="medical_disclaimer">Medical Disclaimer</string>
-    <string name="the_information_and_services_provided_th">The information and services provided through HASET are intended for health management and educational purposes only. They do not substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health providers with any questions you may have regarding a medical condition. Do not disregard professional medical advice or delay in seeking it because of something you have read on this app.</string>
+    <string name="the_information_and_services_provided_th">The information and services provided through AfyaHASET are intended for health management and educational purposes only. They do not substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health providers with any questions you may have regarding a medical condition. Do not disregard professional medical advice or delay in seeking it because of something you have read on this app.</string>
     <string name="terms_of_service">Terms of Service</string>
     <string name="no_results_found_1">No results found</string>
     <string name="author_name">Author Name</string>
@@ -1241,7 +1241,7 @@ Pakia bango kamili la picha</string>
     <string name="medicine_reminder">Medicine Reminder</string>
     <string name="time_to_take_your_prescribed_medicine_pa">Time to take your prescribed medicine: Paracetamol 500mg</string>
     <string name="str_5_minutes_ago">5 minutes ago</string>
-    <string name="about_haset">About HASET</string>
+    <string name="about_haset">About AfyaHASET</string>
     <string name="simulate_incoming_call">Simulate Incoming Call</string>
     <string name="doctor_name_specialty">Doctor Name • Specialty</string>
     <string name="date_amp_time">Date &amp;amp;amp; Time</string>
@@ -1379,7 +1379,7 @@ Pakia bango kamili la picha</string>
     <string name="search_articles">Search Articles</string>
     <string name="filter_by_category">Filter by Category</string>
     <string name="health_alerts_settings">Health Alerts Settings</string>
-    <string name="about_haset_articles">About HASET Articles</string>
+    <string name="about_haset_articles">About AfyaHASET Articles</string>
     <string name="doctor_reviews">Doctor Reviews</string>
     <string name="no_reviews_yet">No reviews yet</string>
     <string name="reject_withdrawal">Reject Withdrawal</string>
@@ -1392,7 +1392,7 @@ Pakia bango kamili la picha</string>
     <string name="refresh">Onyesha Upya</string>
     <string name="hello_world">Hello World!</string>
     <string name="app_version_100dtc">App Version: 1.0.0.DTC</string>
-    <string name="str_2026_haset_all_rights_reserved">© 2026 HASET. All rights reserved.</string>
+    <string name="str_2026_haset_all_rights_reserved">© 2026 AfyaHASET. All rights reserved.</string>
     <string name="choose_goodnmedicine">Choose good\nMedicine</string>
     <string name="users_list">Users List</string>
     <string name="export_list_of_all_users_with_details">Export list of all users with details</string>
@@ -1404,7 +1404,7 @@ Pakia bango kamili la picha</string>
     <string name="requested_01012024_1200">Requested: 01/01/2024 12:00</string>
     <string name="it_looks_like_you_dont_have_any_appointm">It looks like you don\'t have any appointments yet.</string>
     <string name="prescription_report">Prescription Report</string>
-    <string name="haset_telemedicine">HASET Telemedicine</string>
+    <string name="haset_telemedicine">AfyaHASET Telemedicine</string>
     <string name="official_medical_prescription">Official Medical Prescription</string>
     <string name="verified">VERIFIED ✓</string>
     <string name="reference_no">REFERENCE NO.</string>
@@ -1414,7 +1414,7 @@ Pakia bango kamili la picha</string>
     <string name="prescribed_medications">PRESCRIBED MEDICATIONS</string>
     <string name="medication">MEDICATION</string>
     <string name="special_instructions">SPECIAL INSTRUCTIONS</string>
-    <string name="verified_generated_securely_by_haset_tel">VERIFIED · Generated securely by HASET Telemedicine · Valid for 30 days from issue date</string>
+    <string name="verified_generated_securely_by_haset_tel">VERIFIED · Generated securely by AfyaHASET Telemedicine · Valid for 30 days from issue date</string>
     <string name="download_pdf">Download PDF</string>
     <string name="print">Print</string>
     <string name="str_012">0:12</string>

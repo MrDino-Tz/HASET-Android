@@ -245,7 +245,7 @@
     <string name="articles">Articles</string>
     <string name="my_posts">My Posts</string>
     <string name="all_users">All Users</string>
-    <string name="haset_admin">HASET Admin</string>
+    <string name="haset_admin">AfyaHASET Admin</string>
 <!--    <string name="doctors">Doctors</string>-->
     <string name="article_liked">Article liked</string>
     <string name="article_unliked">Article unliked</string>
@@ -260,7 +260,7 @@
     <string name="views">views</string>
     <string name="article">Article</string>
     <string name="share_article">Share article</string>
-    <string name="welcome_text_about_us">Welcome to HASET, your trusted partner for accessible and personalized healthcare. Our expert doctors offer online consultations and specialized services, prioritizing your well-being. Join us on this journey towards a healthier you.</string>
+    <string name="welcome_text_about_us">Welcome to AfyaHASET, your trusted partner for accessible and personalized healthcare. Our expert doctors offer online consultations and specialized services, prioritizing your well-being. Join us on this journey towards a healthier you.</string>
     <string name="title_activity_notification2">NotificationActivity2</string>
     <string name="tab_text_1">Tab 1</string>
     <string name="tab_text_2">Tab 2</string>
@@ -365,7 +365,7 @@
     <string name="qr_code_saved">QR code saved to device</string>
     <string name="qr_code_save_failed">Failed to save QR code</string>
     <string name="qr_code_share_failed">Failed to share QR code</string>
-    <string name="share_qr_text">Check out my profile on HASET! I\'m a %1$s named %2$s. Download the app here: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
+    <string name="share_qr_text">Check out my profile on AfyaHASET! I\'m a %1$s named %2$s. Download the app here: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
     <string name="user_label">User</string>
     <string name="not_provided">Not provided</string>
     <string name="unknown">Unknown</string>
@@ -426,7 +426,7 @@
     <string name="check_status">Check Status</string>
     <string name="ive_paid">I\'ve Paid</string>
     <string name="learn_more_title">End-to-End Encrypted</string>
-    <string name="learn_more_explanation">Messages and media shared in this chat are end-to-end encrypted. This means no one else, not even HASET, can read or listen to them. Only the people in this chat can see or hear what\'s shared.</string>
+    <string name="learn_more_explanation">Messages and media shared in this chat are end-to-end encrypted. This means no one else, not even AfyaHASET, can read or listen to them. Only the people in this chat can see or hear what\'s shared.</string>
     <string name="learn_more">Learn More</string>
     <string name="timeout_msg">The connection timed out. Please check your internet and try again.</string>
     <string name="transaction_cancelled_msg">The transaction was cancelled. If this wasn\'t you, please try again.</string>
@@ -448,7 +448,7 @@
     <string name="update_banner">Update Banner</string>
     <string name="manage_health_quotes">Manage Health Quotes</string>
     <string name="health_quotes">Health Quotes</string>
-    <string name="health_quote_author_default">HASET</string>
+    <string name="health_quote_author_default">AfyaHASET</string>
     <string name="select_method">Select Method</string>
     <string name="reschedule_appointment">Reschedule Appointment</string>
     <string name="book_instant_appointment">Book Instant Appointment</string>
@@ -532,9 +532,9 @@
     <!-- Cloudinary Configuration (for media uploads) -->
     <string name="cloudinary_cloud_name">divky8yna</string>
     <string name="cloudinary_upload_preset">haset_mobile_unsigned</string>
-    <string name="share_app">Share HASET</string>
+    <string name="share_app">Share AfyaHASET</string>
     <string name="recommend_app">Recommend this app to friends</string>
-    <string name="share_app_text">Download HASET - Your trusted partner for accessible healthcare: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
+    <string name="share_app_text">Download AfyaHASET - Your trusted partner for accessible healthcare: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
     <string name="delete">Delete</string>
     <string name="reply">Reply</string>
     <string name="copy">Copy</string>
@@ -584,8 +584,8 @@
     <string name="search_messages_action">Search messages clicked!</string>
     <string name="delete_messages_soon">Delete Messages Coming Soon!</string>
     <string name="search_messages_soon">Search Messages Coming Soon!</string>
-    <string name="shared_from">Shared from HASET</string>
-    <string name="haset_post">HASET Post</string>
+    <string name="shared_from">Shared from AfyaHASET</string>
+    <string name="haset_post">AfyaHASET Post</string>
     <string name="content_desc_success_icon">Success Icon</string>
     <string name="payment_successful">Payment Successful!</string>
     <string name="payment_success_message">Your payment has been processed and confirmed. You can now proceed with your appointment.</string>
@@ -663,9 +663,9 @@
     <string name="hosted_card_checkout">Secure hosted checkout</string>
     <string name="card_checkout_opened">Secure card checkout opened</string>
     <string name="card_checkout_unavailable">Unable to open secure card checkout</string>
-    <string name="email_support_body">Hello HASET Support Team,\n\nI need help with...</string>
+    <string name="email_support_body">Hello AfyaHASET Support Team,\n\nI need help with...</string>
     <string name="send_email_via">Send email via</string>
-    <string name="whatsapp_support_msg">Hello HASET Support</string>
+    <string name="whatsapp_support_msg">Hello AfyaHASET Support</string>
     
     <plurals name="patients_treated">
         <item quantity="one">(%d Patient)</item>
@@ -985,9 +985,9 @@
     <string name="exit_app">Exit App</string>
     <string name="exit_app_confirm">Are you sure you want to exit?</string>
     <string name="notification_permission_title">Notification Permission Required</string>
-    <string name="notification_permission_message">HASET needs notification permission to send you important appointment reminders and welcome messages. Please enable notifications in settings.</string>
-    <string name="rate_haset_title">Rate HASET Health</string>
-    <string name="rate_haset_message">Are you enjoying HASET Health? We\'d love to hear your feedback!</string>
+    <string name="notification_permission_message">AfyaHASET needs notification permission to send you important appointment reminders and welcome messages. Please enable notifications in settings.</string>
+    <string name="rate_haset_title">Rate AfyaHASET Health</string>
+    <string name="rate_haset_message">Are you enjoying AfyaHASET Health? We\'d love to hear your feedback!</string>
     <string name="verify_payment_title">Verify Payment</string>
     <string name="leave_blank_password">Leave blank to keep current password</string>
     <string name="status_pending">Pending</string>
@@ -1075,11 +1075,11 @@
     <string name="author_eg_haset_hospital">Author (e.g., HASET Hospital)</string>
     <string name="haset_hospital">HASET Hospital</string>
     <string name="about_us">About Us</string>
-    <string name="haset_is_a_digital_health_app_designed_t">HASET is a digital health app designed to make healthcare simple and accessible.</string>
+    <string name="haset_is_a_digital_health_app_designed_t">AfyaHASET is a digital health app designed to make healthcare simple and accessible.</string>
     <string name="the_app_connects_patients_with_qualified">The app connects patients with qualified doctors for easy appointment booking, helps users find medicines in nearby pharmacies, and promotes health awareness through educational content and preventive care information.</string>
     <string name="our_goal_is_to_improve_healthcare_access">Our goal is to improve healthcare access through technology and support healthier communities.</string>
     <string name="medical_disclaimer">Medical Disclaimer</string>
-    <string name="the_information_and_services_provided_th">The information and services provided through HASET are intended for health management and educational purposes only. They do not substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health providers with any questions you may have regarding a medical condition. Do not disregard professional medical advice or delay in seeking it because of something you have read on this app.</string>
+    <string name="the_information_and_services_provided_th">The information and services provided through AfyaHASET are intended for health management and educational purposes only. They do not substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health providers with any questions you may have regarding a medical condition. Do not disregard professional medical advice or delay in seeking it because of something you have read on this app.</string>
     <string name="terms_of_service">Terms of Service</string>
     <string name="no_results_found_1">No results found</string>
     <string name="author_name">Author Name</string>
@@ -1245,7 +1245,7 @@
     <string name="medicine_reminder">Medicine Reminder</string>
     <string name="time_to_take_your_prescribed_medicine_pa">Time to take your prescribed medicine: Paracetamol 500mg</string>
     <string name="str_5_minutes_ago">5 minutes ago</string>
-    <string name="about_haset">About HASET</string>
+    <string name="about_haset">About AfyaHASET</string>
     <string name="simulate_incoming_call">Simulate Incoming Call</string>
     <string name="doctor_name_specialty">Doctor Name • Specialty</string>
     <string name="date_amp_time">Date &amp;amp; Time</string>
@@ -1383,7 +1383,7 @@
     <string name="search_articles">Search Articles</string>
     <string name="filter_by_category">Filter by Category</string>
     <string name="health_alerts_settings">Health Alerts Settings</string>
-    <string name="about_haset_articles">About HASET Articles</string>
+    <string name="about_haset_articles">About AfyaHASET Articles</string>
     <string name="doctor_reviews">Doctor Reviews</string>
     <string name="no_reviews_yet">No reviews yet</string>
     <string name="reject_withdrawal">Reject Withdrawal</string>
@@ -1396,7 +1396,7 @@
     <string name="refresh">Refresh</string>
     <string name="hello_world">Hello World!</string>
     <string name="app_version_100dtc">App Version: 1.0.0.DTC</string>
-    <string name="str_2026_haset_all_rights_reserved">© 2026 HASET. All rights reserved.</string>
+    <string name="str_2026_haset_all_rights_reserved">© 2026 AfyaHASET. All rights reserved.</string>
     <string name="choose_goodnmedicine">Choose good\nMedicine</string>
     <string name="users_list">Users List</string>
     <string name="export_list_of_all_users_with_details">Export list of all users with details</string>
@@ -1418,7 +1418,7 @@
     <string name="prescribed_medications">PRESCRIBED MEDICATIONS</string>
     <string name="medication">MEDICATION</string>
     <string name="special_instructions">SPECIAL INSTRUCTIONS</string>
-    <string name="verified_generated_securely_by_haset_tel">VERIFIED · Generated securely by HASET Telemedicine · Valid for 30 days from issue date</string>
+    <string name="verified_generated_securely_by_haset_tel">VERIFIED · Generated securely by AfyaHASET Telemedicine · Valid for 30 days from issue date</string>
     <string name="download_pdf">Download PDF</string>
     <string name="print">Print</string>
     <string name="str_012">0:12</string>
