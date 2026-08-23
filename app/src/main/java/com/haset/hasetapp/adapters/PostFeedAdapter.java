@@ -274,6 +274,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
 
                     @Override
                     public void onError(String error) {
+                        if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                         if (holder.bindGeneration.get() != bindGen) return;
                         if (userInteractedPosts.contains(postId)) return;
                         likedPostsCache.put(postId, false);
@@ -327,7 +328,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                         
                         @Override
                         public void onError(String error) {
-                            android.util.Log.e("PostFeedAdapter", "Error toggling like: " + error);
+                            if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                             // Revert cache on error
                             likedPostsCache.put(post.getPostId(), currentLikedState);
                             post.setLikes(currentLikes);
@@ -385,6 +386,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
 
                 @Override
                 public void onError(String error) {
+                    if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                     updateSaveUI(holder, false);
                 }
             });
@@ -405,6 +407,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
 
                         @Override
                         public void onError(String error) {
+                            if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                             if (holder.ivSave != null) holder.ivSave.setEnabled(true);
                         }
                     });
@@ -702,7 +705,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
 
                             @Override
                             public void onError(String error) {
-                                android.util.Log.e("PostFeedAdapter", "Error incrementing comment count: " + error);
+                                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                                 ivSendComment.setEnabled(true);
                             }
                         });
@@ -710,7 +713,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
 
                     @Override
                     public void onError(String error) {
-                        android.util.Log.e("PostFeedAdapter", "Error saving comment: " + error);
+                        if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                         ivSendComment.setEnabled(true);
                     }
                 });
@@ -1039,7 +1042,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                         
                         @Override
                         public void onError(String error) {
-                            android.util.Log.e("PostFeedAdapter", "Error incrementing shares: " + error);
+                            if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                         }
                     });
             }

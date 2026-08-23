@@ -657,10 +657,14 @@ public class SettingsActivity extends BaseActivity {
                     }
                 });
                 viewModel.getError().observe(this, error -> {
-                    if (error != null) {
-                        com.haset.hasetapp.utils.CustomDialog.hideLoading();
-                        android.widget.Toast.makeText(this, error, android.widget.Toast.LENGTH_SHORT).show();
+                    if (error == null) return;
+                    com.haset.hasetapp.utils.CustomDialog.hideLoading();
+                    if (com.haset.hasetapp.utils.ErrorDisplay.isAuthError(error)) {
+                        com.haset.hasetapp.utils.ErrorDisplay.navigateToLogin(SettingsActivity.this);
+                        return;
                     }
+                    com.haset.hasetapp.utils.ErrorDisplay.toast(SettingsActivity.this, error);
+                    viewModel.clearError();
                 });
             }
         });

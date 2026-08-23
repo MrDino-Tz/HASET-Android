@@ -230,8 +230,10 @@ public class LoginActivity extends BaseActivity {
                     break;
                 case ERROR:
                     CustomDialog.hideLoading();
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                        state.message, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                    String loginDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(LoginActivity.this, state.message);
+                    com.haset.hasetapp.utils.ErrorLogger.log(loginDetail, state.message);
+                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                        loginDetail, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                         .setBackgroundTint(getResources().getColor(R.color.colorError))
                         .show();
                     resetLoginButton();

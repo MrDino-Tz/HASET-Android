@@ -138,11 +138,17 @@ public class BookAppointmentActivity extends BaseActivity {
         });
 
         viewModel.getBookingError().observe(this, error -> {
-            if (error != null) {
-                Snackbar.make(rootView, "Failed to " + (isReschedule ? "reschedule" : "book") + " appointment: " + error, Snackbar.LENGTH_LONG)
-                        .setAction("Retry", v -> bookAppointment())
-                        .show();
+            if (error == null) return;
+            String detail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(BookAppointmentActivity.this, error);
+            Snackbar.make(rootView, "Failed to " + (isReschedule ? "reschedule" : "book") + " appointment: " + detail, Snackbar.LENGTH_LONG)
+                    .setAction("Retry", v -> bookAppointment())
+                    .show();
+            if (com.haset.hasetapp.utils.ErrorDisplay.isAuthError(error)) {
+                com.haset.hasetapp.utils.ErrorDisplay.navigateToLogin(BookAppointmentActivity.this);
+            } else {
+                com.haset.hasetapp.utils.ErrorLogger.log(detail, error);
             }
+            viewModel.clearBookingError();
         });
 
         viewModel.getBookingSuccess().observe(this, resultEntity -> {

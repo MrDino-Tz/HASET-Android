@@ -12,7 +12,9 @@ import com.haset.hasetapp.database.entities.AppointmentEntity;
 import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 import com.haset.hasetapp.database.entities.WithdrawalRequest;
 import com.haset.hasetapp.models.Appointment;
+import com.haset.hasetapp.models.ApiError;
 import com.haset.hasetapp.utils.Constants;
+import com.haset.hasetapp.utils.ErrorParser;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import android.content.Context;
@@ -530,46 +532,9 @@ public class DoctorHomeRepository {
     }
 
     private static String errorMessage(Response<?> response, String fallback) {
-        try {
-            if (response.errorBody() != null) {
-                String raw = response.errorBody().string();
-                String parsed = parseErrorMessage(raw);
-                return parsed.isEmpty() ? fallback : parsed;
-            }
-        } catch (Exception ignored) {
-        }
-        return fallback;
-    }
-
-    private static String parseErrorMessage(String raw) {
-        if (raw == null || raw.trim().isEmpty()) return "";
-        try {
-            com.google.gson.JsonElement parsed = com.google.gson.JsonParser.parseString(raw);
-            if (parsed != null && parsed.isJsonObject()) {
-                JsonObject error = parsed.getAsJsonObject();
-                String message = firstString(error, "message", "error", "detail", "reason");
-                if (!message.isEmpty()) return message;
-
-                JsonObject data = jsonObject(error, "data");
-                message = firstString(data, "message", "error", "detail", "reason");
-                if (!message.isEmpty()) return message;
-
-                JsonObject errors = jsonObject(error, "errors");
-                if (errors != null) {
-                    for (String key : errors.keySet()) {
-                        com.google.gson.JsonElement value = errors.get(key);
-                        if (value == null || value.isJsonNull()) continue;
-                        if (value.isJsonArray() && value.getAsJsonArray().size() > 0) {
-                            com.google.gson.JsonElement first = value.getAsJsonArray().get(0);
-                            if (first != null && !first.isJsonNull()) return first.getAsString();
-                        }
-                        if (value.isJsonPrimitive()) return value.getAsString();
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return raw.trim().length() > 240 ? raw.trim().substring(0, 240) : raw.trim();
+        ApiError error = ErrorParser.fromResponse(response);
+        String message = error.getMessage();
+        return (message != null && !message.isEmpty()) ? message : fallback;
     }
 
     private static String jsonString(JsonObject json, String key, String fallback) {

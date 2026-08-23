@@ -63,8 +63,10 @@ public class ForgotPasswordActivity extends BaseActivity {
                 case ERROR:
                     btnSend.setEnabled(true);
                     btnSend.setText(R.string.send_reset_link);
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                        state.message, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                    String resetDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(ForgotPasswordActivity.this, state.message);
+                    com.haset.hasetapp.utils.ErrorLogger.log(resetDetail, state.message);
+                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                        resetDetail, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                         .setBackgroundTint(getResources().getColor(R.color.colorError))
                         .show();
                     break;

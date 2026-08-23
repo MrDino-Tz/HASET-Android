@@ -185,8 +185,10 @@ public class RegisterActivity extends BaseActivity {
                     break;
                 case ERROR:
                     CustomDialog.hideLoading();
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                        state.message, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                    String registerDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(RegisterActivity.this, state.message);
+                    com.haset.hasetapp.utils.ErrorLogger.log(registerDetail, state.message);
+                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                        registerDetail, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                         .setBackgroundTint(getResources().getColor(R.color.colorError))
                         .show();
                     resetRegisterButton();
@@ -318,6 +320,7 @@ public class RegisterActivity extends BaseActivity {
 
             @Override
             public void onError(String error) {
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                 ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
             }
         });

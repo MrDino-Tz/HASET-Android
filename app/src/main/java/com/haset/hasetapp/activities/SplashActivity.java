@@ -145,6 +145,7 @@ public class SplashActivity extends BaseActivity {
 
             @Override
             public void onError(String error) {
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                 startSplashFlow();
             }
         });

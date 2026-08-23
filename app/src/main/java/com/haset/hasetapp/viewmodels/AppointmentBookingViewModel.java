@@ -11,13 +11,14 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.repositories.AppointmentRepository;
 import com.haset.hasetapp.repositories.DoctorRepository;
+import com.haset.hasetapp.utils.SingleLiveEvent;
 
 public class AppointmentBookingViewModel extends AndroidViewModel {
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
     private MutableLiveData<Doctor> doctorLiveData = new MutableLiveData<>();
     private MutableLiveData<Boolean> bookingProcessing = new MutableLiveData<>(false);
-    private MutableLiveData<String> bookingError = new MutableLiveData<>();
+    private final SingleLiveEvent<String> bookingError = new SingleLiveEvent<>();
     private MutableLiveData<AppointmentEntity> bookingSuccess = new MutableLiveData<>();
 
     public AppointmentBookingViewModel(@NonNull Application application) {
@@ -36,6 +37,10 @@ public class AppointmentBookingViewModel extends AndroidViewModel {
 
     public LiveData<String> getBookingError() {
         return bookingError;
+    }
+
+    public void clearBookingError() {
+        bookingError.setValue(null);
     }
 
     public LiveData<AppointmentEntity> getBookingSuccess() {

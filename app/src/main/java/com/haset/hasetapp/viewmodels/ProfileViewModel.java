@@ -10,13 +10,14 @@ import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.repositories.ProfileRepository;
+import com.haset.hasetapp.utils.SingleLiveEvent;
 
 public class ProfileViewModel extends AndroidViewModel {
     private final ProfileRepository repository;
     private LiveData<UserEntity> userLiveData;
     private LiveData<Doctor> doctorLiveData;
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final SingleLiveEvent<String> error = new SingleLiveEvent<>();
     private final MutableLiveData<Boolean> updateSuccess = new MutableLiveData<>();
     private final MutableLiveData<Boolean> passwordChangeSuccess = new MutableLiveData<>();
     private final MutableLiveData<Boolean> deleteAccountSuccess = new MutableLiveData<>();
@@ -104,6 +105,7 @@ public class ProfileViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getLoading() { return loading; }
     public LiveData<String> getError() { return error; }
+    public void clearError() { error.setValue(null); }
     public LiveData<Boolean> getUpdateSuccess() { return updateSuccess; }
     public LiveData<Boolean> getPasswordChangeSuccess() { return passwordChangeSuccess; }
     public LiveData<Boolean> getDeleteAccountSuccess() { return deleteAccountSuccess; }

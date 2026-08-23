@@ -97,9 +97,9 @@ public class DoctorEditActivity extends AppCompatActivity {
         viewModel.getLoading().observe(this, this::showProgress);
         
         viewModel.getError().observe(this, error -> {
-            if (error != null) {
-                com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), error, com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
-            }
+            if (error == null) return;
+            com.haset.hasetapp.utils.ErrorDisplay.snackbar(findViewById(android.R.id.content), error);
+            viewModel.clearError();
         });
 
         viewModel.getSaveSuccess().observe(this, success -> {

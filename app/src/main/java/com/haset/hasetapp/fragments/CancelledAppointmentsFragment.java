@@ -155,7 +155,7 @@ public class CancelledAppointmentsFragment extends Fragment implements Appointme
 
             @Override
             public void onError(String error) {
-                showSnackbar(getString(R.string.failed_to_approve_appointment, error));
+                if (getView() != null) com.haset.hasetapp.utils.ErrorDisplay.report(getView(), error);
             }
         });
     }
@@ -175,7 +175,7 @@ public class CancelledAppointmentsFragment extends Fragment implements Appointme
 
             @Override
             public void onError(String error) {
-                showSnackbar(getString(R.string.failed_to_decline_appointment, error));
+                if (getView() != null) com.haset.hasetapp.utils.ErrorDisplay.report(getView(), error);
             }
         });
     }
@@ -202,9 +202,9 @@ public class CancelledAppointmentsFragment extends Fragment implements Appointme
                 }
 
                 @Override
-                public void onError(String error) {
-                    showSnackbar(getString(R.string.failed_to_cancel_appointment, error));
-                }
+            public void onError(String error) {
+                if (getView() != null) com.haset.hasetapp.utils.ErrorDisplay.report(getView(), error);
+            }
             });
     }
 

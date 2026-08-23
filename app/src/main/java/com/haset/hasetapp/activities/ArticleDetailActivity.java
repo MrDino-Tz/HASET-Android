@@ -112,6 +112,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(String error) {
+                        if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                         if (likeInteractionPending) return;
                         isLiked = false;
                         runOnUiThread(() -> updateLikeIcon());
@@ -220,6 +221,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(String error) {
+                        if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                         if (likeInteractionPending) return;
                         isLiked = false;
                         runOnUiThread(() -> updateLikeIcon());
@@ -253,6 +255,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
 
             @Override
             public void onError(String error) {
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
             }
         } : null);
     }
@@ -298,10 +301,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
                     @Override
                     public void onError(String error) {
                         likeInteractionPending = false;
-                        android.util.Log.e("ArticleDetailActivity", "Error toggling like: " + error);
-                        com.google.android.material.snackbar.Snackbar.make(layoutLikes, 
-                                getString(R.string.article_like_error, error != null ? error : ""), 
-                                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+                        com.haset.hasetapp.utils.ErrorDisplay.report(layoutLikes, error);
                         isLiked = !newLikedState;
                         article.setLikes(article.getLikes() - likesDelta);
                         runOnUiThread(() -> {
@@ -441,6 +441,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
 
             @Override
             public void onError(String error) {
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
             }
         });
     }

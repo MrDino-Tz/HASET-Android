@@ -209,7 +209,7 @@ public class PatientNotificationManager {
 
             @Override
             public void onError(String error) {
-                Log.e(TAG, "Error fetching trending articles: " + error);
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
             }
         });
     }

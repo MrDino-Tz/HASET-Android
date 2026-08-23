@@ -10,12 +10,13 @@ import androidx.lifecycle.MutableLiveData;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
 import com.haset.hasetapp.repositories.ArticleRepository;
 import com.haset.hasetapp.firebase.ArticlePostHelper;
+import com.haset.hasetapp.utils.SingleLiveEvent;
 
 import java.util.List;
 
 public class ArticleViewModel extends AndroidViewModel {
     private final ArticleRepository repository;
-    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final SingleLiveEvent<String> error = new SingleLiveEvent<>();
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
 
     private final MutableLiveData<List<ArticlePostEntity>> publishedArticles = new MutableLiveData<>();
@@ -125,6 +126,10 @@ public class ArticleViewModel extends AndroidViewModel {
 
     public LiveData<String> getError() {
         return error;
+    }
+
+    public void clearError() {
+        error.setValue(null);
     }
 
     public LiveData<Boolean> getLoading() {

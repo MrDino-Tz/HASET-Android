@@ -177,7 +177,7 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
             @Override
             public void onError(String error) {
                 if (isAdded()) {
-                    Toast.makeText(requireContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    com.haset.hasetapp.utils.ErrorDisplay.report(requireContext(), error);
                 }
             }
         });

@@ -206,7 +206,7 @@ public class PrescriptionDetailFragment extends Fragment {
             @Override
             public void onError(String error) {
                 if (isAdded()) {
-                    com.google.android.material.snackbar.Snackbar.make(requireView(), error, com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
+                    com.haset.hasetapp.utils.ErrorDisplay.report(requireView(), error);
                 }
             }
         });

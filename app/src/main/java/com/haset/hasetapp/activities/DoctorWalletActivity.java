@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import com.haset.hasetapp.ui.MfaCodeInputView;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.ErrorDisplay;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -97,8 +98,8 @@ public class DoctorWalletActivity extends BaseActivity {
                 withdrawDialog.dismiss();
             }
             stopBalanceShimmer();
-            Toast.makeText(this, getString(R.string.operation_failed, walletErrorMessage(error)), Toast.LENGTH_LONG).show();
-            // Consume the error so the sticky LiveData does not re-show a
+            ErrorDisplay.toast(this, walletErrorMessage(error));
+            // Consume the error so the one-shot event does not re-show a
             // previously cached failure every time this screen is (re)opened.
             viewModel.clearError();
         });
@@ -713,12 +714,12 @@ public class DoctorWalletActivity extends BaseActivity {
                                     currentWallet.setMobileMoneyLabel((destination.get("provider").getAsString() + "  " + destination.get("phone_number").getAsString()).trim());
                                 }
                                 viewModel.refreshWalletBalance(preferenceManager.getUserId());
-                            } else Toast.makeText(DoctorWalletActivity.this, payoutErrorMessage(r), Toast.LENGTH_LONG).show();
+                            } else com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, payoutErrorMessage(r));
                         }
-                        @Override public void onFailure(Call<JsonObject> c, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(DoctorWalletActivity.this, "Network error while saving payout account.", Toast.LENGTH_LONG).show(); }
+                        @Override public void onFailure(Call<JsonObject> c, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while saving payout account."); }
                     });
                 }
-                @Override public void onFailure(Call<JsonObject> call, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); Toast.makeText(DoctorWalletActivity.this, "Network error while verifying MFA.", Toast.LENGTH_LONG).show(); }
+                @Override public void onFailure(Call<JsonObject> call, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while verifying MFA."); }
             });
         }).addOnFailureListener(error -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true));
     }
@@ -736,6 +737,7 @@ public class DoctorWalletActivity extends BaseActivity {
                     }
 
                     @Override public void onError(String error) {
+                        if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                     }
                 });
     }

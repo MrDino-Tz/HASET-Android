@@ -87,6 +87,7 @@ public class DoctorPatientsActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(String error) {
+                        if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                         if (!isFinishing() && !isDestroyed()) {
                             showError(getString(R.string.failed_to_load_patients));
                         }

@@ -50,6 +50,7 @@ public class DirectReplyReceiver extends BroadcastReceiver {
 
                 @Override
                 public void onError(String error) {
+                    if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                     Toast.makeText(context, R.string.failed_to_send_reply, Toast.LENGTH_SHORT).show();
                     pendingResult.finish();
                 }

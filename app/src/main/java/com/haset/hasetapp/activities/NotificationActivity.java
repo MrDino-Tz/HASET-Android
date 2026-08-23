@@ -207,6 +207,7 @@ public class NotificationActivity extends AppCompatActivity implements
 
             @Override
             public void onError(String error) {
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
                 hideAppointmentShimmer();
             }
         });

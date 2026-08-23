@@ -173,6 +173,7 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
             @Override
             public void onError(String error) {
                 // Log or handle error if needed, but we still have the initial data
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
             }
         });
     }

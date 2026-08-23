@@ -190,10 +190,10 @@ public class ArticleFragment extends Fragment {
         });
 
         viewModel.getError().observe(getViewLifecycleOwner(), err -> {
-            if (err != null) {
-                hideShimmerLoading();
-                showErrorState(err);
-            }
+            if (err == null) return;
+            hideShimmerLoading();
+            showErrorState(com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(requireContext(), err));
+            viewModel.clearError();
         });
     }
 

@@ -643,7 +643,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         canSendInChat = false;
         chatDisabledMessage = message;
         setChatInputEnabled(false);
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        com.haset.hasetapp.utils.ErrorDisplay.toast(this, message);
     }
 
     private void setChatInputEnabled(boolean enabled) {
@@ -807,6 +807,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
             public void onError(String error) {
                 // If fetching doctor fails (e.g. regular user), just show a simple toast or handle gracefully
                 Toast.makeText(ChatActivity.this, R.string.contact_info_unavailable, Toast.LENGTH_SHORT).show();
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
             }
         });
     }
@@ -909,7 +910,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 
             @Override
             public void onError(String error) {
-                Log.e("ChatActivity", "Error fetching doctor details: " + error);
+                if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
             }
         });
     }

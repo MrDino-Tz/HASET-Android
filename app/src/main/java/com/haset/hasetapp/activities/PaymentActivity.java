@@ -229,6 +229,7 @@ public class PaymentActivity extends AppCompatActivity {
                 }
                 
                 showErrorDialog(error);
+                viewModel.clearError();
             }
         });
     }

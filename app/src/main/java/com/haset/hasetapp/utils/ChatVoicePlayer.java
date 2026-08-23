@@ -163,6 +163,7 @@ public class ChatVoicePlayer {
             
         } catch (IOException e) {
             Log.e(TAG, "Error preparing audio: " + e.getMessage(), e);
+            com.haset.hasetapp.utils.ErrorLogger.log(e);
             currentState = PlaybackState.ERROR;
             if (callback != null) {
                 callback.onPlaybackError("Failed to prepare audio: " + e.getMessage());

@@ -2,6 +2,8 @@ package com.haset.hasetapp.repositories;
 
 import com.google.gson.JsonObject;
 import com.haset.hasetapp.api.RetrofitClient;
+import com.haset.hasetapp.models.ApiError;
+import com.haset.hasetapp.utils.ErrorParser;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import retrofit2.Call;
@@ -75,15 +77,8 @@ public class AdminPayoutRepository {
     }
 
     private static String errorMessage(Response<?> response, String fallback) {
-        try {
-            if (response.errorBody() != null) {
-                JsonObject error = com.google.gson.JsonParser.parseString(response.errorBody().string()).getAsJsonObject();
-                if (error.has("message") && !error.get("message").isJsonNull()) {
-                    return error.get("message").getAsString();
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return fallback;
+        ApiError error = ErrorParser.fromResponse(response);
+        String message = error.getMessage();
+        return (message != null && !message.isEmpty()) ? message : fallback;
     }
 }

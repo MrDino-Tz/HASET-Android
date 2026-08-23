@@ -158,7 +158,7 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
             @Override
             public void onError(String error) {
                 if (isAdded()) {
-                    showSnackbar("Failed to load patients: " + error);
+                    com.haset.hasetapp.utils.ErrorDisplay.report(requireContext(), error);
                 }
             }
         });
@@ -419,7 +419,7 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
             public void onError(String error) {
                 if (isAdded()) {
                     progressOverlay.setVisibility(View.GONE);
-                    showSnackbar("Failed to save: " + error);
+                    com.haset.hasetapp.utils.ErrorDisplay.report(requireContext(), error);
                 }
             }
         });
@@ -450,7 +450,7 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
                     public void onError(String error) {
                         if (isAdded()) {
                             requireActivity().runOnUiThread(() ->
-                                    showSnackbar("Prescription saved, but chat delivery failed: " + error));
+                                    com.haset.hasetapp.utils.ErrorDisplay.report(requireContext(), error));
                         }
                     }
                 });

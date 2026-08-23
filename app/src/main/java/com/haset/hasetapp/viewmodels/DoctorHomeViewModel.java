@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.repositories.DoctorHomeRepository;
+import com.haset.hasetapp.utils.SingleLiveEvent;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.NotificationBadgeHelper;
 
@@ -25,7 +26,7 @@ public class DoctorHomeViewModel extends AndroidViewModel {
     private LiveData<Integer> ratingCount;
     private MutableLiveData<Integer> notificationCount;
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final SingleLiveEvent<String> error = new SingleLiveEvent<>();
     private final MutableLiveData<Boolean> withdrawSuccess = new MutableLiveData<>();
 
     public DoctorHomeViewModel(@NonNull Application application) {

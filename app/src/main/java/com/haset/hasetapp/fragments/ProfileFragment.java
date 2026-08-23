@@ -236,10 +236,18 @@ public class ProfileFragment extends Fragment {
         });
 
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && getView() != null) {
-                CustomDialog.hideLoading();
-                Snackbar.make(getView(), error, Snackbar.LENGTH_SHORT).show();
+            if (error == null) return;
+            CustomDialog.hideLoading();
+            if (com.haset.hasetapp.utils.ErrorDisplay.isAuthError(error)) {
+                com.haset.hasetapp.utils.ErrorDisplay.navigateToLogin(requireContext());
+                return;
             }
+            if (getView() != null) {
+                com.haset.hasetapp.utils.ErrorDisplay.snackbar(getView(), error);
+            } else {
+                com.haset.hasetapp.utils.ErrorDisplay.toast(requireContext(), error);
+            }
+            viewModel.clearError();
         });
 
         viewModel.getPasswordChangeSuccess().observe(getViewLifecycleOwner(), success -> {

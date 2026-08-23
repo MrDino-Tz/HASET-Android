@@ -9,11 +9,12 @@ import androidx.lifecycle.MutableLiveData;
 import com.haset.hasetapp.database.entities.DoctorEntity;
 import com.haset.hasetapp.repositories.DoctorRepository;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.SingleLiveEvent;
 
 public class DoctorEditViewModel extends AndroidViewModel {
     private final DoctorRepository repository;
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final SingleLiveEvent<String> error = new SingleLiveEvent<>();
     private final MutableLiveData<Boolean> saveSuccess = new MutableLiveData<>();
     private LiveData<DoctorEntity> doctorEntity;
 
@@ -48,5 +49,6 @@ public class DoctorEditViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getLoading() { return loading; }
     public LiveData<String> getError() { return error; }
+    public void clearError() { error.setValue(null); }
     public LiveData<Boolean> getSaveSuccess() { return saveSuccess; }
 }

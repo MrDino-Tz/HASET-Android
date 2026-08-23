@@ -9,13 +9,14 @@ import androidx.lifecycle.MutableLiveData;
 import com.haset.hasetapp.repositories.PaymentRepository;
 import com.haset.hasetapp.models.PaymentStatusResponse;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.SingleLiveEvent;
 
 public class PaymentViewModel extends AndroidViewModel {
     private final PaymentRepository repository;
     private final MutableLiveData<Boolean> processing = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> initiated = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> success = new MutableLiveData<>();
-    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private final SingleLiveEvent<String> error = new SingleLiveEvent<>();
     private final MutableLiveData<Boolean> canRetry = new MutableLiveData<>(false);
     private final MutableLiveData<String> paymentUrl = new MutableLiveData<>();
 
@@ -146,6 +147,7 @@ public class PaymentViewModel extends AndroidViewModel {
     public LiveData<Boolean> getInitiated() { return initiated; }
     public LiveData<Boolean> getSuccess() { return success; }
     public LiveData<String> getError() { return error; }
+    public void clearError() { error.setValue(null); }
     public LiveData<String> getPaymentUrl() { return paymentUrl; }
     public LiveData<Boolean> getCanRetry() { return canRetry; }
 }

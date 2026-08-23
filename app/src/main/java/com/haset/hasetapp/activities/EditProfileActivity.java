@@ -62,12 +62,13 @@ public class EditProfileActivity extends AppCompatActivity {
         viewModel.getLoading().observe(this, this::showProgress);
         
         viewModel.getError().observe(this, error -> {
-            if (error != null) {
-                com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                    error, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
-                    .setBackgroundTint(getResources().getColor(R.color.colorError))
-                    .show();
+            if (error == null) return;
+            if (com.haset.hasetapp.utils.ErrorDisplay.isAuthError(error)) {
+                com.haset.hasetapp.utils.ErrorDisplay.navigateToLogin(EditProfileActivity.this);
+                return;
             }
+            com.haset.hasetapp.utils.ErrorDisplay.snackbar(findViewById(android.R.id.content), error);
+            viewModel.clearError();
         });
 
         viewModel.getUpdateSuccess().observe(this, success -> {

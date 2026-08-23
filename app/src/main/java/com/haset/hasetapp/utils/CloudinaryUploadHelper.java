@@ -180,6 +180,7 @@ public class CloudinaryUploadHelper {
             
         } catch (Exception e) {
             Log.e(TAG, "Error preparing file upload: " + e.getMessage(), e);
+            com.haset.hasetapp.utils.ErrorLogger.log(e);
             if (listener != null) {
                 listener.onUploadError("Error preparing upload: " + e.getMessage());
             }

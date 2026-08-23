@@ -164,6 +164,7 @@ public class ProfilePhotoHelper {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error opening gallery", e);
+            com.haset.hasetapp.utils.ErrorLogger.log(e);
             if (listener != null) {
                 listener.onPhotoError("Failed to open gallery: " + e.getMessage());
             }

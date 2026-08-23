@@ -557,7 +557,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             @Override
             public void onError(String error) {
                 if (getView() != null) {
-                    com.google.android.material.snackbar.Snackbar.make(getView(), "Failed to approve: " + error, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+                    com.haset.hasetapp.utils.ErrorDisplay.report(getView(), error);
                 }
             }
         });
@@ -653,7 +653,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             @Override
             public void onError(String error) {
                 if (getView() != null) {
-                    com.google.android.material.snackbar.Snackbar.make(getView(), "Failed to decline: " + error, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+                    com.haset.hasetapp.utils.ErrorDisplay.report(getView(), error);
                 }
             }
         });
