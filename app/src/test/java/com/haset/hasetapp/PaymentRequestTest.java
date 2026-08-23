@@ -52,10 +52,31 @@ public class PaymentRequestTest {
         assertEquals("https://hasethospital.or.tz/payment/success",
                 json.get("redirect_url").getAsString());
         org.junit.Assert.assertFalse(json.has("cancel_url"));
-        assertEquals("HASET Customer",
-                json.getAsJsonObject("customer").get("name").getAsString());
+        org.junit.Assert.assertFalse(json.getAsJsonObject("customer").has("name"));
         assertEquals("support@hasethospital.or.tz",
                 json.getAsJsonObject("customer").get("email").getAsString());
         org.junit.Assert.assertFalse(json.getAsJsonObject("customer").has("phone"));
+    }
+
+    @Test
+    public void cardRequestNormalizesCustomerPhoneToDocumentedPattern() {
+        PaymentRequest request = new PaymentRequest(
+                "temporary-user",
+                "doctor_registration",
+                "registration-123",
+                2000.0,
+                "card",
+                "",
+                "",
+                "patient@example.com",
+                "Asha Mushi",
+                "255683859574",
+                "https://hasethospital.or.tz/payment"
+        );
+
+        JsonObject customer = new Gson().toJsonTree(request).getAsJsonObject()
+                .getAsJsonObject("customer");
+
+        assertEquals("+255683859574", customer.get("phone").getAsString());
     }
 }

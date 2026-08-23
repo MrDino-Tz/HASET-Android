@@ -13,7 +13,6 @@ public class PaymentRequest {
     private CardCustomer customer;
 
     public static class CardCustomer {
-        private String name;
         private String firstname;
         private String lastname;
         private String email;
@@ -27,9 +26,8 @@ public class PaymentRequest {
         public CardCustomer(String firstname, String lastname, String email, String phone) {
             this.firstname = safeString(firstname, "HASET");
             this.lastname = safeString(lastname, "Customer");
-            this.name = this.firstname + " " + this.lastname;
             this.email = safeString(email, "support@hasethospital.or.tz");
-            this.phone = phone == null || phone.trim().isEmpty() ? null : phone.trim();
+            this.phone = normalizeTanzanianPhone(phone);
             this.address = "HASET Hospital";
             this.city = "Dar es Salaam";
             this.state = "Dar es Salaam";
@@ -39,6 +37,23 @@ public class PaymentRequest {
 
         private static String safeString(String value, String fallback) {
             return value == null || value.trim().isEmpty() ? fallback : value.trim();
+        }
+
+        private static String normalizeTanzanianPhone(String value) {
+            if (value == null || value.trim().isEmpty()) {
+                return null;
+            }
+            String phone = value.replaceAll("\\s", "").trim();
+            if (phone.matches("^(?:0\\d{9}|\\+255\\d{9})$")) {
+                return phone;
+            }
+            if (phone.matches("^255\\d{9}$")) {
+                return "+" + phone;
+            }
+            if (phone.matches("^\\d{9}$")) {
+                return "+255" + phone;
+            }
+            return null;
         }
     }
 

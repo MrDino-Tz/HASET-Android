@@ -50,6 +50,7 @@ public class DoctorHomeViewModel extends AndroidViewModel {
 
     public void refreshWalletBalance(String doctorId) {
         if (doctorId == null || doctorId.trim().isEmpty()) return;
+        error.setValue(null);
         repository.fetchWalletBalance(doctorId, new FirebaseHelper.OnCompleteListener<DoctorWalletEntity>() {
             @Override public void onSuccess(DoctorWalletEntity result) {
                 walletLoaded = true;
@@ -117,6 +118,7 @@ public class DoctorHomeViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getLoading() { return loading; }
     public LiveData<String> getError() { return error; }
+    public void clearError() { error.setValue(null); }
     public LiveData<Boolean> getWithdrawSuccess() { return withdrawSuccess; }
 
     public LiveData<List<com.haset.hasetapp.database.entities.WithdrawalRequest>> getWithdrawalRequests(String doctorId) {
@@ -126,6 +128,7 @@ public class DoctorHomeViewModel extends AndroidViewModel {
 
     public void refreshWithdrawalRequests(String doctorId) {
         if (doctorId == null || doctorId.trim().isEmpty()) return;
+        error.setValue(null);
         repository.fetchWithdrawalRequests(doctorId,
                 new FirebaseHelper.OnCompleteListener<List<com.haset.hasetapp.database.entities.WithdrawalRequest>>() {
             @Override public void onSuccess(List<com.haset.hasetapp.database.entities.WithdrawalRequest> result) {

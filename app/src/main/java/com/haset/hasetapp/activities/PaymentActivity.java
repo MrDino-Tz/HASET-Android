@@ -56,6 +56,11 @@ public class PaymentActivity extends AppCompatActivity {
 
     private static final String STATE_CONSULTATION_ID = "payment_consultation_id";
 
+    private interface PaymentStartCallback {
+        void onReady();
+        void onError(String error);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -916,18 +921,32 @@ public class PaymentActivity extends AppCompatActivity {
                     firebaseUser != null ? firebaseUser.getPhoneNumber() : null,
                     preferences.getUserPhone()
                 );
-                viewModel.processPayment(
-                    userId,
-                    doctorId,
-                    consultationId,
-                    consultationFee,
-                    paymentMethodCode,
-                    paymentProvider,  // Already set when user selects provider
-                    paymentAccount,
-                    buyerEmail,
-                    buyerName,
-                    buyerPhone
-                );
+                ensurePriceVerificationRecord(userId, doctorId, new PaymentStartCallback() {
+                    @Override
+                    public void onReady() {
+                        viewModel.processPayment(
+                            userId,
+                            doctorId,
+                            consultationId,
+                            consultationFee,
+                            paymentMethodCode,
+                            paymentProvider,  // Already set when user selects provider
+                            paymentAccount,
+                            buyerEmail,
+                            buyerName,
+                            buyerPhone
+                        );
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        paymentInitiated = false;
+                        progressIndicator.setVisibility(View.GONE);
+                        btnPayNow.setEnabled(true);
+                        btnCancel.setEnabled(true);
+                        showErrorDialog(error);
+                    }
+                });
             } else {
                 com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
                     R.string.doctor_id_missing, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
@@ -946,6 +965,71 @@ public class PaymentActivity extends AppCompatActivity {
             btnPayNow.setEnabled(true);
             btnCancel.setEnabled(true);
         }
+    }
+
+    private void ensurePriceVerificationRecord(String userId, String doctorId, PaymentStartCallback callback) {
+        if (TextUtils.isEmpty(consultationId)) {
+            callback.onError("Unable to prepare payment price verification.");
+            return;
+        }
+
+        DatabaseReference appointmentRef = com.haset.hasetapp.utils.FirebaseHelper
+                .getAppointmentsRef()
+                .child(consultationId);
+        if (isSyntheticPaymentConsultation(doctorId)) {
+            writePriceVerificationRecord(appointmentRef, userId, doctorId, callback);
+            return;
+        }
+        appointmentRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    callback.onReady();
+                    return;
+                }
+
+                writePriceVerificationRecord(appointmentRef, userId, doctorId, callback);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                callback.onError(error.getMessage());
+            }
+        });
+    }
+
+    private boolean isSyntheticPaymentConsultation(String doctorId) {
+        return "doctor_registration".equals(doctorId)
+                || consultationId.startsWith("service-")
+                || consultationId.startsWith("consult-");
+    }
+
+    private void writePriceVerificationRecord(DatabaseReference appointmentRef, String userId,
+                                              String doctorId, PaymentStartCallback callback) {
+        Map<String, Object> appointment = new HashMap<>();
+        appointment.put("appointmentId", consultationId);
+        appointment.put("patientId", userId);
+        appointment.put("doctorId", doctorId);
+        appointment.put("patientName", new PreferenceManager(PaymentActivity.this).getUserName());
+        appointment.put("doctorName", doctor != null ? doctor.getFullName() : "");
+        appointment.put("date", "");
+        appointment.put("time", "");
+        appointment.put("reason", "doctor_registration".equals(doctorId)
+                ? "Doctor registration payment"
+                : "Service payment");
+        appointment.put("status", "pending");
+        appointment.put("appointmentType", "doctor_registration".equals(doctorId)
+                ? "Doctor Registration"
+                : "Service");
+        appointment.put("amount", Math.round(consultationFee));
+        appointment.put("createdAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+
+        appointmentRef.setValue(appointment)
+                .addOnSuccessListener(ignored -> callback.onReady())
+                .addOnFailureListener(error -> callback.onError(
+                        error.getMessage() != null
+                                ? error.getMessage()
+                                : "Unable to prepare payment price verification."));
     }
 
     private static String firstNonBlank(String... values) {

@@ -78,6 +78,7 @@ public class BookAppointmentActivity extends BaseActivity {
     private final android.os.Handler safetyHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private long paidAt = 0L;
     private int paymentTransactionId = -1;
+    private String pendingPaymentAppointmentId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -289,12 +290,12 @@ public class BookAppointmentActivity extends BaseActivity {
             return;
         }
 
-        launchPaymentActivity();
+        prepareAppointmentForPayment();
     }
 
-    private void launchPaymentActivity() {
+    private void prepareAppointmentForPayment() {
         if (isLaunchingPayment) return;
-        
+
         // Check if this is a demo doctor - skip payment
         if (doctor != null && doctor.isDemo()) {
             isLaunchingPayment = true;
@@ -315,13 +316,49 @@ public class BookAppointmentActivity extends BaseActivity {
                 .show();
             return;
         }
-        
+
         isLaunchingPayment = true;
-        
+
+        if (pendingPaymentAppointmentId != null && !pendingPaymentAppointmentId.trim().isEmpty()) {
+            launchPaymentActivity(pendingPaymentAppointmentId);
+            return;
+        }
+
+        String appointmentId = FirebaseHelper.getAppointmentsRef().push().getKey();
+        if (appointmentId == null) {
+            isLaunchingPayment = false;
+            Snackbar.make(rootView, "Unable to prepare payment session", Snackbar.LENGTH_LONG)
+                    .setBackgroundTint(getResources().getColor(R.color.colorError))
+                    .show();
+            return;
+        }
+
+        AppointmentEntity appointmentEntity = buildAppointmentEntity(appointmentId);
+        FirebaseHelper.createAppointment(appointmentEntity, new FirebaseHelper.OnCompleteListener<AppointmentEntity>() {
+            @Override
+            public void onSuccess(AppointmentEntity result) {
+                pendingPaymentAppointmentId = result.getAppointmentId();
+                launchPaymentActivity(pendingPaymentAppointmentId);
+            }
+
+            @Override
+            public void onError(String error) {
+                isLaunchingPayment = false;
+                Snackbar.make(rootView,
+                                error != null ? error : "Unable to prepare payment session",
+                                Snackbar.LENGTH_LONG)
+                        .setBackgroundTint(getResources().getColor(R.color.colorError))
+                        .show();
+            }
+        });
+    }
+
+    private void launchPaymentActivity(String appointmentId) {
         Intent paymentIntent = new Intent(this, PaymentActivity.class);
         paymentIntent.putExtra("doctor", doctor);
         double fee = doctor.getConsultationFee() > 0 ? doctor.getConsultationFee() : 0.0;
         paymentIntent.putExtra("consultation_fee", fee);
+        paymentIntent.putExtra("consultation_id", appointmentId);
         startActivityForResult(paymentIntent, 100);
         
         // Safety timeout to reset the flag if the activity somehow fails to start or we don't get a result
@@ -340,15 +377,52 @@ public class BookAppointmentActivity extends BaseActivity {
                 paidAt = System.currentTimeMillis();
                 paymentTransactionId = data != null ? data.getIntExtra("transaction_id", -1) : -1;
                 proceedWithBooking();
+            } else {
+                cleanupPendingPaymentAppointment();
             }
         }
     }
 
+    private void cleanupPendingPaymentAppointment() {
+        if (pendingPaymentAppointmentId == null || pendingPaymentAppointmentId.trim().isEmpty()) {
+            return;
+        }
+        String appointmentId = pendingPaymentAppointmentId;
+        pendingPaymentAppointmentId = null;
+        String patientId = preferenceManager.getUserId();
+        String resolvedDoctorId = doctorId;
+        FirebaseHelper.getAppointmentsRef().child(appointmentId).removeValue();
+        if (patientId != null) {
+            FirebaseHelper.getPatientAppointmentsRef(patientId).child(appointmentId).removeValue();
+        }
+        if (resolvedDoctorId != null) {
+            FirebaseHelper.getDoctorAppointmentsRef(resolvedDoctorId).child(appointmentId).removeValue();
+        }
+    }
+
     private void proceedWithBooking() {
+        AppointmentEntity appointmentEntity = buildAppointmentEntity(pendingPaymentAppointmentId);
+        if (paidAt > 0 || paymentTransactionId >= 0) {
+            long paymentTime = paidAt > 0 ? paidAt : System.currentTimeMillis();
+            appointmentEntity.setPaymentStatus("paid");
+            appointmentEntity.setPaidAt(paymentTime);
+            appointmentEntity.setPaymentTransactionId(String.valueOf(paymentTransactionId));
+            appointmentEntity.setChatStartsAt(0L);
+            appointmentEntity.setChatExpiresAt(0L);
+            appointmentEntity.setChatActive(false);
+        }
+
+        viewModel.createAppointment(appointmentEntity);
+    }
+
+    private AppointmentEntity buildAppointmentEntity(String appointmentId) {
         String patientId = preferenceManager.getUserId();
         String patientName = preferenceManager.getUserName();
 
         AppointmentEntity appointmentEntity = new AppointmentEntity();
+        if (appointmentId != null && !appointmentId.trim().isEmpty()) {
+            appointmentEntity.setAppointmentId(appointmentId);
+        }
         appointmentEntity.setPatientId(patientId);
         appointmentEntity.setDoctorId(doctorId);
         appointmentEntity.setPatientName(patientName);
@@ -359,20 +433,10 @@ public class BookAppointmentActivity extends BaseActivity {
         appointmentEntity.setAppointmentType(appointmentType);
         // Persist the consultation fee so admin revenue reports can read it
         appointmentEntity.setAmount(doctor != null && doctor.getConsultationFee() > 0 ? doctor.getConsultationFee() : 0.0);
-        if (paidAt > 0 || paymentTransactionId >= 0) {
-            long paymentTime = paidAt > 0 ? paidAt : System.currentTimeMillis();
-            appointmentEntity.setPaymentStatus("paid");
-            appointmentEntity.setPaidAt(paymentTime);
-            appointmentEntity.setPaymentTransactionId(String.valueOf(paymentTransactionId));
-            appointmentEntity.setChatStartsAt(0L);
-            appointmentEntity.setChatExpiresAt(0L);
-            appointmentEntity.setChatActive(false);
-        }
-        
+
         // All appointments start as pending and require doctor approval
         appointmentEntity.setStatus(Constants.STATUS_PENDING);
-
-        viewModel.createAppointment(appointmentEntity);
+        return appointmentEntity;
     }
 
     private void toggleCardExpansion(String cardType) {

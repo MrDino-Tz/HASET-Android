@@ -92,12 +92,15 @@ public class DoctorWalletActivity extends BaseActivity {
         });
 
         viewModel.getError().observe(this, error -> {
-            if (error != null) {
-                if (withdrawDialog != null && withdrawDialog.isShowing()) {
-                    withdrawDialog.dismiss();
-                }
-                Toast.makeText(this, getString(R.string.operation_failed, walletErrorMessage(error)), Toast.LENGTH_LONG).show();
+            if (error == null) return;
+            if (withdrawDialog != null && withdrawDialog.isShowing()) {
+                withdrawDialog.dismiss();
             }
+            stopBalanceShimmer();
+            Toast.makeText(this, getString(R.string.operation_failed, walletErrorMessage(error)), Toast.LENGTH_LONG).show();
+            // Consume the error so the sticky LiveData does not re-show a
+            // previously cached failure every time this screen is (re)opened.
+            viewModel.clearError();
         });
 
         viewModel.getLoading().observe(this, isLoading -> {
@@ -316,6 +319,19 @@ public class DoctorWalletActivity extends BaseActivity {
                     .start();
             })
             .start();
+    }
+
+    private void stopBalanceShimmer() {
+        if (shimmerBalance != null) {
+            shimmerBalance.stopShimmer();
+            shimmerBalance.setVisibility(View.GONE);
+        }
+        if (shimmerTotalEarnings != null) {
+            shimmerTotalEarnings.stopShimmer();
+            shimmerTotalEarnings.setVisibility(View.GONE);
+        }
+        if (tvTotalEarnings != null) tvTotalEarnings.setVisibility(View.VISIBLE);
+        if (llBalanceContainer != null) llBalanceContainer.setVisibility(View.VISIBLE);
     }
 
     private void updateBalanceDisplay() {

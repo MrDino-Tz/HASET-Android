@@ -206,6 +206,27 @@ test("allows only the patient to create a pending appointment with an approved d
   }));
 });
 
+test("allows doctor registration payment price-verification records", async () => {
+  await assertSucceeds(set(ref(newDoctor, "appointments/doctor-registration-price-check"), {
+    appointmentId: "doctor-registration-price-check",
+    patientId: "new-doctor",
+    doctorId: "doctor_registration",
+    patientName: "New Doctor",
+    doctorName: "New Doctor",
+    date: "",
+    time: "",
+    reason: "Doctor registration payment",
+    status: "pending",
+    appointmentType: "Doctor Registration",
+    amount: 500,
+    createdAt: 1786500000000,
+  }));
+});
+
+test("allows authenticated existence checks before payment price records are created", async () => {
+  await assertSucceeds(get(ref(newDoctor, "appointments/missing-price-check")));
+});
+
 test("limits appointment reads and lifecycle updates to participants", async () => {
   await assertFails(get(ref(otherPatient, "appointments/appointment-a")));
   await assertSucceeds(get(ref(patient, "appointments/appointment-a")));

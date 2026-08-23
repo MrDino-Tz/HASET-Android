@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.haset.hasetapp.api.PaymentApiService;
@@ -187,10 +188,14 @@ public class PaymentRepository {
         });
     }
 
-    private static String paymentErrorMessage(String rawBody, String paymentMethod) {
+    static String paymentErrorMessage(String rawBody, String paymentMethod) {
         Integer transactionId = null;
+        String backendMessage = null;
+        String validationMessage = null;
         try {
             JsonObject error = JsonParser.parseString(rawBody).getAsJsonObject();
+            backendMessage = stringValue(error, "message");
+            validationMessage = validationMessage(error);
             if (error.has("transaction_id") && !error.get("transaction_id").isJsonNull()) {
                 transactionId = error.get("transaction_id").getAsInt();
             }
@@ -198,11 +203,57 @@ public class PaymentRepository {
         }
 
         String reference = transactionId == null ? "" : " Reference: " + transactionId + ".";
+        String detail = validationMessage == null ? "" : " " + validationMessage;
+        if (backendMessage != null && !backendMessage.trim().isEmpty()) {
+            return backendMessage.trim() + detail + reference;
+        }
         if ("card".equals(paymentMethod)) {
             return "Card payment is temporarily unavailable. Please use mobile money or try again later."
                     + reference;
         }
         return "Payment could not be started. Please try again later." + reference;
+    }
+
+    private static String stringValue(JsonObject object, String key) {
+        if (object == null || !object.has(key) || object.get(key).isJsonNull()) {
+            return null;
+        }
+        JsonElement value = object.get(key);
+        if (!value.isJsonPrimitive()) {
+            return null;
+        }
+        String text = value.getAsString();
+        return text == null || text.trim().isEmpty() ? null : text.trim();
+    }
+
+    private static String validationMessage(JsonObject error) {
+        if (error == null || !error.has("errors") || error.get("errors").isJsonNull()) {
+            return null;
+        }
+        JsonElement errors = error.get("errors");
+        if (errors.isJsonArray() && errors.getAsJsonArray().size() > 0) {
+            JsonElement first = errors.getAsJsonArray().get(0);
+            if (first.isJsonPrimitive()) {
+                String message = first.getAsString();
+                return message == null || message.trim().isEmpty() ? null : message.trim();
+            }
+        }
+        if (errors.isJsonObject()) {
+            for (java.util.Map.Entry<String, JsonElement> entry : errors.getAsJsonObject().entrySet()) {
+                JsonElement value = entry.getValue();
+                if (value.isJsonArray() && value.getAsJsonArray().size() > 0) {
+                    JsonElement first = value.getAsJsonArray().get(0);
+                    if (first.isJsonPrimitive()) {
+                        String message = first.getAsString();
+                        return message == null || message.trim().isEmpty() ? null : message.trim();
+                    }
+                } else if (value.isJsonPrimitive()) {
+                    String message = value.getAsString();
+                    return message == null || message.trim().isEmpty() ? null : message.trim();
+                }
+            }
+        }
+        return null;
     }
 
     private void startStatusPolling(int transactionId, String doctorId, double amount,
@@ -265,7 +316,7 @@ public class PaymentRepository {
     private void handlePaymentSuccess(int transactionId, String doctorId, double amount,
                                       FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
         // Settlement and doctor wallet credit are owned by the payment backend.
-        currentTransactionId = -1;
+        currentTransactionId = transactionId;
         isProcessingPayment = false;
         if (finalCallback != null) finalCallback.onSuccess(true);
     }

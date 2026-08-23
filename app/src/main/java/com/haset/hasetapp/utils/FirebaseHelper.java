@@ -486,20 +486,24 @@ public class FirebaseHelper {
     // Appointments methods using OnCompleteListener
     public static void createAppointment(AppointmentEntity appointment, OnCompleteListener<AppointmentEntity> listener) {
         DatabaseReference appointmentsRef = getAppointmentsRef();
-        String appointmentId = appointmentsRef.push().getKey(); // Generate unique ID
+        String appointmentId = appointment.getAppointmentId();
+        if (appointmentId == null || appointmentId.trim().isEmpty()) {
+            appointmentId = appointmentsRef.push().getKey(); // Generate unique ID
+        }
         if (appointmentId != null) {
-            appointment.setAppointmentId(appointmentId);
+            final String resolvedAppointmentId = appointmentId;
+            appointment.setAppointmentId(resolvedAppointmentId);
             // Set creation timestamp if not already set
             if (appointment.getCreatedAt() == 0) {
                 appointment.setCreatedAt(System.currentTimeMillis());
             }
 
-            appointmentsRef.child(appointmentId).setValue(appointment)
+            appointmentsRef.child(resolvedAppointmentId).setValue(appointment)
                     .addOnSuccessListener(aVoid -> {
                         // Update patient_appointments node
-                        getPatientAppointmentsRef(appointment.getPatientId()).child(appointmentId).setValue(true);
+                        getPatientAppointmentsRef(appointment.getPatientId()).child(resolvedAppointmentId).setValue(true);
                         // Update doctor_appointments node
-                        getDoctorAppointmentsRef(appointment.getDoctorId()).child(appointmentId).setValue(true);
+                        getDoctorAppointmentsRef(appointment.getDoctorId()).child(resolvedAppointmentId).setValue(true);
                         listener.onSuccess(appointment);
                     })
                     .addOnFailureListener(e -> listener.onError(e.getMessage()));
