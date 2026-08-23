@@ -144,7 +144,7 @@ public class TrendingArticlesWorker extends Worker {
         );
         
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo)
                 .setContentTitle(title)
                 .setContentText(summary)
                 .setStyle(new NotificationCompat.BigTextStyle()

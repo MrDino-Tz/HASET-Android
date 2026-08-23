@@ -64,7 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/select_appointment"
-                app:startIconDrawable="@drawable/ic_empty_appointments"
+                app:startIconDrawable="@drawable/ic_empty_calendar"
                 app:startIconTint="@color/green_primary"
                 app:boxCornerRadiusTopStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"

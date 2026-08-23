@@ -13,7 +13,6 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.MainActivity;
 
 public class NotificationHelper {
     
@@ -123,7 +122,7 @@ public class NotificationHelper {
 
         // Build Notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID_MESSAGES)
-                .setSmallIcon(R.drawable.haset_logo_icon)
+                .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle(senderName)
                 .setContentText(messageBody)
                 .setStyle(messagingStyle)
@@ -157,7 +156,7 @@ public class NotificationHelper {
             }
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
-                    .setSmallIcon(R.drawable.haset_logo_icon)
+                    .setSmallIcon(R.drawable.notification_icon)
                     .setContentTitle(title)
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)

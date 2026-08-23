@@ -162,7 +162,7 @@
                     android:id="@+id/ivLike"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/ic_like_outline"
+                    android:src="@drawable/ic_like"
                     app:tint="@color/red_primary" />
 
                 <TextView

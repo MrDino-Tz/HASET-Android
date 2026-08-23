@@ -82,8 +82,8 @@
                     android:layout_width="290dp"
                     android:layout_height="150dp"
                     android:scaleType="centerInside"
-                    android:src="@drawable/haset_logo"
-                    tools:src="@drawable/haset_logo" />
+                    android:src="@drawable/haset_banner"
+                    tools:src="@drawable/haset_banner" />
 
             </LinearLayout>
 

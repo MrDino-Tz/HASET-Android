@@ -511,7 +511,7 @@ public class StylishQRCodeGenerator {
 
     public static Bitmap generateHASETQR(Context context, String content) {
         Bitmap logo = BitmapFactory.decodeResource(context.getResources(), 
-            com.haset.hasetapp.R.drawable.logo_v1);
+            com.haset.hasetapp.R.drawable.haset_logo);
 
         return new Builder()
             .size(512)
@@ -533,7 +533,7 @@ public class StylishQRCodeGenerator {
             ColorTemplate template, DotStyle dotStyle) {
 
         Bitmap logo = BitmapFactory.decodeResource(context.getResources(), 
-            com.haset.hasetapp.R.drawable.logo_v1);
+            com.haset.hasetapp.R.drawable.haset_logo);
 
         return new Builder()
             .size(512)

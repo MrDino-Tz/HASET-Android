@@ -52,31 +52,41 @@
             android:gravity="center"
             android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/from"
-                android:textColor="@color/text_secondary"
-                android:textSize="15sp"
-                android:fontFamily="@font/poppins_regular" />
-
-            <ImageView
-                android:layout_width="17dp"
-                android:layout_height="17dp"
-                android:layout_marginStart="6dp"
-                android:layout_marginEnd="6dp"
-                android:layout_gravity="center_vertical"
-                android:contentDescription="H-Care Logo"
-                android:src="@drawable/haset_logo" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:text="@string/haset_hospital"
+                android:text="@string/tagline"
                 android:textColor="@color/text_secondary"
-                android:textSize="15sp"
+                android:textSize="20sp"
                 android:fontFamily="@font/poppins_regular" />
+
+
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="@string/from"-->
+<!--                android:textColor="@color/text_secondary"-->
+<!--                android:textSize="15sp"-->
+<!--                android:fontFamily="@font/poppins_regular" />-->
+
+<!--            <ImageView-->
+<!--                android:layout_width="17dp"-->
+<!--                android:layout_height="17dp"-->
+<!--                android:layout_marginStart="6dp"-->
+<!--                android:layout_marginEnd="6dp"-->
+<!--                android:layout_gravity="center_vertical"-->
+<!--                android:contentDescription="H-Care Logo"-->
+<!--                android:src="@drawable/haset_logo" />-->
+
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:text="@string/haset_hospital"-->
+<!--                android:textColor="@color/text_secondary"-->
+<!--                android:textSize="15sp"-->
+<!--                android:fontFamily="@font/poppins_regular" />-->
 
         </LinearLayout>
 
