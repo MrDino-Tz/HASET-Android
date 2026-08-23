@@ -140,6 +140,23 @@ public class AuthRepository {
             });
     }
 
+    /**
+     * Sends a password reset email whose link is handled inside the app
+     * (handleCodeInApp=true). Tapping the email link deep-links back into
+     * AfyaHASET carrying the oobCode, so no Firebase web form is shown.
+     */
+    public void sendPasswordResetEmail(String email, com.google.firebase.auth.ActionCodeSettings settings,
+                                       FirebaseHelper.OnCompleteListener<Void> callback) {
+        mAuth.sendPasswordResetEmail(email, settings)
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Failed to send reset email"));
+                }
+            });
+    }
+
     public void logout() {
         mAuth.signOut();
     }

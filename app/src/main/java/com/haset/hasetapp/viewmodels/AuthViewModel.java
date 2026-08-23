@@ -132,6 +132,25 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * In-app password reset: the emailed link opens this app (deep link)
+     * with the oobCode instead of a web page.
+     */
+    public void resetPassword(String email, com.google.firebase.auth.ActionCodeSettings settings) {
+        authState.setValue(AuthState.loading("Sending reset email..."));
+        repository.sendPasswordResetEmail(email, settings, new FirebaseHelper.OnCompleteListener<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                authState.setValue(AuthState.success("Reset code sent. Check your inbox."));
+            }
+
+            @Override
+            public void onError(String error) {
+                authState.setValue(AuthState.error(error));
+            }
+        });
+    }
+
     public void fetchUserData(String uid) {
         repository.getUserData(uid, new FirebaseHelper.OnCompleteListener<UserEntity>() {
             @Override

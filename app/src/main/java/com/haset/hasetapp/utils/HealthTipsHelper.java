@@ -316,7 +316,7 @@ public class HealthTipsHelper {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo)
                 .setContentTitle(title)
                 .setContentText(tip)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(tip))
@@ -442,7 +442,7 @@ public class HealthTipsHelper {
         
         // Build group summary notification
         NotificationCompat.Builder summaryBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo)
                 .setContentTitle("Vidokezo vya Afya vya Kila Siku")
                 .setContentText("Vidokezo vyako vya afya kwa leo")
                 .setStyle(new NotificationCompat.BigTextStyle().bigText("Vidokezo na vikumbusho vyako vya afya vya kila siku"))

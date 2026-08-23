@@ -927,7 +927,7 @@ public class PatientHomeFragment extends Fragment {
 
         rvCategories.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
         List<CategoryAdapter.Category> catList = new java.util.ArrayList<>();
-        catList.add(new CategoryAdapter.Category(R.drawable.orange_new_publication, getString(R.string.all_articles)));
+        catList.add(new CategoryAdapter.Category(R.drawable.haset_logo, getString(R.string.all_articles)));
         catList.add(new CategoryAdapter.Category(R.drawable.ic_play_circle_filled, getString(R.string.afya_class)));
         catList.add(new CategoryAdapter.Category(R.drawable.ic_heart, getString(R.string.childrens)));
         

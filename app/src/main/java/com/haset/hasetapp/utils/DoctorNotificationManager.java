@@ -217,7 +217,7 @@ public class DoctorNotificationManager {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_TRENDING_ARTICLES)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo)
                 .setContentTitle(title)
                 .setContentText(summary)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(description + "\n\nViews: " + article.getViews()))
@@ -274,7 +274,7 @@ public class DoctorNotificationManager {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_APPOINTMENTS)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo)
                 .setContentTitle("Miadi Inayosubiri")
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -334,7 +334,7 @@ public class DoctorNotificationManager {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(R.drawable.logo_v1_notify)
+                .setSmallIcon(R.drawable.haset_logo)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -401,14 +401,14 @@ public class DoctorNotificationManager {
         if (Constants.STATUS_APPROVED.equals(status) || "completed".equals(status)) {
             title = "Umefanikiwa Kutoa Pesa! 💰";
             message = String.format("Ombi lako la kutoa TZS %,.0f limeidhinishwa.", amount);
-            icon = R.drawable.logo_v1_notify;
+            icon = R.drawable.haset_logo;
         } else if (com.haset.hasetapp.database.entities.WithdrawalRequest.STATUS_REJECTED.equals(status)) {
             title = "Ombi la Kutoa Pesa Limekataliwa ❌";
             message = String.format("Ombi lako la kutoa TZS %,.0f limekataliwa.", amount);
             if (reason != null && !reason.isEmpty()) {
                 message += " Sababu: " + reason;
             }
-            icon = R.drawable.logo_v1_notify;
+            icon = R.drawable.haset_logo;
         } else {
             return;
         }

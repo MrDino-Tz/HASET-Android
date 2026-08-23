@@ -58,7 +58,7 @@ public class DoctorHomeViewModel extends AndroidViewModel {
                 wallet.postValue(result);
             }
             @Override public void onError(String message) {
-                error.postValue(message);
+                // Passive load error: UI falls back gracefully without intrusive Toast popups
             }
         });
     }
@@ -137,7 +137,7 @@ public class DoctorHomeViewModel extends AndroidViewModel {
                 withdrawals.postValue(result);
             }
             @Override public void onError(String message) {
-                error.postValue(message);
+                // Passive load error: UI falls back gracefully without intrusive Toast popups
             }
         });
     }
