@@ -20,10 +20,12 @@ import retrofit2.Response;
 
 public class AuthViewModel extends AndroidViewModel {
     private final AuthRepository repository;
+    private static final long PASSWORD_RESET_COOLDOWN_MS = 30_000L;
     
     private final MutableLiveData<AuthState> authState = new MutableLiveData<>(AuthState.idle());
     private final MutableLiveData<UserEntity> currentUser = new MutableLiveData<>();
     private FirebaseUser pendingFirebaseUser;
+    private long lastPasswordResetRequestAt;
 
     public AuthViewModel(@NonNull Application application) {
         super(application);
@@ -44,7 +46,7 @@ public class AuthViewModel extends AndroidViewModel {
             @Override
             public void onSuccess(FirebaseUser result) {
                 pendingFirebaseUser = result;
-                checkMfaThenFetch(result);
+                checkEmailVerifiedThenContinue(result);
             }
 
             @Override
@@ -52,6 +54,41 @@ public class AuthViewModel extends AndroidViewModel {
                 authState.setValue(AuthState.error(error));
             }
         });
+    }
+
+    private void checkEmailVerifiedThenContinue(FirebaseUser user) {
+        if (user == null) {
+            authState.setValue(AuthState.error("Authentication expired."));
+            return;
+        }
+
+        user.reload()
+            .addOnSuccessListener(unused -> {
+                FirebaseUser refreshed = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                if (refreshed == null) {
+                    authState.postValue(AuthState.error("Authentication expired."));
+                    return;
+                }
+
+                if (!refreshed.isEmailVerified()) {
+                    repository.sendEmailVerificationViaSmtp(refreshed, new FirebaseHelper.OnCompleteListener<Void>() {
+                        @Override
+                        public void onSuccess(Void result) {
+                            blockUnverifiedLogin();
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            blockUnverifiedLogin();
+                        }
+                    });
+                    return;
+                }
+
+                pendingFirebaseUser = refreshed;
+                checkMfaThenFetch(refreshed);
+            })
+            .addOnFailureListener(error -> authState.setValue(AuthState.error("Unable to refresh authentication.")));
     }
 
     private void checkMfaThenFetch(FirebaseUser user) {
@@ -90,7 +127,17 @@ public class AuthViewModel extends AndroidViewModel {
         repository.registerWithEmail(email, password, userData, new FirebaseHelper.OnCompleteListener<FirebaseUser>() {
             @Override
             public void onSuccess(FirebaseUser result) {
-                fetchUserData(result.getUid());
+                repository.sendEmailVerificationViaSmtp(result, new FirebaseHelper.OnCompleteListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        completeRegistrationPendingVerification();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        completeRegistrationPendingVerification();
+                    }
+                });
             }
 
             @Override
@@ -98,6 +145,18 @@ public class AuthViewModel extends AndroidViewModel {
                 authState.setValue(AuthState.error(error));
             }
         });
+    }
+
+    private void blockUnverifiedLogin() {
+        pendingFirebaseUser = null;
+        repository.logout();
+        authState.postValue(AuthState.error(getApplication().getString(com.haset.hasetapp.R.string.verify_email_before_login)));
+    }
+
+    private void completeRegistrationPendingVerification() {
+        pendingFirebaseUser = null;
+        repository.logout();
+        authState.postValue(AuthState.success(getApplication().getString(com.haset.hasetapp.R.string.verify_email_after_registration)));
     }
 
     /*
@@ -118,16 +177,22 @@ public class AuthViewModel extends AndroidViewModel {
     */
 
     public void resetPassword(String email) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - lastPasswordResetRequestAt < PASSWORD_RESET_COOLDOWN_MS) {
+            authState.setValue(AuthState.success(passwordResetResponse()));
+            return;
+        }
+        lastPasswordResetRequestAt = now;
         authState.setValue(AuthState.loading("Sending reset email..."));
         repository.sendPasswordResetEmail(email, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override
             public void onSuccess(Void result) {
-                authState.setValue(AuthState.success("Reset email sent. Check your inbox."));
+                authState.setValue(AuthState.success(passwordResetResponse()));
             }
 
             @Override
             public void onError(String error) {
-                authState.setValue(AuthState.error(error));
+                authState.setValue(AuthState.success(passwordResetResponse()));
             }
         });
     }
@@ -137,18 +202,28 @@ public class AuthViewModel extends AndroidViewModel {
      * with the oobCode instead of a web page.
      */
     public void resetPassword(String email, com.google.firebase.auth.ActionCodeSettings settings) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - lastPasswordResetRequestAt < PASSWORD_RESET_COOLDOWN_MS) {
+            authState.setValue(AuthState.success(passwordResetResponse()));
+            return;
+        }
+        lastPasswordResetRequestAt = now;
         authState.setValue(AuthState.loading("Sending reset email..."));
         repository.sendPasswordResetEmail(email, settings, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override
             public void onSuccess(Void result) {
-                authState.setValue(AuthState.success("Reset code sent. Check your inbox."));
+                authState.setValue(AuthState.success(passwordResetResponse()));
             }
 
             @Override
             public void onError(String error) {
-                authState.setValue(AuthState.error(error));
+                authState.setValue(AuthState.success(passwordResetResponse()));
             }
         });
+    }
+
+    private String passwordResetResponse() {
+        return getApplication().getString(com.haset.hasetapp.R.string.reset_email_sent);
     }
 
     public void fetchUserData(String uid) {

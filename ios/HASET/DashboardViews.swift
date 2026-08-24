@@ -1185,11 +1185,8 @@ private struct DoctorWalletView: View {
     @State private var payoutMethod = "mobile_money"
     @State private var showPayoutAccounts = false
     @State private var payoutSetupAfterMFA = false
-    @State private var destinationType = "mobile_money"
     @State private var destinationProvider = ""
     @State private var destinationPhone = ""
-    @State private var destinationBank = ""
-    @State private var destinationAccount = ""
     @State private var destinationMFA = ""
     @State private var destinationMessage: String?
     @State private var savingDestination = false
@@ -1367,17 +1364,8 @@ private struct DoctorWalletView: View {
                     Text("Payout accounts").font(.title3.bold())
                     Text("Choose where you receive payouts. Finance must approve a change before it can be used.")
                         .font(.caption).foregroundStyle(HASETTheme.textSecondary)
-                    Picker("Account type", selection: $destinationType) {
-                        Text("Mobile Money").tag("mobile_money")
-                        Text("Bank Account").tag("bank")
-                    }.pickerStyle(.segmented)
-                    if destinationType == "bank" {
-                        TextField("Bank code or bank name", text: $destinationBank).textFieldStyle(.roundedBorder)
-                        TextField("Bank account number", text: $destinationAccount).textFieldStyle(.roundedBorder)
-                    } else {
-                        TextField("Provider (M-Pesa, Airtel Money, Mixx by Yas)", text: $destinationProvider).textFieldStyle(.roundedBorder)
-                        TextField("Mobile number", text: $destinationPhone).keyboardType(.phonePad).textFieldStyle(.roundedBorder)
-                    }
+                    TextField("Provider (M-Pesa, Airtel Money, Mixx by Yas)", text: $destinationProvider).textFieldStyle(.roundedBorder)
+                    TextField("Mobile number", text: $destinationPhone).keyboardType(.phonePad).textFieldStyle(.roundedBorder)
                     SixDigitMFAInput(code: $destinationMFA, isInvalid: destinationMessage != nil, isVerified: false) {}
                     if let destinationMessage { Text(destinationMessage).foregroundStyle(.red).font(.caption) }
                     Button(savingDestination ? "Submitting…" : "Submit for approval") { submitPayoutDestination() }
@@ -1468,19 +1456,13 @@ private struct DoctorWalletView: View {
     private func submitPayoutDestination() {
         let provider = destinationProvider.trimmingCharacters(in: .whitespacesAndNewlines)
         let phone = destinationPhone.trimmingCharacters(in: .whitespacesAndNewlines)
-        let bank = destinationBank.trimmingCharacters(in: .whitespacesAndNewlines)
-        let account = destinationAccount.trimmingCharacters(in: .whitespacesAndNewlines)
-        if destinationType == "bank" {
-            guard !bank.isEmpty, account.count >= 5 else { destinationMessage = "Enter a valid bank and account number."; return }
-        } else {
-            guard !provider.isEmpty, phone.range(of: "^(?:0\\d{9}|\\+255\\d{9})$", options: .regularExpression) != nil else { destinationMessage = "Use 07XXXXXXXX or +255XXXXXXXXX."; return }
-        }
+        guard !provider.isEmpty, phone.range(of: "^(?:0\\d{9}|\\+255\\d{9})$", options: .regularExpression) != nil else { destinationMessage = "Use 07XXXXXXXX or +255XXXXXXXXX."; return }
         guard destinationMFA.count == 6 else { destinationMessage = "Enter the six-digit MFA code."; return }
         guard let session = SessionStore().loadSession() else { destinationMessage = "Authentication expired."; return }
         savingDestination = true; destinationMessage = nil
         Task { do {
             guard let token = try await AuthService().verifyMobileMFA(code: destinationMFA, idToken: session.idToken) else { throw ServiceError.message("A current authenticator code is required.") }
-            try await AuthService().updateDoctorPayoutDestination(type: destinationType, provider: provider, phone: phone, bankCode: bank, bankAccount: account, idToken: session.idToken, mfaActionToken: token)
+            try await AuthService().updateDoctorPayoutDestination(type: "mobile_money", provider: provider, phone: phone, bankCode: "", bankAccount: "", idToken: session.idToken, mfaActionToken: token)
             await MainActor.run {
                 clearDestinationState(); showPayoutAccounts = false
                 appViewModel.alertState = AlertState(title: "Payout account submitted", message: "Finance approval and the security cooling-off period are required before withdrawal.")
@@ -1488,7 +1470,7 @@ private struct DoctorWalletView: View {
         } catch { await MainActor.run { savingDestination = false; destinationMessage = error.localizedDescription; destinationMFA = "" } } }
     }
     private func clearDestinationState() {
-        destinationProvider = ""; destinationPhone = ""; destinationBank = ""; destinationAccount = ""
+        destinationProvider = ""; destinationPhone = ""
         destinationMFA = ""; destinationMessage = nil; savingDestination = false
     }
     private func clearPayoutState() { amount = ""; mfaCode = ""; submitting = false; message = nil }

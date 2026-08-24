@@ -20,10 +20,21 @@ import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+
 public class AuthRepository {
     private static final String TAG = "AuthRepository";
+    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private final FirebaseAuth mAuth;
     private final DatabaseReference usersRef;
+    private final OkHttpClient httpClient = new OkHttpClient();
 
     public AuthRepository() {
         this.mAuth = FirebaseAuth.getInstance();
@@ -154,6 +165,43 @@ public class AuthRepository {
                 } else {
                     callback.onError(mapFirebaseAuthError(task.getException(), "Failed to send reset email"));
                 }
+            });
+    }
+
+    public void sendEmailVerificationViaSmtp(FirebaseUser user) {
+        sendEmailVerificationViaSmtp(user, null);
+    }
+
+    public void sendEmailVerificationViaSmtp(FirebaseUser user, FirebaseHelper.OnCompleteListener<Void> callback) {
+        if (user == null) return;
+        user.getIdToken(true)
+            .addOnSuccessListener(token -> {
+                Request request = new Request.Builder()
+                    .url(Constants.EMAIL_VERIFICATION_API_URL)
+                    .post(RequestBody.create("{}", JSON))
+                    .addHeader("Authorization", "Bearer " + token.getToken())
+                    .build();
+                httpClient.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                        Log.w(TAG, "Email verification request failed", e);
+                        if (callback != null) callback.onError("Unable to send verification email.");
+                    }
+
+                    @Override
+                    public void onResponse(@NonNull Call call, @NonNull okhttp3.Response response) {
+                        boolean successful = response.isSuccessful();
+                        response.close();
+                        if (callback != null) {
+                            if (successful) callback.onSuccess(null);
+                            else callback.onError("Unable to send verification email.");
+                        }
+                    }
+                });
+            })
+            .addOnFailureListener(error -> {
+                Log.w(TAG, "Unable to refresh token for email verification", error);
+                if (callback != null) callback.onError("Unable to send verification email.");
             });
     }
 

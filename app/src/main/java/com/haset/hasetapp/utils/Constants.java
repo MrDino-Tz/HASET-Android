@@ -77,6 +77,7 @@ public class Constants {
     // PRODUCTION: public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String PRODUCTION_API_URL = "https://payments.hasethospital.or.tz/public/api/";
     public static final String PAYMENT_API_BASE_URL = "https://payments.hasethospital.or.tz/public/api/";
+    public static final String EMAIL_VERIFICATION_API_URL = PAYMENT_API_BASE_URL + "mobile/email/verification";
     // Use the production backend for all API traffic.
     public static final String API_BASE_URL = PRODUCTION_API_URL;
     

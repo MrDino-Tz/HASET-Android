@@ -51,7 +51,9 @@
     <string name="send_reset_link">Send Reset Link</string>
     <string name="remember_password">Remember your password?</string>
     <string name="sending_reset_email">Sending reset email...</string>
+    <string name="reset_email_sent">If an account exists for this email, a reset link has been sent.</string>
     <string name="register">Register</string>
+    <string name="registration_successful">Registration Successful</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="phone">Phone Number</string>
@@ -64,6 +66,8 @@
     <string name="other">Other</string>
     <string name="confirm_password">Confirm Password</string>
     <string name="forgot_password">Forgot Password?</string>
+    <string name="verify_email_after_registration">Welcome to HASET. Please check your email and verify your account.</string>
+    <string name="verify_email_before_login">Please verify your email address before signing in. We sent you a new verification email.</string>
     <!-- In-app password reset -->
     <string name="reset_password_title">Reset Password</string>
     <string name="reset_password_sheet_description">Open the link we emailed you — it opens this app automatically. You can also copy the link from the email and paste it below, then set a new password.</string>

@@ -36,6 +36,8 @@ final class AppViewModel: ObservableObject {
     private var didLoadAppointments = false
     private var didLoadConversations = false
     private var didLoadNotifications = false
+    private var lastPasswordResetRequestAt: Date?
+    private let passwordResetCooldown: TimeInterval = 30
 
     init() {
         selectedLanguage = sessionStore.languageCode
@@ -239,6 +241,11 @@ final class AppViewModel: ObservableObject {
                 if result.1.role == .patient { await loadPatientHomeContent(force: true) }
                 await loadDoctors(force: true); await loadAppointments(force: true); await loadConversations(force: true); await loadNotifications(force: true)
                 route = .dashboard(result.1.role)
+            } catch ServiceError.emailNotVerified {
+                sessionStore.clearSession()
+                activeSession = nil
+                currentUser = nil
+                alertState = AlertState(title: tr("login_failed"), message: tr("verify_email_before_login"))
             } catch {
                 alertState = AlertState(title: tr("login_failed"), message: error.localizedDescription)
             }
@@ -318,20 +325,12 @@ final class AppViewModel: ObservableObject {
                     role: role,
                     regNo: role == .doctor ? regNo : nil
                 )
-                sessionStore.saveSession(result.0)
-                currentUser = result.1
-                if role == .patient {
-                    await loadPatientHomeContent(force: true)
-                } else if role == .doctor {
-                    await loadDoctorWallet(force: true)
-                    await loadDoctorPresence(force: true)
-                }
-                await loadDoctors(force: true)
-                await loadAppointments(force: true)
-                await loadConversations(force: true)
-                await loadNotifications(force: true)
-                alertState = AlertState(title: tr("registration_successful"), message: "Welcome to HASET!")
-                route = .dashboard(role)
+                try? await authService.sendEmailVerificationViaSmtp(idToken: result.0.idToken)
+                sessionStore.clearSession()
+                activeSession = nil
+                currentUser = nil
+                alertState = AlertState(title: tr("registration_successful"), message: tr("verify_email_after_registration"))
+                route = .login
             } catch {
                 alertState = AlertState(title: tr("registration_failed"), message: error.localizedDescription)
             }
@@ -343,7 +342,13 @@ final class AppViewModel: ObservableObject {
             alertState = AlertState(title: tr("error"), message: tr("valid_email_required"))
             return
         }
+        if let lastPasswordResetRequestAt,
+           Date().timeIntervalSince(lastPasswordResetRequestAt) < passwordResetCooldown {
+            alertState = AlertState(title: tr("success"), message: tr("reset_email_sent"))
+            return
+        }
 
+        lastPasswordResetRequestAt = Date()
         isLoading = true
         Task {
             defer { isLoading = false }
@@ -351,7 +356,7 @@ final class AppViewModel: ObservableObject {
                 try await authService.sendPasswordReset(email: email)
                 alertState = AlertState(title: tr("success"), message: tr("reset_email_sent"))
             } catch {
-                alertState = AlertState(title: tr("reset_failed"), message: error.localizedDescription)
+                alertState = AlertState(title: tr("success"), message: tr("reset_email_sent"))
             }
         }
     }

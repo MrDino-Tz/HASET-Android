@@ -29,7 +29,9 @@
     <string name="send_reset_link">Tuma Kiungo cha Kuweka Upya</string>
     <string name="remember_password">Unakumbuka nenosiri lako?</string>
     <string name="sending_reset_email">Inatuma barua pepe ya kuweka upya...</string>
+    <string name="reset_email_sent">Ikiwa akaunti ipo kwa barua pepe hii, kiungo cha kubadili nenosiri kimetumwa.</string>
     <string name="register">Jisajili</string>
+    <string name="registration_successful">Usajili Umefanikiwa</string>
     <string name="email">Barua pepe</string>
     <string name="password">Nenosiri</string>
     <string name="phone">Namba ya Simu</string>
@@ -42,6 +44,8 @@
     <string name="other">Nyingine</string>
     <string name="confirm_password">Thibitisha Nenosiri</string>
     <string name="forgot_password">Umesahau Nenosiri?</string>
+    <string name="verify_email_after_registration">Karibu HASET. Tafadhali angalia barua pepe yako na uthibitishe akaunti yako.</string>
+    <string name="verify_email_before_login">Tafadhali thibitisha barua pepe yako kabla ya kuingia. Tumekutumia barua pepe mpya ya uthibitisho.</string>
     <!-- Kubadilisha nenosiri ndani ya app -->
     <string name="reset_password_title">Badilisha Nenosiri</string>
     <string name="reset_password_sheet_description">Fungua kiungo tulichokutumea barua pepe — kitafunguka programu hii moja kwa moja. Unaweza pia kunakili kiungo na kuweka hapa chini, kisha weka nenosiri jipya.</string>

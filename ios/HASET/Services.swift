@@ -8,6 +8,7 @@ enum HASETConstants {
     static let firebaseAPIKey = "AIzaSyB6XncMhXdlT0fScdU6Fq7Nw_toPmf-tRU"
     static let firebaseDatabaseURL = "https://hasetapp-4eeba-default-rtdb.europe-west1.firebasedatabase.app"
     static let productionAPIURL = "https://payments.hasethospital.or.tz/public/api/"
+    static let emailVerificationURL = "https://payments.hasethospital.or.tz/public/api/mobile/email/verification"
     static let privacyPolicyURL = "https://hasethospital.or.tz/legal/privacy-policy"
     static let termsURL = "https://hasethospital.or.tz/legal/terms"
     static let supportURL = "https://hasethospital.or.tz/contact"
@@ -240,12 +241,15 @@ final class PermissionService: NSObject, CLLocationManagerDelegate {
 
 enum ServiceError: LocalizedError {
     case invalidResponse
+    case emailNotVerified
     case message(String)
 
     var errorDescription: String? {
         switch self {
         case .invalidResponse:
             return "Something went wrong"
+        case .emailNotVerified:
+            return "Please verify your email address before signing in. We sent you a new verification email."
         case .message(let message):
             return message
         }
@@ -261,6 +265,7 @@ final class AuthService {
         let refreshToken: String?
         // Anonymous Firebase sign-up responses do not include an email field.
         let email: String?
+        let emailVerified: Bool?
     }
 
     private struct RefreshTokenResponse: Decodable {
@@ -299,6 +304,11 @@ final class AuthService {
             path: "accounts:signInWithPassword",
             payload: ["email": email, "password": password, "returnSecureToken": true]
         )
+        if identity.emailVerified != true {
+            try? await sendEmailVerificationViaSmtp(idToken: identity.idToken)
+            throw ServiceError.emailNotVerified
+        }
+
         let profile = try await fetchUserProfile(
             userId: identity.localId,
             idToken: identity.idToken,
@@ -418,6 +428,17 @@ final class AuthService {
             path: "accounts:sendOobCode",
             payload: ["requestType": "PASSWORD_RESET", "email": email]
         )
+    }
+
+    func sendEmailVerificationViaSmtp(idToken: String) async throws {
+        let url = URL(string: HASETConstants.emailVerificationURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = Data("{}".utf8)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
     }
 
     func restoreProfile(session: StoredSession) async throws -> UserProfile {

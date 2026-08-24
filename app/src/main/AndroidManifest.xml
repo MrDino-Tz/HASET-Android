@@ -49,20 +49,8 @@
 
         <activity
             android:name=".activities.ForgotPasswordActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:enableOnBackInvokedCallback="true">
-            <!-- Receives the emailed reset link (oobCode) in-app; no web form -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="https"
-                    android:host="www.hasethospital.or.tz"
-                    android:pathPrefix="/reset" />
-            </intent-filter>
-        </activity>
+            android:exported="false"
+            android:enableOnBackInvokedCallback="true" />
         <activity
             android:name=".activities.NotificationActivity"
             android:exported="false"

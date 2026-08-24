@@ -193,6 +193,14 @@ public class RegisterActivity extends BaseActivity {
                         .show();
                     resetRegisterButton();
                     break;
+                case SUCCESS:
+                    CustomDialog.hideLoading();
+                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                        state.message, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                        .setBackgroundTint(getResources().getColor(android.R.color.holo_green_dark))
+                        .show();
+                    showSuccessAndNavigate(LoginActivity.class, getString(R.string.registration_successful), state.message);
+                    break;
                 case AUTHENTICATED:
                     CustomDialog.hideLoading();
                     UserEntity user = (UserEntity) state.data;
@@ -224,7 +232,7 @@ public class RegisterActivity extends BaseActivity {
             .setBackgroundTint(getResources().getColor(android.R.color.holo_green_dark))
             .show();
 
-        showSuccessAndNavigate(DashboardActivity.class, "Registration Successful", "Welcome to HASET!");
+        showSuccessAndNavigate(DashboardActivity.class, "Registration Successful", getString(R.string.verify_email_after_registration));
     }
 
     /*

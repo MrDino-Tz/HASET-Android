@@ -640,10 +640,11 @@ public class DoctorWalletActivity extends BaseActivity {
         provider.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, providers));
         String[] banks = {"CRDB", "NMB", "TCB", "AKIBA Bank", "DTB", "KCB", "Azania Bank", "Mwanga Bank", "Selcom MF Bank"};
         bankCode.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, banks));
+        view.findViewById(R.id.rbBank).setVisibility(View.GONE);
+        typeGroup.check(R.id.rbMobileMoney);
         typeGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            boolean bank = checkedId == R.id.rbBank;
-            mobileFields.setVisibility(bank ? View.GONE : View.VISIBLE);
-            bankFields.setVisibility(bank ? View.VISIBLE : View.GONE);
+            mobileFields.setVisibility(View.VISIBLE);
+            bankFields.setVisibility(View.GONE);
         });
 
         androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
@@ -653,7 +654,7 @@ public class DoctorWalletActivity extends BaseActivity {
                 .setPositiveButton("Submit for approval", null)
                 .create();
         dialog.setOnShowListener(ignored -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            boolean bank = typeGroup.getCheckedRadioButtonId() == R.id.rbBank;
+            boolean bank = false;
             String code = mfaCode.getCode();
             if (!mfaCode.isComplete()) {
                 mfaCode.setErrorState(true);
