@@ -53,6 +53,8 @@
     <string name="weak_password_error">Nenosiri dhaifu sana — tumia herufi 6 au zaidi.</string>
     <string name="password_reset_success">Nenosiri limebadilishwa. Tafadhali ingia tena.</string>
     <string name="reset_code_verified_as">Nambari imethibitishwa kwa: %1$s</string>
+    <string name="security_warning_title">Taarifa ya Usalama</string>
+    <string name="rooted_device_warning">Kifaa chako kinaonekana kuwa rooted au kinatumia build ya debug. Malipo yanaweza kuwa less salama kwenye kifaa hiki. Endelea tu ukiamini mazingira haya.</string>
     <string name="dont_have_account">Hauna akaunti?</string>
     <string name="already_have_account">Tayari unayo akaunti?</string>
     <string name="sign_up">Jisajili</string>

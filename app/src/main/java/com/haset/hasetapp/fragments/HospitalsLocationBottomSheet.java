@@ -57,7 +57,8 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
 
         WebSettings settings = webViewMap.getSettings();
         settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
+        // Hardened: no local persistence needed for a read-only map embed
+        settings.setDomStorageEnabled(false);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setSupportZoom(true);
@@ -65,6 +66,7 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
         settings.setDisplayZoomControls(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         }
@@ -72,6 +74,17 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
         settings.setUserAgentString("Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.196 Mobile Safari/537.36");
 
         webViewMap.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView webView, WebResourceRequest request) {
+                // Navigation guard: only trusted Google Maps origins may load
+                Uri url = request.getUrl();
+                String host = url.getHost() != null ? url.getHost() : "";
+                boolean trusted = host.equals("maps.google.com")
+                        || host.endsWith(".google.com")
+                        || host.endsWith(".gstatic.com");
+                return !trusted; // true = intercepted/blocked
+            }
+
             @Override
             public void onPageFinished(WebView webView, String url) {
                 progressBar.setVisibility(View.GONE);

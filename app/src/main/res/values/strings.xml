@@ -76,6 +76,8 @@
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="password_reset_success">Password reset successfully. Please sign in.</string>
     <string name="reset_code_verified_as">Code verified for: %1$s</string>
+    <string name="security_warning_title">Security Notice</string>
+    <string name="rooted_device_warning">Your device appears to be rooted or running a debug build. Payments may be less secure on this device. Continue only if you trust this environment.</string>
     <string name="dont_have_account">Don\'t have an account?</string>
     <string name="already_have_account">Already have an account?</string>
     <string name="sign_up">Sign Up</string>
