@@ -49,8 +49,20 @@
 
         <activity
             android:name=".activities.ForgotPasswordActivity"
-            android:exported="false"
-            android:enableOnBackInvokedCallback="true" />
+            android:exported="true"
+            android:enableOnBackInvokedCallback="true">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="hasetapp-4eeba.firebaseapp.com"
+                    android:pathPrefix="/__/auth/action" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".activities.NotificationActivity"
             android:exported="false"

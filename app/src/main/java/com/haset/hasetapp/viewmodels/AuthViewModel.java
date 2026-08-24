@@ -119,7 +119,7 @@ public class AuthViewModel extends AndroidViewModel {
 
     public void resumeAfterMfaSetup() {
         FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) checkMfaThenFetch(user); else authState.setValue(AuthState.error("Authentication expired."));
+        if (user != null) checkEmailVerifiedThenContinue(user); else authState.setValue(AuthState.error("Authentication expired."));
     }
 
     public void register(String email, String password, UserEntity userData) {
@@ -187,12 +187,12 @@ public class AuthViewModel extends AndroidViewModel {
         repository.sendPasswordResetEmail(email, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override
             public void onSuccess(Void result) {
-                authState.setValue(AuthState.success(passwordResetResponse()));
+                authState.postValue(AuthState.success(passwordResetResponse()));
             }
 
             @Override
             public void onError(String error) {
-                authState.setValue(AuthState.success(passwordResetResponse()));
+                authState.postValue(AuthState.success(passwordResetResponse()));
             }
         });
     }
@@ -212,12 +212,12 @@ public class AuthViewModel extends AndroidViewModel {
         repository.sendPasswordResetEmail(email, settings, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override
             public void onSuccess(Void result) {
-                authState.setValue(AuthState.success(passwordResetResponse()));
+                authState.postValue(AuthState.success(passwordResetResponse()));
             }
 
             @Override
             public void onError(String error) {
-                authState.setValue(AuthState.success(passwordResetResponse()));
+                authState.postValue(AuthState.success(passwordResetResponse()));
             }
         });
     }

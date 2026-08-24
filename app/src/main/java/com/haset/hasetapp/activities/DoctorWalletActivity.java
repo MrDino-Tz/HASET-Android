@@ -36,6 +36,8 @@ import java.util.Locale;
 import com.haset.hasetapp.ui.MfaCodeInputView;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.ErrorDisplay;
+import com.haset.hasetapp.utils.RootIntegrityHelper;
+import com.haset.hasetapp.utils.CustomDialog;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -58,11 +60,14 @@ public class DoctorWalletActivity extends BaseActivity {
     private double withdrawalFee = DEFAULT_WITHDRAWAL_FEE;
     private WithdrawalHistoryAdapter historyAdapter;
     private List<WithdrawalRequest> latestWithdrawalRequests;
+    private boolean securityWarningShown = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         setContentView(R.layout.activity_doctor_wallet);
+        maybeShowSecurityWarning();
 
         preferenceManager = new PreferenceManager(this);
 
@@ -71,6 +76,22 @@ public class DoctorWalletActivity extends BaseActivity {
         setupObservers();
         loadWalletData();
         loadWithdrawalFee();
+    }
+
+    private void maybeShowSecurityWarning() {
+        if (securityWarningShown || !RootIntegrityHelper.isPotentiallyCompromised(this)) {
+            return;
+        }
+        securityWarningShown = true;
+        CustomDialog.showWarning(
+            this,
+            getString(R.string.security_warning_title),
+            getString(R.string.rooted_device_warning),
+            getString(R.string.continue_btn),
+            null,
+            getString(R.string.cancel_btn),
+            v -> finish()
+        );
     }
 
     private void setupObservers() {

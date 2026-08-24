@@ -20,6 +20,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.ValidationUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -111,8 +112,8 @@ public class ResetPasswordBottomSheet extends BottomSheetDialogFragment {
             return;
         }
 
-        if (TextUtils.isEmpty(newPassword) || newPassword.length() < 6) {
-            etNewPassword.setError(getString(R.string.error_password));
+        if (!ValidationUtils.isStrongPassword(newPassword)) {
+            etNewPassword.setError(getString(R.string.error_strong_password));
             return;
         }
         if (!newPassword.equals(confirmPassword)) {

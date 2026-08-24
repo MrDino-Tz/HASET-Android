@@ -54,7 +54,7 @@
     <string name="confirm_new_password_hint">Thibitisha Nenosiri Mpya</string>
     <string name="btn_reset_password">Badilisha Nenosiri</string>
     <string name="invalid_reset_code">Nambari ya kubadilisha ni batili au muda umeisha. Tuma barua pepe mpya.</string>
-    <string name="weak_password_error">Nenosiri dhaifu sana — tumia herufi 6 au zaidi.</string>
+    <string name="weak_password_error">Nenosiri dhaifu sana. Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba.</string>
     <string name="password_reset_success">Nenosiri limebadilishwa. Tafadhali ingia tena.</string>
     <string name="reset_code_verified_as">Nambari imethibitishwa kwa: %1$s</string>
     <string name="security_warning_title">Taarifa ya Usalama</string>

@@ -24,7 +24,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
+import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.PreferenceManager;
+import com.haset.hasetapp.utils.RootIntegrityHelper;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.PaymentViewModel;
 
@@ -53,6 +55,7 @@ public class PaymentActivity extends AppCompatActivity {
     private boolean cardCheckoutOpened = false;
     private DatabaseReference registrationFeeRef;
     private ValueEventListener registrationFeeListener;
+    private boolean securityWarningShown = false;
 
     private static final String STATE_CONSULTATION_ID = "payment_consultation_id";
 
@@ -70,6 +73,7 @@ public class PaymentActivity extends AppCompatActivity {
         com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_payment);
+        maybeShowSecurityWarning();
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -103,6 +107,22 @@ public class PaymentActivity extends AppCompatActivity {
         setupViews();
         observeDoctorRegistrationFee();
         setupClickListeners();
+    }
+
+    private void maybeShowSecurityWarning() {
+        if (securityWarningShown || !RootIntegrityHelper.isPotentiallyCompromised(this)) {
+            return;
+        }
+        securityWarningShown = true;
+        CustomDialog.showWarning(
+            this,
+            getString(R.string.security_warning_title),
+            getString(R.string.rooted_device_warning),
+            getString(R.string.continue_btn),
+            null,
+            getString(R.string.cancel_btn),
+            v -> finish()
+        );
     }
 
     @Override

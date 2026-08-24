@@ -4,17 +4,16 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.haset.hasetapp.R;
 
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.AuthViewModel;
 import com.haset.hasetapp.utils.ValidationUtils;
-import android.widget.Toast;
 import android.content.Intent;
+import android.net.Uri;
 
 public class ForgotPasswordActivity extends BaseActivity {
 
@@ -32,6 +31,14 @@ public class ForgotPasswordActivity extends BaseActivity {
         initViews();
         setupClickListeners();
         setupObservers();
+        handleResetLink(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleResetLink(intent);
     }
 
     private void initViews() {
@@ -89,12 +96,39 @@ public class ForgotPasswordActivity extends BaseActivity {
                 return;
             }
 
-            authViewModel.resetPassword(email);
+            authViewModel.resetPassword(email, createResetActionCodeSettings());
         });
 
         // Back to login link
         tvBackToLogin.setOnClickListener(v -> {
             finish();
         });
+    }
+
+    private void handleResetLink(Intent intent) {
+        if (intent == null || intent.getData() == null) {
+            return;
+        }
+
+        Uri data = intent.getData();
+        if (!"resetPassword".equals(data.getQueryParameter("mode"))) {
+            return;
+        }
+
+        ResetPasswordBottomSheet sheet = ResetPasswordBottomSheet.newInstance(data.toString());
+        sheet.setOnPasswordResetListener(() -> {
+            startActivity(new Intent(ForgotPasswordActivity.this, LoginActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
+            finish();
+        });
+        sheet.show(getSupportFragmentManager(), "ResetPasswordBottomSheet");
+    }
+
+    private ActionCodeSettings createResetActionCodeSettings() {
+        return ActionCodeSettings.newBuilder()
+                .setUrl("https://hasetapp-4eeba.firebaseapp.com/__/auth/action")
+                .setHandleCodeInApp(true)
+                .setAndroidPackageName(getPackageName(), true, null)
+                .build();
     }
 }

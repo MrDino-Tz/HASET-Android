@@ -31,6 +31,7 @@ import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ThemeHelper;
+import com.haset.hasetapp.utils.ValidationUtils;
 import com.haset.hasetapp.viewmodels.ProfileViewModel;
 
 import retrofit2.Call;
@@ -640,8 +641,8 @@ public class SettingsActivity extends BaseActivity {
                 return;
             }
 
-            if (newPass.length() < 6) {
-                android.widget.Toast.makeText(this, R.string.error_password, android.widget.Toast.LENGTH_SHORT).show();
+            if (!ValidationUtils.isStrongPassword(newPass)) {
+                android.widget.Toast.makeText(this, R.string.error_strong_password, android.widget.Toast.LENGTH_SHORT).show();
                 return;
             }
 

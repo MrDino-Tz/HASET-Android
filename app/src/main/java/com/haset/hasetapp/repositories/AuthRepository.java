@@ -21,6 +21,7 @@ import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -32,9 +33,15 @@ import okhttp3.RequestBody;
 public class AuthRepository {
     private static final String TAG = "AuthRepository";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private static final long HTTP_TIMEOUT_SECONDS = 20;
     private final FirebaseAuth mAuth;
     private final DatabaseReference usersRef;
-    private final OkHttpClient httpClient = new OkHttpClient();
+    private final OkHttpClient httpClient = new OkHttpClient.Builder()
+        .connectTimeout(HTTP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(HTTP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(HTTP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .callTimeout(HTTP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .build();
 
     public AuthRepository() {
         this.mAuth = FirebaseAuth.getInstance();
@@ -141,6 +148,79 @@ public class AuthRepository {
     }
 
     public void sendPasswordResetEmail(String email, FirebaseHelper.OnCompleteListener<Void> callback) {
+        sendPasswordResetEmailViaBackend(email, callback, () -> sendPasswordResetEmailViaFirebase(email, callback));
+    }
+
+    /**
+     * Sends a password reset email whose link is handled inside the app
+     * (handleCodeInApp=true). Tapping the email link deep-links back into
+     * AfyaHASET carrying the oobCode, so no Firebase web form is shown.
+     */
+    public void sendPasswordResetEmail(String email, com.google.firebase.auth.ActionCodeSettings settings,
+                                       FirebaseHelper.OnCompleteListener<Void> callback) {
+        sendPasswordResetEmailViaFirebase(email, settings, callback);
+    }
+
+    private void sendPasswordResetEmailViaBackend(
+            String email,
+            FirebaseHelper.OnCompleteListener<Void> callback,
+            Runnable fallback
+    ) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            sendPasswordResetEmailViaBackend(email, null, callback, fallback);
+            return;
+        }
+
+        user.getIdToken(true)
+            .addOnSuccessListener(token -> sendPasswordResetEmailViaBackend(
+                    email,
+                    "Bearer " + token.getToken(),
+                    callback,
+                    fallback))
+            .addOnFailureListener(error -> {
+                Log.w(TAG, "Unable to refresh token for password reset email", error);
+                sendPasswordResetEmailViaBackend(email, null, callback, fallback);
+            });
+    }
+
+    private void sendPasswordResetEmailViaBackend(
+            String email,
+            String bearerToken,
+            FirebaseHelper.OnCompleteListener<Void> callback,
+            Runnable fallback
+    ) {
+        String body = "{\"email\":\"" + jsonEscape(email) + "\"}";
+        Request.Builder requestBuilder = new Request.Builder()
+            .url(Constants.PASSWORD_RESET_EMAIL_API_URL)
+            .post(RequestBody.create(body, JSON));
+        if (bearerToken != null && !bearerToken.trim().isEmpty()) {
+            requestBuilder.addHeader("Authorization", bearerToken);
+        }
+        Request request = requestBuilder.build();
+
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.w(TAG, "Password reset email request failed", e);
+                fallback.run();
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull okhttp3.Response response) {
+                boolean successful = response.isSuccessful();
+                response.close();
+                if (successful) {
+                    callback.onSuccess(null);
+                } else {
+                    Log.w(TAG, "Password reset email backend returned HTTP " + response.code());
+                    fallback.run();
+                }
+            }
+        });
+    }
+
+    private void sendPasswordResetEmailViaFirebase(String email, FirebaseHelper.OnCompleteListener<Void> callback) {
         mAuth.sendPasswordResetEmail(email)
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
@@ -151,13 +231,8 @@ public class AuthRepository {
             });
     }
 
-    /**
-     * Sends a password reset email whose link is handled inside the app
-     * (handleCodeInApp=true). Tapping the email link deep-links back into
-     * AfyaHASET carrying the oobCode, so no Firebase web form is shown.
-     */
-    public void sendPasswordResetEmail(String email, com.google.firebase.auth.ActionCodeSettings settings,
-                                       FirebaseHelper.OnCompleteListener<Void> callback) {
+    private void sendPasswordResetEmailViaFirebase(String email, com.google.firebase.auth.ActionCodeSettings settings,
+                                                   FirebaseHelper.OnCompleteListener<Void> callback) {
         mAuth.sendPasswordResetEmail(email, settings)
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
@@ -166,6 +241,18 @@ public class AuthRepository {
                     callback.onError(mapFirebaseAuthError(task.getException(), "Failed to send reset email"));
                 }
             });
+    }
+
+    private String jsonEscape(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t");
     }
 
     public void sendEmailVerificationViaSmtp(FirebaseUser user) {
