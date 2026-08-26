@@ -12,7 +12,7 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.utils.Constants;
 
-public class ServiceAgreementActivity extends AppCompatActivity {
+public class ServiceAgreementActivity extends LocalizedAppCompatActivity {
     
     private LinearLayout btnPrivacyPolicy, btnTermsConditions;
     private ImageView btnBack;

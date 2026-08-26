@@ -25,9 +25,11 @@ public abstract class BaseActivity extends AppCompatActivity implements NoIntern
 
     private NetworkUtils.NetworkCallback networkCallback;
     protected NoInternetBottomSheet noInternetBottomSheet;
+    private String attachedLanguage;
 
     @Override
     protected void attachBaseContext(Context newBase) {
+        attachedLanguage = com.haset.hasetapp.utils.LocaleHelper.getLanguage(newBase);
         super.attachBaseContext(com.haset.hasetapp.utils.LocaleHelper.onAttach(newBase));
     }
 
@@ -71,6 +73,12 @@ public abstract class BaseActivity extends AppCompatActivity implements NoIntern
     @Override
     protected void onResume() {
         super.onResume();
+        String currentLanguage = com.haset.hasetapp.utils.LocaleHelper.getLanguage(this);
+        if (attachedLanguage != null && !attachedLanguage.equals(currentLanguage)) {
+            recreate();
+            return;
+        }
+
         // Log memory usage for monitoring
         MemoryMonitor.logMemoryUsageThrottled(getClass().getSimpleName() + "_onResume");
         
@@ -197,4 +205,3 @@ public abstract class BaseActivity extends AppCompatActivity implements NoIntern
         }
     }
 }
-

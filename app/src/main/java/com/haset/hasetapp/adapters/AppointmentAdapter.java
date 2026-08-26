@@ -117,7 +117,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             
             tvDate.setText(appointment.getDate() != null ? appointment.getDate() : "");
             tvTime.setText(appointment.getTime() != null ? appointment.getTime() : "");
-            tvStatus.setText(appointment.getStatus() != null ? appointment.getStatus().toUpperCase() : "UNKNOWN");
+            tvStatus.setText(getLocalizedStatus(appointment.getStatus()));
 
             // Set status color
             int statusColor = getStatusColor(appointment.getStatus());
@@ -136,7 +136,8 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
                    (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equals(appointment.getAppointmentType()) || 
                     "Video Call".equals(appointment.getAppointmentType()))) {
                     btnStartSession.setVisibility(View.VISIBLE);
-                    btnStartSession.setText(Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equals(appointment.getAppointmentType()) ? "Chat Now" : "Join Call");
+                    btnStartSession.setText(Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equals(appointment.getAppointmentType())
+                            ? R.string.chat_now : R.string.join_call);
                 } else {
                     btnStartSession.setVisibility(View.GONE);
                 }
@@ -205,6 +206,24 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
                     return Color.parseColor("#888888");
                 default:
                     return Color.parseColor("#CCCCCC");
+            }
+        }
+
+        private String getLocalizedStatus(String status) {
+            if (status == null) return itemView.getContext().getString(R.string.status_unknown);
+            switch (status.trim().toLowerCase(java.util.Locale.ROOT)) {
+                case Constants.STATUS_PENDING:
+                    return itemView.getContext().getString(R.string.status_pending);
+                case Constants.STATUS_APPROVED:
+                    return itemView.getContext().getString(R.string.status_approved);
+                case Constants.STATUS_DECLINED:
+                    return itemView.getContext().getString(R.string.status_declined);
+                case Constants.STATUS_CANCELLED:
+                    return itemView.getContext().getString(R.string.status_cancelled);
+                case Constants.STATUS_COMPLETED:
+                    return itemView.getContext().getString(R.string.status_completed);
+                default:
+                    return status;
             }
         }
     }

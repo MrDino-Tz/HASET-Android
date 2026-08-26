@@ -35,7 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-public class PaymentActivity extends AppCompatActivity {
+public class PaymentActivity extends LocalizedAppCompatActivity {
     private TextView tvDoctorName, tvSpecialty, tvAmount, tvPaymentMethod, tvSelectedPaymentDetails;
     private ImageView ivDoctorPhoto, ivVerifiedBadge;
     private MaterialButton btnPayNow, btnCancel;

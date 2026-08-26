@@ -148,7 +148,9 @@ public class AuthRepository {
     }
 
     public void sendPasswordResetEmail(String email, FirebaseHelper.OnCompleteListener<Void> callback) {
-        sendPasswordResetEmailViaBackend(email, callback, () -> sendPasswordResetEmailViaFirebase(email, callback));
+        // Keep password-reset mail on the Hostinger SMTP implementation.
+        // Falling back to Firebase here would send the outdated Firebase template.
+        sendPasswordResetEmailViaBackend(email, callback);
     }
 
     /**
@@ -163,12 +165,11 @@ public class AuthRepository {
 
     private void sendPasswordResetEmailViaBackend(
             String email,
-            FirebaseHelper.OnCompleteListener<Void> callback,
-            Runnable fallback
+            FirebaseHelper.OnCompleteListener<Void> callback
     ) {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) {
-            sendPasswordResetEmailViaBackend(email, null, callback, fallback);
+            sendPasswordResetEmailViaBackend(email, null, callback);
             return;
         }
 
@@ -176,19 +177,17 @@ public class AuthRepository {
             .addOnSuccessListener(token -> sendPasswordResetEmailViaBackend(
                     email,
                     "Bearer " + token.getToken(),
-                    callback,
-                    fallback))
+                    callback))
             .addOnFailureListener(error -> {
                 Log.w(TAG, "Unable to refresh token for password reset email", error);
-                sendPasswordResetEmailViaBackend(email, null, callback, fallback);
+                sendPasswordResetEmailViaBackend(email, null, callback);
             });
     }
 
     private void sendPasswordResetEmailViaBackend(
             String email,
             String bearerToken,
-            FirebaseHelper.OnCompleteListener<Void> callback,
-            Runnable fallback
+            FirebaseHelper.OnCompleteListener<Void> callback
     ) {
         String body = "{\"email\":\"" + jsonEscape(email) + "\"}";
         Request.Builder requestBuilder = new Request.Builder()
@@ -203,7 +202,7 @@ public class AuthRepository {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 Log.w(TAG, "Password reset email request failed", e);
-                fallback.run();
+                callback.onError("Unable to send password reset email.");
             }
 
             @Override
@@ -214,7 +213,7 @@ public class AuthRepository {
                     callback.onSuccess(null);
                 } else {
                     Log.w(TAG, "Password reset email backend returned HTTP " + response.code());
-                    fallback.run();
+                    callback.onError("Unable to send password reset email.");
                 }
             }
         });
@@ -332,6 +331,27 @@ public class AuthRepository {
         String message = exception.getMessage();
         if (exception instanceof FirebaseAuthException) {
             String errorCode = ((FirebaseAuthException) exception).getErrorCode();
+            if ("ERROR_INVALID_CREDENTIAL".equals(errorCode)
+                    || "ERROR_INVALID_LOGIN_CREDENTIALS".equals(errorCode)
+                    || "ERROR_WRONG_PASSWORD".equals(errorCode)
+                    || "ERROR_USER_NOT_FOUND".equals(errorCode)
+                    || "invalid-credential".equalsIgnoreCase(errorCode)
+                    || "wrong-password".equalsIgnoreCase(errorCode)
+                    || "user-not-found".equalsIgnoreCase(errorCode)) {
+                return "Incorrect email or password.";
+            }
+            if ("ERROR_INVALID_EMAIL".equals(errorCode) || "invalid-email".equalsIgnoreCase(errorCode)) {
+                return "Please enter a valid email address.";
+            }
+            if ("ERROR_TOO_MANY_REQUESTS".equals(errorCode) || "too-many-requests".equalsIgnoreCase(errorCode)) {
+                return "Too many attempts. Please try again later.";
+            }
+            if ("ERROR_USER_DISABLED".equals(errorCode) || "user-disabled".equalsIgnoreCase(errorCode)) {
+                return "This account has been disabled.";
+            }
+            if ("ERROR_WEAK_PASSWORD".equals(errorCode) || "weak-password".equalsIgnoreCase(errorCode)) {
+                return "Password is too weak. Use at least 12 characters with uppercase, lowercase, and a number.";
+            }
             if ("ERROR_OPERATION_NOT_ALLOWED".equals(errorCode) || "operation-not-allowed".equalsIgnoreCase(errorCode)) {
                 return "Firebase Authentication is blocking sign-up. Enable Email/Password sign-in in the Firebase console.";
             }

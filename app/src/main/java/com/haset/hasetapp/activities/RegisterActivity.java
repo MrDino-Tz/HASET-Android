@@ -81,13 +81,12 @@ public class RegisterActivity extends BaseActivity {
         com.haset.hasetapp.utils.LanguageToggleHelper.setup(this, findViewById(android.R.id.content), languageCode -> {
             com.haset.hasetapp.utils.CustomDialog.showLoading(this, getString(R.string.switching_language));
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                com.haset.hasetapp.utils.LocaleHelper.setLocale(this, languageCode);
                 if (preferenceManager != null) {
                     preferenceManager.setLanguage(languageCode);
                 }
                 com.haset.hasetapp.utils.CustomDialog.hideLoading();
                 overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
-                recreate();
+                com.haset.hasetapp.utils.LocaleHelper.applyLanguageChange(this, languageCode);
                 overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
             }, 500);
         });

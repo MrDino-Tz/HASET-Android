@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NotificationActivity extends AppCompatActivity implements 
+public class NotificationActivity extends LocalizedAppCompatActivity implements 
         AppointmentNotificationAdapter.OnNotificationClickListener {
     private static final String PREF_NOTIFICATION_CLEAR_STATE = "notification_clear_state";
     private static final String KEY_HIDDEN_APPOINTMENT_IDS = "hidden_appointment_ids";

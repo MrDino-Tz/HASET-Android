@@ -93,7 +93,7 @@ public class SettingsActivity extends BaseActivity {
         tvMfaDescription = findViewById(R.id.tvMfaDescription);
         TextView tvVersion = findViewById(R.id.tvVersion);
         if (tvVersion != null) {
-            tvVersion.setText("App Version: 1.0.0.DTC");
+            tvVersion.setText(R.string.app_version_100dtc);
         }
     }
 
@@ -164,7 +164,7 @@ public class SettingsActivity extends BaseActivity {
                             @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                                 if (!response.isSuccessful() || response.body() == null) {
                                     setMfaUi(false, false);
-                                    Toast.makeText(SettingsActivity.this, "Unable to load MFA status.", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(SettingsActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_SHORT).show();
                                     return;
                                 }
                                 boolean enabled = response.body().has("two_factor_enabled")
@@ -174,12 +174,12 @@ public class SettingsActivity extends BaseActivity {
 
                             @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
                                 setMfaUi(false, false);
-                                Toast.makeText(SettingsActivity.this, "Unable to load MFA status.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(SettingsActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_SHORT).show();
                             }
                         }))
                 .addOnFailureListener(error -> {
                     setMfaUi(false, false);
-                    Toast.makeText(this, "Authentication expired.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -258,7 +258,7 @@ public class SettingsActivity extends BaseActivity {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) {
             setMfaUi(true, true);
-            Toast.makeText(this, "Authentication expired.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
             return;
         }
         switchMfa.setEnabled(false);
@@ -275,20 +275,20 @@ public class SettingsActivity extends BaseActivity {
                                 Toast.makeText(SettingsActivity.this, R.string.mfa_disabled_success, Toast.LENGTH_SHORT).show();
                             } else {
                                 setMfaUi(true, true);
-                                Toast.makeText(SettingsActivity.this, "Invalid or expired MFA code.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(SettingsActivity.this, R.string.invalid_or_expired_mfa_code, Toast.LENGTH_LONG).show();
                             }
                         }
 
                         @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
                             CustomDialog.hideLoading();
                             setMfaUi(true, true);
-                            Toast.makeText(SettingsActivity.this, "Unable to disable MFA. Try again.", Toast.LENGTH_LONG).show();
+                            Toast.makeText(SettingsActivity.this, R.string.unable_to_disable_mfa, Toast.LENGTH_LONG).show();
                         }
                     });
         }).addOnFailureListener(error -> {
             CustomDialog.hideLoading();
             setMfaUi(true, true);
-            Toast.makeText(this, "Authentication expired.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -416,7 +416,7 @@ public class SettingsActivity extends BaseActivity {
             intent.setData(Uri.parse(url));
             startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "WhatsApp not installed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.whatsapp_not_installed, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -460,7 +460,7 @@ public class SettingsActivity extends BaseActivity {
 
     private void submitBugReport(String report) {
         // Logic to save bug report to Firebase
-        com.haset.hasetapp.utils.CustomDialog.showLoading(this, "Submitting...");
+        com.haset.hasetapp.utils.CustomDialog.showLoading(this, getString(R.string.submitting));
         com.google.firebase.database.DatabaseReference ref = com.google.firebase.database.FirebaseDatabase.getInstance()
             .getReference("support_tickets").push();
         
@@ -476,7 +476,7 @@ public class SettingsActivity extends BaseActivity {
             if (task.isSuccessful()) {
                 Toast.makeText(this, R.string.bug_report_submitted, Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Failed to submit report", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.failed_to_submit_report, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -522,13 +522,12 @@ public class SettingsActivity extends BaseActivity {
                 com.haset.hasetapp.utils.CustomDialog.showLoading(this, getString(R.string.switching_language));
 
                 new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                    com.haset.hasetapp.utils.LocaleHelper.setLocale(this, languageCode);
                     if (preferenceManager != null) {
                         preferenceManager.setLanguage(languageCode);
                     }
                     com.haset.hasetapp.utils.CustomDialog.hideLoading();
                     overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
-                    recreate();
+                    com.haset.hasetapp.utils.LocaleHelper.applyLanguageChange(this, languageCode);
                     overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
                 }, 500);
             }

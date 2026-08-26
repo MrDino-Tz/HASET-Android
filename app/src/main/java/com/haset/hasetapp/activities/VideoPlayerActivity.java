@@ -10,7 +10,7 @@ import android.widget.VideoView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.haset.hasetapp.R;
 
-public class VideoPlayerActivity extends AppCompatActivity {
+public class VideoPlayerActivity extends LocalizedAppCompatActivity {
     private VideoView videoView;
     private ProgressBar progressBar;
     private ImageView ivBack;

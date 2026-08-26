@@ -96,7 +96,7 @@ public class AuthViewModel extends AndroidViewModel {
             MobileMfaApiService api = RetrofitClient.getInstance().getMobileMfaApiService();
             api.status("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                    if (!response.isSuccessful() || response.body() == null) { authState.postValue(AuthState.error("Unable to verify MFA status.")); return; }
+                    if (!response.isSuccessful() || response.body() == null) { authState.postValue(AuthState.error("MFA service unavailable. Please try again later.")); return; }
                     boolean enabled = response.body().has("two_factor_enabled") && response.body().get("two_factor_enabled").getAsBoolean();
                     if (enabled) authState.postValue(AuthState.mfaRequired()); else fetchUserData(user.getUid());
                 }

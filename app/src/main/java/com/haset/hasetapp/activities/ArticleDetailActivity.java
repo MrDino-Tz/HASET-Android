@@ -40,7 +40,7 @@ import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class ArticleDetailActivity extends AppCompatActivity {
+public class ArticleDetailActivity extends LocalizedAppCompatActivity {
 
     public static final String EXTRA_ARTICLE = "extra_article";
 

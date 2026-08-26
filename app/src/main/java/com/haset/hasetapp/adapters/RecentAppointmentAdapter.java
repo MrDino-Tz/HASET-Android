@@ -81,7 +81,7 @@ public class RecentAppointmentAdapter extends RecyclerView.Adapter<RecentAppoint
 
             // Set status
             String status = appointment.getStatus();
-            tvStatus.setText(status != null ? status : Constants.STATUS_PENDING);
+            tvStatus.setText(getLocalizedStatus(status));
             
             // Set status background color
             int statusColor;
@@ -125,7 +125,24 @@ public class RecentAppointmentAdapter extends RecyclerView.Adapter<RecentAppoint
                 tvReason.setVisibility(View.GONE);
             }
         }
+
+        private String getLocalizedStatus(String status) {
+            if (status == null) return itemView.getContext().getString(R.string.status_pending);
+            switch (status.trim().toLowerCase(Locale.ROOT)) {
+                case Constants.STATUS_PENDING:
+                    return itemView.getContext().getString(R.string.status_pending);
+                case Constants.STATUS_APPROVED:
+                    return itemView.getContext().getString(R.string.status_approved);
+                case Constants.STATUS_DECLINED:
+                    return itemView.getContext().getString(R.string.status_declined);
+                case Constants.STATUS_CANCELLED:
+                    return itemView.getContext().getString(R.string.status_cancelled);
+                case Constants.STATUS_COMPLETED:
+                    return itemView.getContext().getString(R.string.status_completed);
+                default:
+                    return status;
+            }
+        }
     }
 }
-
 

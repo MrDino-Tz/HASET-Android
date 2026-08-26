@@ -1470,11 +1470,11 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                 new androidx.appcompat.app.AlertDialog.Builder(this)
                         .setTitle(R.string.delete_message)
                         .setMessage(R.string.delete_message_confirm)
-                        .setPositiveButton("Delete", (dialog, which) -> {
+                        .setPositiveButton(R.string.delete, (dialog, which) -> {
                             viewModel.deleteMessage(chatRoomId, message, currentUserId, chatUserId);
                             Toast.makeText(this, R.string.message_deleted, Toast.LENGTH_SHORT).show();
                         })
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton(R.string.cancel, null)
                         .show();
                 return true;
             } else if (id == R.id.action_download) {

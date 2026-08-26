@@ -26,7 +26,7 @@ import com.haset.hasetapp.viewmodels.ProfileViewModel;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class EditProfileActivity extends AppCompatActivity {
+public class EditProfileActivity extends LocalizedAppCompatActivity {
 //    private MaterialToolbar toolbar;
     private ImageView btnBack;
     private CircleImageView ivProfileImage;

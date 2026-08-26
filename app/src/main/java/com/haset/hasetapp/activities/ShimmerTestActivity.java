@@ -18,7 +18,7 @@ import com.haset.hasetapp.utils.SimpleShimmerHelper;
  * ShimmerTestActivity - Test shimmer effects
  * Use this to verify shimmer is working before implementing in main app
  */
-public class ShimmerTestActivity extends AppCompatActivity {
+public class ShimmerTestActivity extends LocalizedAppCompatActivity {
 
     private LinearLayout container;
     private TextView testText;

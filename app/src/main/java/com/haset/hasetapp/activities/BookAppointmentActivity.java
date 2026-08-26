@@ -307,15 +307,15 @@ public class BookAppointmentActivity extends BaseActivity {
             isLaunchingPayment = true;
             // Show confirmation and proceed directly without payment
             new AlertDialog.Builder(this)
-                .setTitle("Demo Doctor")
-                .setMessage("This is a free demo consultation. No payment required. Do you want to continue?")
-                .setPositiveButton("Continue", (dialog, which) -> {
+                .setTitle(R.string.demo_doctor)
+                .setMessage(R.string.free_demo_consultation_confirm)
+                .setPositiveButton(R.string.continue_action, (dialog, which) -> {
                     paidAt = System.currentTimeMillis();
                     paymentTransactionId = 0;
                     proceedWithBooking();
                     isLaunchingPayment = false;
                 })
-                .setNegativeButton("Cancel", (dialog, which) -> {
+                .setNegativeButton(R.string.cancel, (dialog, which) -> {
                     isLaunchingPayment = false;
                 })
                 .setOnCancelListener(dialog -> isLaunchingPayment = false)

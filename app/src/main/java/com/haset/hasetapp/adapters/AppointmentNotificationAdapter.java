@@ -53,7 +53,9 @@ public class AppointmentNotificationAdapter extends RecyclerView.Adapter<Appoint
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Appointment appointment = appointments.get(position);
         
-        holder.tvNotificationTitle.setText("Appointment " + appointment.getStatus());
+        holder.tvNotificationTitle.setText(context.getString(
+                R.string.appointment_status_title,
+                getLocalizedStatus(appointment.getStatus())));
         holder.tvNotificationMessage.setText("You have an appointment with " + appointment.getDoctorName() + 
                 " on " + appointment.getDate() + " at " + appointment.getTime());
         holder.tvNotificationTime.setText(getRelativeTime(appointment.getCreatedAt()));
@@ -100,6 +102,18 @@ public class AppointmentNotificationAdapter extends RecyclerView.Adapter<Appoint
         
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault());
         return sdf.format(new java.util.Date(timestamp));
+    }
+
+    private String getLocalizedStatus(String status) {
+        if (status == null) return context.getString(R.string.status_unknown);
+        switch (status.trim().toLowerCase(java.util.Locale.ROOT)) {
+            case "pending": return context.getString(R.string.status_pending);
+            case "approved": return context.getString(R.string.status_approved);
+            case "declined": return context.getString(R.string.status_declined);
+            case "cancelled": return context.getString(R.string.status_cancelled);
+            case "completed": return context.getString(R.string.status_completed);
+            default: return status;
+        }
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

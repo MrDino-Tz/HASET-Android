@@ -6,6 +6,9 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
+import android.app.Activity;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.os.LocaleListCompat;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.PreferenceManager;
 
@@ -29,8 +32,25 @@ public class LocaleHelper {
         return getPersistedData(context, Locale.getDefault().getLanguage());
     }
 
+    public static void applyLanguageChange(Activity activity, String language) {
+        String normalizedLanguage = normalizeLanguage(language);
+        setLocale(activity, normalizedLanguage);
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(normalizedLanguage));
+        activity.recreate();
+    }
+
     public static Context setLocale(Context context, String language) {
-        // Sanitize language code if it comes from old preference values (full names)
+        language = normalizeLanguage(language);
+        persist(context, language);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return updateResources(context, language);
+        }
+
+        return updateResourcesLegacy(context, language);
+    }
+
+    private static String normalizeLanguage(String language) {
         if (language != null) {
             if (language.equalsIgnoreCase("English") || language.equalsIgnoreCase("en")) {
                 language = "en";
@@ -51,13 +71,7 @@ public class LocaleHelper {
             language = "en";
         }
 
-        persist(context, language);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return updateResources(context, language);
-        }
-
-        return updateResourcesLegacy(context, language);
+        return language;
     }
 
     private static String getPersistedData(Context context, String defaultLanguage) {

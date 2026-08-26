@@ -529,7 +529,16 @@ public class AppointmentsFragment extends Fragment {
                 String specialty = a.getDoctorSpecialty() != null ? a.getDoctorSpecialty() : "";
                 String date = a.getDate() != null ? a.getDate() : "";
                 String time = a.getTime() != null ? a.getTime() : "";
-                String status = a.getStatus() != null ? a.getStatus().toUpperCase() : "";
+                String rawStatus = a.getStatus() != null ? a.getStatus().trim().toLowerCase(java.util.Locale.ROOT) : "";
+                String status;
+                switch (rawStatus) {
+                    case Constants.STATUS_PENDING: status = holder.itemView.getContext().getString(R.string.status_pending); break;
+                    case Constants.STATUS_APPROVED: status = holder.itemView.getContext().getString(R.string.status_approved); break;
+                    case Constants.STATUS_DECLINED: status = holder.itemView.getContext().getString(R.string.status_declined); break;
+                    case Constants.STATUS_CANCELLED: status = holder.itemView.getContext().getString(R.string.status_cancelled); break;
+                    case Constants.STATUS_COMPLETED: status = holder.itemView.getContext().getString(R.string.status_completed); break;
+                    default: status = rawStatus;
+                }
                 
                 holder.tvName.setText(doctorName + (specialty.isEmpty() ? "" : " • " + specialty));
                 holder.tvDetails.setText(date + " " + time);

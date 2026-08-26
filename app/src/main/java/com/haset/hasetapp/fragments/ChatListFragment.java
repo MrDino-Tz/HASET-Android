@@ -132,7 +132,9 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
             layoutEmpty.setVisibility(View.VISIBLE);
             rvConversations.setVisibility(View.GONE);
             if (tvEmptyMessage != null) {
-                tvEmptyMessage.setText(isArchived ? "No archived messages" : "No messages yet");
+                tvEmptyMessage.setText(isArchived
+                        ? R.string.no_archived_messages
+                        : R.string.no_messages_yet);
             }
         } else {
             layoutEmpty.setVisibility(View.GONE);
@@ -202,8 +204,8 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
     @Override
     public void onConversationLongClick(Conversation conversation) {
         String[] options = {
-            conversation.isArchived() ? "Unarchive Chat" : "Archive Chat",
-            "Delete Chat"
+            getString(conversation.isArchived() ? R.string.unarchive_chat : R.string.archive_chat),
+            getString(R.string.delete_chat)
         };
 
         new MaterialAlertDialogBuilder(requireContext())
@@ -212,7 +214,8 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
                     if (which == 0) {
                         // Archive/Unarchive
                         viewModel.toggleArchive(currentUserId, conversation.getOtherUserId(), !conversation.isArchived());
-                        String msg = conversation.isArchived() ? "Chat unarchived" : "Chat archived";
+                        String msg = getString(conversation.isArchived()
+                                ? R.string.chat_unarchived : R.string.chat_archived);
                         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
                     } else if (which == 1) {
                         // Delete
@@ -225,9 +228,9 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
     private void showDeleteConfirmation(Conversation conversation) {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.delete_chat)
-                .setMessage("Are you sure you want to delete this conversation with " + conversation.getOtherUserName() + "? This action cannot be undone.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setMessage(getString(R.string.delete_conversation_confirm, conversation.getOtherUserName()))
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, (dialog, which) -> {
                     viewModel.deleteConversation(currentUserId, conversation.getOtherUserId());
                     Toast.makeText(requireContext(), R.string.chat_deleted, Toast.LENGTH_SHORT).show();
                 })

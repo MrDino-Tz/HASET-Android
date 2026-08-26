@@ -6,7 +6,6 @@ import android.widget.TextView;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.ActionCodeSettings;
 import com.haset.hasetapp.R;
 
 import androidx.lifecycle.ViewModelProvider;
@@ -96,7 +95,8 @@ public class ForgotPasswordActivity extends BaseActivity {
                 return;
             }
 
-            authViewModel.resetPassword(email, createResetActionCodeSettings());
+            // Password reset mail is sent by the Hostinger SMTP backend.
+            authViewModel.resetPassword(email);
         });
 
         // Back to login link
@@ -124,11 +124,4 @@ public class ForgotPasswordActivity extends BaseActivity {
         sheet.show(getSupportFragmentManager(), "ResetPasswordBottomSheet");
     }
 
-    private ActionCodeSettings createResetActionCodeSettings() {
-        return ActionCodeSettings.newBuilder()
-                .setUrl("https://hasetapp-4eeba.firebaseapp.com/__/auth/action")
-                .setHandleCodeInApp(true)
-                .setAndroidPackageName(getPackageName(), true, null)
-                .build();
-    }
 }

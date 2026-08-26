@@ -48,7 +48,7 @@ import java.io.IOException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class DoctorEditActivity extends AppCompatActivity {
+public class DoctorEditActivity extends LocalizedAppCompatActivity {
     private TextInputEditText etSpecialty, etConsultationFee, etFromTime, etToTime, etLocation, etBio, etRegNo;
     private MaterialButton btnSave, btnCancel;
     private LinearLayout layoutProgress;

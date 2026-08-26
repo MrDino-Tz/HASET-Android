@@ -6,6 +6,8 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="cancel">Cancel</string>
+    <string name="continue_action">Continue</string>
+    <string name="go_to_settings">Go to Settings</string>
     <string name="ok">OK</string>
     <string name="error_generic">Something went wrong</string>
     <string name="error_network">Network error. Please check your connection and try again.</string>
@@ -158,6 +160,7 @@
 <!--    <string name="view_prescription">View Prescription</string>-->
 <!--    <string name="prescription_details">Prescription Details</string>-->
     <string name="medicines">Medicines</string>
+    <string name="buy_medicine">Buy Medicine</string>
 <!--    <string name="instructions">Instructions</string>-->
 
     <!-- Settings -->
@@ -235,6 +238,7 @@
     <string name="doctor_specialty">Doctor Specialty</string>
     <string name="popular_doctors">Popular Doctors</string>
     <string name="popular_articles">Popular Articles</string>
+    <string name="health_articles">Health Articles</string>
     <string name="services">Services</string>
     <string name="back">Back</string>
     <string name="like">Like</string>
@@ -461,6 +465,8 @@
     <string name="schedule_appointment">Schedule Appointment</string>
     <string name="book_appointment_type">Book %s Appointment</string>
     <string name="book_now">Book Now</string>
+    <string name="demo_doctor">Demo Doctor</string>
+    <string name="free_demo_consultation_confirm">This is a free demo consultation. No payment required. Do you want to continue?</string>
     <string name="recording_duration_default">0:00</string>
 <!--    <string name="balance_default">0 TZS</string>-->
     <string name="na">N/A</string>
@@ -542,6 +548,7 @@
     <string name="recommend_app">Recommend this app to friends</string>
     <string name="share_app_text">Download AfyaHASET - Your trusted partner for accessible healthcare: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
     <string name="delete">Delete</string>
+    <string name="delete_conversation_confirm">Are you sure you want to delete this conversation with %1$s? This action cannot be undone.</string>
     <string name="reply">Reply</string>
     <string name="copy">Copy</string>
     <string name="select">Select</string>
@@ -893,7 +900,6 @@
 
     <!-- ChatListFragment -->
     <string name="chat_deleted">Chat deleted</string>
-    <string name="delete_chat">Delete Chat</string>
 
     <!-- ArticleCenterMyPostsFragment -->
     <string name="article_deleted_success">Article deleted successfully</string>
@@ -930,6 +936,11 @@
     <string name="minimum_withdrawal_missing_amount">The payout minimum is TZS 5,000. You need TZS %1$,.0f more.</string>
     <string name="authentication_expired">Authentication expired. Please sign in again.</string>
     <string name="mfa_status_unavailable">Unable to verify MFA status. Please try again.</string>
+    <string name="invalid_or_expired_mfa_code">Invalid or expired MFA code.</string>
+    <string name="unable_to_disable_mfa">Unable to disable MFA. Try again.</string>
+    <string name="whatsapp_not_installed">WhatsApp not installed</string>
+    <string name="submitting">Submitting...</string>
+    <string name="failed_to_submit_report">Failed to submit report</string>
     <string name="mfa_required_for_withdrawal_title">Enable MFA to withdraw</string>
     <string name="mfa_required_for_withdrawal_message">Withdrawals require multi-factor authentication. Enable MFA first, then you may disable it later from Settings when you are not withdrawing.</string>
     <string name="enable_mfa">Enable MFA</string>
@@ -998,7 +1009,18 @@
     <string name="leave_blank_password">Leave blank to keep current password</string>
     <string name="status_pending">Pending</string>
     <string name="status_approved">Approved</string>
+    <string name="status_declined">Declined</string>
     <string name="status_cancelled">Cancelled</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="appointment_status_title">Appointment %1$s</string>
+    <string name="join_call">Join Call</string>
+    <string name="no_archived_messages">No archived messages</string>
+    <string name="chat_archived">Chat archived</string>
+    <string name="chat_unarchived">Chat unarchived</string>
+    <string name="archive_chat">Archive Chat</string>
+    <string name="unarchive_chat">Unarchive Chat</string>
+    <string name="delete_chat">Delete Chat</string>
 <!--    <string name="passwords_do_not_match">Passwords do not match</string>-->
     <string name="mct_reg_required">MCT Registration Number is required</string>
 

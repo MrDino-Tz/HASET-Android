@@ -18,7 +18,7 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HospitalsActivity extends AppCompatActivity {
+public class HospitalsActivity extends LocalizedAppCompatActivity {
 
     private RecyclerView rvHospitals;
     private View layoutEmptyState;

@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import android.widget.CheckBox;
 // import com.google.android.gms.auth.api.signin.GoogleSignIn;
 // import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -62,6 +63,7 @@ import com.haset.hasetapp.ui.MfaCodeInputView;
 
 public class LoginActivity extends BaseActivity {
     private TextInputEditText etEmail, etPassword;
+    private TextInputLayout tilEmail, tilPassword;
     private MaterialButton btnLogin;
     private MaterialCardView btnGoogleLogin;
     private TextView tvRegister, tvForgotPassword;
@@ -108,12 +110,12 @@ public class LoginActivity extends BaseActivity {
         com.haset.hasetapp.utils.LanguageToggleHelper.setup(this, findViewById(android.R.id.content), languageCode -> {
             com.haset.hasetapp.utils.CustomDialog.showLoading(this, getString(R.string.switching_language));
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                com.haset.hasetapp.utils.LocaleHelper.setLocale(this, languageCode);
                 if (preferenceManager != null) {
                     preferenceManager.setLanguage(languageCode);
                 }
+                com.haset.hasetapp.utils.CustomDialog.hideLoading();
                 overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
-                recreate();
+                com.haset.hasetapp.utils.LocaleHelper.applyLanguageChange(this, languageCode);
                 overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
             }, 500);
         });
@@ -188,6 +190,8 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void initViews() {
+        tilEmail = findViewById(R.id.tilEmail);
+        tilPassword = findViewById(R.id.tilPassword);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
@@ -373,13 +377,16 @@ public class LoginActivity extends BaseActivity {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
+        tilEmail.setError(null);
+        tilPassword.setError(null);
+
         if (!ValidationUtils.isValidEmail(email)) {
-            etEmail.setError(getString(R.string.error_email));
+            tilEmail.setError(getString(R.string.error_email));
             return;
         }
 
-        if (!ValidationUtils.isValidPassword(password)) {
-            etPassword.setError(getString(R.string.error_password));
+        if (!ValidationUtils.isStrongPassword(password)) {
+            tilPassword.setError(getString(R.string.error_strong_password));
             return;
         }
 

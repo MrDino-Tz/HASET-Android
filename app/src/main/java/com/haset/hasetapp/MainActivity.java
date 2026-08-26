@@ -19,6 +19,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.activities.LocalizedAppCompatActivity;
 import com.haset.hasetapp.utils.AppRatingHelper;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.HealthTipsHelper;
@@ -26,7 +27,7 @@ import com.haset.hasetapp.utils.NotificationHelper;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.StatusBarHelper;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends LocalizedAppCompatActivity {
 
     private PreferenceManager preferenceManager;
     private NotificationHelper notificationHelper;
@@ -140,13 +141,13 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.notification_permission_title)
                 .setMessage(R.string.notification_permission_message)
-                .setPositiveButton("Go to Settings", (dialog, which) -> {
+                .setPositiveButton(R.string.go_to_settings, (dialog, which) -> {
                     // Open app settings
                     Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                     intent.setData(Uri.parse("package:" + getPackageName()));
                     startActivity(intent);
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .setCancelable(false)
                 .show();
     }

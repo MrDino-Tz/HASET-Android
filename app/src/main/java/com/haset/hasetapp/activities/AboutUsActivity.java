@@ -17,7 +17,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.utils.Constants;
 
-public class AboutUsActivity extends AppCompatActivity {
+public class AboutUsActivity extends LocalizedAppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

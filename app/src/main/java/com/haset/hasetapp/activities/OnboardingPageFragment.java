@@ -63,12 +63,11 @@ public class OnboardingPageFragment extends Fragment {
         com.haset.hasetapp.utils.LanguageToggleHelper.setup(getActivity(), root, languageCode -> {
             com.haset.hasetapp.utils.CustomDialog.showLoading(getContext(), getString(R.string.switching_language));
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                com.haset.hasetapp.utils.LocaleHelper.setLocale(getContext(), languageCode);
                 com.haset.hasetapp.utils.PreferenceManager pm = new com.haset.hasetapp.utils.PreferenceManager(getContext());
                 pm.setLanguage(languageCode);
                 com.haset.hasetapp.utils.CustomDialog.hideLoading();
                 if (getActivity() != null) {
-                    getActivity().recreate();
+                    com.haset.hasetapp.utils.LocaleHelper.applyLanguageChange(getActivity(), languageCode);
                 }
             }, 500);
         });

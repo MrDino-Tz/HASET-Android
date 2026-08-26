@@ -26,7 +26,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import com.google.gson.Gson;
 
-public class ArticleActivity extends AppCompatActivity {
+public class ArticleActivity extends LocalizedAppCompatActivity {
     public static final String EXTRA_ARTICLE_ID = "extra_article_id";
     private static final String[] TAB_TITLES = {"Articles", "Health Tips", "Saved"};
     private AuthViewModel authViewModel;

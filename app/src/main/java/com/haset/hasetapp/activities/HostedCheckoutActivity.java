@@ -23,7 +23,7 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.utils.SensitiveActivityHelper;
 
 /** Full-screen HASET container for Snippe's PCI-hosted checkout. */
-public class HostedCheckoutActivity extends AppCompatActivity {
+public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
     public static final String EXTRA_CHECKOUT_URL = "checkout_url";
 
     private WebView checkoutView;

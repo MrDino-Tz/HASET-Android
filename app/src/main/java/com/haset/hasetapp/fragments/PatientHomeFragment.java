@@ -271,11 +271,11 @@ public class PatientHomeFragment extends Fragment {
 
         // Search App Services
         List<com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem> availableServices = java.util.Arrays.asList(
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem("Chat with Doctor", R.drawable.user_md_24, "chat"),
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem("Menstruation Tracker", R.drawable.ic_medical, "menstruation"),
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem("Buy Medicine", R.drawable.ic_medical, "medicine"),
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem("Health Articles", R.drawable.ic_news_paper, "articles"),
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem("Find Hospital", R.drawable.ic_hospital_24, "hospitals")
+            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.chat_doctor), R.drawable.user_md_24, "chat"),
+            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.menstruation_tracker), R.drawable.ic_medical, "menstruation"),
+            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.buy_medicine), R.drawable.ic_medical, "medicine"),
+            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.health_articles), R.drawable.ic_news_paper, "articles"),
+            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.find_hospital), R.drawable.ic_hospital_24, "hospitals")
         );
         for (com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem service : availableServices) {
             if (service.name.toLowerCase().contains(lowerQuery)) {
@@ -689,7 +689,7 @@ public class PatientHomeFragment extends Fragment {
                         
                         currentQuoteIndex = (currentQuoteIndex + 1) % healthQuotes.size();
                         tvHealthQuote.setText("\"" + healthQuotes.get(currentQuoteIndex) + "\"");
-                        tvHealthQuoteAuthor.setText("— HASET Hospital");
+                        tvHealthQuoteAuthor.setText(R.string.haset_hospital_1);
                         
                         Animation fadeIn = AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in);
                         layoutHealthQuote.startAnimation(fadeIn);
@@ -706,7 +706,7 @@ public class PatientHomeFragment extends Fragment {
         
         if (!healthQuotes.isEmpty()) {
             tvHealthQuote.setText("\"" + healthQuotes.get(0) + "\"");
-            tvHealthQuoteAuthor.setText("— HASET Hospital");
+            tvHealthQuoteAuthor.setText(R.string.haset_hospital_1);
         }
         
         Animation fadeIn = AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in);
@@ -935,22 +935,17 @@ public class PatientHomeFragment extends Fragment {
         Log.d("Categories", "Category list size: " + catList.size());
 
         categoryAdapter = new CategoryAdapter(catList, cat -> {
-            switch(cat.name) {
-                case "Articles":
-                    startActivity(new Intent(requireContext(), com.haset.hasetapp.activities.ArticleActivity.class));
-                    break;
-                case "Pharmacy":
-                    // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
-                    showComingSoonDialog(getString(R.string.pharmacy));
-                    break;
-                case "Darasa la Afya":
-                case "Afya Class":
-                    showComingSoonDialog(getString(R.string.afya_class));
-                    break;
-                case "Watoto":
-                case "Children's":
-                    showComingSoonDialog(getString(R.string.childrens));
-                    break;
+            String name = cat.name;
+            if (getString(R.string.all_articles).equals(name) || "Articles".equals(name)) {
+                startActivity(new Intent(requireContext(), com.haset.hasetapp.activities.ArticleActivity.class));
+            } else if (getString(R.string.pharmacy).equals(name) || "Pharmacy".equals(name)) {
+                // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
+                showComingSoonDialog(getString(R.string.pharmacy));
+            } else if (getString(R.string.afya_class).equals(name) || "Afya Class".equals(name)) {
+                showComingSoonDialog(getString(R.string.afya_class));
+            } else if (getString(R.string.childrens).equals(name) || getString(R.string.childrens_corner).equals(name)
+                    || "Watoto".equals(name) || "Children's".equals(name) || "Children's Corner".equals(name)) {
+                showComingSoonDialog(getString(R.string.childrens));
             }
         });
         rvCategories.setAdapter(categoryAdapter);
