@@ -136,7 +136,8 @@ public final class ErrorDisplay {
                 || lower.contains("credential is incorrect")) {
             return context.getString(R.string.error_invalid_credential);
         }
-        if (lower.contains("weak_password") || lower.contains("password should be at least")) {
+        if (lower.contains("weak_password") || lower.contains("password should be at least")
+                || lower.contains("password-does-not-meet-requirements") || lower.contains("missing password requirements")) {
             return context.getString(R.string.error_weak_password);
         }
         if (lower.contains("badly formatted") || lower.contains("invalid_email")

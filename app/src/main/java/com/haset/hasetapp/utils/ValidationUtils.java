@@ -14,10 +14,10 @@ public class ValidationUtils {
 
     public static boolean isStrongPassword(String password) {
         return password != null
-                && password.length() >= 12
+                && password.length() >= 13
                 && password.matches(".*[a-z].*")
                 && password.matches(".*[A-Z].*")
-                && password.matches(".*[0-9].*");
+                && password.matches(".*[^a-zA-Z0-9].*");
     }
     
     public static boolean isValidPhone(String phone) {

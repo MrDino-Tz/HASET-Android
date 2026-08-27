@@ -158,8 +158,9 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
     }
 
     private void displayArticle() {
-        tvArticleTitle.setText(article.getTitle() != null ? article.getTitle() : "");
-        tvArticleContent.setText(article.getDescription() != null ? article.getDescription() : "");
+        String language = com.haset.hasetapp.utils.LocaleHelper.getLanguage(this);
+        tvArticleTitle.setText(article.getLocalizedTitle(language) != null ? article.getLocalizedTitle(language) : "");
+        tvArticleContent.setText(article.getLocalizedDescription(language) != null ? article.getLocalizedDescription(language) : "");
 
         tvAuthorName.setText(article.getProfileName() != null ? article.getProfileName() : getString(R.string.app_name));
 

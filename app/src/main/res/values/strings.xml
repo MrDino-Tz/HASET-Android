@@ -21,7 +21,7 @@
     <string name="error_invalid_credential">Incorrect email or password.</string>
     <string name="error_user_not_found">No account was found with this email.</string>
     <string name="error_user_disabled">This account has been disabled.</string>
-    <string name="error_weak_password">Password is too weak. Use at least 12 characters with uppercase, lowercase, and a number.</string>
+    <string name="error_weak_password">Password must be at least 13 characters with an uppercase letter and a special character (!@#$%^&amp;*).</string>
     <string name="error_email_bad_format">Please enter a valid email address.</string>
     <string name="error_too_many_requests">Too many attempts. Please try again later.</string>
     <string name="error_email_not_verified">Please verify your email address to continue.</string>
@@ -78,7 +78,7 @@
     <string name="confirm_new_password_hint">Confirm New Password</string>
     <string name="btn_reset_password">Reset Password</string>
     <string name="invalid_reset_code">Invalid or expired reset code. Request a new email.</string>
-    <string name="weak_password_error">Password too weak. Use at least 12 characters with uppercase, lowercase, and a number.</string>
+    <string name="weak_password_error">Password must be at least 13 characters with an uppercase letter and a special character (!@#$%^&amp;*).</string>
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="password_reset_success">Password reset successfully. Please sign in.</string>
     <string name="reset_code_verified_as">Code verified for: %1$s</string>
@@ -220,7 +220,7 @@
     <!-- Validation -->
     <string name="error_email">Please enter a valid email</string>
     <string name="error_password">Password must be at least 6 characters</string>
-    <string name="error_strong_password">Use at least 12 characters with uppercase, lowercase, and a number</string>
+    <string name="error_strong_password">Use at least 13 characters with an uppercase letter and a special character (!@#$%^&amp;*)</string>
     <string name="error_phone">Please enter a valid phone number</string>
     <string name="error_name">Please enter your name</string>
     <string name="error_password_match">Passwords do not match</string>
@@ -1014,6 +1014,7 @@
     <string name="status_completed">Completed</string>
     <string name="status_unknown">Unknown</string>
     <string name="appointment_status_title">Appointment %1$s</string>
+    <string name="no_content">No content</string>
     <string name="join_call">Join Call</string>
     <string name="no_archived_messages">No archived messages</string>
     <string name="chat_archived">Chat archived</string>

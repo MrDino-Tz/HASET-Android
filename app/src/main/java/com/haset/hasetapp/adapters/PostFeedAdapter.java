@@ -172,16 +172,18 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         holder.tvTimeAgo.setText(getTimeAgo(post.getCreatedAt()));
         
         // Title
-        if (post.getTitle() != null && !post.getTitle().isEmpty()) {
-            holder.tvPostTitle.setText(post.getTitle());
+        String localizedTitle = post.getLocalizedTitle(com.haset.hasetapp.utils.LocaleHelper.getLanguage(context));
+        String localizedDescription = post.getLocalizedDescription(com.haset.hasetapp.utils.LocaleHelper.getLanguage(context));
+        if (localizedTitle != null && !localizedTitle.isEmpty()) {
+            holder.tvPostTitle.setText(localizedTitle);
             holder.tvPostTitle.setVisibility(View.VISIBLE);
         } else {
             holder.tvPostTitle.setVisibility(View.GONE);
         }
         
         // Description
-        if (post.getDescription() != null && !post.getDescription().isEmpty()) {
-            holder.tvPostDescription.setText(post.getDescription());
+        if (localizedDescription != null && !localizedDescription.isEmpty()) {
+            holder.tvPostDescription.setText(localizedDescription);
             holder.tvPostDescription.setVisibility(View.VISIBLE);
         } else {
             holder.tvPostDescription.setVisibility(View.GONE);
@@ -1155,4 +1157,3 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         }
     }
 }
-

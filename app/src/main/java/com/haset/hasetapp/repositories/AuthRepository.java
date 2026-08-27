@@ -271,22 +271,39 @@ public class AuthRepository {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
                         Log.w(TAG, "Email verification request failed", e);
-                        if (callback != null) callback.onError("Unable to send verification email.");
+                        sendEmailVerificationViaFirebase(user, callback);
                     }
 
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull okhttp3.Response response) {
                         boolean successful = response.isSuccessful();
                         response.close();
-                        if (callback != null) {
-                            if (successful) callback.onSuccess(null);
-                            else callback.onError("Unable to send verification email.");
+                        if (successful) {
+                            if (callback != null) callback.onSuccess(null);
+                        } else {
+                            sendEmailVerificationViaFirebase(user, callback);
                         }
                     }
                 });
             })
             .addOnFailureListener(error -> {
                 Log.w(TAG, "Unable to refresh token for email verification", error);
+                sendEmailVerificationViaFirebase(user, callback);
+            });
+    }
+
+    private void sendEmailVerificationViaFirebase(FirebaseUser user, FirebaseHelper.OnCompleteListener<Void> callback) {
+        if (user == null) {
+            if (callback != null) callback.onError("Unable to send verification email.");
+            return;
+        }
+
+        user.sendEmailVerification()
+            .addOnSuccessListener(unused -> {
+                if (callback != null) callback.onSuccess(null);
+            })
+            .addOnFailureListener(error -> {
+                Log.w(TAG, "Firebase email verification fallback failed", error);
                 if (callback != null) callback.onError("Unable to send verification email.");
             });
     }
@@ -349,8 +366,9 @@ public class AuthRepository {
             if ("ERROR_USER_DISABLED".equals(errorCode) || "user-disabled".equalsIgnoreCase(errorCode)) {
                 return "This account has been disabled.";
             }
-            if ("ERROR_WEAK_PASSWORD".equals(errorCode) || "weak-password".equalsIgnoreCase(errorCode)) {
-                return "Password is too weak. Use at least 12 characters with uppercase, lowercase, and a number.";
+            if ("ERROR_WEAK_PASSWORD".equals(errorCode) || "weak-password".equalsIgnoreCase(errorCode)
+                    || "password-does-not-meet-requirements".equalsIgnoreCase(errorCode)) {
+                return "Password must be at least 13 characters with an uppercase letter and a special character (!@#$%^&*).";
             }
             if ("ERROR_OPERATION_NOT_ALLOWED".equals(errorCode) || "operation-not-allowed".equalsIgnoreCase(errorCode)) {
                 return "Firebase Authentication is blocking sign-up. Enable Email/Password sign-in in the Firebase console.";

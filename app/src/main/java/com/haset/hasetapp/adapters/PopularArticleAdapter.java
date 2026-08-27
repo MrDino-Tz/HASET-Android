@@ -104,7 +104,8 @@ public class PopularArticleAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         }
 
         public void bind(ArticlePostEntity article) {
-            tvTitle.setText(article.getTitle() != null ? article.getTitle() : "");
+            tvTitle.setText(article.getLocalizedTitle(com.haset.hasetapp.utils.LocaleHelper.getLanguage(itemView.getContext())) != null
+                    ? article.getLocalizedTitle(com.haset.hasetapp.utils.LocaleHelper.getLanguage(itemView.getContext())) : "");
             tvViewCount.setText(formatCount(article.getViews()) + " views");
 
             String imageUrl = article.getImageUrl();
@@ -149,7 +150,8 @@ public class PopularArticleAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         }
 
         public void bind(ArticlePostEntity article) {
-            tvTitle.setText(article.getTitle() != null ? article.getTitle() : "");
+            tvTitle.setText(article.getLocalizedTitle(com.haset.hasetapp.utils.LocaleHelper.getLanguage(itemView.getContext())) != null
+                    ? article.getLocalizedTitle(com.haset.hasetapp.utils.LocaleHelper.getLanguage(itemView.getContext())) : "");
             tvViewCount.setText(formatCount(article.getViews()) + " views");
 
             String description = article.getDescription();

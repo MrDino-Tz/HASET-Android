@@ -154,7 +154,11 @@ public class ResetPasswordBottomSheet extends BottomSheetDialogFragment {
     private void showFailure(Exception e) {
         int messageRes;
         if (e instanceof FirebaseAuthWeakPasswordException) {
-            messageRes = R.string.weak_password_error;
+            messageRes = R.string.error_weak_password;
+        } else if (e.getMessage() != null
+                && (e.getMessage().toLowerCase().contains("password-does-not-meet-requirements")
+                    || e.getMessage().toLowerCase().contains("missing password requirements"))) {
+            messageRes = R.string.error_weak_password;
         } else if (e instanceof FirebaseAuthInvalidCredentialsException) {
             messageRes = R.string.invalid_reset_code;
         } else {

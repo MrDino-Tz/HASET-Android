@@ -22,7 +22,7 @@
     <string name="error_invalid_credential">Barua pepe au nenosiri si sahihi.</string>
     <string name="error_user_not_found">Hakuna akaunti iliyopatikana kwa barua pepe hii.</string>
     <string name="error_user_disabled">Akaunti hii imezimwa.</string>
-    <string name="error_weak_password">Nenosiri ni dhaifu. Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba.</string>
+    <string name="error_weak_password">Nenosiri lazima liwe na angalau herufi 13, herufi kubwa na ishara maalum (!@#$%^&amp;*).</string>
     <string name="error_email_bad_format">Tafadhali weka barua pepe sahihi.</string>
     <string name="error_too_many_requests">Majaribio ni mengi sana. Tafadhali jaribu tena baadaye.</string>
     <string name="error_email_not_verified">Tafadhali thibitisha barua pepe yako ili uendelee.</string>
@@ -74,7 +74,7 @@
     <string name="confirm_new_password_hint">Thibitisha Nenosiri Mpya</string>
     <string name="btn_reset_password">Badilisha Nenosiri</string>
     <string name="invalid_reset_code">Nambari ya kubadilisha ni batili au muda umeisha. Tuma barua pepe mpya.</string>
-    <string name="weak_password_error">Nenosiri dhaifu sana. Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba.</string>
+    <string name="weak_password_error">Nenosiri lazima liwe na angalau herufi 13, herufi kubwa na ishara maalum (!@#$%^&amp;*).</string>
     <string name="password_reset_success">Nenosiri limebadilishwa. Tafadhali ingia tena.</string>
     <string name="reset_code_verified_as">Nambari imethibitishwa kwa: %1$s</string>
     <string name="security_warning_title">Taarifa ya Usalama</string>
@@ -206,7 +206,7 @@
     <!-- Validation -->
     <string name="error_email">Tafadhali weka barua pepe sahihi</string>
     <string name="error_password">Nenosiri lazima liwe na angalau herufi 6</string>
-    <string name="error_strong_password">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba</string>
+    <string name="error_strong_password">Tumia angalau herufi 13 zenye herufi kubwa na ishara maalum (!@#$%^&amp;*)</string>
     <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
     <string name="error_name">Tafadhali weka jina lako</string>
     <string name="error_password_match">Manenosiri hayafanani</string>
@@ -963,6 +963,7 @@
     <string name="status_completed">Imekamilika</string>
     <string name="status_unknown">Haijulikani</string>
     <string name="appointment_status_title">Miadi %1$s</string>
+    <string name="no_content">Hakuna maudhui</string>
     <string name="chat_now">Ongea Sasa</string>
     <string name="join_call">Jiunge na Simu</string>
     <string name="no_archived_messages">Hakuna ujumbe uliohifadhiwa</string>

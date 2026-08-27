@@ -131,14 +131,17 @@ public class ArticleAdapter extends RecyclerView.Adapter<ArticleAdapter.ArticleV
             tvProfileName.setText(article.getProfileName() != null ? article.getProfileName() : "HASET User");
             tvTimestamp.setText("Just now"); 
             
-            if (article.getTitle() != null && !article.getTitle().isEmpty()) {
-                tvPostTitle.setText(article.getTitle());
+            String language = com.haset.hasetapp.utils.LocaleHelper.getLanguage(itemView.getContext());
+            String localizedTitle = article.getLocalizedTitle(language);
+            String localizedDescription = article.getLocalizedDescription(language);
+            if (localizedTitle != null && !localizedTitle.isEmpty()) {
+                tvPostTitle.setText(localizedTitle);
                 tvPostTitle.setVisibility(View.VISIBLE);
             } else {
                 tvPostTitle.setVisibility(View.GONE);
             }
             
-            tvPostText.setText(article.getDescription() != null ? article.getDescription() : "No content");
+            tvPostText.setText(localizedDescription != null ? localizedDescription : itemView.getContext().getString(R.string.no_content));
             tvLikeCount.setText(String.valueOf(article.getLikes()) + " Likes");
             tvCommentCount.setText(String.valueOf(article.getComments()) + " Comments");
             tvShareCount.setText(String.valueOf(article.getShares()) + " Shares");

@@ -12,6 +12,10 @@ public class ArticlePostEntity {
     private String type; // "image", "text"
     private String title;
     private String description;
+    @androidx.room.Ignore
+    private String titleSw;
+    @androidx.room.Ignore
+    private String descriptionSw;
     private String profileName;
     private String tags;
     private String imagePath; // Local file path for image (legacy, kept for backward compatibility)
@@ -83,8 +87,24 @@ public class ArticlePostEntity {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
+    public String getTitleSw() { return titleSw; }
+    public void setTitleSw(String titleSw) { this.titleSw = titleSw; }
+
+    public String getLocalizedTitle(String language) {
+        return "sw".equalsIgnoreCase(language) && titleSw != null && !titleSw.trim().isEmpty()
+                ? titleSw : title;
+    }
+
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getDescriptionSw() { return descriptionSw; }
+    public void setDescriptionSw(String descriptionSw) { this.descriptionSw = descriptionSw; }
+
+    public String getLocalizedDescription(String language) {
+        return "sw".equalsIgnoreCase(language) && descriptionSw != null && !descriptionSw.trim().isEmpty()
+                ? descriptionSw : description;
+    }
 
     public String getProfileName() { return profileName; }
     public void setProfileName(String profileName) { this.profileName = profileName; }
@@ -119,4 +139,3 @@ public class ArticlePostEntity {
     public long getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
 }
-
