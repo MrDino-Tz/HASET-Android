@@ -136,7 +136,9 @@ public class AuthViewModel extends AndroidViewModel {
 
                     @Override
                     public void onError(String error) {
-                        completeRegistrationPendingVerification();
+                        repository.logout();
+                        authState.postValue(AuthState.error(
+                            error != null ? error : "Unable to send verification email."));
                     }
                 });
             }
@@ -156,7 +158,6 @@ public class AuthViewModel extends AndroidViewModel {
 
     private void completeRegistrationPendingVerification() {
         pendingFirebaseUser = null;
-        repository.logout();
         authState.postValue(AuthState.success(getApplication().getString(com.haset.hasetapp.R.string.verify_email_after_registration)));
     }
 

@@ -54,8 +54,6 @@ public class RegisterActivity extends BaseActivity {
     private UserEntity pendingDoctorUser;
     private String pendingDoctorEmail;
     private String pendingDoctorPassword;
-    private boolean pendingDoctorPaymentRequiresAnonymousAuth = false;
-    private FirebaseUser pendingAnonymousPaymentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +75,6 @@ public class RegisterActivity extends BaseActivity {
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         setupObservers();
-        setupPaymentLauncher();
 
         // Language Switcher Toggle logic
         com.haset.hasetapp.utils.LanguageToggleHelper.setup(this, findViewById(android.R.id.content), languageCode -> {
@@ -300,12 +297,28 @@ public class RegisterActivity extends BaseActivity {
                     String registerDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(RegisterActivity.this, state.message);
                     com.haset.hasetapp.utils.ErrorLogger.log(registerDetail, state.message);
                     com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), registerDetail);
+                    pendingDoctorUser = null;
+                    pendingDoctorEmail = null;
+                    pendingDoctorPassword = null;
                     resetRegisterButton();
                     break;
                 case SUCCESS:
                     CustomDialog.hideLoading();
-                    com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content), state.message);
-                    showSuccessAndNavigate(LoginActivity.class, getString(R.string.registration_successful), state.message);
+                    if (Constants.ROLE_DOCTOR.equals(userRole)) {
+                        CustomDialog.showSuccess(
+                            this,
+                            "Verification email sent",
+                            "Check your inbox and verify your email before logging in. Payment will resume after verification.",
+                            "Continue to login",
+                            v -> {
+                                FirebaseAuth.getInstance().signOut();
+                                showSuccessAndNavigate(LoginActivity.class,
+                                    getString(R.string.registration_successful), state.message);
+                            });
+                    } else {
+                        com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content), state.message);
+                        showSuccessAndNavigate(LoginActivity.class, getString(R.string.registration_successful), state.message);
+                    }
                     break;
                 case AUTHENTICATED:
                     CustomDialog.hideLoading();
@@ -408,7 +421,8 @@ public class RegisterActivity extends BaseActivity {
         newUser.setCreatedAt(System.currentTimeMillis());
 
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
-            fetchDoctorRegistrationFeeAndShowPaymentDialog(email, password, newUser);
+            // Account creation and custom verification email happen before payment.
+            authViewModel.register(email, password, newUser);
         } else {
             authViewModel.register(email, password, newUser);
         }
@@ -424,41 +438,21 @@ public class RegisterActivity extends BaseActivity {
                     ? Math.max(0.0, config.getDoctorRegistrationFee())
                     : 500.0;
                 if (fee == 0.0) {
-                    authViewModel.register(email, password, newUser);
+                    FirebaseAuth.getInstance().signOut();
+                    showSuccessAndNavigate(LoginActivity.class,
+                        getString(R.string.registration_successful),
+                        getString(R.string.verify_email_after_registration));
                     return;
                 }
-                ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, fee);
+                showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             }
 
             @Override
             public void onError(String error) {
                 if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
-                ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
+                showDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
             }
         });
-    }
-
-    private void ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser, double fee) {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            pendingDoctorPaymentRequiresAnonymousAuth = currentUser.isAnonymous();
-            pendingAnonymousPaymentUser = currentUser.isAnonymous() ? currentUser : null;
-            showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
-            return;
-        }
-
-        FirebaseAuth.getInstance().signInAnonymously()
-            .addOnSuccessListener(result -> {
-                pendingDoctorPaymentRequiresAnonymousAuth = true;
-                pendingAnonymousPaymentUser = result.getUser();
-                showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
-            })
-            .addOnFailureListener(error -> {
-                resetRegisterButton();
-                CustomDialog.hideLoading();
-                com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
-                    error.getMessage() != null ? error.getMessage() : "Unable to prepare payment session");
-            });
     }
 
     private void showDoctorRegistrationPaymentDialog(String email, String password, UserEntity newUser, double fee) {
@@ -484,16 +478,15 @@ public class RegisterActivity extends BaseActivity {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
-                    // A successful payment must still result in a normal credential-backed
-                    // account. Never promote an anonymous Firebase session to a doctor.
-                    UserEntity doctorUser = pendingDoctorUser;
-                    String doctorEmail = pendingDoctorEmail;
-                    String doctorPassword = pendingDoctorPassword;
-                    CustomDialog.showLoading(RegisterActivity.this, getString(R.string.creating_account));
-                    cleanupAnonymousPaymentSession(() ->
-                        authViewModel.register(doctorEmail, doctorPassword, doctorUser));
+                    // The account and verification email were created before payment.
+                    FirebaseAuth.getInstance().signOut();
+                    CustomDialog.hideLoading();
+                    com.haset.hasetapp.utils.SnackbarHelper.success(
+                        findViewById(android.R.id.content), getString(R.string.registration_successful));
+                    showSuccessAndNavigate(LoginActivity.class,
+                        getString(R.string.registration_successful),
+                        getString(R.string.verify_email_after_registration));
                 } else {
-                    cleanupAnonymousPaymentSession(null);
                     CustomDialog.hideLoading();
                     resetRegisterButton();
                 }
@@ -501,44 +494,8 @@ public class RegisterActivity extends BaseActivity {
                 pendingDoctorUser = null;
                 pendingDoctorEmail = null;
                 pendingDoctorPassword = null;
-                pendingDoctorPaymentRequiresAnonymousAuth = false;
-                pendingAnonymousPaymentUser = null;
             }
         );
-    }
-
-    private void cleanupAnonymousPaymentSession(@androidx.annotation.Nullable Runnable onComplete) {
-        FirebaseUser anonymousUser = pendingAnonymousPaymentUser;
-        if (!pendingDoctorPaymentRequiresAnonymousAuth
-                || anonymousUser == null
-                || !anonymousUser.isAnonymous()) {
-            if (onComplete != null) onComplete.run();
-            return;
-        }
-
-        String anonymousUid = anonymousUser.getUid();
-        java.util.Map<String, Object> cleanupUpdates = new java.util.HashMap<>();
-        cleanupUpdates.put("users/" + anonymousUid, null);
-        cleanupUpdates.put("doctors/" + anonymousUid, null);
-        cleanupUpdates.put("notifications/" + anonymousUid, null);
-        cleanupUpdates.put("saved_articles/" + anonymousUid, null);
-
-        FirebaseHelper.getDatabaseReference().updateChildren(cleanupUpdates)
-            .addOnCompleteListener(ignored -> deleteAnonymousUser(anonymousUser, onComplete));
-    }
-
-    private void deleteAnonymousUser(FirebaseUser anonymousUser,
-                                     @androidx.annotation.Nullable Runnable onComplete) {
-        anonymousUser.delete()
-            .addOnCompleteListener(task -> {
-                FirebaseAuth auth = FirebaseAuth.getInstance();
-                FirebaseUser currentUser = auth.getCurrentUser();
-                if (currentUser != null && currentUser.isAnonymous()
-                        && currentUser.getUid().equals(anonymousUser.getUid())) {
-                    auth.signOut();
-                }
-                if (onComplete != null) onComplete.run();
-            });
     }
 
     private void resetRegisterButton() {

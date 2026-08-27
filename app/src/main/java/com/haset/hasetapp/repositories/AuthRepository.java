@@ -16,6 +16,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
@@ -138,6 +140,7 @@ public class AuthRepository {
                     doctorUpdates.put("regNo", user.getRegNo());
                     doctorUpdates.put("approved", false);
                     doctorUpdates.put("verified", false);
+                    doctorUpdates.put("registrationPaymentStatus", "pending");
                     FirebaseHelper.getDoctorsNodeRef().child(user.getUserId()).updateChildren(doctorUpdates)
                         .addOnSuccessListener(aVoid1 -> callback.onSuccess(null))
                         .addOnFailureListener(e -> callback.onError(e.getMessage()));
@@ -260,36 +263,56 @@ public class AuthRepository {
     }
 
     public void sendEmailVerificationViaSmtp(FirebaseUser user, FirebaseHelper.OnCompleteListener<Void> callback) {
-        if (user == null) return;
+        if (user == null) {
+            if (callback != null) callback.onError("Unable to send verification email.");
+            return;
+        }
+
         user.getIdToken(true)
             .addOnSuccessListener(token -> {
                 Request request = new Request.Builder()
                     .url(Constants.EMAIL_VERIFICATION_API_URL)
-                    .post(RequestBody.create("{}", JSON))
+                    .post(RequestBody.create(
+                        "{\"email\":\"" + jsonEscape(user.getEmail()) + "\"}", JSON))
                     .addHeader("Authorization", "Bearer " + token.getToken())
                     .build();
                 httpClient.newCall(request).enqueue(new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        Log.w(TAG, "Email verification request failed", e);
-                        sendEmailVerificationViaFirebase(user, callback);
+                        Log.w(TAG, "SMTP email verification request failed", e);
+                        if (callback != null) callback.onError("Unable to send verification email.");
                     }
 
                     @Override
                     public void onResponse(@NonNull Call call, @NonNull okhttp3.Response response) {
                         boolean successful = response.isSuccessful();
+                        String responseBody = "";
+                        try {
+                            if (response.body() != null) responseBody = response.body().string();
+                        } catch (IOException ignored) {
+                        }
+                        Log.w(TAG, "SMTP email verification response: HTTP " + response.code()
+                                + " body=" + responseBody);
                         response.close();
                         if (successful) {
-                            if (callback != null) callback.onSuccess(null);
-                        } else {
-                            sendEmailVerificationViaFirebase(user, callback);
+                            try {
+                                JsonObject body = JsonParser.parseString(responseBody).getAsJsonObject();
+                                if (body.has("sent") && !body.get("sent").getAsBoolean()) {
+                                    successful = false;
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        if (callback != null) {
+                            if (successful) callback.onSuccess(null);
+                            else callback.onError("Unable to send verification email.");
                         }
                     }
                 });
             })
             .addOnFailureListener(error -> {
-                Log.w(TAG, "Unable to refresh token for email verification", error);
-                sendEmailVerificationViaFirebase(user, callback);
+                Log.w(TAG, "Unable to refresh token for SMTP email verification", error);
+                if (callback != null) callback.onError("Unable to send verification email.");
             });
     }
 

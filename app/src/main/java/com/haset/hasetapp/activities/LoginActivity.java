@@ -36,6 +36,7 @@ import android.widget.CheckBox;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
+import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.Constants;
@@ -58,6 +59,7 @@ import android.util.Log;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.NetworkUtils;
+import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
 import com.haset.hasetapp.ui.MfaCodeInputView;
 
@@ -408,7 +410,46 @@ public class LoginActivity extends BaseActivity {
 
         AuditLogger.getInstance(this).logLogin();
         
-        handleNotificationAndNavigation(user);
+        resumeDoctorRegistrationIfNeeded(user);
+    }
+
+    private void resumeDoctorRegistrationIfNeeded(UserEntity user) {
+        if (!Constants.ROLE_DOCTOR.equals(user.getRole())) {
+            handleNotificationAndNavigation(user);
+            return;
+        }
+
+        FirebaseHelper.getDoctorsNodeRef().child(user.getUserId())
+            .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                @Override
+                public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
+                    String paymentStatus = snapshot.child("registrationPaymentStatus").getValue(String.class);
+                    if (!"pending".equalsIgnoreCase(paymentStatus)) {
+                        handleNotificationAndNavigation(user);
+                        return;
+                    }
+
+                    Doctor registrationDoctor = new Doctor(
+                        user.getUserId(), user.getUserId(), user.getFullName(), "Doctor Registration");
+                    registrationDoctor.setEmail(user.getEmail());
+                    registrationDoctor.setPhone(user.getPhone());
+                    registrationDoctor.setRegNo(user.getRegNo());
+                    registrationDoctor.setVerified(false);
+                    Intent paymentIntent = new Intent(LoginActivity.this, PaymentActivity.class);
+                    paymentIntent.putExtra("doctor", registrationDoctor);
+                    paymentIntent.putExtra("consultation_fee", 0.0);
+                    paymentIntent.putExtra("buyer_email", user.getEmail());
+                    paymentIntent.putExtra("buyer_name", user.getFullName());
+                    paymentIntent.putExtra("buyer_phone", user.getPhone());
+                    startActivity(paymentIntent);
+                    finish();
+                }
+
+                @Override
+                public void onCancelled(com.google.firebase.database.DatabaseError error) {
+                    handleNotificationAndNavigation(user);
+                }
+            });
     }
 
     /*

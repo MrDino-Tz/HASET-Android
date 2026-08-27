@@ -322,12 +322,23 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         MaterialButton btnDone = dialogView.findViewById(R.id.btnDone);
         btnDone.setOnClickListener(v -> {
             dialog.dismiss();
-            Intent resultIntent = new Intent();
-            resultIntent.putExtra("service_message_id", serviceMessageId);
-            resultIntent.putExtra("chat_room_id", chatRoomId);
-            resultIntent.putExtra("transaction_id", viewModel.getCurrentTransactionId());
-            setResult(RESULT_OK, resultIntent);
-            finish();
+            Runnable complete = () -> {
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("service_message_id", serviceMessageId);
+                resultIntent.putExtra("chat_room_id", chatRoomId);
+                resultIntent.putExtra("transaction_id", viewModel.getCurrentTransactionId());
+                setResult(RESULT_OK, resultIntent);
+                finish();
+            };
+            if (isDoctorRegistrationPayment()) {
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("registrationPaymentStatus", "paid");
+                com.haset.hasetapp.utils.FirebaseHelper.getDoctorsNodeRef()
+                    .child(getCurrentUserId()).updateChildren(updates)
+                    .addOnCompleteListener(ignored -> complete.run());
+            } else {
+                complete.run();
+            }
         });
 
         dialog.show();
@@ -1066,5 +1077,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                .getCurrentUser() != null ? 
                com.google.firebase.auth.FirebaseAuth.getInstance()
                .getCurrentUser().getUid() : null;
+    }
+
+    private boolean isDoctorRegistrationPayment() {
+        return doctor != null && "doctor_registration".equals(doctor.getDoctorId());
     }
 }
