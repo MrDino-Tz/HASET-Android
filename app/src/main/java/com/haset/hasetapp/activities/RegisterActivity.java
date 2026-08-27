@@ -36,6 +36,7 @@ import com.haset.hasetapp.models.AppConfig;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 public class RegisterActivity extends BaseActivity {
+    private static final String TAG = "HASETDoctorFlow";
     private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo;
     private com.google.android.material.textfield.TextInputLayout tilRegNo;
     private com.google.android.material.progressindicator.LinearProgressIndicator passwordStrengthBar;
@@ -374,7 +375,10 @@ public class RegisterActivity extends BaseActivity {
         String phone = etPhone.getText().toString().trim();
         final String password = etPassword.getText().toString().trim();
 
-        final String finalPhoneNumber = phone.startsWith("+255") ? phone : "+255" + phone;
+        String phoneDigits = phone.replaceAll("[^0-9]", "");
+        phoneDigits = phoneDigits.replaceFirst("^255", "");
+        phoneDigits = phoneDigits.replaceFirst("^0+", "");
+        final String finalPhoneNumber = "+255" + phoneDigits;
 
         if (!ValidationUtils.isValidName(fullName)) {
             etFullName.setError(getString(R.string.error_name));
@@ -429,6 +433,7 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void fetchDoctorRegistrationFeeAndShowPaymentDialog(String email, String password, UserEntity newUser) {
+        android.util.Log.d(TAG, "Fetching doctor registration fee for " + email);
         FirebaseHelper.getAppConfig(new FirebaseHelper.OnCompleteListener<AppConfig>() {
             @Override
             public void onSuccess(AppConfig config) {
@@ -437,6 +442,7 @@ public class RegisterActivity extends BaseActivity {
                 double fee = config != null
                     ? Math.max(0.0, config.getDoctorRegistrationFee())
                     : 500.0;
+                android.util.Log.d(TAG, "Doctor registration fee loaded: " + fee);
                 if (fee == 0.0) {
                     FirebaseAuth.getInstance().signOut();
                     showSuccessAndNavigate(LoginActivity.class,
@@ -450,6 +456,7 @@ public class RegisterActivity extends BaseActivity {
             @Override
             public void onError(String error) {
                 if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
+                showDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
                 showDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
             }
         });
@@ -476,7 +483,7 @@ public class RegisterActivity extends BaseActivity {
     private void setupPaymentLauncher() {
         doctorPaymentLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> {
+                result -> {
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
                     // The account and verification email were created before payment.
                     FirebaseAuth.getInstance().signOut();
@@ -488,6 +495,8 @@ public class RegisterActivity extends BaseActivity {
                         getString(R.string.verify_email_after_registration));
                 } else {
                     CustomDialog.hideLoading();
+                    com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
+                        getString(R.string.the_payment_request_was_rejected_or_did_));
                     resetRegisterButton();
                 }
 
