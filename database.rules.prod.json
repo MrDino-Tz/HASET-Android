@@ -78,7 +78,7 @@
       }
     },
     "support_tickets": {
-      ".read": "auth != null",
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
       ".write": false,
       ".indexOn": [
         "timestamp",
@@ -88,7 +88,8 @@
         "uid"
       ],
       "$ticketId": {
-        ".write": "auth != null"
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (!data.exists() && newData.child('userId').val() === auth.uid && newData.child('report').isString() && newData.child('report').val().length > 0 && newData.child('report').val().length <= 5000 && newData.child('status').val() === 'open') || (data.exists() && data.child('userId').val() === auth.uid && newData.child('userId').val() === data.child('userId').val() && newData.child('report').val() === data.child('report').val() && newData.child('status').val() === data.child('status').val()))"
       }
     },
     "doctor_wallets": {
