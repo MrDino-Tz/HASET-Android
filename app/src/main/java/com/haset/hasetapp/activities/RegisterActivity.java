@@ -39,6 +39,8 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 public class RegisterActivity extends BaseActivity {
     private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo;
     private com.google.android.material.textfield.TextInputLayout tilRegNo;
+    private com.google.android.material.progressindicator.LinearProgressIndicator passwordStrengthBar;
+    private TextView tvPasswordStrength;
     private MaterialButton btnRegister;
     private MaterialCardView btnGoogleLogin;
     private TextView tvLogin, tvRole;
@@ -71,6 +73,7 @@ public class RegisterActivity extends BaseActivity {
         }
 
         initViews();
+        setupKeyboardScroll();
         preferenceManager = new PreferenceManager(this);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
@@ -143,6 +146,8 @@ public class RegisterActivity extends BaseActivity {
         etPassword = findViewById(R.id.etPassword);
         etRegNo = findViewById(R.id.etRegNo);
         tilRegNo = findViewById(R.id.tilRegNo);
+        passwordStrengthBar = findViewById(R.id.passwordStrengthBar);
+        tvPasswordStrength = findViewById(R.id.tvPasswordStrength);
         btnRegister = findViewById(R.id.btnRegister);
         tvLogin = findViewById(R.id.tvLogin);
         tvRole = findViewById(R.id.tvRole);
@@ -153,6 +158,115 @@ public class RegisterActivity extends BaseActivity {
         }
         
         setupClickListeners();
+        setupPasswordStrengthWatcher();
+    }
+
+    private void setupKeyboardScroll() {
+        final android.view.View content = findViewById(android.R.id.content);
+        if (content == null) return;
+        final int[] lastVisibleHeight = {content.getHeight()};
+        content.getViewTreeObserver().addOnGlobalLayoutListener(new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                int visible = content.getHeight();
+                // Detect keyboard appearing (visible area shrinks significantly)
+                if (lastVisibleHeight[0] - visible > 200) {
+                    android.view.View focused = getCurrentFocus();
+                    if (focused != null) {
+                        focused.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                focused.requestFocus();
+                                if (focused.getParent() != null) {
+                                    android.view.View scrollTarget = focused;
+                                    android.view.ViewParent parent = focused.getParent();
+                                    while (parent instanceof android.view.View) {
+                                        if (parent instanceof android.widget.ScrollView) {
+                                            ((android.widget.ScrollView) parent).smoothScrollTo(0, scrollTarget.getTop());
+                                            break;
+                                        }
+                                        scrollTarget = (android.view.View) parent;
+                                        parent = parent.getParent();
+                                    }
+                                }
+                            }
+                        }, 120);
+                    }
+                }
+                lastVisibleHeight[0] = visible;
+            }
+        });
+    }
+
+    private void setupPasswordStrengthWatcher() {
+        if (etPassword == null) return;
+        etPassword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                updatePasswordStrength(s != null ? s.toString() : "");
+            }
+        });
+    }
+
+    private void updatePasswordStrength(String password) {
+        if (passwordStrengthBar == null || tvPasswordStrength == null) return;
+
+        int minChars = 12;
+        int len = password.length();
+        boolean hasLength = len >= minChars;
+        boolean hasUpper = password.matches(".*[A-Z].*");
+        boolean hasLower = password.matches(".*[a-z].*");
+        boolean hasDigit = password.matches(".*[0-9].*");
+
+        int met = 0;
+        if (hasLength) met++;
+        if (hasUpper) met++;
+        if (hasLower) met++;
+        if (hasDigit) met++;
+
+        int max = 4;
+        if (password.isEmpty()) {
+            met = 0;
+        }
+
+        int progress = Math.min(met, max);
+        passwordStrengthBar.setMax(max);
+        passwordStrengthBar.setProgress(progress);
+
+        String countText = getString(R.string.password_strength_chars, Math.min(len, minChars), minChars);
+
+        int color;
+        String label;
+        if (password.isEmpty()) {
+            color = android.graphics.Color.rgb(158, 158, 158);
+            label = getString(R.string.password_strength_label) + " (" + countText + ")";
+        } else if (met == 1) {
+            color = getResources().getColor(R.color.red_primary);
+            label = getString(R.string.password_strength_label) + ": " + getString(R.string.password_strength_weak)
+                    + " (" + countText + ")";
+        } else if (met == 2) {
+            color = getResources().getColor(R.color.warning_color);
+            label = getString(R.string.password_strength_label) + ": " + getString(R.string.password_strength_fair)
+                    + " (" + countText + ")";
+        } else if (met == 3) {
+            color = getResources().getColor(R.color.status_approved);
+            label = getString(R.string.password_strength_label) + ": " + getString(R.string.password_strength_good)
+                    + " (" + countText + ")";
+        } else {
+            color = getResources().getColor(R.color.green_primary);
+            label = getString(R.string.password_strength_label) + ": " + getString(R.string.password_strength_strong)
+                    + " (" + countText + ")";
+        }
+
+        passwordStrengthBar.setIndicatorColor(color);
+        tvPasswordStrength.setText(label);
+        tvPasswordStrength.setTextColor(color);
     }
     
     private void setupClickListeners() {

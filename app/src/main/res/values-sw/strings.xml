@@ -70,6 +70,7 @@
     <string name="reset_password_title">Badilisha Nenosiri</string>
     <string name="reset_password_sheet_description">Fungua kiungo tulichokutumea barua pepe — kitafunguka programu hii moja kwa moja. Unaweza pia kunakili kiungo na kuweka hapa chini, kisha weka nenosiri jipya.</string>
     <string name="paste_reset_link_hint">Weka kiungo cha kubadilisha nenosiri</string>
+    <string name="have_reset_link_paste">Un tayari kiungo cha kubadilisha? Kiweke hapa</string>
     <string name="new_password_hint">Nenosiri Mpya</string>
     <string name="confirm_new_password_hint">Thibitisha Nenosiri Mpya</string>
     <string name="btn_reset_password">Badilisha Nenosiri</string>
@@ -207,6 +208,13 @@
     <string name="error_email">Tafadhali weka barua pepe sahihi</string>
     <string name="error_password">Nenosiri lazima liwe na angalau herufi 6</string>
     <string name="error_strong_password">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba</string>
+    <string name="password_strength_label">Nguvu ya nenosiri</string>
+    <string name="password_strength_weak">Dhaifu</string>
+    <string name="password_strength_fair">Wastani</string>
+    <string name="password_strength_good">Nzuri</string>
+    <string name="password_strength_strong">Imara</string>
+    <string name="password_strength_chars">Herufi %1$d/%2$d</string>
+    <string name="password_auth_ok">Nenosiri linaonekana sahihi</string>
     <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
     <string name="error_name">Tafadhali weka jina lako</string>
     <string name="error_password_match">Manenosiri hayafanani</string>

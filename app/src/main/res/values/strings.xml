@@ -74,6 +74,7 @@
     <string name="reset_password_title">Reset Password</string>
     <string name="reset_password_sheet_description">Open the link we emailed you — it opens this app automatically. You can also copy the link from the email and paste it below, then set a new password.</string>
     <string name="paste_reset_link_hint">Paste reset link from email</string>
+    <string name="have_reset_link_paste">Already have a reset link? Paste it here</string>
     <string name="new_password_hint">New Password</string>
     <string name="confirm_new_password_hint">Confirm New Password</string>
     <string name="btn_reset_password">Reset Password</string>
@@ -221,6 +222,13 @@
     <string name="error_email">Please enter a valid email</string>
     <string name="error_password">Password must be at least 6 characters</string>
     <string name="error_strong_password">Use at least 12 characters with uppercase, lowercase, and a number</string>
+    <string name="password_strength_label">Password strength</string>
+    <string name="password_strength_weak">Weak</string>
+    <string name="password_strength_fair">Fair</string>
+    <string name="password_strength_good">Good</string>
+    <string name="password_strength_strong">Strong</string>
+    <string name="password_strength_chars">%1$d/%2$d characters</string>
+    <string name="password_auth_ok">Password looks valid</string>
     <string name="error_phone">Please enter a valid phone number</string>
     <string name="error_name">Please enter your name</string>
     <string name="error_password_match">Passwords do not match</string>

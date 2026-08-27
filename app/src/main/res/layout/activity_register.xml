@@ -208,6 +208,28 @@
                 android:fontFamily="@font/poppins_regular"/>
         </com.google.android.material.textfield.TextInputLayout>
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/passwordStrengthBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="8dp"
+            app:trackThickness="6dp"
+            app:trackCornerRadius="3dp"
+            app:trackColor="@color/background_light"
+            app:indicatorColor="@color/red_primary"
+            android:max="4" />
+
+        <TextView
+            android:id="@+id/tvPasswordStrength"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="@string/password_strength_label"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:fontFamily="@font/poppins_regular"/>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRegister"
             android:layout_width="match_parent"
