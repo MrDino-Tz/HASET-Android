@@ -230,6 +230,7 @@
     <string name="password_strength_strong">Strong</string>
     <string name="password_strength_chars">%1$d/%2$d characters</string>
     <string name="password_auth_ok">Password looks valid</string>
+    <string name="login_locked">Too many failed login attempts. Please try again in %1$d minute(s).</string>
     <string name="error_phone">Please enter a valid phone number</string>
     <string name="error_name">Please enter your name</string>
     <string name="error_password_match">Passwords do not match</string>

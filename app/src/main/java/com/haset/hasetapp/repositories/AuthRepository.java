@@ -31,6 +31,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 
 public class AuthRepository {
+    public static final String CREDENTIAL_ERROR_MESSAGE = "Incorrect email or password.";
     private static final String TAG = "AuthRepository";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final long HTTP_TIMEOUT_SECONDS = 20;
@@ -355,7 +356,7 @@ public class AuthRepository {
                     || "invalid-credential".equalsIgnoreCase(errorCode)
                     || "wrong-password".equalsIgnoreCase(errorCode)
                     || "user-not-found".equalsIgnoreCase(errorCode)) {
-                return "Incorrect email or password.";
+                return CREDENTIAL_ERROR_MESSAGE;
             }
             if ("ERROR_INVALID_EMAIL".equals(errorCode) || "invalid-email".equalsIgnoreCase(errorCode)) {
                 return "Please enter a valid email address.";
@@ -368,7 +369,7 @@ public class AuthRepository {
             }
             if ("ERROR_WEAK_PASSWORD".equals(errorCode) || "weak-password".equalsIgnoreCase(errorCode)
                     || "password-does-not-meet-requirements".equalsIgnoreCase(errorCode)) {
-                return "Password must be at least 13 characters with an uppercase letter and a special character (!@#$%^&*).";
+                return "Password must be at least 12 characters with uppercase, lowercase, and a number.";
             }
             if ("ERROR_OPERATION_NOT_ALLOWED".equals(errorCode) || "operation-not-allowed".equalsIgnoreCase(errorCode)) {
                 return "Firebase Authentication is blocking sign-up. Enable Email/Password sign-in in the Firebase console.";

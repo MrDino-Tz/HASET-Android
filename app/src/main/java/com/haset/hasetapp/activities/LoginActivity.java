@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.widget.TextView;
 
@@ -79,6 +80,11 @@ public class LoginActivity extends BaseActivity {
     // private ActivityResultLauncher<Intent> googleSignInLauncher;
 
     private AuthViewModel authViewModel;
+
+    private static final int MAX_LOGIN_ATTEMPTS = 3;
+    private static final long LOCKOUT_DURATION_MS = 5 * 60 * 1000L;
+    private int loginAttemptCount;
+    private long lockoutUntil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -274,19 +280,33 @@ public class LoginActivity extends BaseActivity {
                     String loginDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(LoginActivity.this, state.message);
                     com.haset.hasetapp.utils.ErrorLogger.log(loginDetail, state.message);
                     com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), loginDetail);
+                    if (state.credentialFailure) {
+                        loginAttemptCount++;
+                        if (loginAttemptCount >= MAX_LOGIN_ATTEMPTS) {
+                            lockoutUntil = SystemClock.elapsedRealtime() + LOCKOUT_DURATION_MS;
+                            loginAttemptCount = 0;
+                            showLockoutMessage();
+                        }
+                    }
                     resetLoginButton();
                     break;
                 case AUTHENTICATED:
                     CustomDialog.hideLoading();
+                    loginAttemptCount = 0;
+                    lockoutUntil = 0;
                     UserEntity user = (UserEntity) state.data;
                     onAuthSuccess(user);
                     break;
                 case MFA_REQUIRED:
                     CustomDialog.hideLoading();
+                    loginAttemptCount = 0;
+                    lockoutUntil = 0;
                     showMfaDialog(false);
                     break;
                 case MFA_SETUP_REQUIRED:
                     CustomDialog.hideLoading();
+                    loginAttemptCount = 0;
+                    lockoutUntil = 0;
                     startActivityForResult(new Intent(this, MfaEnrollmentActivity.class), 701);
                     break;
                 case MFA_ERROR:
@@ -408,6 +428,11 @@ public class LoginActivity extends BaseActivity {
     */
 
     private void loginUser() {
+        if (isLoginLocked()) {
+            showLockoutMessage();
+            return;
+        }
+
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
@@ -427,6 +452,18 @@ public class LoginActivity extends BaseActivity {
         btnLogin.setEnabled(false);
         btnLogin.setText(R.string.loading);
         authViewModel.login(email, password);
+    }
+
+    private boolean isLoginLocked() {
+        return SystemClock.elapsedRealtime() < lockoutUntil;
+    }
+
+    private void showLockoutMessage() {
+        long remainingMs = lockoutUntil - SystemClock.elapsedRealtime();
+        if (remainingMs < 0) remainingMs = 0;
+        long remainingMinutes = (remainingMs + 60_000L - 1L) / 60_000L;
+        String message = getString(R.string.login_locked, remainingMinutes);
+        com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), message);
     }
 
     private void setupNotificationPermissionLauncher() {

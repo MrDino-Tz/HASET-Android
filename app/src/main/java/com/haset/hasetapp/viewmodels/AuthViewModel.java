@@ -51,7 +51,8 @@ public class AuthViewModel extends AndroidViewModel {
 
             @Override
             public void onError(String error) {
-                authState.setValue(AuthState.error(error));
+                boolean credentialFailure = com.haset.hasetapp.repositories.AuthRepository.CREDENTIAL_ERROR_MESSAGE.equals(error);
+                authState.setValue(AuthState.error(error, credentialFailure));
             }
         });
     }
@@ -274,21 +275,24 @@ public class AuthViewModel extends AndroidViewModel {
         public final Status status;
         public final String message;
         public final Object data;
+        public final boolean credentialFailure;
 
-        private AuthState(Status status, String message, Object data) {
+        private AuthState(Status status, String message, Object data, boolean credentialFailure) {
             this.status = status;
             this.message = message;
             this.data = data;
+            this.credentialFailure = credentialFailure;
         }
 
-        public static AuthState idle() { return new AuthState(Status.IDLE, null, null); }
-        public static AuthState loading(String message) { return new AuthState(Status.LOADING, message, null); }
-        public static AuthState success(String message) { return new AuthState(Status.SUCCESS, message, null); }
-        public static AuthState error(String message) { return new AuthState(Status.ERROR, message, null); }
-        public static AuthState authenticated(UserEntity user) { return new AuthState(Status.AUTHENTICATED, null, user); }
-        public static AuthState unregistered(String uid) { return new AuthState(Status.UNREGISTERED, null, uid); }
-        public static AuthState mfaRequired() { return new AuthState(Status.MFA_REQUIRED, "MFA verification required", null); }
-        public static AuthState mfaSetupRequired() { return new AuthState(Status.MFA_SETUP_REQUIRED, "MFA enrollment required", null); }
-        public static AuthState mfaError(String message) { return new AuthState(Status.MFA_ERROR, message, null); }
+        public static AuthState idle() { return new AuthState(Status.IDLE, null, null, false); }
+        public static AuthState loading(String message) { return new AuthState(Status.LOADING, message, null, false); }
+        public static AuthState success(String message) { return new AuthState(Status.SUCCESS, message, null, false); }
+        public static AuthState error(String message) { return new AuthState(Status.ERROR, message, null, false); }
+        public static AuthState error(String message, boolean credentialFailure) { return new AuthState(Status.ERROR, message, null, credentialFailure); }
+        public static AuthState authenticated(UserEntity user) { return new AuthState(Status.AUTHENTICATED, null, user, false); }
+        public static AuthState unregistered(String uid) { return new AuthState(Status.UNREGISTERED, null, uid, false); }
+        public static AuthState mfaRequired() { return new AuthState(Status.MFA_REQUIRED, "MFA verification required", null, false); }
+        public static AuthState mfaSetupRequired() { return new AuthState(Status.MFA_SETUP_REQUIRED, "MFA enrollment required", null, false); }
+        public static AuthState mfaError(String message) { return new AuthState(Status.MFA_ERROR, message, null, false); }
     }
 }

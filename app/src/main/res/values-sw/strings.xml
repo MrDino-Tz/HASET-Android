@@ -216,6 +216,7 @@
     <string name="password_strength_strong">Imara</string>
     <string name="password_strength_chars">Herufi %1$d/%2$d</string>
     <string name="password_auth_ok">Nenosiri linaonekana sahihi</string>
+    <string name="login_locked">Majiribio mengi ya kuingia yameshindwa. Tafadhali jaribu tena baada ya dakika %1$d.</string>
     <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
     <string name="error_name">Tafadhali weka jina lako</string>
     <string name="error_password_match">Manenosiri hayafanani</string>
