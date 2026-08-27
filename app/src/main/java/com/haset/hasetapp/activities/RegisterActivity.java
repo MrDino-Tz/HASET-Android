@@ -36,6 +36,7 @@ import com.haset.hasetapp.models.AppConfig;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 public class RegisterActivity extends BaseActivity {
+    private static final String TAG = "HASETDoctorFlow";
     private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo;
     private com.google.android.material.textfield.TextInputLayout tilRegNo;
     private com.google.android.material.progressindicator.LinearProgressIndicator passwordStrengthBar;
@@ -361,7 +362,10 @@ public class RegisterActivity extends BaseActivity {
         String phone = etPhone.getText().toString().trim();
         final String password = etPassword.getText().toString().trim();
 
-        final String finalPhoneNumber = phone.startsWith("+255") ? phone : "+255" + phone;
+        String phoneDigits = phone.replaceAll("[^0-9]", "");
+        phoneDigits = phoneDigits.replaceFirst("^255", "");
+        phoneDigits = phoneDigits.replaceFirst("^0+", "");
+        final String finalPhoneNumber = "+255" + phoneDigits;
 
         if (!ValidationUtils.isValidName(fullName)) {
             etFullName.setError(getString(R.string.error_name));
@@ -415,6 +419,7 @@ public class RegisterActivity extends BaseActivity {
     }
 
     private void fetchDoctorRegistrationFeeAndShowPaymentDialog(String email, String password, UserEntity newUser) {
+        android.util.Log.d(TAG, "Fetching doctor registration fee for " + email);
         FirebaseHelper.getAppConfig(new FirebaseHelper.OnCompleteListener<AppConfig>() {
             @Override
             public void onSuccess(AppConfig config) {
@@ -423,7 +428,9 @@ public class RegisterActivity extends BaseActivity {
                 double fee = config != null
                     ? Math.max(0.0, config.getDoctorRegistrationFee())
                     : 500.0;
+                android.util.Log.d(TAG, "Doctor registration fee loaded: " + fee);
                 if (fee == 0.0) {
+                    android.util.Log.d(TAG, "Fee is 0, registering directly");
                     authViewModel.register(email, password, newUser);
                     return;
                 }
@@ -433,6 +440,7 @@ public class RegisterActivity extends BaseActivity {
             @Override
             public void onError(String error) {
                 if (error != null) com.haset.hasetapp.utils.ErrorLogger.log(error, error);
+                android.util.Log.d(TAG, "Fee fetch error, defaulting to 500: " + error);
                 ensurePaymentAuthThenShowDoctorRegistrationPaymentDialog(email, password, newUser, 500.0);
             }
         });
@@ -443,17 +451,21 @@ public class RegisterActivity extends BaseActivity {
         if (currentUser != null) {
             pendingDoctorPaymentRequiresAnonymousAuth = currentUser.isAnonymous();
             pendingAnonymousPaymentUser = currentUser.isAnonymous() ? currentUser : null;
+            android.util.Log.d(TAG, "Existing user present for payment (anonymous=" + currentUser.isAnonymous() + ")");
             showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             return;
         }
 
+        android.util.Log.d(TAG, "Signing in anonymously for payment session");
         FirebaseAuth.getInstance().signInAnonymously()
             .addOnSuccessListener(result -> {
                 pendingDoctorPaymentRequiresAnonymousAuth = true;
                 pendingAnonymousPaymentUser = result.getUser();
+                android.util.Log.d(TAG, "Anonymous auth obtained for payment");
                 showDoctorRegistrationPaymentDialog(email, password, newUser, fee);
             })
             .addOnFailureListener(error -> {
+                android.util.Log.d(TAG, "Anonymous auth failed: " + error.getMessage());
                 resetRegisterButton();
                 CustomDialog.hideLoading();
                 com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
@@ -486,6 +498,7 @@ public class RegisterActivity extends BaseActivity {
                 if (result.getResultCode() == RESULT_OK && pendingDoctorUser != null) {
                     // A successful payment must still result in a normal credential-backed
                     // account. Never promote an anonymous Firebase session to a doctor.
+                    android.util.Log.d(TAG, "Payment succeeded, registering doctor account");
                     UserEntity doctorUser = pendingDoctorUser;
                     String doctorEmail = pendingDoctorEmail;
                     String doctorPassword = pendingDoctorPassword;
@@ -493,8 +506,12 @@ public class RegisterActivity extends BaseActivity {
                     cleanupAnonymousPaymentSession(() ->
                         authViewModel.register(doctorEmail, doctorPassword, doctorUser));
                 } else {
+                    android.util.Log.d(TAG, "Payment did not succeed (resultCode=" + result.getResultCode()
+                            + "), cleaning up and notifying doctor");
                     cleanupAnonymousPaymentSession(null);
                     CustomDialog.hideLoading();
+                    com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
+                        getString(R.string.the_payment_request_was_rejected_or_did_));
                     resetRegisterButton();
                 }
 

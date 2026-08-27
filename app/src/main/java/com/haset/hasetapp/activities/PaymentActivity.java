@@ -215,6 +215,8 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 
         viewModel.getError().observe(this, error -> {
             if (error != null) {
+                android.util.Log.d("HASETDoctorFlow", "PaymentActivity error (doctor_registration="
+                        + (doctor != null && "doctor_registration".equals(doctor.getDoctorId())) + "): " + error);
                 paymentInitiated = false;
                 progressIndicator.setVisibility(View.GONE);
                 tvSelectedPaymentDetails.setVisibility(View.VISIBLE);
