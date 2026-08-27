@@ -115,7 +115,12 @@ public class CustomDialog {
      */
     public CustomDialog setPositiveButton(String text, View.OnClickListener listener) {
         btnPositive.setText(text);
-        btnPositive.setOnClickListener(listener);
+        btnPositive.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onClick(v);
+            }
+            dismiss();
+        });
         return this;
     }
     
@@ -124,7 +129,12 @@ public class CustomDialog {
      */
     public CustomDialog setNegativeButton(String text, View.OnClickListener listener) {
         btnNegative.setText(text);
-        btnNegative.setOnClickListener(listener);
+        btnNegative.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onClick(v);
+            }
+            dismiss();
+        });
         return this;
     }
     

@@ -69,7 +69,7 @@ public class ResetPasswordBottomSheet extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.sheet_reset_password, container, false);
+        return inflater.inflate(R.layout.bottom_sheet_reset_password, container, false);
     }
 
     @Override

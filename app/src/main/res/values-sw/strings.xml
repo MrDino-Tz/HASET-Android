@@ -64,6 +64,7 @@
     <string name="other">Nyingine</string>
     <string name="confirm_password">Thibitisha Nenosiri</string>
     <string name="forgot_password">Umesahau Nenosiri?</string>
+    <string name="lets_retrieve_account">Wacha TuRefishe Akaunti Yako</string>
     <string name="verify_email_after_registration">Karibu HASET. Tafadhali angalia barua pepe yako na uthibitishe akaunti yako.</string>
     <string name="verify_email_before_login">Tafadhali thibitisha barua pepe yako kabla ya kuingia. Tumekutumia barua pepe mpya ya uthibitisho.</string>
     <!-- Kubadilisha nenosiri ndani ya app -->
@@ -207,9 +208,6 @@
     <!-- Validation -->
     <string name="error_email">Tafadhali weka barua pepe sahihi</string>
     <string name="error_password">Nenosiri lazima liwe na angalau herufi 6</string>
-<<<<<<< HEAD
-    <string name="error_strong_password">Tumia angalau herufi 13 zenye herufi kubwa na ishara maalum (!@#$%^&amp;*)</string>
-=======
     <string name="error_strong_password">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba</string>
     <string name="password_strength_label">Nguvu ya nenosiri</string>
     <string name="password_strength_weak">Dhaifu</string>
@@ -218,7 +216,6 @@
     <string name="password_strength_strong">Imara</string>
     <string name="password_strength_chars">Herufi %1$d/%2$d</string>
     <string name="password_auth_ok">Nenosiri linaonekana sahihi</string>
->>>>>>> 37ca6c8f15041b3a4ec984ff3438284c408744c9
     <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
     <string name="error_name">Tafadhali weka jina lako</string>
     <string name="error_password_match">Manenosiri hayafanani</string>

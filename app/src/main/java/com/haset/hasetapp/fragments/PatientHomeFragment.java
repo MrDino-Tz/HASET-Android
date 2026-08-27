@@ -1017,18 +1017,25 @@ public class PatientHomeFragment extends Fragment {
 
         viewPagerBanner.setAdapter(bannerAdapter);
 
+        // Spacing between banner pages so images are not cut at the ends
+        int pageMarginPx = (int) (getResources().getDisplayMetrics().density * 10);
+        androidx.viewpager2.widget.CompositePageTransformer compositeTransformer =
+                new androidx.viewpager2.widget.CompositePageTransformer();
+        compositeTransformer.addTransformer(new androidx.viewpager2.widget.MarginPageTransformer(pageMarginPx));
+
         // Add Premium Page Transformer (Zoom-out / Parallax effect)
-        viewPagerBanner.setPageTransformer((page, position) -> {
+        compositeTransformer.addTransformer((page, position) -> {
             float absPos = Math.abs(position);
             page.setAlpha(1.0f - absPos * 0.3f);
             page.setScaleY(0.85f + (1 - absPos) * 0.15f);
-            
+
             // Subtle Parallax for the internal image
             View image = page.findViewById(R.id.ivBannerImage);
             if (image != null) {
                 image.setTranslationX(-position * (page.getWidth() / 2f));
             }
         });
+        viewPagerBanner.setPageTransformer(compositeTransformer);
 
         // Setup pagination indicators
         updatePaginationIndicators(0, bannersList.size());

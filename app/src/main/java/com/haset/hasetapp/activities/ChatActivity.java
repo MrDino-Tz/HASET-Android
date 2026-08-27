@@ -167,7 +167,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         super.onCreate(savedInstanceState);
         
         // Block screenshots for chat (sensitive - private messages)
-        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
+//        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_chat);
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {

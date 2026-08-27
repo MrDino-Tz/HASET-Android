@@ -87,7 +87,7 @@ public class ProfileFragment extends Fragment {
         
         // Block screenshots for profile (sensitive - personal health info)
         if (getActivity() != null) {
-            com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity());
+//            com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity());
         }
 
         preferenceManager = new PreferenceManager(requireContext());

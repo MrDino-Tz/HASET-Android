@@ -69,10 +69,8 @@ public class ForgotPasswordActivity extends BaseActivity {
                 case ERROR:
                     btnSend.setEnabled(true);
                     btnSend.setText(R.string.send_reset_link);
-                    String resetDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(ForgotPasswordActivity.this, state.message);
-                    com.haset.hasetapp.utils.ErrorLogger.log(resetDetail, state.message);
                     com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
-                        resetDetail, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                        state.message, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                         .setBackgroundTint(getResources().getColor(R.color.colorError))
                         .show();
                     break;
@@ -103,6 +101,20 @@ public class ForgotPasswordActivity extends BaseActivity {
         tvBackToLogin.setOnClickListener(v -> {
             finish();
         });
+
+        // Manual fallback: user pastes the emailed reset link into the sheet
+        findViewById(R.id.tvPasteResetLink).setOnClickListener(v -> openResetSheet(null));
+    }
+
+    /** Opens the in-app reset sheet. linkOrCode == null → paste field visible. */
+    private void openResetSheet(String linkOrCode) {
+        ResetPasswordBottomSheet sheet = ResetPasswordBottomSheet.newInstance(linkOrCode);
+        sheet.setOnPasswordResetListener(() -> {
+            startActivity(new Intent(ForgotPasswordActivity.this, LoginActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
+            finish();
+        });
+        sheet.show(getSupportFragmentManager(), "ResetPasswordBottomSheet");
     }
 
     private void handleResetLink(Intent intent) {

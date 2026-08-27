@@ -3,7 +3,6 @@ package com.haset.hasetapp.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -300,18 +299,12 @@ public class RegisterActivity extends BaseActivity {
                     CustomDialog.hideLoading();
                     String registerDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(RegisterActivity.this, state.message);
                     com.haset.hasetapp.utils.ErrorLogger.log(registerDetail, state.message);
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
-                        registerDetail, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
-                        .setBackgroundTint(getResources().getColor(R.color.colorError))
-                        .show();
+                    com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), registerDetail);
                     resetRegisterButton();
                     break;
                 case SUCCESS:
                     CustomDialog.hideLoading();
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
-                        state.message, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
-                        .setBackgroundTint(getResources().getColor(android.R.color.holo_green_dark))
-                        .show();
+                    com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content), state.message);
                     showSuccessAndNavigate(LoginActivity.class, getString(R.string.registration_successful), state.message);
                     break;
                 case AUTHENTICATED:
@@ -340,10 +333,8 @@ public class RegisterActivity extends BaseActivity {
         preferenceManager.setLoggedIn(true);
         
         AuditLogger.getInstance(this).logRegistration();
-        com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-            "Registration successful!", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
-            .setBackgroundTint(getResources().getColor(android.R.color.holo_green_dark))
-            .show();
+        com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content),
+            getString(R.string.registration_successful));
 
         showSuccessAndNavigate(DashboardActivity.class, "Registration Successful", getString(R.string.verify_email_after_registration));
     }
@@ -465,11 +456,8 @@ public class RegisterActivity extends BaseActivity {
             .addOnFailureListener(error -> {
                 resetRegisterButton();
                 CustomDialog.hideLoading();
-                com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
-                    error.getMessage() != null ? error.getMessage() : "Unable to prepare payment session",
-                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
-                    .setBackgroundTint(getResources().getColor(R.color.colorError))
-                    .show();
+                com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
+                    error.getMessage() != null ? error.getMessage() : "Unable to prepare payment session");
             });
     }
 

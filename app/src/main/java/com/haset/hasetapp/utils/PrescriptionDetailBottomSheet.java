@@ -101,7 +101,7 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
         // Note: FLAG_SECURE only blocks OS-level screenshots/screen recording.
         // Direct View.draw() to our own Canvas (used for PDF/print) is unaffected.
         if (getDialog() != null && getDialog().getWindow() != null) {
-            getDialog().getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+//            getDialog().getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
         }
     }
 

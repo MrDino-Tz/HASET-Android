@@ -70,7 +70,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         super.onCreate(savedInstanceState);
         
         // Block screenshots for payment screen (sensitive - financial data)
-        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
+//        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_payment);
         maybeShowSecurityWarning();

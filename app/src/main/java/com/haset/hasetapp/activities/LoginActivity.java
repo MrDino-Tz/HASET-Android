@@ -12,7 +12,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -64,6 +63,7 @@ import com.haset.hasetapp.ui.MfaCodeInputView;
 public class LoginActivity extends BaseActivity {
     private TextInputEditText etEmail, etPassword;
     private TextInputLayout tilEmail, tilPassword;
+    private android.widget.TextView tvPasswordAuth;
     private MaterialButton btnLogin;
     private MaterialCardView btnGoogleLogin;
     private TextView tvRegister, tvForgotPassword;
@@ -174,8 +174,8 @@ public class LoginActivity extends BaseActivity {
         tvForgotPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
             startActivity(intent);
-            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                "Let's Retrieve Your Account", com.google.android.material.snackbar.Snackbar.LENGTH_LONG).show();
+            com.haset.hasetapp.utils.SnackbarHelper.info(findViewById(android.R.id.content),
+                getString(R.string.lets_retrieve_account));
         });
     }
 
@@ -194,6 +194,7 @@ public class LoginActivity extends BaseActivity {
         tilPassword = findViewById(R.id.tilPassword);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
+        tvPasswordAuth = findViewById(R.id.tvPasswordAuth);
         btnLogin = findViewById(R.id.btnLogin);
         btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         tvRegister = findViewById(R.id.tvRegister);
@@ -201,8 +202,44 @@ public class LoginActivity extends BaseActivity {
         cbRememberMe = findViewById(R.id.cbRememberMe);
         
         setupClickListeners();
+        setupPasswordAuthWatcher();
     }
-    
+
+    private void setupPasswordAuthWatcher() {
+        if (etPassword == null) return;
+        etPassword.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                updatePasswordAuth(s != null ? s.toString() : "");
+            }
+        });
+    }
+
+    private void updatePasswordAuth(String password) {
+        if (tvPasswordAuth == null) return;
+        tilPassword.setError(null);
+
+        if (password == null || password.isEmpty()) {
+            tvPasswordAuth.setVisibility(android.view.View.GONE);
+            return;
+        }
+
+        if (ValidationUtils.isStrongPassword(password)) {
+            tvPasswordAuth.setText(getString(R.string.password_auth_ok));
+            tvPasswordAuth.setTextColor(getResources().getColor(R.color.green_primary));
+        } else {
+            tvPasswordAuth.setText(getString(R.string.error_strong_password));
+            tvPasswordAuth.setTextColor(getResources().getColor(R.color.red_primary));
+        }
+        tvPasswordAuth.setVisibility(android.view.View.VISIBLE);
+    }
+
     private void setupClickListeners() {
         /*
         if (btnGoogleLogin != null) {
@@ -236,10 +273,7 @@ public class LoginActivity extends BaseActivity {
                     CustomDialog.hideLoading();
                     String loginDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(LoginActivity.this, state.message);
                     com.haset.hasetapp.utils.ErrorLogger.log(loginDetail, state.message);
-                    com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
-                        loginDetail, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
-                        .setBackgroundTint(getResources().getColor(R.color.colorError))
-                        .show();
+                    com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), loginDetail);
                     resetLoginButton();
                     break;
                 case AUTHENTICATED:
@@ -495,10 +529,8 @@ public class LoginActivity extends BaseActivity {
             // Automatically attempt login if coming from a retry and network is available
             loginUser();
         } else {
-            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                "Still no internet connection.", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
-                .setBackgroundTint(getResources().getColor(R.color.colorError))
-                .show();
+            com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
+                getString(R.string.still_no_internet));
         }
     }
 

@@ -32,12 +32,22 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Payment screen: block OS screenshots/screen recording (see SCREENSHOT_BLOCKING_POLICY.md)
         SensitiveActivityHelper.blockScreenshots(this);
 
         String checkoutUrl = getIntent().getStringExtra(EXTRA_CHECKOUT_URL);
         if (!isTrustedCheckoutUrl(checkoutUrl)) {
             finish();
             return;
+        }
+
+        // Passive tamper warning (does not block): rooted/debug environments
+        if (com.haset.hasetapp.utils.RootIntegrityHelper.isPotentiallyCompromised(this)) {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                    .setTitle(com.haset.hasetapp.R.string.security_warning_title)
+                    .setMessage(com.haset.hasetapp.R.string.rooted_device_warning)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
         }
 
         LinearLayout root = new LinearLayout(this);
@@ -97,8 +107,11 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
                     return true;
                 }
                 String scheme = uri.getScheme();
-                if ("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme)) {
-                    return false;
+                if ("https".equalsIgnoreCase(scheme)) {
+                    return false; // PCI checkout flows through trusted https redirects
+                }
+                if ("http".equalsIgnoreCase(scheme)) {
+                    return true; // never load cleartext content in the payment WebView
                 }
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
