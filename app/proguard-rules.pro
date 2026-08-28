@@ -61,6 +61,13 @@
 -keep class com.haset.hasetapp.models.** { *; }
 -keep class com.haset.hasetapp.database.entities.** { *; }
 
+# Keep the Firebase-reflected banner model: DataSnapshot.getValue() maps JSON to
+# fields by NAME reflectively, so field names must not be obfuscated.
+-keep class com.haset.hasetapp.adapters.PatientBannerAdapter$BannerItem {
+    <fields>;
+    <init>();
+}
+
 # ===========================
 # Firebase
 # ===========================
