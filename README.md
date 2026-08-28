@@ -1,4 +1,4 @@
-# MediConnect - Doctor-Patient Appointment App
+# AfyaHASET - Doctor-Patient Appointment App
 
 A complete Android application built with Java and XML for managing doctor-patient appointments, real-time chat, and prescriptions.
 
