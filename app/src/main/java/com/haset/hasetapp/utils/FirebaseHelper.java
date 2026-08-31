@@ -1729,10 +1729,21 @@ public class FirebaseHelper {
             listener.onSuccess(false);
             return;
         }
-        getDoctorsNodeRef().child(userId).child("registrationPaymentStatus").get()
-                .addOnSuccessListener(snapshot -> {
-                    String status = snapshot.getValue(String.class);
-                    listener.onSuccess("pending".equalsIgnoreCase(status));
+        getUsersRef().child(userId).child("role").get()
+                .addOnSuccessListener(roleSnap -> {
+                    if (!Constants.ROLE_DOCTOR.equals(roleSnap.getValue(String.class))) {
+                        listener.onSuccess(false);
+                        return;
+                    }
+                    getDoctorsNodeRef().child(userId).child("registrationPaymentStatus").get()
+                            .addOnSuccessListener(snapshot -> {
+                                String status = snapshot.getValue(String.class);
+                                listener.onSuccess("pending".equalsIgnoreCase(status));
+                            })
+                            .addOnFailureListener(error -> listener.onError(
+                                    error.getMessage() != null
+                                            ? error.getMessage()
+                                            : "Unable to check registration payment"));
                 })
                 .addOnFailureListener(error -> listener.onError(
                         error.getMessage() != null

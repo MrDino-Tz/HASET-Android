@@ -443,6 +443,11 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void startDoctorRegistrationPayment(UserEntity user) {
+        if (user == null || !Constants.ROLE_DOCTOR.equals(user.getRole())) {
+            completeDoctorOrPatientLogin(user);
+            return;
+        }
+
         FirebaseHelper.getAppConfig(new FirebaseHelper.OnCompleteListener<com.haset.hasetapp.models.AppConfig>() {
             @Override
             public void onSuccess(com.haset.hasetapp.models.AppConfig config) {
@@ -460,6 +465,10 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void openDoctorRegistrationPayment(UserEntity user, double fee) {
+        if (user == null || !Constants.ROLE_DOCTOR.equals(user.getRole())) {
+            completeDoctorOrPatientLogin(user);
+            return;
+        }
         if (fee == 0.0) {
             completeDoctorOrPatientLogin(user);
             return;
