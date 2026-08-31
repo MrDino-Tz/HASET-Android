@@ -459,7 +459,8 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 }
                 boolean processing = viewModel != null
                         && Boolean.TRUE.equals(viewModel.getProcessing().getValue());
-                if (parsedFee == null || paymentInitiated || processing) return;
+                if (paymentInitiated || processing) return;
+                if (parsedFee == null) return;
 
                 double latestFee = Math.max(0.0, parsedFee);
                 if (latestFee == 0.0) {

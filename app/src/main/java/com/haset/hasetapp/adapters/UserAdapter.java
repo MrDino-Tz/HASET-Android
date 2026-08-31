@@ -98,7 +98,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
                 tvRoleBadge.setText("USER");
             }
             
-            tvUserEmail.setText(email != null ? email : "");
+            tvUserEmail.setText(email != null ? com.haset.hasetapp.utils.Constants.displayEmail(email) : "");
             
             if (role != null) {
                 switch (role.toLowerCase()) {

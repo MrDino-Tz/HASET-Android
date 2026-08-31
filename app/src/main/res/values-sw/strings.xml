@@ -911,6 +911,7 @@
     <!-- RegisterActivity fee dialog -->
     <string name="doctor_reg_fee_title">Ada ya Usajili wa Daktari</string>
     <string name="doctor_reg_fee_message">Ada ya lazima ya uthibitishaji wa MCT na usajili inahitajika.\n\nBonyeza \'Lipa kupitia USSD\' kuiga malipo.</string>
+    <string name="doctor_reg_payment_required">Lipa ada ya usajili wa daktari ili kumaliza kuingia. Huwezi kutumia programu hadi malipo yakamilike.</string>
     <string name="pay_via_ussd">Lipa kupitia USSD</string>
     <string name="processing_payment">Inashughulikia malipo…</string>
 

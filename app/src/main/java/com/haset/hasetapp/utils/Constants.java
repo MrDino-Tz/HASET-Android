@@ -166,4 +166,22 @@ public class Constants {
     // "New" label threshold
     public static final int NEW_DOCTOR_THRESHOLD_DAYS = 7;
 
+    /** Login alias that maps to the admin Firebase email. */
+    public static final String ADMIN_LOGIN_ALIAS = "admin";
+    public static final String ADMIN_EMAIL = "kilindosaid771@gmail.com";
+
+    public static String resolveLoginEmail(String identifier) {
+        if (identifier != null && ADMIN_LOGIN_ALIAS.equalsIgnoreCase(identifier.trim())) {
+            return ADMIN_EMAIL;
+        }
+        return identifier;
+    }
+
+    public static String displayEmail(String email) {
+        if (email != null && ADMIN_EMAIL.equalsIgnoreCase(email.trim())) {
+            return ADMIN_LOGIN_ALIAS;
+        }
+        return email;
+    }
+
 }

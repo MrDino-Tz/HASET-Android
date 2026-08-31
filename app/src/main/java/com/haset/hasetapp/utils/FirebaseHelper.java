@@ -1723,4 +1723,20 @@ public class FirebaseHelper {
                                 ? error.getMessage()
                                 : "Unable to load app configuration"));
     }
+
+    public static void isDoctorRegistrationPending(String userId, OnCompleteListener<Boolean> listener) {
+        if (userId == null || userId.trim().isEmpty()) {
+            listener.onSuccess(false);
+            return;
+        }
+        getDoctorsNodeRef().child(userId).child("registrationPaymentStatus").get()
+                .addOnSuccessListener(snapshot -> {
+                    String status = snapshot.getValue(String.class);
+                    listener.onSuccess("pending".equalsIgnoreCase(status));
+                })
+                .addOnFailureListener(error -> listener.onError(
+                        error.getMessage() != null
+                                ? error.getMessage()
+                                : "Unable to check registration payment"));
+    }
 }

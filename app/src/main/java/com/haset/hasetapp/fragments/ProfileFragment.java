@@ -260,7 +260,7 @@ public class ProfileFragment extends Fragment {
 
     private void updateUserUI(UserEntity user) {
         tvUserName.setText(user.getFullName());
-        tvUserEmail.setText(user.getEmail());
+        tvUserEmail.setText(Constants.displayEmail(user.getEmail()));
         tvUserPhone.setText(user.getPhone());
         
         String role = user.getRole();
@@ -385,7 +385,7 @@ public class ProfileFragment extends Fragment {
         String userRole = preferenceManager.getUserRole();
 
         if (userName != null) tvUserName.setText(userName);
-        if (userEmail != null) tvUserEmail.setText(userEmail);
+        if (userEmail != null) tvUserEmail.setText(Constants.displayEmail(userEmail));
         if (userPhone != null) tvUserPhone.setText(userPhone);
         if (userRole != null) {
 

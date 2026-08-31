@@ -75,6 +75,7 @@ public class LoginActivity extends BaseActivity {
     private NotificationHelper notificationHelper;
     private HealthTipsHelper healthTipsHelper;
     private ActivityResultLauncher<String> requestNotificationPermissionLauncher;
+    private ActivityResultLauncher<Intent> doctorPaymentLauncher;
     private UserEntity loggedInUser; // Store user for notification after permission
     private android.app.Dialog mfaDialog;
 
@@ -112,7 +113,9 @@ public class LoginActivity extends BaseActivity {
         healthTipsHelper = new HealthTipsHelper(this);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        setupDoctorPaymentLauncher();
         setupObservers();
+        showUnpaidDoctorMessageIfNeeded();
 
         // Language Switcher Toggle logic
         com.haset.hasetapp.utils.LanguageToggleHelper.setup(this, findViewById(android.R.id.content), languageCode -> {
@@ -406,50 +409,111 @@ public class LoginActivity extends BaseActivity {
         preferenceManager.saveUserId(user.getUserId());
         preferenceManager.saveUserRole(user.getRole());
         preferenceManager.saveUserName(user.getFullName());
-        preferenceManager.setLoggedIn(true);
-
-        AuditLogger.getInstance(this).logLogin();
-        
         resumeDoctorRegistrationIfNeeded(user);
     }
 
     private void resumeDoctorRegistrationIfNeeded(UserEntity user) {
         if (!Constants.ROLE_DOCTOR.equals(user.getRole())) {
-            handleNotificationAndNavigation(user);
+            completeDoctorOrPatientLogin(user);
             return;
         }
 
-        FirebaseHelper.getDoctorsNodeRef().child(user.getUserId())
-            .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+        FirebaseHelper.isDoctorRegistrationPending(user.getUserId(),
+            new FirebaseHelper.OnCompleteListener<Boolean>() {
                 @Override
-                public void onDataChange(com.google.firebase.database.DataSnapshot snapshot) {
-                    String paymentStatus = snapshot.child("registrationPaymentStatus").getValue(String.class);
-                    if (!"pending".equalsIgnoreCase(paymentStatus)) {
-                        handleNotificationAndNavigation(user);
-                        return;
+                public void onSuccess(Boolean pending) {
+                    if (Boolean.TRUE.equals(pending)) {
+                        startDoctorRegistrationPayment(user);
+                    } else {
+                        completeDoctorOrPatientLogin(user);
                     }
-
-                    Doctor registrationDoctor = new Doctor(
-                        user.getUserId(), user.getUserId(), user.getFullName(), "Doctor Registration");
-                    registrationDoctor.setEmail(user.getEmail());
-                    registrationDoctor.setPhone(user.getPhone());
-                    registrationDoctor.setRegNo(user.getRegNo());
-                    registrationDoctor.setVerified(false);
-                    Intent paymentIntent = new Intent(LoginActivity.this, PaymentActivity.class);
-                    paymentIntent.putExtra("doctor", registrationDoctor);
-                    paymentIntent.putExtra("consultation_fee", 0.0);
-                    paymentIntent.putExtra("buyer_email", user.getEmail());
-                    paymentIntent.putExtra("buyer_name", user.getFullName());
-                    paymentIntent.putExtra("buyer_phone", user.getPhone());
-                    startActivity(paymentIntent);
-                    finish();
                 }
 
                 @Override
-                public void onCancelled(com.google.firebase.database.DatabaseError error) {
-                    handleNotificationAndNavigation(user);
+                public void onError(String error) {
+                    startDoctorRegistrationPayment(user);
                 }
             });
+    }
+
+    private void completeDoctorOrPatientLogin(UserEntity user) {
+        preferenceManager.setLoggedIn(true);
+        AuditLogger.getInstance(this).logLogin();
+        handleNotificationAndNavigation(user);
+    }
+
+    private void startDoctorRegistrationPayment(UserEntity user) {
+        FirebaseHelper.getAppConfig(new FirebaseHelper.OnCompleteListener<com.haset.hasetapp.models.AppConfig>() {
+            @Override
+            public void onSuccess(com.haset.hasetapp.models.AppConfig config) {
+                double fee = config != null
+                        ? Math.max(0.0, config.getDoctorRegistrationFee())
+                        : 500.0;
+                openDoctorRegistrationPayment(user, fee);
+            }
+
+            @Override
+            public void onError(String error) {
+                openDoctorRegistrationPayment(user, 500.0);
+            }
+        });
+    }
+
+    private void openDoctorRegistrationPayment(UserEntity user, double fee) {
+        if (fee == 0.0) {
+            completeDoctorOrPatientLogin(user);
+            return;
+        }
+
+        Doctor registrationDoctor = new Doctor(
+                "doctor_registration", "doctor_registration", user.getFullName(), "Doctor Registration");
+        registrationDoctor.setEmail(user.getEmail());
+        registrationDoctor.setPhone(user.getPhone());
+        registrationDoctor.setRegNo(user.getRegNo());
+        registrationDoctor.setConsultationFee(fee);
+        registrationDoctor.setVerified(false);
+
+        Intent paymentIntent = new Intent(LoginActivity.this, PaymentActivity.class);
+        paymentIntent.putExtra("doctor", registrationDoctor);
+        paymentIntent.putExtra("consultation_fee", fee);
+        paymentIntent.putExtra("buyer_email", user.getEmail());
+        paymentIntent.putExtra("buyer_name", user.getFullName());
+        paymentIntent.putExtra("buyer_phone", user.getPhone());
+        doctorPaymentLauncher.launch(paymentIntent);
+        resetLoginButton();
+    }
+
+    private void setupDoctorPaymentLauncher() {
+        doctorPaymentLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && loggedInUser != null) {
+                    completeDoctorOrPatientLogin(loggedInUser);
+                    return;
+                }
+                blockUnpaidDoctorLogin();
+            });
+    }
+
+    private void showUnpaidDoctorMessageIfNeeded() {
+        if (getIntent() != null && getIntent().getBooleanExtra("unpaid_doctor", false)) {
+            findViewById(android.R.id.content).post(() ->
+                com.haset.hasetapp.utils.SnackbarHelper.error(
+                    findViewById(android.R.id.content),
+                    getString(R.string.doctor_reg_payment_required)));
+        }
+    }
+
+    private void blockUnpaidDoctorLogin() {
+        FirebaseAuth.getInstance().signOut();
+        if (preferenceManager != null) {
+            preferenceManager.setLoggedIn(false);
+        }
+        loggedInUser = null;
+        resetLoginButton();
+        com.haset.hasetapp.utils.SnackbarHelper.error(
+            findViewById(android.R.id.content),
+            getString(R.string.doctor_reg_payment_required));
     }
 
     /*
@@ -474,7 +538,8 @@ public class LoginActivity extends BaseActivity {
             return;
         }
 
-        String email = etEmail.getText().toString().trim();
+        String identifier = etEmail.getText().toString().trim();
+        String email = Constants.resolveLoginEmail(identifier);
         String password = etPassword.getText().toString().trim();
 
         tilEmail.setError(null);

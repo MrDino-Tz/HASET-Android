@@ -28,6 +28,7 @@ import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.HealthTipsHelper;
 import com.haset.hasetapp.utils.StatusBarHelper;
 import com.haset.hasetapp.utils.ThemeHelper;
+import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
 import com.haset.hasetapp.workers.TrendingArticlesWorker;
 
@@ -42,6 +43,7 @@ public class DashboardActivity extends BaseActivity {
         // Theme is initialized globally in HASETApplication
         
         preferenceManager = new PreferenceManager(this);
+        redirectUnpaidDoctorIfNeeded();
         
         setContentView(R.layout.activity_dashboard);
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
@@ -81,6 +83,36 @@ public class DashboardActivity extends BaseActivity {
         // Trigger role-specific notifications
         triggerPatientNotifications();
         triggerDoctorNotifications();
+    }
+
+    private void redirectUnpaidDoctorIfNeeded() {
+        if (!Constants.ROLE_DOCTOR.equals(preferenceManager.getUserRole())) {
+            return;
+        }
+        FirebaseHelper.isDoctorRegistrationPending(preferenceManager.getUserId(),
+            new FirebaseHelper.OnCompleteListener<Boolean>() {
+                @Override
+                public void onSuccess(Boolean pending) {
+                    if (Boolean.TRUE.equals(pending) && !isFinishing()) {
+                        sendUnpaidDoctorToLogin();
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    // Leave paid doctors online if the check fails.
+                }
+            });
+    }
+
+    private void sendUnpaidDoctorToLogin() {
+        com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+        preferenceManager.setLoggedIn(false);
+        Intent login = new Intent(DashboardActivity.this, LoginActivity.class);
+        login.putExtra("unpaid_doctor", true);
+        login.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(login);
+        finish();
     }
 
     private void syncFcmToken() {

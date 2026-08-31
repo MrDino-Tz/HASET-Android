@@ -10,6 +10,7 @@ import com.haset.hasetapp.R;
 
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.AuthViewModel;
+import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.ValidationUtils;
 import android.content.Intent;
 import android.net.Uri;
@@ -87,7 +88,8 @@ public class ForgotPasswordActivity extends BaseActivity {
 
         // Send reset link button
         btnSend.setOnClickListener(v -> {
-            String email = etEmail.getText().toString().trim();
+            String identifier = etEmail.getText().toString().trim();
+            String email = Constants.resolveLoginEmail(identifier);
             if (!ValidationUtils.isValidEmail(email)) {
                 etEmail.setError(getString(R.string.error_email));
                 return;

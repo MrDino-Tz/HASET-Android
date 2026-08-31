@@ -959,6 +959,7 @@
     <!-- RegisterActivity fee dialog -->
     <string name="doctor_reg_fee_title">Doctor Registration Fee</string>
     <string name="doctor_reg_fee_message">A mandatory MCT verification and registration fee is required.\n\nComplete the payment to continue doctor registration.</string>
+    <string name="doctor_reg_payment_required">Pay the doctor registration fee to finish sign-in. You cannot use the app until payment is complete.</string>
     <string name="pay_via_ussd">Pay via USSD (200 TSH)</string>
     <string name="processing_payment">Processing payment…</string>
 

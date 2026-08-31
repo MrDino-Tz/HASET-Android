@@ -75,16 +75,54 @@ public class SplashActivity extends BaseActivity {
     private void startSplashFlow() {
         splashHandler = new Handler(Looper.getMainLooper());
         splashHandler.postDelayed(() -> {
-            if (preferenceManager.isLoggedIn()) {
-                Intent intent = new Intent(SplashActivity.this, DashboardActivity.class);
-                startActivity(intent);
-            } else {
-                Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
-                startActivity(intent);
+            if (preferenceManager.isLoggedIn()
+                    && Constants.ROLE_DOCTOR.equals(preferenceManager.getUserRole())) {
+                FirebaseHelper.isDoctorRegistrationPending(preferenceManager.getUserId(),
+                    new FirebaseHelper.OnCompleteListener<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean pending) {
+                            if (Boolean.TRUE.equals(pending)) {
+                                openLogin(true);
+                            } else {
+                                openDashboard();
+                            }
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            openDashboard();
+                        }
+                    });
+                return;
             }
-            overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
-            finish();
+            if (preferenceManager.isLoggedIn()) {
+                openDashboard();
+            } else {
+                openLogin(false);
+            }
         }, SPLASH_DELAY);
+    }
+
+    private void openDashboard() {
+        if (isFinishing()) return;
+        startActivity(new Intent(SplashActivity.this, DashboardActivity.class));
+        overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
+        finish();
+    }
+
+    private void openLogin(boolean unpaidDoctor) {
+        if (isFinishing()) return;
+        if (unpaidDoctor) {
+            com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+            preferenceManager.setLoggedIn(false);
+        }
+        Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
+        if (unpaidDoctor) {
+            intent.putExtra("unpaid_doctor", true);
+        }
+        startActivity(intent);
+        overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
+        finish();
     }
 
     @Override
