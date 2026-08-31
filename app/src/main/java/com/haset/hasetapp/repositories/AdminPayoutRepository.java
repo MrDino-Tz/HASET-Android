@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.models.ApiError;
 import com.haset.hasetapp.utils.ErrorParser;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import retrofit2.Call;
@@ -13,42 +14,46 @@ import retrofit2.Response;
 public class AdminPayoutRepository {
     public void listPayoutDestinations(String adminToken, String status,
             FirebaseHelper.OnCompleteListener<JsonObject> callback) {
+        CrashMonitor.step("payout", "AdminPayoutRepository.list", "listing payout destinations status=" + status);
         RetrofitClient.getInstance().getAdminPayoutApiService()
                 .listPayoutDestinations(bearer(adminToken), status)
-                .enqueue(jsonCallback(callback, "Unable to load payout destinations."));
+                .enqueue(jsonCallback(callback, "Unable to load payout destinations.", "AdminPayoutRepository.list"));
     }
 
     public void setVerifiedPayoutDestination(String adminToken, String doctorId,
             String phoneNumber, String provider, String twoFactorCode,
             FirebaseHelper.OnCompleteListener<JsonObject> callback) {
+        CrashMonitor.step("payout", "AdminPayoutRepository.set", "set verified payout doctorId=" + doctorId);
         JsonObject body = new JsonObject();
         body.addProperty("phone_number", phoneNumber);
         body.addProperty("provider", provider);
         body.addProperty("two_factor_code", twoFactorCode);
         RetrofitClient.getInstance().getAdminPayoutApiService()
                 .setVerifiedPayoutDestination(bearer(adminToken), doctorId, body)
-                .enqueue(jsonCallback(callback, "Unable to set payout destination."));
+                .enqueue(jsonCallback(callback, "Unable to set payout destination.", "AdminPayoutRepository.set"));
     }
 
     public void approvePayoutDestination(String adminToken, String doctorId,
             String changePublicId, String twoFactorCode,
             FirebaseHelper.OnCompleteListener<JsonObject> callback) {
+        CrashMonitor.step("payout", "AdminPayoutRepository.approve", "approve payout doctorId=" + doctorId);
         JsonObject body = new JsonObject();
         body.addProperty("two_factor_code", twoFactorCode);
         RetrofitClient.getInstance().getAdminPayoutApiService()
                 .approvePayoutDestination(bearer(adminToken), doctorId, changePublicId, body)
-                .enqueue(jsonCallback(callback, "Unable to approve payout destination."));
+                .enqueue(jsonCallback(callback, "Unable to approve payout destination.", "AdminPayoutRepository.approve"));
     }
 
     public void rejectPayoutDestination(String adminToken, String doctorId,
             String changePublicId, String reason, String twoFactorCode,
             FirebaseHelper.OnCompleteListener<JsonObject> callback) {
+        CrashMonitor.step("payout", "AdminPayoutRepository.reject", "reject payout doctorId=" + doctorId);
         JsonObject body = new JsonObject();
         body.addProperty("reason", reason);
         body.addProperty("two_factor_code", twoFactorCode);
         RetrofitClient.getInstance().getAdminPayoutApiService()
                 .rejectPayoutDestination(bearer(adminToken), doctorId, changePublicId, body)
-                .enqueue(jsonCallback(callback, "Unable to reject payout destination."));
+                .enqueue(jsonCallback(callback, "Unable to reject payout destination.", "AdminPayoutRepository.reject"));
     }
 
     private static String bearer(String token) {
@@ -58,7 +63,7 @@ public class AdminPayoutRepository {
     }
 
     private static Callback<JsonObject> jsonCallback(FirebaseHelper.OnCompleteListener<JsonObject> callback,
-            String fallback) {
+            String fallback, String screen) {
         return new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -66,11 +71,15 @@ public class AdminPayoutRepository {
                     callback.onSuccess(response.body());
                     return;
                 }
+                CrashMonitor.report("payout", screen,
+                        "payout rejected code=" + response.code() + " " + errorMessage(response, fallback), null);
                 callback.onError(errorMessage(response, fallback));
             }
 
             @Override
             public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                CrashMonitor.report("payout", screen,
+                        "payout network failure: " + throwable.getMessage(), throwable);
                 callback.onError(fallback);
             }
         };

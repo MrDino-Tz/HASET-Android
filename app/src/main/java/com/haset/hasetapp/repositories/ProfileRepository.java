@@ -11,6 +11,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.models.Doctor;
 
 import java.util.ArrayList;
@@ -157,6 +158,7 @@ public class ProfileRepository {
     }
 
     public void updateUserInfo(UserEntity user, FirebaseHelper.OnCompleteListener<Void> callback) {
+        CrashMonitor.step("profile", "ProfileRepository.update", "updating user info id=" + user.getUserId());
         java.util.Map<String, Object> updates = new java.util.HashMap<>();
         updates.put("userId", user.getUserId());
         updates.put("fullName", user.getFullName());
@@ -167,7 +169,14 @@ public class ProfileRepository {
         updates.put("age", user.getAge());
         updates.put("gender", user.getGender() == null ? "" : user.getGender());
         firebaseHelper.getUsersRef().child(user.getUserId()).updateChildren(updates)
-                .addOnSuccessListener(aVoid -> callback.onSuccess(null))
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnSuccessListener(aVoid -> {
+                    CrashMonitor.breadcrumb("user profile updated id=" + user.getUserId());
+                    callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    CrashMonitor.report("profile", "ProfileRepository.update",
+                            "user profile update failed id=" + user.getUserId(), e);
+                    callback.onError(e.getMessage());
+                });
     }
 }

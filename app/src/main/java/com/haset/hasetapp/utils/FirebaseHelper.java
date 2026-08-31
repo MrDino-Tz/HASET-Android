@@ -12,6 +12,7 @@ import com.haset.hasetapp.database.entities.DoctorEntity;
 import com.haset.hasetapp.database.entities.NotificationEntity;
 import com.haset.hasetapp.models.AppConfig;
 import com.google.firebase.auth.FirebaseUser;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import androidx.annotation.NonNull;
@@ -506,8 +507,14 @@ public class FirebaseHelper {
                         getDoctorAppointmentsRef(appointment.getDoctorId()).child(resolvedAppointmentId).setValue(true);
                         listener.onSuccess(appointment);
                     })
-                    .addOnFailureListener(e -> listener.onError(e.getMessage()));
+                    .addOnFailureListener(e -> {
+                        CrashMonitor.report("appointment", "FirebaseHelper.createAppointment",
+                                "appointment write failed id=" + resolvedAppointmentId + " patient=" + appointment.getPatientId(), e);
+                        listener.onError(e.getMessage());
+                    });
         } else {
+            CrashMonitor.report("appointment", "FirebaseHelper.createAppointment",
+                    "failed to generate appointment id", null);
             listener.onError("Failed to generate appointment ID.");
         }
     }
@@ -1330,9 +1337,11 @@ public class FirebaseHelper {
      */
     public static void deleteUserAccount(String userId, OnCompleteListener<Void> listener) {
         if (userId == null || userId.isEmpty()) {
+            CrashMonitor.report("profile", "FirebaseHelper.deleteUserAccount", "delete account - null user id", null);
             listener.onError("User ID is null or empty.");
             return;
         }
+        CrashMonitor.step("profile", "FirebaseHelper.deleteUserAccount", "deleting account data for " + userId);
 
         DatabaseReference db = getFirebaseDatabase().getReference();
         
@@ -1374,9 +1383,12 @@ public class FirebaseHelper {
                                         if (user != null && user.getUid().equals(userId)) {
                                             user.delete().addOnCompleteListener(authTask -> {
                                                 if (authTask.isSuccessful()) {
+                                                    CrashMonitor.breadcrumb("account auth deleted " + userId);
                                                     listener.onSuccess(null);
                                                 } else {
                                                     Exception exception = authTask.getException();
+                                                    CrashMonitor.report("profile", "FirebaseHelper.deleteUserAccount",
+                                                            "account auth deletion failed: " + (exception != null ? exception.getMessage() : "unknown"), exception);
                                                     if (exception instanceof com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
                                                         listener.onError("Session expired. Please log out and log in again to delete your account.");
                                                     } else {

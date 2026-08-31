@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
 
@@ -53,6 +54,21 @@ public class AppointmentRepository {
     }
 
     public void createAppointment(AppointmentEntity appointment, FirebaseHelper.OnCompleteListener<AppointmentEntity> callback) {
-        FirebaseHelper.createAppointment(appointment, callback);
+        CrashMonitor.step("appointment", "AppointmentRepository.create",
+                "create appointment patient=" + appointment.getPatientId() + " doctor=" + appointment.getDoctorId());
+        FirebaseHelper.createAppointment(appointment, new FirebaseHelper.OnCompleteListener<AppointmentEntity>() {
+            @Override
+            public void onSuccess(AppointmentEntity result) {
+                CrashMonitor.breadcrumb("appointment created id=" + result.getAppointmentId());
+                callback.onSuccess(result);
+            }
+
+            @Override
+            public void onError(String error) {
+                CrashMonitor.report("appointment", "AppointmentRepository.create",
+                        "create appointment failed: " + error, null);
+                callback.onError(error);
+            }
+        });
     }
 }

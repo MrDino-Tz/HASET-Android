@@ -29,6 +29,7 @@ import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
 import com.haset.hasetapp.utils.DoctorNotificationManager;
 import com.haset.hasetapp.utils.CustomDialog;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import java.text.SimpleDateFormat;
@@ -407,6 +408,7 @@ public class BookAppointmentActivity extends BaseActivity {
     }
 
     private void proceedWithBooking() {
+        CrashMonitor.step("appointment", "BookAppointmentActivity", "proceeding with booked appointment");
         AppointmentEntity appointmentEntity = buildAppointmentEntity(pendingPaymentAppointmentId);
         if (paidAt > 0 || paymentTransactionId >= 0) {
             long paymentTime = paidAt > 0 ? paidAt : System.currentTimeMillis();
