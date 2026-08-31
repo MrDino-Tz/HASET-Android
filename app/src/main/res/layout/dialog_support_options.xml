@@ -94,20 +94,6 @@
             app:cornerRadius="12dp"
             style="@style/ButtonSecondary" />
 
-        <!-- TEMP: Test Crash (for Crashlytics setup verification. Remove after testing.) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnTestCrash"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:text="@string/test_crash"
-            android:textAllCaps="false"
-            app:icon="@drawable/ic_bug"
-            app:iconGravity="textStart"
-            app:cornerRadius="12dp"
-            style="@style/ButtonSecondary"
-            android:alpha="0.6" />
-
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

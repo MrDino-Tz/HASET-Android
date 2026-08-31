@@ -384,7 +384,6 @@ public class SettingsActivity extends BaseActivity {
         MaterialButton btnWhatsApp = dialogView.findViewById(R.id.btnWhatsApp);
         MaterialButton btnCall = dialogView.findViewById(R.id.btnCall);
         MaterialButton btnBugReport = dialogView.findViewById(R.id.btnBugReport);
-        MaterialButton btnTestCrash = dialogView.findViewById(R.id.btnTestCrash);
         ImageView btnClose = dialogView.findViewById(R.id.btnClose);
 
         btnWhatsApp.setOnClickListener(v -> {
@@ -401,14 +400,6 @@ public class SettingsActivity extends BaseActivity {
             dialog.dismiss();
             showBugReportDialog();
         });
-
-        // TEMP: Test Crash — for Crashlytics setup verification. Remove after testing.
-        if (btnTestCrash != null) {
-            btnTestCrash.setOnClickListener(v -> {
-                dialog.dismiss();
-                throw new RuntimeException("Test Crash");
-            });
-        }
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
 

@@ -1047,7 +1047,6 @@
     <string name="bug_report_hint">Describe the bug or issue you encountered…</string>
     <string name="bug_report_description">Help us improve by describing the bug or issue you encountered.</string>
     <string name="report_a_bug">Report a Bug</string>
-    <string name="test_crash">Test Crash</string>
     <string name="submit">Submit</string>
     <string name="bug_report_submitted">Bug Report Submitted</string>
     <string name="contact_support">Contact Support</string>
