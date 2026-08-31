@@ -148,16 +148,17 @@ public class PrescriptionRepository {
             id = prescriptionsRef.push().getKey();
             prescription.setPrescriptionId(id);
         }
+        final String resolvedId = id;
 
         prescriptionsRef.child(id).setValue(prescription)
             .addOnSuccessListener(aVoid -> {
-                CrashMonitor.breadcrumb("prescription created id=" + id);
+                CrashMonitor.breadcrumb("prescription created id=" + resolvedId);
                 saveLocally(prescription);
                 if (callback != null) callback.onSuccess(null);
             })
             .addOnFailureListener(e -> {
                 CrashMonitor.report("appointment", "PrescriptionRepository.create",
-                        "prescription write failed id=" + id, e);
+                        "prescription write failed id=" + resolvedId, e);
                 if (callback != null) callback.onError(e.getMessage());
             });
     }
