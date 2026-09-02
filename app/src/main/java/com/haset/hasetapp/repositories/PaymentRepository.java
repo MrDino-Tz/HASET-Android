@@ -14,6 +14,7 @@ import com.haset.hasetapp.models.PaymentResponse;
 import com.haset.hasetapp.models.PaymentStatusResponse;
 import com.haset.hasetapp.models.CancelPaymentRequest;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.CrashMonitor;
 
 import java.util.UUID;
 
@@ -102,6 +103,11 @@ public class PaymentRepository {
         currentDoctorId = doctorId;
         currentAmount = amount;
         pendingFinalCallback = finalCallback;
+        CrashMonitor.step("payment", "PaymentRepository.processPayment",
+                "payment initiated provider=" + provider + " method=" + paymentMethod + " amount=" + amount);
+        if (buyerEmail != null && !buyerEmail.isEmpty()) {
+            CrashMonitor.breadcrumb("buyer " + buyerEmail);
+        }
 
         PaymentRequest request = new PaymentRequest(userId, doctorId, consultationId, amount, paymentMethod,
                 provider, paymentAccount, buyerEmail, buyerName, buyerPhone,
@@ -124,6 +130,8 @@ public class PaymentRepository {
                             PaymentResponse paymentResponse = response.body();
                             if (paymentResponse.isSuccess() && paymentResponse.getTransactionId() <= 0) {
                                 isProcessingPayment = false;
+                                CrashMonitor.report("payment", "PaymentRepository.processPayment",
+                                        "initiation returned success without transaction id: " + paymentResponse.getMessage(), null);
                                 String message = paymentResponse.getMessage() != null
                                         ? paymentResponse.getMessage()
                                         : "Payment response did not include a transaction ID. Please retry.";
@@ -160,6 +168,8 @@ public class PaymentRepository {
                                 }
                             } catch (Exception ignored) {
                             }
+                            CrashMonitor.report("payment", "PaymentRepository.processPayment",
+                                    "initiation HTTP error code=" + response.code() + " " + errorMsg, null);
                             if (initiationCallback != null) {
                                 initiationCallback.onError(errorMsg);
                             }
@@ -170,7 +180,12 @@ public class PaymentRepository {
                     public void onFailure(Call<PaymentResponse> call, Throwable t) {
                         untrackCall(call);
                         isProcessingPayment = false;
-                        if (call.isCanceled()) return;
+                        if (call.isCanceled()) {
+                            CrashMonitor.breadcrumb("payment initiation cancelled");
+                            return;
+                        }
+                        CrashMonitor.report("payment", "PaymentRepository.processPayment",
+                                "initiation network failure: " + t.getMessage(), t);
                         if (initiationCallback != null) {
                             initiationCallback.onError("Network error: " + t.getMessage());
                         }
@@ -181,6 +196,8 @@ public class PaymentRepository {
             @Override
             public void onError(String error) {
                 isProcessingPayment = false;
+                CrashMonitor.report("payment", "PaymentRepository.processPayment",
+                        "initiation auth-header error: " + error, null);
                 if (initiationCallback != null) {
                     initiationCallback.onError(error);
                 }
@@ -268,6 +285,8 @@ public class PaymentRepository {
                                    int attemptCount, FirebaseHelper.OnCompleteListener<Boolean> finalCallback) {
         if (attemptCount >= MAX_STATUS_CHECKS) {
             isProcessingPayment = false;
+            CrashMonitor.report("payment", "PaymentRepository.pollStatus",
+                    "status checks exhausted tx=" + transactionId, null);
             if (finalCallback != null) {
                 finalCallback.onError("Payment is taking longer than expected. Transaction #" +
                     transactionId + " is still being processed. Tap 'Check Status' to verify.");
@@ -285,6 +304,7 @@ public class PaymentRepository {
                             handlePaymentSuccess(transactionId, doctorId, amount, finalCallback);
                         } else if (transaction.isFailed()) {
                             isProcessingPayment = false;
+                            CrashMonitor.breadcrumb("payment status failed tx=" + transactionId);
                             if (finalCallback != null) {
                                 finalCallback.onError("Payment was unsuccessful or cancelled.");
                             }

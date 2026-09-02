@@ -239,6 +239,58 @@ FirebaseCrashlytics.getInstance().log("booking appointment for " + doctorId);
 Suggested keys: `userId`, `role` (patient/doctor), `screen`, `language` (en/sw), and the
 `HASETDoctorFlow` tag context used in the doctor sign-up path.
 
+### 5.5 `CrashMonitor` helper + hot-area instrumentation (auth / payments / appointments)
+
+A small `utils/CrashMonitor.java` wrapper centralises breadcrumbs, custom keys and
+non-fatal reporting so the three highest-risk flows surface as attributable Crashlytics
+issues:
+
+```java
+CrashMonitor.setFlow("auth");                        // "auth" | "payment" | "appointment"
+CrashMonitor.setScreen("AuthRepository.signIn");
+CrashMonitor.breadcrumb("sign-in started for " + email);   // journey step (visible on any crash)
+CrashMonitor.report("auth", "AuthRepository.signIn", "sign-in failed", throwable); // non-fatal
+```
+
+Instrumented entry points:
+
+| Area | Where | What's reported |
+|------|-------|-----------------|
+| Auth | `AuthRepository.signInWithEmail` / `registerWithEmail` / `logout` | success/failure breadcrumbs; non-fatal on login/register/map-password errors |
+| Auth | `AuthViewModel.login` / `register` / `checkMfaThenFetch` / `verifyMfa` | non-fatal on credential rejection, MFA status/verify network failures |
+| Payment | `PaymentRepository.processPayment` | flow=payment, amount/provider breadcrumb; non-fatal on HTTP, network, auth-header, missing-transaction-id, polling-timeout, status-failed |
+| Payment | `PaymentActivity.processPayment` | screen/start breadcrumb before `viewModel.processPayment` |
+| Appointment | `AppointmentRepository.createAppointment` | create started/created/failed breadcrumb |
+| Appointment | `FirebaseHelper.createAppointment` | non-fatal on RTDB write failure / missing appointment id |
+| Appointment | `BookAppointmentActivity.proceedWithBooking` | flow=appointment screen breadcrumb |
+
+Non-fatals are grouped under the `flow` custom key: set `flow=auth|payment|appointment`
+as a Crashlytics **console filter** to see per-area issues. Optionally call
+`CrashMonitor.setFlow(...)` + `setUserId(uid)` once in `SplashActivity`/`AuthViewModel`
+so every report carries identity.
+
+### 5.6 Additional instrumented areas (session / wallet / payout / MFA / data-authoring)
+
+The same `CrashMonitor` pattern was extended to cover the other high-value flows (see
+`CrashMonitor.java`). These use additional `flow` values: `session`, `wallet`, `payout`,
+`profile`.
+
+| Area | Where | What's reported |
+|------|-------|-----------------|
+| Session | `SplashActivity` | `setUserId(uid)` + `role`/`loggedIn` breadcrumb on every launch; non-fatal on doctor-pending check failure |
+| Wallet | `DoctorHomeRepository.fetchWalletBalance` | flow=wallet breadcrumb; non-fatal on no-auth, network failure, token-refresh failure |
+| Payout | `AdminPayoutRepository` (list/set/approve/reject) | flow=payout breadcrumb per op; non-fatal on rejected HTTP and network failure |
+| Security | `MfaEnrollmentActivity` (requestSetup / confirmCode) | non-fatal on setup/confirm network, token-refresh and QR-generation failures |
+| Medical | `PrescriptionRepository.createPrescription` / `deletePrescription` | flow=appointment breadcrumb; non-fatal on write/delete failure |
+| Profile | `ProfileRepository.updateUserInfo` | flow=profile breadcrumb; non-fatal on update failure |
+| Profile | `FirebaseHelper.deleteUserAccount` | destructive-account-deletion breadcrumb; non-fatal on auth deletion failure |
+
+**Identity on every crash:** `SplashActivity` sets `setUserId(uid)` at launch, so an
+entire session's reports are attributable to a single user regardless of the area.
+
+**Console filters:** `flow=auth`, `flow=payment`, `flow=appointment`, `flow=session`,
+`flow=wallet`, `flow=payout`, `flow=profile`.
+
 ---
 
 ## 6. Force a test crash (finish setup)

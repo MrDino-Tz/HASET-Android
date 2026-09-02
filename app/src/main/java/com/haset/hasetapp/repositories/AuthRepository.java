@@ -20,6 +20,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.Constants;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import java.io.IOException;
@@ -52,31 +53,40 @@ public class AuthRepository {
     }
 
     public void signInWithEmail(String email, String password, FirebaseHelper.OnCompleteListener<FirebaseUser> callback) {
+        CrashMonitor.step("auth", "AuthRepository.signIn", "sign-in started for " + safeEmail(email));
         mAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
+                    CrashMonitor.breadcrumb("sign-in succeeded uid=" + currentUid());
                     callback.onSuccess(mAuth.getCurrentUser());
                 } else {
+                    CrashMonitor.report("auth", "AuthRepository.signIn", "sign-in failed: " + safeEmail(email),
+                            task.getException());
                     callback.onError(mapFirebaseAuthError(task.getException(), "Login failed"));
                 }
             });
     }
 
     public void registerWithEmail(String email, String password, UserEntity userData, FirebaseHelper.OnCompleteListener<FirebaseUser> callback) {
+        CrashMonitor.step("auth", "AuthRepository.register", "register started for " + safeEmail(email));
         mAuth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
+                    CrashMonitor.breadcrumb("register auth created uid=" + currentUid());
                     FirebaseUser firebaseUser = mAuth.getCurrentUser();
                     if (firebaseUser != null) {
                         userData.setUserId(firebaseUser.getUid());
                         saveUserData(userData, new FirebaseHelper.OnCompleteListener<Void>() {
                             @Override
                             public void onSuccess(Void result) {
+                                CrashMonitor.breadcrumb("register user data saved role=" + userData.getRole());
                                 callback.onSuccess(firebaseUser);
                             }
 
                             @Override
                             public void onError(String error) {
+                                CrashMonitor.report("auth", "AuthRepository.register",
+                                        "register DB save failed (rolling back auth): " + error, null);
                                 // Cleanup auth user if database save fails
                                 firebaseUser.delete();
                                 callback.onError(error);
@@ -84,6 +94,8 @@ public class AuthRepository {
                         });
                     }
                 } else {
+                    CrashMonitor.report("auth", "AuthRepository.register",
+                            "register auth creation failed: " + safeEmail(email), task.getException());
                     callback.onError(mapFirebaseAuthError(task.getException(), "Registration failed"));
                 }
             });
@@ -371,6 +383,7 @@ public class AuthRepository {
     }
 
     public void logout() {
+        CrashMonitor.step("auth", "AuthRepository.logout", "sign-out requested");
         mAuth.signOut();
     }
 
@@ -416,6 +429,18 @@ public class AuthRepository {
             }
         }
         return mapFirebaseAuthError(exception, "Failed to send reset email.");
+    }
+
+    private String safeEmail(String email) {
+        if (email == null) return "";
+        int at = email.indexOf('@');
+        if (at <= 1) return email;
+        return email.substring(0, 2) + "****" + email.substring(at);
+    }
+
+    private String currentUid() {
+        FirebaseUser u = mAuth.getCurrentUser();
+        return u != null ? u.getUid() : "none";
     }
 
     private String mapFirebaseAuthError(Exception exception, String fallbackMessage) {

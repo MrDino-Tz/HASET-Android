@@ -14,6 +14,7 @@ import com.haset.hasetapp.database.entities.WithdrawalRequest;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.models.ApiError;
 import com.haset.hasetapp.utils.Constants;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.ErrorParser;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
@@ -134,9 +135,11 @@ public class DoctorHomeRepository {
     public void fetchWalletBalance(String doctorId, FirebaseHelper.OnCompleteListener<DoctorWalletEntity> callback) {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) {
+            CrashMonitor.report("wallet", "DoctorHomeRepository.fetchWallet", "wallet fetch - no authenticated user", null);
             callback.onError("Authentication expired. Please sign in again.");
             return;
         }
+        CrashMonitor.step("wallet", "DoctorHomeRepository.fetchWallet", "fetching doctor wallet doctorId=" + doctorId);
         user.getIdToken(true).addOnSuccessListener(token ->
             RetrofitClient.getInstance().getDoctorPayoutApiService()
                 .getWallet("Bearer " + token.getToken())
@@ -208,10 +211,16 @@ public class DoctorHomeRepository {
 
                     @Override
                     public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                        CrashMonitor.report("wallet", "DoctorHomeRepository.fetchWallet",
+                                "wallet network failure: " + throwable.getMessage(), throwable);
                         callback.onError("Network error while loading the doctor wallet.");
                     }
                 })
-        ).addOnFailureListener(error -> callback.onError("Authentication expired. Please sign in again."));
+        ).addOnFailureListener(error -> {
+            CrashMonitor.report("wallet", "DoctorHomeRepository.fetchWallet",
+                    "wallet fetch token refresh failed: " + error.getMessage(), error);
+            callback.onError("Authentication expired. Please sign in again.");
+        });
     }
 
     private static void fallbackWalletFromFirebase(FirebaseHelper.OnCompleteListener<DoctorWalletEntity> callback,

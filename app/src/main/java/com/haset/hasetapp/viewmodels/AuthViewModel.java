@@ -11,6 +11,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.repositories.AuthRepository;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.api.MobileMfaApiService;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.google.gson.JsonObject;
@@ -51,6 +52,7 @@ public class AuthViewModel extends AndroidViewModel {
 
             @Override
             public void onError(String error) {
+                CrashMonitor.report("auth", "AuthViewModel.login", "login rejected: " + error, null);
                 boolean credentialFailure = com.haset.hasetapp.repositories.AuthRepository.CREDENTIAL_ERROR_MESSAGE.equals(error);
                 authState.setValue(AuthState.error(error, credentialFailure));
             }
@@ -101,9 +103,9 @@ public class AuthViewModel extends AndroidViewModel {
                     boolean enabled = response.body().has("two_factor_enabled") && response.body().get("two_factor_enabled").getAsBoolean();
                     if (enabled) authState.postValue(AuthState.mfaRequired()); else fetchUserData(user.getUid());
                 }
-                public void onFailure(Call<JsonObject> call, Throwable t) { authState.postValue(AuthState.error("MFA service unavailable.")); }
+                public void onFailure(Call<JsonObject> call, Throwable t) { CrashMonitor.report("auth", "AuthViewModel.checkMfa", "MFA status check failed", t); authState.postValue(AuthState.error("MFA service unavailable.")); }
             });
-        }).addOnFailureListener(e -> authState.postValue(AuthState.error("Unable to refresh authentication.")));
+        }).addOnFailureListener(e -> CrashMonitor.report("auth", "AuthViewModel.checkMfa", "token refresh failed during MFA check", e));
     }
 
     public void verifyMfa(String code) {
@@ -112,8 +114,8 @@ public class AuthViewModel extends AndroidViewModel {
         pendingFirebaseUser.getIdToken(true).addOnSuccessListener(token -> {
             JsonObject body = new JsonObject(); body.addProperty("code", code);
             RetrofitClient.getInstance().getMobileMfaApiService().verify("Bearer " + token.getToken(), body).enqueue(new Callback<JsonObject>() {
-                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) { if (response.isSuccessful()) fetchUserData(pendingFirebaseUser.getUid()); else authState.postValue(AuthState.mfaError("Invalid or expired MFA code.")); }
-                public void onFailure(Call<JsonObject> call, Throwable t) { authState.postValue(AuthState.mfaError("MFA verification failed. Try again.")); }
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) { if (response.isSuccessful()) fetchUserData(pendingFirebaseUser.getUid()); else { CrashMonitor.breadcrumb("MFA verify rejected"); authState.postValue(AuthState.mfaError("Invalid or expired MFA code.")); } }
+                public void onFailure(Call<JsonObject> call, Throwable t) { CrashMonitor.report("auth", "AuthViewModel.verifyMfa", "MFA verify network failure", t); authState.postValue(AuthState.mfaError("MFA verification failed. Try again.")); }
             });
         }).addOnFailureListener(e -> authState.setValue(AuthState.mfaError("Login session expired.")));
     }
@@ -145,6 +147,7 @@ public class AuthViewModel extends AndroidViewModel {
 
             @Override
             public void onError(String error) {
+                CrashMonitor.report("auth", "AuthViewModel.register", "registration rejected: " + error, null);
                 authState.setValue(AuthState.error(error));
             }
         });

@@ -24,6 +24,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.PreferenceManager;
 // import com.haset.hasetapp.utils.RootIntegrityHelper;
@@ -977,6 +978,8 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 ensurePriceVerificationRecord(userId, doctorId, new PaymentStartCallback() {
                     @Override
                     public void onReady() {
+                        CrashMonitor.setScreen("PaymentActivity");
+                        CrashMonitor.breadcrumb("payment start user=" + userId + " doctor=" + doctorId + " amount=" + consultationFee);
                         viewModel.processPayment(
                             userId,
                             doctorId,

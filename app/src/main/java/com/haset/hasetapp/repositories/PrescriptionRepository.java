@@ -18,6 +18,7 @@ import com.haset.hasetapp.database.AppDatabase;
 import com.haset.hasetapp.database.entities.PrescriptionEntity;
 import com.haset.hasetapp.models.Prescription;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.CrashMonitor;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -140,31 +141,41 @@ public class PrescriptionRepository {
     }
 
     public void createPrescription(Prescription prescription, FirebaseHelper.OnCompleteListener<Void> callback) {
+        CrashMonitor.step("appointment", "PrescriptionRepository.create",
+                "create prescription patient=" + (prescription.getPatientId() != null ? prescription.getPatientId() : "") + " doctor=" + (prescription.getDoctorId() != null ? prescription.getDoctorId() : ""));
         String id = prescription.getPrescriptionId();
         if (id == null || id.isEmpty()) {
             id = prescriptionsRef.push().getKey();
             prescription.setPrescriptionId(id);
         }
+        final String resolvedId = id;
 
         prescriptionsRef.child(id).setValue(prescription)
             .addOnSuccessListener(aVoid -> {
+                CrashMonitor.breadcrumb("prescription created id=" + resolvedId);
                 saveLocally(prescription);
                 if (callback != null) callback.onSuccess(null);
             })
             .addOnFailureListener(e -> {
+                CrashMonitor.report("appointment", "PrescriptionRepository.create",
+                        "prescription write failed id=" + resolvedId, e);
                 if (callback != null) callback.onError(e.getMessage());
             });
     }
 
     public void deletePrescription(String prescriptionId, FirebaseHelper.OnCompleteListener<Void> callback) {
+        CrashMonitor.step("appointment", "PrescriptionRepository.delete", "delete prescription id=" + prescriptionId);
         prescriptionsRef.child(prescriptionId).removeValue()
             .addOnSuccessListener(aVoid -> {
+                CrashMonitor.breadcrumb("prescription deleted id=" + prescriptionId);
                 AppDatabase.databaseWriteExecutor.execute(() -> {
                     database.prescriptionDao().deleteById(prescriptionId);
                 });
                 if (callback != null) callback.onSuccess(null);
             })
             .addOnFailureListener(e -> {
+                CrashMonitor.report("appointment", "PrescriptionRepository.delete",
+                        "prescription delete failed id=" + prescriptionId, e);
                 if (callback != null) callback.onError(e.getMessage());
             });
     }

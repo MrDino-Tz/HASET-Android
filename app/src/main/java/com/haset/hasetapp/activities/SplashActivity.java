@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.utils.Constants;
+import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ThemeHelper;
 import com.haset.hasetapp.utils.NetworkUtils;
@@ -34,11 +35,21 @@ public class SplashActivity extends BaseActivity {
 
         preferenceManager = new PreferenceManager(this);
         if (!preferenceManager.isOnboardingSeen()) {
+            CrashMonitor.step("session", "SplashActivity", "first launch - onboarding not seen");
             Intent intent = new Intent(SplashActivity.this, OnboardingActivity.class);
             startActivity(intent);
             finish();
             return;
         }
+
+        // Attach identity + role to every report for this session.
+        String uid = preferenceManager.getUserId();
+        if (uid != null && !uid.isEmpty()) {
+            com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().setUserId(uid);
+        }
+        CrashMonitor.setFlow("session");
+        CrashMonitor.setScreen("SplashActivity");
+        CrashMonitor.breadcrumb("splash role=" + preferenceManager.getUserRole() + " loggedIn=" + preferenceManager.isLoggedIn());
         
         // Theme is initialized globally in HASETApplication
         getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -77,11 +88,13 @@ public class SplashActivity extends BaseActivity {
         splashHandler.postDelayed(() -> {
             if (preferenceManager.isLoggedIn()
                     && Constants.ROLE_DOCTOR.equals(preferenceManager.getUserRole())) {
+                CrashMonitor.breadcrumb("splash routing doctor pending-check");
                 FirebaseHelper.isDoctorRegistrationPending(preferenceManager.getUserId(),
                     new FirebaseHelper.OnCompleteListener<Boolean>() {
                         @Override
                         public void onSuccess(Boolean pending) {
                             if (Boolean.TRUE.equals(pending)) {
+                                CrashMonitor.breadcrumb("splash -> doctor pending, force login");
                                 openLogin(true);
                             } else {
                                 openDashboard();
@@ -90,6 +103,8 @@ public class SplashActivity extends BaseActivity {
 
                         @Override
                         public void onError(String error) {
+                            CrashMonitor.report("session", "SplashActivity.startSplashFlow",
+                                    "doctor pending check failed: " + error, null);
                             openDashboard();
                         }
                     });
