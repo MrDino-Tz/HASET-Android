@@ -177,6 +177,94 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilNin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            style="@style/EditTextStyle"
+            android:elevation="4dp"
+            android:outlineProvider="background"
+            app:startIconDrawable="@drawable/ic_verified"
+            app:startIconTint="@color/green_primary"
+            app:hintTextColor="@color/text_secondary"
+            app:boxStrokeWidth="0dp"
+            app:boxBackgroundColor="@color/background_card"
+            app:boxCornerRadiusTopStart="20dp"
+            app:boxCornerRadiusTopEnd="20dp"
+            app:boxCornerRadiusBottomStart="20dp"
+            app:boxCornerRadiusBottomEnd="20dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etNin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_nin"
+                android:inputType="number"
+                android:maxLength="20"
+                android:textSize="14sp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:fontFamily="@font/poppins_regular"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutDoctorDocuments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUploadNin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/upload_nin_document"
+                android:textAllCaps="false"
+                android:fontFamily="@font/poppins_regular"
+                app:icon="@drawable/ic_images"
+                app:iconTint="@color/green_primary"
+                app:iconGravity="textStart"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/green_primary" />
+
+            <TextView
+                android:id="@+id/tvNinUploadStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="@font/poppins_regular" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUploadMct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/upload_mct_certificate"
+                android:textAllCaps="false"
+                android:fontFamily="@font/poppins_regular"
+                app:icon="@drawable/ic_images"
+                app:iconTint="@color/green_primary"
+                app:iconGravity="textStart"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/green_primary" />
+
+            <TextView
+                android:id="@+id/tvMctUploadStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="@font/poppins_regular" />
+        </LinearLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

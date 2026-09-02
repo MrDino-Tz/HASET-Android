@@ -1,5 +1,10 @@
 import SwiftUI
 
+private struct ResetPasswordSheetToken: Identifiable {
+    let code: String
+    var id: String { code.isEmpty ? "manual-reset" : code }
+}
+
 struct RootView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
 
@@ -42,6 +47,54 @@ struct RootView: View {
         }())
         .alert(item: $appViewModel.alertState) { state in
             Alert(title: Text(state.title), message: Text(state.message), dismissButton: .default(Text("OK")))
+        }
+        .alert(item: $appViewModel.blockingDialog) { state in
+            if let urlString = state.updateURL, let url = URL(string: urlString) {
+                Alert(
+                    title: Text(state.title),
+                    message: Text(state.message),
+                    primaryButton: .default(Text("Update Now")) {
+                        UIApplication.shared.open(url)
+                    },
+                    secondaryButton: .destructive(Text("Exit")) {
+                        exit(0)
+                    }
+                )
+            } else {
+                Alert(
+                    title: Text(state.title),
+                    message: Text(state.message),
+                    dismissButton: .destructive(Text("Exit")) {
+                        exit(0)
+                    }
+                )
+            }
+        }
+        .sheet(item: $appViewModel.pendingDoctorRegistration) { pending in
+            PaymentCheckoutView(
+                doctor: pending.doctor,
+                amount: pending.amount,
+                initialMethod: .mobileMoney,
+                onPaymentConfirmed: {
+                    Task { await appViewModel.completeDoctorRegistrationPayment() }
+                },
+                onCancelRegistrationPayment: {
+                    appViewModel.cancelDoctorRegistrationPayment()
+                }
+            )
+            .environmentObject(appViewModel)
+            .interactiveDismissDisabled(true)
+        }
+        .sheet(item: Binding(
+            get: {
+                appViewModel.pendingPasswordResetCode.map { ResetPasswordSheetToken(code: $0) }
+            },
+            set: { newValue in
+                appViewModel.pendingPasswordResetCode = newValue?.code
+            }
+        )) { token in
+            ResetPasswordConfirmView(initialCode: token.code)
+                .environmentObject(appViewModel)
         }
         .overlay {
             if appViewModel.isLoading {

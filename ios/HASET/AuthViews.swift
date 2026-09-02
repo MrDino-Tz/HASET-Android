@@ -319,6 +319,18 @@ struct LoginView: View {
                     RoundedInputField(title: appViewModel.tr("email"), systemImage: "envelope", text: $email, keyboardType: .emailAddress)
                     RoundedInputField(title: appViewModel.tr("password"), systemImage: "lock", text: $password, isSecure: true)
 
+                    if appViewModel.showUnpaidDoctorMessage {
+                        Text(appViewModel.tr("doctor_reg_payment_required"))
+                            .font(HASETTheme.font(.regular, 13))
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    appViewModel.showUnpaidDoctorMessage = false
+                                }
+                            }
+                    }
+
                     HStack {
                         Toggle(isOn: $rememberMe) {
                             Text(appViewModel.tr("remember_me"))
@@ -656,16 +668,27 @@ struct RegisterView: View {
     @State private var email = ""
     @State private var phone = ""
     @State private var regNo = ""
+    @State private var nin = ""
     @State private var password = ""
-    @State private var doctorSignupPayment: DoctorSignupPaymentRequest?
+    @State private var ninDocumentData: Data?
+    @State private var mctCertificateData: Data?
+    @State private var showingNinImporter = false
+    @State private var showingMctImporter = false
+    @State private var uploadingDocuments = false
 
     private var canSubmitRegistration: Bool {
         let phoneDigits = phone.filter(\.isNumber)
-        return ValidationService.isValidName(fullName)
+        let baseValid = ValidationService.isValidName(fullName)
             && ValidationService.isValidEmail(email)
             && phoneDigits.count == 9
             && ValidationService.isStrongPassword(password)
-            && (role != .doctor || !regNo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        if role != .doctor { return baseValid }
+        return baseValid
+            && !regNo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && ValidationService.isValidNin(nin)
+            && ninDocumentData != nil
+            && mctCertificateData != nil
+            && !uploadingDocuments
     }
 
     var body: some View {
@@ -701,58 +724,44 @@ struct RegisterView: View {
 
                     if role == .doctor {
                         RoundedInputField(
-                            title: "Tanzanian Medical Council (MCT) Reg. No. (e.g. MCT3625)",
+                            title: appViewModel.tr("hint_mct_reg_no"),
                             systemImage: "checkmark.seal",
                             text: $regNo
                         )
+                        RoundedInputField(
+                            title: appViewModel.tr("hint_nin"),
+                            systemImage: "person.text.rectangle",
+                            text: $nin,
+                            keyboardType: .numberPad
+                        )
+
+                        documentPickerRow(
+                            title: appViewModel.tr("upload_nin_document"),
+                            selected: ninDocumentData != nil
+                        ) {
+                            showingNinImporter = true
+                        }
+                        documentPickerRow(
+                            title: appViewModel.tr("upload_mct_certificate"),
+                            selected: mctCertificateData != nil
+                        ) {
+                            showingMctImporter = true
+                        }
                     }
 
                     RoundedInputField(title: appViewModel.tr("password"), systemImage: "lock", text: $password, isSecure: true)
 
-                    Button(appViewModel.tr("sign_up")) {
+                    Button(uploadingDocuments ? appViewModel.tr("uploading_documents") : appViewModel.tr("sign_up")) {
                         guard canSubmitRegistration else {
                             appViewModel.alertState = AlertState(
                                 title: appViewModel.tr("error"),
-                                message: "Enter a valid name, email, 9-digit phone number, and a password with at least 12 characters, uppercase, lowercase, and a number."
+                                message: role == .doctor
+                                    ? appViewModel.tr("doctor_registration_pdf_details_required")
+                                    : "Enter a valid name, email, 9-digit phone number, and a password with at least 12 characters, uppercase, lowercase, and a number."
                             )
                             return
                         }
-                        if role == .doctor {
-                            let fee = appViewModel.doctorRegistrationFee
-                            doctorSignupPayment = DoctorSignupPaymentRequest(
-                                doctor: DoctorSummary(
-                                    id: "doctor_registration",
-                                    name: fullName,
-                                    specialty: StaticContentService.specialties.first ?? "General Physician",
-                                    hospital: "HASET Hospital",
-                                    phoneNumber: phone.hasPrefix("+255") ? phone : "+255\(phone)",
-                                    email: email,
-                                    address: nil,
-                                    bio: nil,
-                                    rating: 5.0,
-                                    experienceYears: nil,
-                                    verified: false,
-                                    consultationFee: "TZS \(Int(fee))",
-                                    availableToday: true,
-                                    profileImage: nil,
-                                    availableTimes: nil
-                                ),
-                                fullName: fullName,
-                                email: email,
-                                phoneDigits: phone,
-                                password: password,
-                                regNo: regNo
-                            )
-                        } else {
-                            appViewModel.register(
-                                fullName: fullName,
-                                email: email,
-                                phoneDigits: phone,
-                                password: password,
-                                role: role,
-                                regNo: regNo
-                            )
-                        }
+                        Task { await submitRegistration() }
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(!canSubmitRegistration)
@@ -798,42 +807,134 @@ struct RegisterView: View {
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
-        .task {
-            while role == .doctor && !Task.isCancelled {
-                await appViewModel.refreshDoctorRegistrationFee()
-                try? await Task.sleep(for: .seconds(3))
-            }
+        .fileImporter(
+            isPresented: $showingNinImporter,
+            allowedContentTypes: [.pdf],
+            allowsMultipleSelection: false
+        ) { result in
+            importPdfDocument(from: result) { ninDocumentData = $0 }
         }
-        .sheet(item: $doctorSignupPayment) { request in
-            let fee = appViewModel.doctorRegistrationFee
-            PaymentCheckoutView(
-                doctor: request.doctor,
-                amount: fee,
-                initialMethod: .mobileMoney,
-                onPaymentConfirmed: {
-                    doctorSignupPayment = nil
-                    appViewModel.register(
-                        fullName: request.fullName,
-                        email: request.email,
-                        phoneDigits: request.phoneDigits,
-                        password: request.password,
-                        role: .doctor,
-                        regNo: request.regNo
-                    )
-                }
+        .fileImporter(
+            isPresented: $showingMctImporter,
+            allowedContentTypes: [.pdf],
+            allowsMultipleSelection: false
+        ) { result in
+            importPdfDocument(from: result) { mctCertificateData = $0 }
+        }
+    }
+
+    private func importPdfDocument(from result: Result<[URL], Error>, assign: (Data?) -> Void) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            guard url.startAccessingSecurityScopedResource() else {
+                appViewModel.alertState = AlertState(
+                    title: appViewModel.tr("error"),
+                    message: appViewModel.tr("document_pdf_only")
+                )
+                assign(nil)
+                return
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
+            guard let data = try? Data(contentsOf: url), ValidationService.isPdfData(data) else {
+                assign(nil)
+                appViewModel.alertState = AlertState(
+                    title: appViewModel.tr("error"),
+                    message: appViewModel.tr("document_pdf_only")
+                )
+                return
+            }
+            assign(data)
+        case .failure(let error):
+            assign(nil)
+            appViewModel.alertState = AlertState(
+                title: appViewModel.tr("error"),
+                message: error.localizedDescription
             )
         }
     }
-}
 
-private struct DoctorSignupPaymentRequest: Identifiable {
-    let id = UUID()
-    let doctor: DoctorSummary
-    let fullName: String
-    let email: String
-    let phoneDigits: String
-    let password: String
-    let regNo: String
+    @ViewBuilder
+    private func documentPickerRow(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: selected ? "checkmark.circle.fill" : "doc.badge.plus")
+                    .foregroundStyle(selected ? HASETTheme.greenPrimary : HASETTheme.textSecondary)
+                Text(title)
+                    .font(HASETTheme.font(.regular, 14))
+                    .foregroundStyle(HASETTheme.textPrimary)
+                Spacer()
+                Text(selected ? appViewModel.tr("document_selected") : appViewModel.tr("document_upload"))
+                    .font(HASETTheme.font(.medium, 13))
+                    .foregroundStyle(HASETTheme.greenPrimary)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.white)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func submitRegistration() async {
+        uploadingDocuments = true
+        defer { uploadingDocuments = false }
+
+        var ninUrl: String?
+        var mctUrl: String?
+        if role == .doctor {
+            let authService = AuthService()
+            do {
+                if let ninDocumentData {
+                    guard ValidationService.isPdfData(ninDocumentData) else {
+                        appViewModel.alertState = AlertState(
+                            title: appViewModel.tr("error"),
+                            message: appViewModel.tr("document_pdf_only")
+                        )
+                        return
+                    }
+                    ninUrl = try await authService.uploadVerificationDocument(
+                        ninDocumentData,
+                        fileName: "nin_document.pdf",
+                        mimeType: "application/pdf"
+                    )
+                }
+                if let mctCertificateData {
+                    guard ValidationService.isPdfData(mctCertificateData) else {
+                        appViewModel.alertState = AlertState(
+                            title: appViewModel.tr("error"),
+                            message: appViewModel.tr("document_pdf_only")
+                        )
+                        return
+                    }
+                    mctUrl = try await authService.uploadVerificationDocument(
+                        mctCertificateData,
+                        fileName: "mct_certificate.pdf",
+                        mimeType: "application/pdf"
+                    )
+                }
+            } catch {
+                appViewModel.alertState = AlertState(
+                    title: appViewModel.tr("registration_failed"),
+                    message: error.localizedDescription
+                )
+                return
+            }
+        }
+
+        appViewModel.register(
+            fullName: fullName,
+            email: email,
+            phoneDigits: phone,
+            password: password,
+            role: role,
+            regNo: regNo,
+            nin: nin,
+            ninDocumentUrl: ninUrl,
+            mctCertificateUrl: mctUrl
+        )
+    }
 }
 
 private struct CheckboxToggleStyle: ToggleStyle {
@@ -896,6 +997,102 @@ struct ForgotPasswordView: View {
                 }
             }
             .padding(24)
+        }
+    }
+}
+
+struct ResetPasswordConfirmView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    let initialCode: String
+    @State private var linkInput: String
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var verifiedEmail: String?
+    @State private var showPasteField: Bool
+
+    init(initialCode: String) {
+        self.initialCode = initialCode
+        _linkInput = State(initialValue: initialCode)
+        _showPasteField = State(initialValue: initialCode.isEmpty)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    if showPasteField {
+                        RoundedInputField(
+                            title: appViewModel.tr("paste_reset_link"),
+                            systemImage: "link",
+                            text: $linkInput
+                        )
+                    }
+
+                    if let verifiedEmail {
+                        Text("Reset code verified for \(verifiedEmail)")
+                            .font(HASETTheme.font(.regular, 14))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    RoundedInputField(
+                        title: appViewModel.tr("reset_new_password"),
+                        systemImage: "lock",
+                        text: $newPassword,
+                        isSecure: true
+                    )
+                    RoundedInputField(
+                        title: appViewModel.tr("reset_confirm_password"),
+                        systemImage: "lock",
+                        text: $confirmPassword,
+                        isSecure: true
+                    )
+
+                    Button(appViewModel.tr("reset_password_action")) {
+                        Task {
+                            let code = PasswordResetLinkParser.extractOobCode(from: linkInput) ?? linkInput
+                            if verifiedEmail == nil {
+                                do {
+                                    let email = try await AuthService().verifyPasswordResetCode(code)
+                                    verifiedEmail = email
+                                    linkInput = code
+                                    return
+                                } catch {
+                                    appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
+                                    return
+                                }
+                            }
+                            if await appViewModel.confirmPasswordReset(
+                                oobCode: code,
+                                newPassword: newPassword,
+                                confirmPassword: confirmPassword
+                            ) {
+                                dismiss()
+                            }
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
+                .padding(24)
+            }
+            .navigationTitle(appViewModel.tr("forgot_password"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(appViewModel.tr("close")) {
+                        appViewModel.pendingPasswordResetCode = nil
+                        dismiss()
+                    }
+                }
+            }
+            .task {
+                guard !initialCode.isEmpty else { return }
+                if let email = try? await AuthService().verifyPasswordResetCode(initialCode) {
+                    verifiedEmail = email
+                }
+            }
         }
     }
 }

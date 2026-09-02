@@ -73,6 +73,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     private DoctorHomeViewModel viewModel;
     private LinearLayout emptyState;
     private android.widget.ProgressBar progressBar;
+    private com.google.android.material.card.MaterialCardView cardPendingApproval;
 
     // Header Profile Components
     private ImageView ivProfileHeader;
@@ -158,6 +159,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         ivProfileHeader = view.findViewById(R.id.ivProfileHeader);
         shimmerPageLoading = view.findViewById(R.id.shimmerPageLoading);
         layoutHomeContent = view.findViewById(R.id.layoutHomeContent);
+        cardPendingApproval = view.findViewById(R.id.cardPendingApproval);
         shimmerProfileHeader = view.findViewById(R.id.shimmerProfileHeader);
         profileImageContainer = view.findViewById(R.id.profileImageContainer);
         
@@ -170,6 +172,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         }
         
         refreshHeaderProfile();
+        loadApprovalBanner();
 
         ivNotification = view.findViewById(R.id.ivNotification);
         tvNotificationBadge = view.findViewById(R.id.tvNotificationBadge);
@@ -826,6 +829,30 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         }
         refreshHeaderProfile();
         loadDoctorOnlineStatus();
+        loadApprovalBanner();
+    }
+
+    private void loadApprovalBanner() {
+        if (cardPendingApproval == null || preferenceManager == null) return;
+        String userId = preferenceManager.getUserId();
+        if (userId == null || userId.isEmpty()) {
+            cardPendingApproval.setVisibility(View.GONE);
+            return;
+        }
+        FirebaseHelper.getDoctorApprovalStatus(userId, new FirebaseHelper.OnCompleteListener<Boolean>() {
+            @Override
+            public void onSuccess(Boolean approved) {
+                if (!isAdded() || cardPendingApproval == null) return;
+                cardPendingApproval.setVisibility(Boolean.TRUE.equals(approved) ? View.GONE : View.VISIBLE);
+            }
+
+            @Override
+            public void onError(String error) {
+                if (isAdded() && cardPendingApproval != null) {
+                    cardPendingApproval.setVisibility(View.GONE);
+                }
+            }
+        });
     }
     
     @Override

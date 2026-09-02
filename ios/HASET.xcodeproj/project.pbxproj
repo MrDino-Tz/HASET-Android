@@ -19,6 +19,12 @@
 		4C11A0070A0010000A001000 /* a_airtel_money.png in Resources */ = {isa = PBXBuildFile; fileRef = 4C11A0080A0010000A001000 /* a_airtel_money.png */; };
 		4C11A0090A0010000A001000 /* a_ttcl_pesa.png in Resources */ = {isa = PBXBuildFile; fileRef = 4C11A00A0A0010000A001000 /* a_ttcl_pesa.png */; };
 		52DA4210D91D4618CA6A8F15 /* DashboardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387C6EEF26E31238CF1A8BBC /* DashboardViews.swift */; };
+		4C11A0100A0010000A001000 /* PlatformHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11A0110A0010000A001000 /* PlatformHelpers.swift */; };
+		4C11A0120A0010000A001000 /* PrescriptionsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11A0130A0010000A001000 /* PrescriptionsViews.swift */; };
+		4C11A0140A0010000A001000 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11A0150A0010000A001000 /* PushNotificationService.swift */; };
+		4C11A0160A0010000A001000 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4C11A0170A0010000A001000 /* GoogleService-Info.plist */; };
+		4C11A0180A0010000A001000 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4C11A01A0A0010000A001000 /* FirebaseCore */; };
+		4C11A0190A0010000A001000 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 4C11A01B0A0010000A001000 /* FirebaseMessaging */; };
 		5E064768D0BAA590AC097C88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 22E4F6650BEE9A7D875E2D74 /* Assets.xcassets */; };
 		534A56BD5F8B066A23367FE7 /* app_logo_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 1282AB8206000ACD25846A45 /* app_logo_icon.png */; };
 		5A1EA944A3C7640161980FA9 /* Poppins-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FBCFC4155A63C194B2E20F0A /* Poppins-Black.ttf */; };
@@ -47,6 +53,12 @@
 		22E4F6650BEE9A7D875E2D74 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		20CE8F9D8F93CCDE21CA92E6 /* HASETApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HASETApp.swift; sourceTree = "<group>"; };
 		387C6EEF26E31238CF1A8BBC /* DashboardViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardViews.swift; sourceTree = "<group>"; };
+		4C11A0110A0010000A001000 /* PlatformHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlatformHelpers.swift; sourceTree = "<group>"; };
+		4C11A0130A0010000A001000 /* PrescriptionsViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrescriptionsViews.swift; sourceTree = "<group>"; };
+		4C11A0150A0010000A001000 /* PushNotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
+		4C11A0170A0010000A001000 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		4C11A01C0A0010000A001000 /* HASET.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = HASET.entitlements; sourceTree = "<group>"; };
+		4C11A01E0A0010000A001000 /* HASETRelease.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = HASETRelease.entitlements; sourceTree = "<group>"; };
 		59FFA93A8DFF1DE3D57F3442 /* Poppins-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Poppins-Medium.ttf"; sourceTree = "<group>"; };
 		61166AD2CAB696D1B970684E /* onboard_img1.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = onboard_img1.png; sourceTree = "<group>"; };
 		69811585B8EF0E3DE41CB246 /* full_afyaplus_logo.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = full_afyaplus_logo.png; sourceTree = "<group>"; };
@@ -72,6 +84,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				12B828107909D9C86190915B /* Foundation.framework in Frameworks */,
+				4C11A0180A0010000A001000 /* FirebaseCore in Frameworks */,
+				4C11A0190A0010000A001000 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +145,12 @@
 				78245DA81ACAB1C1B5F21654 /* RootView.swift */,
 				7A8CEC8F18A08B49B0C3016A /* AuthViews.swift */,
 				387C6EEF26E31238CF1A8BBC /* DashboardViews.swift */,
+				4C11A0110A0010000A001000 /* PlatformHelpers.swift */,
+				4C11A0130A0010000A001000 /* PrescriptionsViews.swift */,
+				4C11A0150A0010000A001000 /* PushNotificationService.swift */,
+				4C11A0170A0010000A001000 /* GoogleService-Info.plist */,
+				4C11A01C0A0010000A001000 /* HASET.entitlements */,
+				4C11A01E0A0010000A001000 /* HASETRelease.entitlements */,
 				E37FA3CA4DBF79B764753B43 /* Info.plist */,
 			);
 			name = HASET;
@@ -179,6 +199,10 @@
 			dependencies = (
 			);
 			name = HASET;
+			packageProductDependencies = (
+				4C11A01A0A0010000A001000 /* FirebaseCore */,
+				4C11A01B0A0010000A001000 /* FirebaseMessaging */,
+			);
 			productName = HASET;
 			productReference = 0A5CBCDB2EF509752DBAB4B0 /* HASET.app */;
 			productType = "com.apple.product-type.application";
@@ -206,6 +230,9 @@
 			productRefGroup = 364825E8340E6EFC4CDADEAE /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				4C11A01D0A0010000A001000 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			targets = (
 				7FB1A63ABBC966DFCB50D02C /* HASET */,
 			);
@@ -233,6 +260,7 @@
 				765DC66D3C1B1DCA6BEAD9DC /* onboard_img1.png in Resources */,
 				DCE2F210EF746C2618281709 /* onboard_img2.png in Resources */,
 				EFC3B3B966881C2899DA2815 /* onboard_img3.png in Resources */,
+				4C11A0160A0010000A001000 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,6 +280,9 @@
 				77B2CA53F5EDCA7B3126CE01 /* RootView.swift in Sources */,
 				B6FB865A7A327571F5FE1C9C /* AuthViews.swift in Sources */,
 				52DA4210D91D4618CA6A8F15 /* DashboardViews.swift in Sources */,
+				4C11A0100A0010000A001000 /* PlatformHelpers.swift in Sources */,
+				4C11A0120A0010000A001000 /* PrescriptionsViews.swift in Sources */,
+				4C11A0140A0010000A001000 /* PushNotificationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,6 +295,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = HASET/HASETRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -351,6 +383,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = HASET/HASET.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -425,6 +458,30 @@
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4C11A01D0A0010000A001000 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4C11A01A0A0010000A001000 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C11A01D0A0010000A001000 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		4C11A01B0A0010000A001000 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C11A01D0A0010000A001000 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCConfigurationList section */
 		293FD9C104D31C361DE9A60E /* Build configuration list for PBXProject "HASET" */ = {

@@ -22,6 +22,7 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.ui.MfaCodeInputView;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.SensitiveActivityHelper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -46,7 +47,8 @@ public class MfaEnrollmentActivity extends BaseActivity {
     private String recoveryCodesRaw;
     private boolean busy;
     @Override protected void onCreate(@Nullable Bundle state) {
-//        super.onCreate(state); getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        super.onCreate(state);
+        SensitiveActivityHelper.blockScreenshots(this);
         setContentView(R.layout.activity_mfa_enrollment);
         manualKey=findViewById(R.id.mfaManualKey); recoveryCodes=findViewById(R.id.mfaRecoveryCodes); codeInput=findViewById(R.id.mfaCodeInput); confirm=findViewById(R.id.mfaConfirm); continueButton=findViewById(R.id.mfaContinue); saved=findViewById(R.id.mfaSaved);
         qrCode=findViewById(R.id.mfaQrCode); qrProgress=findViewById(R.id.mfaQrProgress); qrCard=findViewById(R.id.mfaQrCard); manualContainer=findViewById(R.id.mfaManualContainer); manualToggle=findViewById(R.id.mfaManualToggle); copyKey=findViewById(R.id.mfaCopyKey);

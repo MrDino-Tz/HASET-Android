@@ -2,6 +2,9 @@ package com.haset.hasetapp.models;
 
 import com.google.gson.Gson;
 
+import java.util.Locale;
+import java.util.Map;
+
 public class PaymentStatusResponse {
     private String status;
     private String message;
@@ -42,20 +45,71 @@ public class PaymentStatusResponse {
         public void setExternalReference(String externalReference) { this.external_reference = externalReference; }
         
         public boolean isSuccess() {
-            return "success".equalsIgnoreCase(status);
+            return isSettledPayment(status, payment_status);
         }
-        
+
         public boolean isFailed() {
-            return "failed".equalsIgnoreCase(status) || 
-                   "cancelled".equalsIgnoreCase(status) ||
-                   "expired".equalsIgnoreCase(status) ||
-                   "declined".equalsIgnoreCase(status);
+            return isFailedPayment(status, payment_status);
         }
-        
+
         public boolean isProcessing() {
-            return "processing".equalsIgnoreCase(status) || 
-                   "pending".equalsIgnoreCase(status);
+            if (isSuccess() || isFailed()) {
+                return false;
+            }
+            if (payment_status != null && !payment_status.trim().isEmpty()) {
+                return isPendingPayment(payment_status) || !isSettledPayment(null, payment_status);
+            }
+            return isPendingPayment(status);
         }
+    }
+
+    private static boolean isSettledPayment(String status, String paymentStatus) {
+        if (paymentStatus != null && !paymentStatus.trim().isEmpty()) {
+            if (isPendingPayment(paymentStatus) || isFailedPayment(null, paymentStatus)) {
+                return false;
+            }
+            return isSettledValue(paymentStatus);
+        }
+        return isSettledValue(status);
+    }
+
+    private static boolean isFailedPayment(String status, String paymentStatus) {
+        return isFailedValue(status) || isFailedValue(paymentStatus);
+    }
+
+    private static boolean isSettledValue(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase(Locale.US);
+        return "success".equals(normalized)
+                || "completed".equals(normalized)
+                || "paid".equals(normalized);
+    }
+
+    private static boolean isPendingPayment(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase(Locale.US);
+        return "processing".equals(normalized)
+                || "pending".equals(normalized)
+                || "initiated".equals(normalized)
+                || "submitted".equals(normalized);
+    }
+
+    private static boolean isFailedValue(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase(Locale.US);
+        return "failed".equals(normalized)
+                || "cancelled".equals(normalized)
+                || "canceled".equals(normalized)
+                || "expired".equals(normalized)
+                || "declined".equals(normalized)
+                || "rejected".equals(normalized)
+                || "voided".equals(normalized);
     }
 
     // Getters
@@ -65,7 +119,21 @@ public class PaymentStatusResponse {
         if (transaction != null) {
             return transaction;
         }
-        if (data != null) {
+        if (data instanceof Map<?, ?>) {
+            Map<?, ?> payload = (Map<?, ?>) data;
+            Object nestedTransaction = payload.get("transaction");
+            if (nestedTransaction != null) {
+                try {
+                    return new Gson().fromJson(new Gson().toJson(nestedTransaction), Transaction.class);
+                } catch (RuntimeException ignored) {
+                    return null;
+                }
+            }
+            if (!payload.containsKey("id")
+                    && !payload.containsKey("transaction_id")
+                    && !payload.containsKey("payment_status")) {
+                return null;
+            }
             try {
                 return new Gson().fromJson(new Gson().toJson(data), Transaction.class);
             } catch (RuntimeException ignored) {
@@ -82,6 +150,7 @@ public class PaymentStatusResponse {
     public void setData(Object data) { this.data = data; }
     
     public boolean isSuccess() {
-        return "success".equalsIgnoreCase(status);
+        Transaction resolved = getTransaction();
+        return resolved != null && resolved.isSuccess();
     }
 }

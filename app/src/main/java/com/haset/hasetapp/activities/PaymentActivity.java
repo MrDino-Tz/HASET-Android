@@ -26,7 +26,7 @@ import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.PreferenceManager;
-import com.haset.hasetapp.utils.RootIntegrityHelper;
+// import com.haset.hasetapp.utils.RootIntegrityHelper;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.PaymentViewModel;
 
@@ -52,10 +52,10 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
     private String serviceMessageId = null;
     private String chatRoomId = null;
     private String consultationId;
-    private boolean cardCheckoutOpened = false;
+    // private boolean cardCheckoutOpened = false;
     private DatabaseReference registrationFeeRef;
     private ValueEventListener registrationFeeListener;
-    private boolean securityWarningShown = false;
+    // private boolean securityWarningShown = false;
 
     private static final String STATE_CONSULTATION_ID = "payment_consultation_id";
 
@@ -73,7 +73,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 //        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_payment);
-        maybeShowSecurityWarning();
+        // maybeShowSecurityWarning();
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -98,7 +98,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         if (TextUtils.isEmpty(consultationId)) {
             consultationId = !TextUtils.isEmpty(serviceMessageId)
                 ? "service-" + serviceMessageId
-                : "consult-" + UUID.randomUUID().toString();
+                : buildDefaultConsultationId();
         }
 
         initViews();
@@ -109,6 +109,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         setupClickListeners();
     }
 
+    /*
     private void maybeShowSecurityWarning() {
         if (securityWarningShown || !RootIntegrityHelper.isPotentiallyCompromised(this)) {
             return;
@@ -124,6 +125,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             v -> finish()
         );
     }
+    */
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -171,6 +173,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             }
         });
 
+        /*
         viewModel.getPaymentUrl().observe(this, paymentUrl -> {
             if (paymentUrl == null || paymentUrl.trim().isEmpty()) return;
             try {
@@ -183,6 +186,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 tvSelectedPaymentDetails.setText(R.string.card_checkout_unavailable);
             }
         });
+        */
 
         viewModel.getSuccess().observe(this, success -> {
             if (success != null && success) {
@@ -333,11 +337,27 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 finish();
             };
             if (isDoctorRegistrationPayment()) {
-                Map<String, Object> updates = new HashMap<>();
-                updates.put("registrationPaymentStatus", "paid");
+                String userId = getCurrentUserId();
+                Map<String, Object> doctorUpdates = new HashMap<>();
+                doctorUpdates.put("registrationPaymentStatus", "paid");
+
+                Map<String, Object> paymentUpdates = new HashMap<>();
+                paymentUpdates.put("status", "paid");
+                paymentUpdates.put("paymentStatus", "paid");
+                paymentUpdates.put("paidAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+                int transactionId = viewModel.getCurrentTransactionId();
+                if (transactionId > 0) {
+                    paymentUpdates.put("transactionId", transactionId);
+                }
+
                 com.haset.hasetapp.utils.FirebaseHelper.getDoctorsNodeRef()
-                    .child(getCurrentUserId()).updateChildren(updates)
-                    .addOnCompleteListener(ignored -> complete.run());
+                    .child(userId)
+                    .updateChildren(doctorUpdates)
+                    .addOnCompleteListener(ignored ->
+                        com.haset.hasetapp.utils.FirebaseHelper.getRegistrationPaymentsRef()
+                            .child(consultationId)
+                            .updateChildren(paymentUpdates)
+                            .addOnCompleteListener(ignored2 -> complete.run()));
             } else {
                 complete.run();
             }
@@ -528,22 +548,20 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_payment_method, null);
         
         androidx.cardview.widget.CardView llMobileMoney = view.findViewById(R.id.llMobileMoney);
-        androidx.cardview.widget.CardView llCardPayment = view.findViewById(R.id.llCardPayment);
+        // Card / bank payments disabled for now — mobile money only.
+        // androidx.cardview.widget.CardView llCardPayment = view.findViewById(R.id.llCardPayment);
         
         llMobileMoney.setOnClickListener(v -> {
             bottomSheetDialog.dismiss();
             showMobileMoneyProvidersBottomSheet();
         });
         
+        /*
         llCardPayment.setOnClickListener(v -> {
             bottomSheetDialog.dismiss();
-            paymentMethodCode = "card";
-            paymentMethod = getString(R.string.payment_card_payment);
-            paymentProvider = "";
-            paymentAccount = "";
-            updatePaymentMethodDisplay(paymentMethod, "", getString(R.string.hosted_card_checkout));
-            enablePayButton();
+            showCardPaymentProvidersBottomSheet();
         });
+        */
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
@@ -604,6 +622,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         bottomSheetDialog.show();
     }
 
+    /*
     private void showCardPaymentProvidersBottomSheet() {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
         View view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_card_payment_providers, null);
@@ -642,6 +661,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
     }
+    */
 
     private void showMobileNumberInputBottomSheet(String providerName, int providerImageResId) {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
@@ -737,6 +757,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         bottomSheetDialog.show();
     }
 
+    /*
     private void showAccountNumberInputBottomSheet(String providerName) {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
         View view = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_account_number_input, null);
@@ -858,12 +879,11 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
     }
+    */
 
     private void updatePaymentMethodDisplay(String method, String provider, String wallet) {
-        // Update the payment method button text
         tvPaymentMethod.setText(method);
-        
-        // Show the selected payment details below
+
         String details = provider + " • " + wallet;
         tvSelectedPaymentDetails.setText(details);
         tvSelectedPaymentDetails.setVisibility(View.VISIBLE);
@@ -885,11 +905,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         return formatted.toString();
     }
 
+    /*
     private String formatAccountNumberForDisplay(String number) {
-        // Remove all spaces
         String digits = number.replaceAll("\\s", "");
-        
-        // Format: XXXX XXXX XXXX XXXX (groups of 4)
         StringBuilder formatted = new StringBuilder();
         for (int i = 0; i < digits.length(); i++) {
             if (i > 0 && i % 4 == 0) {
@@ -897,9 +915,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             }
             formatted.append(digits.charAt(i));
         }
-        
         return formatted.toString();
     }
+    */
 
     private void enablePayButton() {
         btnPayNow.setEnabled(true);
@@ -1008,14 +1026,15 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             return;
         }
 
-        DatabaseReference appointmentRef = com.haset.hasetapp.utils.FirebaseHelper
-                .getAppointmentsRef()
-                .child(consultationId);
-        if (isSyntheticPaymentConsultation(doctorId)) {
-            writePriceVerificationRecord(appointmentRef, userId, doctorId, callback);
+        boolean synthetic = isSyntheticPaymentConsultation(doctorId);
+        DatabaseReference recordRef = synthetic
+                ? com.haset.hasetapp.utils.FirebaseHelper.getRegistrationPaymentsRef().child(consultationId)
+                : com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef().child(consultationId);
+        if (synthetic) {
+            writePriceVerificationRecord(recordRef, userId, doctorId, callback);
             return;
         }
-        appointmentRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        recordRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -1023,7 +1042,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                     return;
                 }
 
-                writePriceVerificationRecord(appointmentRef, userId, doctorId, callback);
+                writePriceVerificationRecord(recordRef, userId, doctorId, callback);
             }
 
             @Override
@@ -1035,31 +1054,33 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 
     private boolean isSyntheticPaymentConsultation(String doctorId) {
         return "doctor_registration".equals(doctorId)
+                || consultationId.startsWith("registration-")
                 || consultationId.startsWith("service-")
                 || consultationId.startsWith("consult-");
     }
 
-    private void writePriceVerificationRecord(DatabaseReference appointmentRef, String userId,
+    private void writePriceVerificationRecord(DatabaseReference recordRef, String userId,
                                               String doctorId, PaymentStartCallback callback) {
-        Map<String, Object> appointment = new HashMap<>();
-        appointment.put("appointmentId", consultationId);
-        appointment.put("patientId", userId);
-        appointment.put("doctorId", doctorId);
-        appointment.put("patientName", new PreferenceManager(PaymentActivity.this).getUserName());
-        appointment.put("doctorName", doctor != null ? doctor.getFullName() : "");
-        appointment.put("date", "");
-        appointment.put("time", "");
-        appointment.put("reason", "doctor_registration".equals(doctorId)
+        Map<String, Object> record = new HashMap<>();
+        record.put("appointmentId", consultationId);
+        record.put("consultationId", consultationId);
+        record.put("patientId", userId);
+        record.put("doctorId", doctorId);
+        record.put("patientName", new PreferenceManager(PaymentActivity.this).getUserName());
+        record.put("doctorName", doctor != null ? doctor.getFullName() : "");
+        record.put("date", "");
+        record.put("time", "");
+        record.put("reason", "doctor_registration".equals(doctorId)
                 ? "Doctor registration payment"
                 : "Service payment");
-        appointment.put("status", "pending");
-        appointment.put("appointmentType", "doctor_registration".equals(doctorId)
+        record.put("status", "pending");
+        record.put("appointmentType", "doctor_registration".equals(doctorId)
                 ? "Doctor Registration"
                 : "Service");
-        appointment.put("amount", Math.round(consultationFee));
-        appointment.put("createdAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+        record.put("amount", Math.round(consultationFee));
+        record.put("createdAt", com.google.firebase.database.ServerValue.TIMESTAMP);
 
-        appointmentRef.setValue(appointment)
+        recordRef.setValue(record)
                 .addOnSuccessListener(ignored -> callback.onReady())
                 .addOnFailureListener(error -> callback.onError(
                         error.getMessage() != null
@@ -1084,5 +1105,15 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 
     private boolean isDoctorRegistrationPayment() {
         return doctor != null && "doctor_registration".equals(doctor.getDoctorId());
+    }
+
+    private String buildDefaultConsultationId() {
+        if (isDoctorRegistrationPayment()) {
+            String userId = getCurrentUserId();
+            if (!TextUtils.isEmpty(userId)) {
+                return "registration-" + userId;
+            }
+        }
+        return "consult-" + UUID.randomUUID();
     }
 }

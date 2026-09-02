@@ -108,10 +108,17 @@ struct AlertState: Identifiable {
     let message: String
 }
 
+struct BlockingDialogState: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+    let updateURL: String?
+}
+
 struct PendingDoctorRegistration: Identifiable {
     let id = UUID()
     let doctor: DoctorSummary
-    let completion: () -> Void
+    let amount: Double
 }
 
 struct DoctorSummary: Identifiable, Hashable {
@@ -126,6 +133,7 @@ struct DoctorSummary: Identifiable, Hashable {
     let rating: Double
     let experienceYears: Int?
     let verified: Bool
+    let isDemo: Bool
     let consultationFee: String
     let availableToday: Bool
     let profileImage: String?
@@ -298,6 +306,62 @@ struct HospitalSummary: Identifiable, Hashable {
     let name: String
     let location: String
     let distance: String
+    let address: String?
+    let city: String?
+    let phone: String?
+    let latitude: Double?
+    let longitude: Double?
+
+    var mapsQuery: String {
+        var parts = [name]
+        if let address, !address.isEmpty { parts.append(address) }
+        else if !location.isEmpty { parts.append(location) }
+        if let city, !city.isEmpty { parts.append(city) }
+        return parts.joined(separator: ", ")
+    }
+}
+
+struct PrescriptionMedicine: Identifiable, Hashable, Codable {
+    let id: String
+    let name: String
+    let dosage: String
+    let frequency: String
+    let duration: Int
+}
+
+struct PrescriptionSummary: Identifiable, Hashable {
+    let id: String
+    let appointmentId: String?
+    let patientId: String
+    let patientName: String
+    let doctorId: String
+    let doctorName: String
+    let medicines: [PrescriptionMedicine]
+    let instructions: String
+    let imageUrl: String?
+    let createdAt: TimeInterval?
+}
+
+struct PharmacyProductSummary: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let description: String
+    let category: String
+    let price: Double
+    let imageUrl: String?
+    let manufacturer: String?
+    let inStock: Bool
+}
+
+struct PharmacyCartItem: Identifiable, Hashable {
+    let id: String
+    let productId: String
+    let name: String
+    let price: Double
+    let quantity: Int
+    let imageUrl: String?
+
+    var lineTotal: Double { price * Double(quantity) }
 }
 
 struct PharmacyCategory: Identifiable, Hashable {
@@ -445,16 +509,35 @@ struct PaymentStatusEnvelope: Decodable {
         }
 
         var isSuccess: Bool {
-            status.caseInsensitiveCompare("success") == .orderedSame
+            let payment = paymentStatus?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+            if !payment.isEmpty {
+                if Self.pendingValues.contains(payment) || Self.failedValues.contains(payment) {
+                    return false
+                }
+                return Self.settledValues.contains(payment)
+            }
+            return Self.settledValues.contains(status.lowercased())
         }
 
         var isFailed: Bool {
-            ["failed", "cancelled", "expired", "declined"].contains(status.lowercased())
+            Self.failedValues.contains(status.lowercased())
+                || Self.failedValues.contains((paymentStatus ?? "").lowercased())
         }
 
         var isProcessing: Bool {
-            ["processing", "pending"].contains(status.lowercased())
+            if isSuccess || isFailed { return false }
+            let payment = paymentStatus?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+            if !payment.isEmpty {
+                return Self.pendingValues.contains(payment) || !Self.settledValues.contains(payment)
+            }
+            return Self.pendingValues.contains(status.lowercased())
         }
+
+        private static let settledValues: Set<String> = ["success", "completed", "paid"]
+        private static let pendingValues: Set<String> = ["processing", "pending", "initiated", "submitted"]
+        private static let failedValues: Set<String> = [
+            "failed", "cancelled", "canceled", "expired", "declined", "rejected", "voided"
+        ]
     }
 
     let status: String

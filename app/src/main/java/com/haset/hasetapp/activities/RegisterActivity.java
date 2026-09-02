@@ -1,7 +1,9 @@
 package com.haset.hasetapp.activities;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,6 +27,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.UserEntity;
+import com.haset.hasetapp.utils.CloudinaryUploadHelper;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ValidationUtils;
@@ -37,8 +40,15 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 
 public class RegisterActivity extends BaseActivity {
     private static final String TAG = "HASETDoctorFlow";
-    private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo;
-    private com.google.android.material.textfield.TextInputLayout tilRegNo;
+    private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo, etNin;
+    private com.google.android.material.textfield.TextInputLayout tilRegNo, tilNin;
+    private LinearLayout layoutDoctorDocuments;
+    private MaterialButton btnUploadNin, btnUploadMct;
+    private TextView tvNinUploadStatus, tvMctUploadStatus;
+    private Uri ninDocumentUri;
+    private Uri mctCertificateUri;
+    private String pendingNinDocumentUrl;
+    private String pendingMctCertificateUrl;
     private com.google.android.material.progressindicator.LinearProgressIndicator passwordStrengthBar;
     private TextView tvPasswordStrength;
     private MaterialButton btnRegister;
@@ -52,6 +62,38 @@ public class RegisterActivity extends BaseActivity {
 
     private AuthViewModel authViewModel;
     private ActivityResultLauncher<Intent> doctorPaymentLauncher;
+    private final ActivityResultLauncher<String[]> ninPicker =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null) return;
+                if (!ValidationUtils.isPdfDocument(getContentResolver(), uri)) {
+                    ninDocumentUri = null;
+                    com.haset.hasetapp.utils.SnackbarHelper.error(
+                            findViewById(android.R.id.content), getString(R.string.error_document_pdf_only));
+                    return;
+                }
+                persistReadPermission(uri);
+                ninDocumentUri = uri;
+                if (tvNinUploadStatus != null) {
+                    tvNinUploadStatus.setText(R.string.nin_document_selected);
+                    tvNinUploadStatus.setTextColor(getResources().getColor(R.color.green_primary));
+                }
+            });
+    private final ActivityResultLauncher<String[]> mctPicker =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null) return;
+                if (!ValidationUtils.isPdfDocument(getContentResolver(), uri)) {
+                    mctCertificateUri = null;
+                    com.haset.hasetapp.utils.SnackbarHelper.error(
+                            findViewById(android.R.id.content), getString(R.string.error_document_pdf_only));
+                    return;
+                }
+                persistReadPermission(uri);
+                mctCertificateUri = uri;
+                if (tvMctUploadStatus != null) {
+                    tvMctUploadStatus.setText(R.string.mct_certificate_selected);
+                    tvMctUploadStatus.setTextColor(getResources().getColor(R.color.green_primary));
+                }
+            });
     private UserEntity pendingDoctorUser;
     private String pendingDoctorEmail;
     private String pendingDoctorPassword;
@@ -143,6 +185,13 @@ public class RegisterActivity extends BaseActivity {
         etPassword = findViewById(R.id.etPassword);
         etRegNo = findViewById(R.id.etRegNo);
         tilRegNo = findViewById(R.id.tilRegNo);
+        etNin = findViewById(R.id.etNin);
+        tilNin = findViewById(R.id.tilNin);
+        layoutDoctorDocuments = findViewById(R.id.layoutDoctorDocuments);
+        btnUploadNin = findViewById(R.id.btnUploadNin);
+        btnUploadMct = findViewById(R.id.btnUploadMct);
+        tvNinUploadStatus = findViewById(R.id.tvNinUploadStatus);
+        tvMctUploadStatus = findViewById(R.id.tvMctUploadStatus);
         passwordStrengthBar = findViewById(R.id.passwordStrengthBar);
         tvPasswordStrength = findViewById(R.id.tvPasswordStrength);
         btnRegister = findViewById(R.id.btnRegister);
@@ -150,8 +199,10 @@ public class RegisterActivity extends BaseActivity {
         tvRole = findViewById(R.id.tvRole);
         btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         
-        if (Constants.ROLE_DOCTOR.equals(userRole) && tilRegNo != null) {
-            tilRegNo.setVisibility(android.view.View.VISIBLE);
+        if (Constants.ROLE_DOCTOR.equals(userRole)) {
+            if (tilRegNo != null) tilRegNo.setVisibility(android.view.View.VISIBLE);
+            if (tilNin != null) tilNin.setVisibility(android.view.View.VISIBLE);
+            if (layoutDoctorDocuments != null) layoutDoctorDocuments.setVisibility(android.view.View.VISIBLE);
         }
         
         setupClickListeners();
@@ -285,6 +336,15 @@ public class RegisterActivity extends BaseActivity {
             
         findViewById(R.id.tvTermsOfService).setOnClickListener(v -> 
             openWebPage(Constants.TERMS_CONDITIONS_URL));
+
+        if (btnUploadNin != null) {
+            btnUploadNin.setOnClickListener(v ->
+                    ninPicker.launch(new String[]{"application/pdf"}));
+        }
+        if (btnUploadMct != null) {
+            btnUploadMct.setOnClickListener(v ->
+                    mctPicker.launch(new String[]{"application/pdf"}));
+        }
     }
 
     private void setupObservers() {
@@ -401,6 +461,7 @@ public class RegisterActivity extends BaseActivity {
         }
 
         String regNo = "";
+        String nin = "";
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
             if (etRegNo != null) {
                 regNo = etRegNo.getText().toString().trim();
@@ -409,10 +470,38 @@ public class RegisterActivity extends BaseActivity {
                     return;
                 }
             }
+            nin = etNin != null && etNin.getText() != null ? etNin.getText().toString().trim() : "";
+            if (nin.isEmpty()) {
+                if (etNin != null) etNin.setError(getString(R.string.nin_required));
+                return;
+            }
+            if (!ValidationUtils.isValidNin(nin)) {
+                if (etNin != null) etNin.setError(getString(R.string.error_valid_nin));
+                return;
+            }
+            if (ninDocumentUri == null) {
+                com.haset.hasetapp.utils.SnackbarHelper.error(
+                        findViewById(android.R.id.content), getString(R.string.error_nin_document_required));
+                return;
+            }
+            if (!ValidationUtils.isPdfDocument(getContentResolver(), ninDocumentUri)) {
+                com.haset.hasetapp.utils.SnackbarHelper.error(
+                        findViewById(android.R.id.content), getString(R.string.error_document_pdf_only));
+                return;
+            }
+            if (mctCertificateUri == null) {
+                com.haset.hasetapp.utils.SnackbarHelper.error(
+                        findViewById(android.R.id.content), getString(R.string.error_mct_certificate_required));
+                return;
+            }
+            if (!ValidationUtils.isPdfDocument(getContentResolver(), mctCertificateUri)) {
+                com.haset.hasetapp.utils.SnackbarHelper.error(
+                        findViewById(android.R.id.content), getString(R.string.error_document_pdf_only));
+                return;
+            }
         }
 
         btnRegister.setEnabled(false);
-//        CustomDialog.showLoading(this, getString(R.string.creating_account));
 
         UserEntity newUser = new UserEntity();
         newUser.setEmail(email);
@@ -421,14 +510,83 @@ public class RegisterActivity extends BaseActivity {
         newUser.setRole(userRole);
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
             newUser.setRegNo(regNo);
+            newUser.setNin(nin);
         }
         newUser.setCreatedAt(System.currentTimeMillis());
 
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
-            // Account creation and custom verification email happen before payment.
-            authViewModel.register(email, password, newUser);
+            uploadDoctorDocumentsThenRegister(email, password, newUser);
         } else {
             authViewModel.register(email, password, newUser);
+        }
+    }
+
+    private void uploadDoctorDocumentsThenRegister(String email, String password, UserEntity newUser) {
+        CustomDialog.showLoading(this, getString(R.string.uploading_documents));
+        String ninType = uploadTypeFor(ninDocumentUri);
+        CloudinaryUploadHelper.uploadFile(this, ninDocumentUri, ninType, "nin_document",
+                "doctor_verification", new CloudinaryUploadHelper.OnFileUploadListener() {
+                    @Override
+                    public void onUploadStart() {}
+
+                    @Override
+                    public void onUploadProgress(double progress) {}
+
+                    @Override
+                    public void onUploadSuccess(String downloadUrl, String fileName) {
+                        pendingNinDocumentUrl = downloadUrl;
+                        uploadMctCertificateThenRegister(email, password, newUser);
+                    }
+
+                    @Override
+                    public void onUploadError(String error) {
+                        CustomDialog.hideLoading();
+                        resetRegisterButton();
+                        com.haset.hasetapp.utils.SnackbarHelper.error(
+                                findViewById(android.R.id.content),
+                                error != null ? error : getString(R.string.error_nin_document_required));
+                    }
+                });
+    }
+
+    private void uploadMctCertificateThenRegister(String email, String password, UserEntity newUser) {
+        String mctType = uploadTypeFor(mctCertificateUri);
+        CloudinaryUploadHelper.uploadFile(this, mctCertificateUri, mctType, "mct_certificate",
+                "doctor_verification", new CloudinaryUploadHelper.OnFileUploadListener() {
+                    @Override
+                    public void onUploadStart() {}
+
+                    @Override
+                    public void onUploadProgress(double progress) {}
+
+                    @Override
+                    public void onUploadSuccess(String downloadUrl, String fileName) {
+                        pendingMctCertificateUrl = downloadUrl;
+                        newUser.setNinDocumentUrl(pendingNinDocumentUrl);
+                        newUser.setMctCertificateUrl(pendingMctCertificateUrl);
+                        authViewModel.register(email, password, newUser);
+                    }
+
+                    @Override
+                    public void onUploadError(String error) {
+                        CustomDialog.hideLoading();
+                        resetRegisterButton();
+                        com.haset.hasetapp.utils.SnackbarHelper.error(
+                                findViewById(android.R.id.content),
+                                error != null ? error : getString(R.string.error_mct_certificate_required));
+                    }
+                });
+    }
+
+    private String uploadTypeFor(Uri uri) {
+        return "document";
+    }
+
+    private void persistReadPermission(Uri uri) {
+        try {
+            getContentResolver().takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (SecurityException ignored) {
         }
     }
 

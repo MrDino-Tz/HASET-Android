@@ -18,6 +18,7 @@ public class Constants {
     public static final String USERS_PATH = "users";
     public static final String DOCTORS_PATH = "doctors";
     public static final String APPOINTMENTS_PATH = "appointments";
+    public static final String REGISTRATION_PAYMENTS_PATH = "registration_payments";
     public static final String MESSAGES_PATH = "messages";
     public static final String PRESCRIPTIONS_PATH = "prescriptions";
     public static final String NOTIFICATIONS_PATH = "notifications";
@@ -168,7 +169,7 @@ public class Constants {
 
     /** Login alias that maps to the admin Firebase email. */
     public static final String ADMIN_LOGIN_ALIAS = "admin";
-    public static final String ADMIN_EMAIL = "kilindosaid771@gmail.com";
+    public static final String ADMIN_EMAIL = "admin@hasethospital.or.tz";
 
     public static String resolveLoginEmail(String identifier) {
         if (identifier != null && ADMIN_LOGIN_ALIAS.equalsIgnoreCase(identifier.trim())) {

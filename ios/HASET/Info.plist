@@ -34,6 +34,23 @@
 	<string>Allow HASET to access your photos for uploads and profile pictures.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Allow HASET to send appointment, chat, and article notifications.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.44252460208-uv6f9p47ti6jk1dqbdgps3knsfjvapsb</string>
+			</array>
+		</dict>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

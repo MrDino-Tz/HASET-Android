@@ -53,7 +53,8 @@
     <string name="send_reset_link">Send Reset Link</string>
     <string name="remember_password">Remember your password?</string>
     <string name="sending_reset_email">Sending reset email...</string>
-    <string name="reset_email_sent">If an account exists for this email, a reset link has been sent.</string>
+    <string name="reset_email_sent">A password reset link has been sent to your email. Please check your inbox and spam folder.</string>
+    <string name="reset_email_not_found">No account found with this email address. Please check the email or register.</string>
     <string name="register">Register</string>
     <string name="registration_successful">Registration Successful</string>
     <string name="email">Email</string>
@@ -958,7 +959,7 @@
 
     <!-- RegisterActivity fee dialog -->
     <string name="doctor_reg_fee_title">Doctor Registration Fee</string>
-    <string name="doctor_reg_fee_message">A mandatory MCT verification and registration fee is required.\n\nComplete the payment to continue doctor registration.</string>
+    <string name="doctor_awaiting_admin_approval">Your account is waiting for admin approval. You can use the app, but patients cannot find or book you until an administrator approves your MCT documents.</string>
     <string name="doctor_reg_payment_required">Pay the doctor registration fee to finish sign-in. You cannot use the app until payment is complete.</string>
     <string name="pay_via_ussd">Pay via USSD (200 TSH)</string>
     <string name="processing_payment">Processing payment…</string>
@@ -1035,6 +1036,17 @@
     <string name="delete_chat">Delete Chat</string>
 <!--    <string name="passwords_do_not_match">Passwords do not match</string>-->
     <string name="mct_reg_required">MCT Registration Number is required</string>
+    <string name="hint_nin">NIN (20 digits)</string>
+    <string name="nin_required">NIN is required</string>
+    <string name="error_valid_nin">Enter a valid 20-digit NIN</string>
+    <string name="upload_nin_document">Upload NIN document (PDF)</string>
+    <string name="upload_mct_certificate">Upload MCT certificate (PDF)</string>
+    <string name="nin_document_selected">NIN PDF selected</string>
+    <string name="mct_certificate_selected">MCT certificate PDF selected</string>
+    <string name="error_nin_document_required">Upload your NIN as a PDF</string>
+    <string name="error_mct_certificate_required">Upload your MCT registration certificate as a PDF</string>
+    <string name="error_document_pdf_only">Only PDF documents are accepted</string>
+    <string name="uploading_documents">Uploading documents…</string>
 
     <!-- SearchActivity -->
     <string name="try_different_keywords">Try searching with different keywords</string>
@@ -1354,7 +1366,7 @@
     <string name="premium">Premium</string>
     <string name="healthcare">Healthcare</string>
     <string name="payment_confirmed_1">Payment Confirmed</string>
-    <string name="the_backend_returned_a_successful_paymen">The backend returned a successful payment response. You can now continue.</string>
+    <string name="the_backend_returned_a_successful_paymen">Your payment was received successfully. You can now continue.</string>
     <string name="title">Title</string>
     <string name="description_text">Description text</string>
     <string name="select_completed_appointments_to_export">Select Completed Appointments to Export</string>

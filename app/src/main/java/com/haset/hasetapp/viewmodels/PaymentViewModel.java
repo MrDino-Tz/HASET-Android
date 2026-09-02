@@ -15,7 +15,7 @@ public class PaymentViewModel extends AndroidViewModel {
     private final PaymentRepository repository;
     private final MutableLiveData<Boolean> processing = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> initiated = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> success = new MutableLiveData<>();
+    private final SingleLiveEvent<Boolean> success = new SingleLiveEvent<>();
     private final SingleLiveEvent<String> error = new SingleLiveEvent<>();
     private final MutableLiveData<Boolean> canRetry = new MutableLiveData<>(false);
     private final MutableLiveData<String> paymentUrl = new MutableLiveData<>();

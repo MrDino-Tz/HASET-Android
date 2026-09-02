@@ -8,7 +8,6 @@ final class HASETNotificationDelegate: NSObject, UNUserNotificationCenterDelegat
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Show alerts, sounds, and badges even while the app is open.
         completionHandler([.banner, .list, .sound, .badge])
     }
 
@@ -27,7 +26,6 @@ final class HASETNotificationDelegate: NSObject, UNUserNotificationCenterDelegat
 
 extension Notification.Name {
     static let hasetNotificationOpened = Notification.Name("haset.notification.opened")
-    static let hasetAPNsTokenUpdated = Notification.Name("haset.apns.token.updated")
 }
 
 final class HASETAppDelegate: NSObject, UIApplicationDelegate {
@@ -37,14 +35,14 @@ final class HASETAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        PushNotificationService.configure()
         UNUserNotificationCenter.current().delegate = notificationDelegate
         return true
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-        UserDefaults.standard.set(token, forKey: "apns_device_token")
-        NotificationCenter.default.post(name: .hasetAPNsTokenUpdated, object: token)
+        PushNotificationService.setAPNSToken(deviceToken)
+        PushNotificationService.refreshFCMToken()
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -61,6 +59,14 @@ struct HASETApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appViewModel)
+                .onOpenURL { url in
+                    appViewModel.handleIncomingURL(url)
+                }
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    if let url = activity.webpageURL {
+                        appViewModel.handleIncomingURL(url)
+                    }
+                }
         }
     }
 }

@@ -6,15 +6,34 @@ import UserNotifications
 
 enum HASETConstants {
     static let firebaseAPIKey = "AIzaSyB6XncMhXdlT0fScdU6Fq7Nw_toPmf-tRU"
+    static let firebaseAuthDomain = "hasetapp-4eeba.firebaseapp.com"
     static let firebaseDatabaseURL = "https://hasetapp-4eeba-default-rtdb.europe-west1.firebasedatabase.app"
+    static let firebaseIOSAppId = "1:44252460208:ios:54c1c56edd94dbef9df775"
     static let productionAPIURL = "https://payments.hasethospital.or.tz/public/api/"
     static let emailVerificationURL = "https://payments.hasethospital.or.tz/public/api/mobile/email/verification"
-    static let privacyPolicyURL = "https://hasethospital.or.tz/legal/privacy-policy"
-    static let termsURL = "https://hasethospital.or.tz/legal/terms"
+    static let passwordResetURL = "https://payments.hasethospital.or.tz/public/api/mobile/password/reset"
+    static let privacyPolicyURL = "https://hasethospital.or.tz/legal/hasetapp/privacy-policy"
+    static let termsURL = "https://hasethospital.or.tz/legal/hasetapp/terms"
     static let supportURL = "https://hasethospital.or.tz/contact"
     static let appConfigPath = "app_config"
+    static let registrationPaymentsPath = "registration_payments"
     static let cloudinaryCloudName = "divky8yna"
     static let cloudinaryUploadPreset = "haset_mobile_unsigned"
+    static let adminLoginAlias = "admin"
+    static let adminEmail = "admin@hasethospital.or.tz"
+    static let minPaymentAmount: Double = 500
+    static let maxPaymentAmount: Double = 5_000_000
+    static let sessionTimeoutMs: Int = 1_800_000
+    static let maxLoginAttempts = 3
+    static let loginLockoutSeconds: TimeInterval = 5 * 60
+
+    static func resolveLoginEmail(_ identifier: String) -> String {
+        let value = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.lowercased() == adminLoginAlias {
+            return adminEmail
+        }
+        return value
+    }
 }
 
 final class SessionStore {
@@ -127,27 +146,37 @@ enum ValidationService {
     static func isValidName(_ name: String) -> Bool {
         name.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
     }
+
+    static func isValidNin(_ nin: String) -> Bool {
+        let digits = nin.replacingOccurrences(of: " ", with: "")
+        return digits.range(of: #"^\d{20}$"#, options: .regularExpression) != nil
+    }
+
+    static func isPdfData(_ data: Data) -> Bool {
+        guard data.count >= 4 else { return false }
+        return String(data: data.prefix(4), encoding: .ascii) == "%PDF"
+    }
 }
 
 enum StaticContentService {
-    static let specialties: [String] = []
+    static let specialties: [String] = [
+        "General Physician",
+        "Cardiologist",
+        "Dermatologist",
+        "Pediatrician",
+        "Orthopedic",
+        "Neurologist",
+        "Psychiatrist",
+        "Gynecologist",
+        "Dentist",
+        "ENT Specialist"
+    ]
     static let timeSlots: [String] = [
-        "06:00",
-        "07:00",
-        "08:00",
-        "09:00",
-        "10:00",
-        "11:00",
-        "12:00",
-        "13:00",
-        "14:00",
-        "15:00",
-        "16:00",
-        "17:00",
-        "18:00",
-        "19:00",
-        "20:00",
-        "21:00"
+        "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
+        "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
+        "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
+        "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
+        "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM"
     ]
     static let doctors: [DoctorSummary] = []
     static let homeHighlights: [HomeHighlight] = []
@@ -157,7 +186,12 @@ enum StaticContentService {
     static let adminMetrics: [AdminMetric] = []
     static let conversations: [UserRole: [ConversationSummary]] = [:]
     static let hospitals: [HospitalSummary] = []
-    static let pharmacyCategories: [PharmacyCategory] = []
+    static let pharmacyCategories: [PharmacyCategory] = [
+        PharmacyCategory(id: "medicine", title: "Medicines", subtitle: "Prescription and OTC medicines"),
+        PharmacyCategory(id: "supplement", title: "Supplements", subtitle: "Vitamins and supplements"),
+        PharmacyCategory(id: "equipment", title: "Health Devices", subtitle: "Medical equipment and devices"),
+        PharmacyCategory(id: "personal_care", title: "Personal Care", subtitle: "Personal care products")
+    ]
     static let recentNotifications: [String] = []
 
     static let supportPhone = "+255754501671"
@@ -348,7 +382,17 @@ final class AuthService {
         )
     }
 
-    func register(email: String, password: String, fullName: String, phone: String, role: UserRole, regNo: String?) async throws -> (StoredSession, UserProfile) {
+    func register(
+        email: String,
+        password: String,
+        fullName: String,
+        phone: String,
+        role: UserRole,
+        regNo: String?,
+        nin: String? = nil,
+        ninDocumentUrl: String? = nil,
+        mctCertificateUrl: String? = nil
+    ) async throws -> (StoredSession, UserProfile) {
         let identity = try await performIdentityRequest(
             path: "accounts:signUp",
             payload: ["email": email, "password": password, "returnSecureToken": true]
@@ -375,7 +419,13 @@ final class AuthService {
 
         try await saveUserProfile(profile, idToken: identity.idToken)
         if role == .doctor {
-            try await saveDoctorBootstrap(profile: profile, idToken: identity.idToken)
+            try await saveDoctorBootstrap(
+                profile: profile,
+                idToken: identity.idToken,
+                nin: nin,
+                ninDocumentUrl: ninDocumentUrl,
+                mctCertificateUrl: mctCertificateUrl
+            )
         }
 
         let session = StoredSession(
@@ -423,11 +473,35 @@ final class AuthService {
         )
     }
 
-    func sendPasswordReset(email: String) async throws {
-        _ = try await performIdentityRequest(
-            path: "accounts:sendOobCode",
-            payload: ["requestType": "PASSWORD_RESET", "email": email]
-        )
+    func sendPasswordReset(email: String) async throws -> String {
+        let url = URL(string: HASETConstants.passwordResetURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["email": email], options: [])
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let payload = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        let message = (payload["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let status = (payload["status"] as? String) ?? ""
+
+        guard let http = response as? HTTPURLResponse else {
+            throw ServiceError.message("Unable to send password reset email.")
+        }
+
+        if (200...299).contains(http.statusCode), status == "success" {
+            return message.isEmpty
+                ? "A password reset link has been sent to your email. Please check your inbox and spam folder."
+                : message
+        }
+        if http.statusCode == 404 || status == "not_found" {
+            throw ServiceError.message(message.isEmpty
+                ? "No account found with this email address. Please check the email or register."
+                : message)
+        }
+        throw ServiceError.message(message.isEmpty
+            ? "Unable to send password reset email."
+            : message)
     }
 
     func sendEmailVerificationViaSmtp(idToken: String) async throws {
@@ -898,6 +972,7 @@ final class AuthService {
                     intValue(user["experience"]) ??
                     intValue(user["experienceYears"]),
                 verified: boolValue(doctorNode?["verified"]) ?? approved ?? false,
+                isDemo: boolValue(doctorNode?["isDemo"]) ?? boolValue(user["isDemo"]) ?? false,
                 consultationFee: consultationFeeValue(doctorNode?["consultationFee"]) ??
                     consultationFeeValue(user["consultationFee"]) ??
                     "TZS 0",
@@ -1117,7 +1192,7 @@ final class AuthService {
         appointmentType: String,
         paymentConfirmed: Bool,
         idToken: String?
-    ) async throws {
+    ) async throws -> String {
         let appointmentId = UUID().uuidString
         var payload: [String: Any] = [
             "appointmentId": appointmentId,
@@ -1168,6 +1243,7 @@ final class AuthService {
         try await put(patientConversation, url: patientConvURL)
         let doctorConvURL = try databaseURL(path: "user_conversations/\(doctor.id)/\(patient.userId)", authToken: idToken)
         try await put(doctorConversation, url: doctorConvURL)
+        return appointmentId
     }
 
     func updateAppointmentStatus(
@@ -1210,6 +1286,14 @@ final class AuthService {
         paymentAccount: String,
         idToken: String?
     ) async throws -> PaymentInitiationResponse {
+        try await ensurePaymentPriceRecord(
+            user: user,
+            doctor: doctor,
+            consultationId: consultationId,
+            amount: amount,
+            idToken: idToken
+        )
+
         let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/payment/initiate")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -1256,6 +1340,43 @@ final class AuthService {
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
         return try decoder.decode(PaymentInitiationResponse.self, from: data)
+    }
+
+    func ensurePaymentPriceRecord(
+        user: UserProfile,
+        doctor: DoctorSummary,
+        consultationId: String,
+        amount: Double,
+        idToken: String?
+    ) async throws {
+        let synthetic = doctor.id == "doctor_registration"
+            || consultationId.hasPrefix("consult-")
+            || consultationId.hasPrefix("service-")
+        let root = synthetic ? HASETConstants.registrationPaymentsPath : "appointments"
+        let url = try databaseURL(path: "\(root)/\(consultationId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        if data != Data("null".utf8) {
+            return
+        }
+
+        let now = Int(Date().timeIntervalSince1970 * 1000)
+        let record: [String: Any] = [
+            "appointmentId": consultationId,
+            "consultationId": consultationId,
+            "patientId": user.userId,
+            "doctorId": doctor.id,
+            "patientName": user.fullName,
+            "doctorName": doctor.name,
+            "date": "",
+            "time": "",
+            "reason": doctor.id == "doctor_registration" ? "Doctor registration payment" : "Service payment",
+            "status": "pending",
+            "appointmentType": doctor.id == "doctor_registration" ? "Doctor Registration" : "Service",
+            "amount": Int(amount.rounded()),
+            "createdAt": now
+        ]
+        try await put(record, url: url)
     }
 
     func checkPaymentStatus(transactionId: Int, idToken: String?) async throws -> PaymentStatusEnvelope {
@@ -1804,16 +1925,378 @@ final class AuthService {
         ], url: publicURL)
     }
 
-    private func saveDoctorBootstrap(profile: UserProfile, idToken: String) async throws {
+    func uploadVerificationDocument(_ data: Data, fileName: String, mimeType: String) async throws -> String {
+        try await uploadChatAttachment(data, fileName: fileName, mimeType: mimeType)
+    }
+
+    func isDoctorRegistrationPending(userId: String, idToken: String?) async throws -> Bool {
+        let url = try databaseURL(path: "doctors/\(userId)/registrationPaymentStatus", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard data != Data("null".utf8),
+              let json = try JSONSerialization.jsonObject(with: data) as? String else {
+            return false
+        }
+        return json.lowercased() == "pending"
+    }
+
+    func markDoctorRegistrationPaid(userId: String, idToken: String?) async throws {
+        let url = try databaseURL(path: "doctors/\(userId)", authToken: idToken)
+        try await patch(["registrationPaymentStatus": "paid"], url: url)
+    }
+
+    func syncDeviceToken(userId: String, token: String, idToken: String?) async throws {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let url = try databaseURL(path: "users/\(userId)/fcmToken", authToken: idToken)
+        try await put(trimmed, url: url)
+    }
+
+    func writeAuditLog(
+        action: String,
+        description: String,
+        entityType: String,
+        entityId: String?,
+        profile: UserProfile,
+        idToken: String?
+    ) async throws {
+        let logId = UUID().uuidString
+        var payload: [String: Any] = [
+            "logId": logId,
+            "userId": profile.userId,
+            "userName": profile.fullName,
+            "userRole": profile.role.rawValue,
+            "userEmail": profile.email,
+            "action": action,
+            "description": description,
+            "entityType": entityType,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+            "platform": "iOS",
+            "deviceInfo": UIDevice.current.model + " (iOS \(UIDevice.current.systemVersion))"
+        ]
+        if let entityId, !entityId.isEmpty {
+            payload["entityId"] = entityId
+        }
+        let url = try databaseURL(path: "audit_logs/\(logId)", authToken: idToken)
+        try await put(payload, url: url)
+    }
+
+    func fetchHospitals(limit: Int = 50, idToken: String?) async throws -> [HospitalSummary] {
+        let url = try databaseURL(
+            path: "Hospitals",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"$key\""),
+                URLQueryItem(name: "limitToFirst", value: String(limit))
+            ]
+        )
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        return json.compactMap { key, value in
+            guard let record = value as? [String: Any] else { return nil }
+            let name = stringValue(record["name"]) ?? "Hospital"
+            let address = stringValue(record["address"])
+            let city = stringValue(record["city"])
+            let location = [address, city].compactMap { $0?.nonEmpty }.joined(separator: ", ")
+            return HospitalSummary(
+                id: key,
+                name: name,
+                location: location,
+                distance: "",
+                address: address,
+                city: city,
+                phone: stringValue(record["phone"]),
+                latitude: doubleValue(record["latitude"]),
+                longitude: doubleValue(record["longitude"])
+            )
+        }
+        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    func fetchPharmacyProducts(category: String?, idToken: String?) async throws -> [PharmacyProductSummary] {
+        var queryItems: [URLQueryItem] = []
+        if let category, !category.isEmpty {
+            queryItems.append(URLQueryItem(name: "orderBy", value: "\"category\""))
+            queryItems.append(URLQueryItem(name: "equalTo", value: "\"\(category)\""))
+        }
+        let url = try databaseURL(path: "pharmacy_products", authToken: idToken, queryItems: queryItems)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        return json.compactMap { key, value in
+            guard let record = value as? [String: Any] else { return nil }
+            return PharmacyProductSummary(
+                id: key,
+                name: stringValue(record["name"]) ?? "Product",
+                description: stringValue(record["description"]) ?? "",
+                category: stringValue(record["category"]) ?? "",
+                price: doubleValue(record["price"]) ?? 0,
+                imageUrl: stringValue(record["imageUrl"]),
+                manufacturer: stringValue(record["manufacturer"]),
+                inStock: (record["inStock"] as? Bool) ?? true
+            )
+        }
+        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    func fetchPharmacyCart(userId: String, idToken: String?) async throws -> [PharmacyCartItem] {
+        let url = try databaseURL(path: "carts/\(userId)", authToken: idToken)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        return json.compactMap { key, value in
+            guard let record = value as? [String: Any] else { return nil }
+            return PharmacyCartItem(
+                id: key,
+                productId: stringValue(record["productId"]) ?? key,
+                name: stringValue(record["name"]) ?? "Item",
+                price: doubleValue(record["price"]) ?? 0,
+                quantity: intValue(record["quantity"]) ?? 1,
+                imageUrl: stringValue(record["imageUrl"])
+            )
+        }
+    }
+
+    func upsertPharmacyCartItem(userId: String, item: PharmacyCartItem, idToken: String?) async throws {
+        let url = try databaseURL(path: "carts/\(userId)/\(item.productId)", authToken: idToken)
+        try await put([
+            "productId": item.productId,
+            "name": item.name,
+            "price": item.price,
+            "quantity": item.quantity,
+            "imageUrl": item.imageUrl ?? ""
+        ], url: url)
+    }
+
+    func removePharmacyCartItem(userId: String, productId: String, idToken: String?) async throws {
+        let url = try databaseURL(path: "carts/\(userId)/\(productId)", authToken: idToken)
+        try await delete(url: url)
+    }
+
+    func fetchPrescriptions(userId: String, role: UserRole, idToken: String?) async throws -> [PrescriptionSummary] {
+        let field = role == .doctor ? "doctorId" : "patientId"
+        let url = try databaseURL(
+            path: "prescriptions",
+            authToken: idToken,
+            queryItems: [
+                URLQueryItem(name: "orderBy", value: "\"\(field)\""),
+                URLQueryItem(name: "equalTo", value: "\"\(userId)\"")
+            ]
+        )
+        let (data, response) = try await URLSession.shared.data(from: url)
+        try validate(response: response, data: data)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        return json.compactMap { key, value in
+            parsePrescription(id: key, record: value)
+        }
+        .sorted { ($0.createdAt ?? 0) > ($1.createdAt ?? 0) }
+    }
+
+    func createPrescription(
+        patientId: String,
+        patientName: String,
+        doctorId: String,
+        doctorName: String,
+        medicines: [PrescriptionMedicine],
+        instructions: String,
+        imageUrl: String?,
+        idToken: String?
+    ) async throws {
+        let prescriptionId = UUID().uuidString
+        let payload: [String: Any] = [
+            "prescriptionId": prescriptionId,
+            "patientId": patientId,
+            "patientName": patientName,
+            "doctorId": doctorId,
+            "doctorName": doctorName,
+            "medicines": medicines.map {
+                [
+                    "name": $0.name,
+                    "dosage": $0.dosage,
+                    "frequency": $0.frequency,
+                    "duration": $0.duration
+                ]
+            },
+            "instructions": instructions,
+            "imageUrl": imageUrl ?? "",
+            "createdAt": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        let url = try databaseURL(path: "prescriptions/\(prescriptionId)", authToken: idToken)
+        try await put(payload, url: url)
+    }
+
+    func uploadPrescriptionImage(_ data: Data) async throws -> String {
+        try await uploadCloudinaryAsset(data, fileName: "prescription.jpg", mimeType: "image/jpeg", folder: "prescriptions")
+    }
+
+    func mirrorPayoutDestinationForApproval(
+        doctorId: String,
+        destinationType: String,
+        provider: String,
+        bankCode: String,
+        phoneNumber: String,
+        bankAccount: String,
+        idToken: String?
+    ) async throws {
+        let bank = destinationType.lowercased() == "bank"
+        let masked = maskAccount(bank ? bankAccount : phoneNumber)
+        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+        var requestPayload: [String: Any] = [
+            "doctor_id": doctorId,
+            "destination_type": bank ? "bank" : "mobile_money",
+            "provider": bank ? bankCode : provider,
+            "masked_account": masked,
+            "status": "pending",
+            "submitted_by": doctorId,
+            "created_at": timestamp,
+            "can_review": true
+        ]
+        if bank, !bankCode.isEmpty {
+            requestPayload["bank_code"] = bankCode
+        }
+        var walletPayload: [String: Any] = [
+            "status": "pending",
+            "available": false,
+            "masked_account": masked,
+            "created_at": timestamp
+        ]
+        if bank {
+            walletPayload["bank_code"] = bankCode
+            walletPayload["provider"] = bankCode
+        } else {
+            walletPayload["provider"] = provider
+        }
+        let requestURL = try databaseURL(path: "payout_destination_requests/\(doctorId)", authToken: idToken)
+        try await put(requestPayload, url: requestURL)
+        let walletURL = try databaseURL(
+            path: "doctor_wallets/\(doctorId)/payout_destinations/\(bank ? "bank" : "mobile_money")",
+            authToken: idToken
+        )
+        try await put(walletPayload, url: walletURL)
+    }
+
+    func verifyPasswordResetCode(_ oobCode: String) async throws -> String {
+        let url = URL(string: "https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=\(HASETConstants.firebaseAPIKey)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["oobCode": oobCode])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ServiceError.message("Unable to verify reset code.")
+        }
+        let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        if (200...299).contains(http.statusCode), let email = stringValue(json["email"]) {
+            return email
+        }
+        let errorMessage = (json["error"] as? [String: Any]).flatMap { stringValue($0["message"]) }
+        throw ServiceError.message(mapIdentityError(errorMessage ?? "Invalid or expired reset code."))
+    }
+
+    func confirmPasswordReset(oobCode: String, newPassword: String) async throws {
+        let url = URL(string: "https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key=\(HASETConstants.firebaseAPIKey)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "oobCode": oobCode,
+            "newPassword": newPassword
+        ])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+            let errorMessage = (json["error"] as? [String: Any]).flatMap { stringValue($0["message"]) }
+            throw ServiceError.message(mapIdentityError(errorMessage ?? "Unable to reset password."))
+        }
+    }
+
+    private func uploadCloudinaryAsset(_ data: Data, fileName: String, mimeType: String, folder: String) async throws -> String {
+        let boundary = "HASET-\(UUID().uuidString)"
+        let endpoint = "https://api.cloudinary.com/v1_1/\(HASETConstants.cloudinaryCloudName)/auto/upload"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        var body = Data()
+        func field(_ name: String, _ value: String) {
+            body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".utf8))
+        }
+        field("upload_preset", HASETConstants.cloudinaryUploadPreset)
+        field("folder", folder)
+        body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8))
+        body.append(data)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        request.httpBody = body
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: responseData)
+        guard let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any],
+              let url = stringValue(json["secure_url"])?.nonEmpty else {
+            throw ServiceError.invalidResponse
+        }
+        return url
+    }
+
+    private func parsePrescription(id: String, record: Any) -> PrescriptionSummary? {
+        guard let item = record as? [String: Any] else { return nil }
+        let medicinesRaw = item["medicines"] as? [[String: Any]] ?? []
+        let medicines = medicinesRaw.enumerated().map { index, medicine in
+            PrescriptionMedicine(
+                id: "\(id)-\(index)",
+                name: stringValue(medicine["name"]) ?? "",
+                dosage: stringValue(medicine["dosage"]) ?? "",
+                frequency: stringValue(medicine["frequency"]) ?? "",
+                duration: intValue(medicine["duration"]) ?? 0
+            )
+        }
+        return PrescriptionSummary(
+            id: stringValue(item["prescriptionId"]) ?? id,
+            appointmentId: stringValue(item["appointmentId"]),
+            patientId: stringValue(item["patientId"]) ?? "",
+            patientName: stringValue(item["patientName"]) ?? "",
+            doctorId: stringValue(item["doctorId"]) ?? "",
+            doctorName: stringValue(item["doctorName"]) ?? "",
+            medicines: medicines,
+            instructions: stringValue(item["instructions"]) ?? "",
+            imageUrl: stringValue(item["imageUrl"]),
+            createdAt: timeIntervalValue(item["createdAt"])
+        )
+    }
+
+    private func maskAccount(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 4 else { return "****" }
+        return "****" + trimmed.suffix(4)
+    }
+
+    private func saveDoctorBootstrap(
+        profile: UserProfile,
+        idToken: String,
+        nin: String?,
+        ninDocumentUrl: String?,
+        mctCertificateUrl: String?
+    ) async throws {
         let payload: [String: Any] = [
             "doctorId": profile.userId,
             "regNo": profile.regNo ?? "",
+            "nin": nin ?? "",
+            "ninDocumentUrl": ninDocumentUrl ?? "",
+            "mctCertificateUrl": mctCertificateUrl ?? "",
+            "documentsStatus": "pending",
+            "documentsVerified": false,
             "approved": false,
-            "verified": false
+            "verified": false,
+            "registrationPaymentStatus": "pending"
         ]
         let url = try databaseURL(path: "doctors/\(profile.userId)", authToken: idToken)
         try await put(payload, url: url)
-
     }
 
     private func performIdentityRequest(path: String, payload: [String: Any]) async throws -> IdentityResponse {

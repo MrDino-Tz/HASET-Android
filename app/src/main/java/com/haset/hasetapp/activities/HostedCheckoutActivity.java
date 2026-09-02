@@ -41,6 +41,7 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
             return;
         }
 
+        /*
         // Passive tamper warning (does not block): rooted/debug environments
         if (com.haset.hasetapp.utils.RootIntegrityHelper.isPotentiallyCompromised(this)) {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
@@ -49,6 +50,7 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
                     .setPositiveButton(android.R.string.ok, null)
                     .show();
         }
+        */
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);

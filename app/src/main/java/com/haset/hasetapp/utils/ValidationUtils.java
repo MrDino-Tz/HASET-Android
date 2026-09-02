@@ -1,6 +1,10 @@
 package com.haset.hasetapp.utils;
 
+import android.content.ContentResolver;
+import android.net.Uri;
 import android.util.Patterns;
+
+import java.util.Locale;
 
 public class ValidationUtils {
     
@@ -29,6 +33,22 @@ public class ValidationUtils {
         return name != null && !name.trim().isEmpty() && name.length() >= 2;
     }
     
+    public static boolean isValidNin(String nin) {
+        if (nin == null) return false;
+        String digits = nin.replaceAll("\\s", "");
+        return digits.matches("\\d{20}");
+    }
+
+    public static boolean isPdfDocument(ContentResolver resolver, Uri uri) {
+        if (uri == null) return false;
+        String type = resolver.getType(uri);
+        if (type != null && "application/pdf".equalsIgnoreCase(type)) {
+            return true;
+        }
+        String path = uri.getLastPathSegment();
+        return path != null && path.toLowerCase(Locale.ROOT).endsWith(".pdf");
+    }
+
     public static boolean passwordsMatch(String password, String confirmPassword) {
         return password != null && password.equals(confirmPassword);
     }

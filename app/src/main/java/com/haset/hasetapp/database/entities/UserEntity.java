@@ -66,4 +66,18 @@ public class UserEntity implements Serializable {
 
     public String getRegNo() { return regNo; }
     public void setRegNo(String regNo) { this.regNo = regNo; }
+
+    @androidx.room.Ignore
+    private String nin;
+    @androidx.room.Ignore
+    private String ninDocumentUrl;
+    @androidx.room.Ignore
+    private String mctCertificateUrl;
+
+    public String getNin() { return nin; }
+    public void setNin(String nin) { this.nin = nin; }
+    public String getNinDocumentUrl() { return ninDocumentUrl; }
+    public void setNinDocumentUrl(String ninDocumentUrl) { this.ninDocumentUrl = ninDocumentUrl; }
+    public String getMctCertificateUrl() { return mctCertificateUrl; }
+    public void setMctCertificateUrl(String mctCertificateUrl) { this.mctCertificateUrl = mctCertificateUrl; }
 }

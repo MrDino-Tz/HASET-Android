@@ -103,20 +103,6 @@ public class ForgotPasswordActivity extends BaseActivity {
         tvBackToLogin.setOnClickListener(v -> {
             finish();
         });
-
-        // Manual fallback: user pastes the emailed reset link into the sheet
-        findViewById(R.id.tvPasteResetLink).setOnClickListener(v -> openResetSheet(null));
-    }
-
-    /** Opens the in-app reset sheet. linkOrCode == null → paste field visible. */
-    private void openResetSheet(String linkOrCode) {
-        ResetPasswordBottomSheet sheet = ResetPasswordBottomSheet.newInstance(linkOrCode);
-        sheet.setOnPasswordResetListener(() -> {
-            startActivity(new Intent(ForgotPasswordActivity.this, LoginActivity.class)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK));
-            finish();
-        });
-        sheet.show(getSupportFragmentManager(), "ResetPasswordBottomSheet");
     }
 
     private void handleResetLink(Intent intent) {

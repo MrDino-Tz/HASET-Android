@@ -39,6 +39,7 @@ database-debug.log
 .env
 .env.*
 !.env.example
+.upload-keystore-password.local
 *.jks
 *.keystore
 *.p12

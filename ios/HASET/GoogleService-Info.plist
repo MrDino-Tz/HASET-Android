@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>44252460208-uv6f9p47ti6jk1dqbdgps3knsfjvapsb.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.44252460208-uv6f9p47ti6jk1dqbdgps3knsfjvapsb</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD_QXGNsLJuDD8sI-S5CPSCYvvt4gDb_E4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>44252460208</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.haset.hasetapp</string>
+	<key>PROJECT_ID</key>
+	<string>hasetapp-4eeba</string>
+	<key>STORAGE_BUCKET</key>
+	<string>hasetapp-4eeba.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:44252460208:ios:54c1c56edd94dbef9df775</string>
+	<key>DATABASE_URL</key>
+	<string>https://hasetapp-4eeba-default-rtdb.europe-west1.firebasedatabase.app</string>
+</dict>
+</plist>

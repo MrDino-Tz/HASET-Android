@@ -18,7 +18,7 @@
       ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
       "$doctorId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || ($doctorId === auth.uid && root.child('users').child(auth.uid).child('role').val() === 'doctor') || ($doctorId === auth.uid && !newData.exists() && auth.token.firebase.sign_in_provider === 'anonymous'))",
-        ".validate": "!newData.exists() || (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (!data.exists() && $doctorId === auth.uid && newData.child('doctorId').val() === auth.uid && newData.child('approved').val() === false && newData.child('verified').val() === false) || (data.exists() && newData.child('approved').val() === data.child('approved').val() && newData.child('verified').val() === data.child('verified').val() && newData.child('isApproved').val() === data.child('isApproved').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('averageRating').val() === data.child('averageRating').val() && newData.child('isDemo').val() === data.child('isDemo').val() && newData.child('patientsTreated').val() === data.child('patientsTreated').val()))"
+        ".validate": "!newData.exists() || (((root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin') && ((newData.child('approved').val() !== true) || (newData.child('documentsVerified').val() === true || newData.child('documentsStatus').val() === 'verified'))) || (!data.exists() && $doctorId === auth.uid && newData.child('doctorId').val() === auth.uid && newData.child('approved').val() === false && newData.child('verified').val() === false) || (data.exists() && newData.child('approved').val() === data.child('approved').val() && newData.child('verified').val() === data.child('verified').val() && newData.child('isApproved').val() === data.child('isApproved').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('averageRating').val() === data.child('averageRating').val() && newData.child('isDemo').val() === data.child('isDemo').val() && newData.child('patientsTreated').val() === data.child('patientsTreated').val()))"
       }
     },
     "appointments": {
@@ -35,6 +35,22 @@
       "$appointmentId": {
         ".read": "auth != null && (!data.exists() || data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (!data.exists() && newData.child('appointmentId').val() === $appointmentId && newData.child('patientId').val() === auth.uid && newData.child('status').val() === 'pending' && (root.child('doctors').child(newData.child('doctorId').val()).child('approved').val() === true || newData.child('doctorId').val() === 'doctor_registration')) || (data.exists() && data.child('doctorId').val() === auth.uid && newData.child('doctorId').val() === data.child('doctorId').val() && newData.child('patientId').val() === data.child('patientId').val() && (newData.child('status').val() === 'approved' || newData.child('status').val() === 'declined' || newData.child('status').val() === data.child('status').val())) || (data.exists() && data.child('patientId').val() === auth.uid && newData.child('doctorId').val() === data.child('doctorId').val() && newData.child('patientId').val() === data.child('patientId').val() && newData.child('status').val() === 'pending'))"
+      }
+    },
+    "registration_payments": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (query.orderByChild === 'patientId' && query.equalTo === auth.uid))",
+      ".write": false,
+      ".indexOn": [
+        "createdAt",
+        "patientId",
+        "patient_id",
+        "user_id",
+        "doctorId",
+        "doctor_id"
+      ],
+      "$paymentId": {
+        ".read": "auth != null && (!data.exists() || data.child('patientId').val() === auth.uid || data.child('doctorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (!data.exists() && newData.child('consultationId').val() === $paymentId && newData.child('patientId').val() === auth.uid && newData.child('status').val() === 'pending' && newData.child('doctorId').val() === 'doctor_registration'))"
       }
     },
     "departments": {
@@ -147,6 +163,7 @@
     "patient_appointments": {
       "$patientId": {
         ".read": "auth != null && ($patientId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
         "$appointmentId": {
           ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || ($patientId === auth.uid && root.child('appointments').child($appointmentId).child('patientId').val() === auth.uid && (newData.val() === true || !newData.exists())))",
           ".validate": "!newData.exists() || newData.val() === true"
@@ -156,6 +173,7 @@
     "doctor_appointments": {
       "$doctorId": {
         ".read": "auth != null && ($doctorId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
         "$appointmentId": {
           ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin' || (root.child('appointments').child($appointmentId).child('patientId').val() === auth.uid && root.child('appointments').child($appointmentId).child('doctorId').val() === $doctorId && newData.val() === true) || ($doctorId === auth.uid && !newData.exists()))",
           ".validate": "!newData.exists() || newData.val() === true"
@@ -285,6 +303,7 @@
     "user_conversations": {
       "$uid": {
         ".read": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
+        ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'super_admin' || root.child('users').child(auth.uid).child('adminRole').val() === 'super_admin' || root.child('users').child(auth.uid).child('admin_role').val() === 'super_admin')",
         "$otherUid": {
           ".write": "auth != null && ($uid === auth.uid || $otherUid === auth.uid)"
         }

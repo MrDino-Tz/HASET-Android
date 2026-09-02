@@ -210,7 +210,11 @@ public class FirebaseHelper {
 
     // Appointments methods
     public static DatabaseReference getAppointmentsRef() {
-        return getFirebaseDatabase().getReference("appointments");
+        return getFirebaseDatabase().getReference(Constants.APPOINTMENTS_PATH);
+    }
+
+    public static DatabaseReference getRegistrationPaymentsRef() {
+        return getFirebaseDatabase().getReference(Constants.REGISTRATION_PAYMENTS_PATH);
     }
 
     public static DatabaseReference getPatientAppointmentsRef(String patientId) {

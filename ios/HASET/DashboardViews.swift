@@ -1463,6 +1463,15 @@ private struct DoctorWalletView: View {
         Task { do {
             guard let token = try await AuthService().verifyMobileMFA(code: destinationMFA, idToken: session.idToken) else { throw ServiceError.message("A current authenticator code is required.") }
             try await AuthService().updateDoctorPayoutDestination(type: "mobile_money", provider: provider, phone: phone, bankCode: "", bankAccount: "", idToken: session.idToken, mfaActionToken: token)
+            try await AuthService().mirrorPayoutDestinationForApproval(
+                doctorId: session.userId,
+                destinationType: "mobile_money",
+                provider: provider,
+                bankCode: "",
+                phoneNumber: phone,
+                bankAccount: "",
+                idToken: session.idToken
+            )
             await MainActor.run {
                 clearDestinationState(); showPayoutAccounts = false
                 appViewModel.alertState = AlertState(title: "Payout account submitted", message: "Finance approval and the security cooling-off period are required before withdrawal.")
@@ -1647,22 +1656,12 @@ struct BookAppointmentView: View {
                     systemImage: "clock.fill",
                     mode: .instant
                 ) {
-                    HStack(spacing: 12) {
-                        instantOptionCard(
-                            title: "Online Chat",
-                            systemImage: "message.fill",
-                            isSelected: appointmentType == "Online Chat"
-                        ) {
-                            selectInstantAppointment(type: "Online Chat")
-                        }
-
-                        instantOptionCard(
-                            title: "Video Call",
-                            systemImage: "video.fill",
-                            isSelected: appointmentType == "Video Call"
-                        ) {
-                            selectInstantAppointment(type: "Video Call")
-                        }
+                    instantOptionCard(
+                        title: "Online Chat",
+                        systemImage: "message.fill",
+                        isSelected: appointmentType == "Online Chat"
+                    ) {
+                        selectInstantAppointment(type: "Online Chat")
                     }
                 }
 
@@ -1748,7 +1747,7 @@ struct BookAppointmentView: View {
     }
 
     private var requiresPayment: Bool {
-        consultationFeeAmount > 0
+        !doctor.isDemo && consultationFeeAmount > 0
     }
 
     private var bookingDoctorCard: some View {
@@ -1980,13 +1979,15 @@ struct BookAppointmentView: View {
 struct PaymentCheckoutView: View {
     enum PaymentMethod: String {
         case mobileMoney
-        case cardPayment
+        // Card / bank payments disabled for now — mobile money only (Android parity).
+        // case cardPayment
     }
 
     let doctor: DoctorSummary
     let amount: Double
     let initialMethod: PaymentMethod
     let onPaymentConfirmed: () -> Void
+    var onCancelRegistrationPayment: (() -> Void)? = nil
 
     @EnvironmentObject private var appViewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
@@ -2017,18 +2018,27 @@ struct PaymentCheckoutView: View {
         ProviderOption(name: "Airtel", displayName: "Airtel Money", imageName: "a_airtel_money"),
         ProviderOption(name: "Tigo", displayName: "T-Pesa", imageName: "a_ttcl_pesa")
     ]
+    /*
     private let cardProviders: [ProviderOption] = [
         ProviderOption(name: "CRDB", displayName: "CRDB", imageName: nil),
         ProviderOption(name: "NMB", displayName: "NMB", imageName: nil),
         ProviderOption(name: "TCB", displayName: "TCB", imageName: nil),
         ProviderOption(name: "AKIBA", displayName: "AKIBA", imageName: nil)
     ]
+    */
 
-    init(doctor: DoctorSummary, amount: Double, initialMethod: PaymentMethod, onPaymentConfirmed: @escaping () -> Void) {
+    init(
+        doctor: DoctorSummary,
+        amount: Double,
+        initialMethod: PaymentMethod,
+        onPaymentConfirmed: @escaping () -> Void,
+        onCancelRegistrationPayment: (() -> Void)? = nil
+    ) {
         self.doctor = doctor
         self.amount = amount
         self.initialMethod = initialMethod
         self.onPaymentConfirmed = onPaymentConfirmed
+        self.onCancelRegistrationPayment = onCancelRegistrationPayment
         _selectedMethod = State(initialValue: initialMethod)
         _consultationId = State(initialValue: "consult-\(UUID().uuidString.lowercased())")
         // Keep margin below Snippe's 30-character processor limit.
@@ -2098,36 +2108,19 @@ struct PaymentCheckoutView: View {
                                 Text(appViewModel.tr("payment_method_label"))
                                     .font(HASETTheme.font(.medium, 13))
 
-                                HStack(spacing: 10) {
-                                    paymentMethodCard(
-                                        title: appViewModel.tr("mobile_money"),
-                                        systemImage: "iphone.gen3.radiowaves.left.and.right",
-                                        isSelected: selectedMethod == .mobileMoney
-                                    ) {
-                                        selectedMethod = .mobileMoney
-                                        selectedProvider = mobileProviders.first?.name ?? "Vodacom"
-                                        walletNumber = ""
-                                    }
-                                    .disabled(isProcessing)
-
-                                    paymentMethodCard(
-                                        title: appViewModel.tr("card_payment"),
-                                        systemImage: "creditcard.fill",
-                                        isSelected: selectedMethod == .cardPayment
-                                    ) {
-                                        selectedMethod = .cardPayment
-                                        selectedProvider = cardProviders.first?.name ?? "CRDB"
-                                        walletNumber = ""
-                                    }
-                                    .disabled(isProcessing)
-                                }
+                                paymentMethodCard(
+                                    title: appViewModel.tr("mobile_money"),
+                                    systemImage: "iphone.gen3.radiowaves.left.and.right",
+                                    isSelected: true
+                                ) {}
+                                .disabled(true)
                             }
 
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(appViewModel.tr("payment_provider"))
                                     .font(HASETTheme.font(.medium, 13))
                                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                                    ForEach(activeProviders) { provider in
+                                    ForEach(mobileProviders) { provider in
                                         PaymentProviderCard(
                                             provider: provider,
                                             isSelected: selectedProvider == provider.name
@@ -2140,43 +2133,34 @@ struct PaymentCheckoutView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(selectedMethod == .mobileMoney ? appViewModel.tr("payment_number") : appViewModel.tr("hosted_card_checkout"))
+                                Text(appViewModel.tr("payment_number"))
                                     .font(HASETTheme.font(.medium, 13))
-                                if selectedMethod == .mobileMoney {
-                                    HStack(spacing: 10) {
-                                        Text("+255")
-                                            .font(HASETTheme.font(.medium, 14))
-                                            .foregroundStyle(HASETTheme.textPrimary)
-                                            .padding(.leading, 16)
+                                HStack(spacing: 10) {
+                                    Text("+255")
+                                        .font(HASETTheme.font(.medium, 14))
+                                        .foregroundStyle(HASETTheme.textPrimary)
+                                        .padding(.leading, 16)
 
-                                        Rectangle()
-                                            .fill(HASETTheme.divider)
-                                            .frame(width: 1, height: 24)
+                                    Rectangle()
+                                        .fill(HASETTheme.divider)
+                                        .frame(width: 1, height: 24)
 
-                                        TextField("683859574", text: $walletNumber)
-                                            .keyboardType(.numberPad)
-                                            .textInputAutocapitalization(.never)
-                                            .autocorrectionDisabled()
-                                            .font(HASETTheme.font(.regular, 14))
-                                            .onChange(of: walletNumber) { newValue in
-                                                walletNumber = sanitizedWalletSuffix(newValue)
-                                            }
-                                            .padding(.trailing, 16)
-                                            .disabled(isProcessing)
-                                    }
-                                    .frame(height: 56)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                            .fill(HASETTheme.backgroundPrimary)
-                                    )
-                                } else {
-                                    Text(appViewModel.tr("card_checkout_description"))
-                                        .font(HASETTheme.font(.regular, 13))
-                                        .foregroundStyle(HASETTheme.textSecondary)
-                                        .padding(.horizontal, 16)
-                                        .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                                        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(HASETTheme.backgroundPrimary))
+                                    TextField("683859574", text: $walletNumber)
+                                        .keyboardType(.numberPad)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .font(HASETTheme.font(.regular, 14))
+                                        .onChange(of: walletNumber) { newValue in
+                                            walletNumber = sanitizedWalletSuffix(newValue)
+                                        }
+                                        .padding(.trailing, 16)
+                                        .disabled(isProcessing)
                                 }
+                                .frame(height: 56)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .fill(HASETTheme.backgroundPrimary)
+                                )
                             }
 
                             if !statusMessage.isEmpty {
@@ -2206,7 +2190,7 @@ struct PaymentCheckoutView: View {
                                     Task { await startPayment() }
                                 }
                                 .buttonStyle(PrimaryButtonStyle())
-                                .disabled(isProcessing || (selectedMethod == .mobileMoney && normalizedWalletNumber.isEmpty))
+                                .disabled(isProcessing || normalizedWalletNumber.isEmpty)
                             }
 
                         }
@@ -2222,6 +2206,8 @@ struct PaymentCheckoutView: View {
                     Button(appViewModel.tr("close")) {
                         if isProcessing {
                             showingCancelConfirmation = true
+                        } else if doctor.id == "doctor_registration", let onCancelRegistrationPayment {
+                            onCancelRegistrationPayment()
                         } else {
                             dismiss()
                         }
@@ -2264,6 +2250,7 @@ struct PaymentCheckoutView: View {
                 }
             }
         }
+        .screenshotProtected()
     }
 
     private func preparePaymentSession() async {
@@ -2281,10 +2268,17 @@ struct PaymentCheckoutView: View {
             }
             return
         }
-        if sessionStore.loadSession() != nil {
+        if sessionStore.loadSession() != nil || appViewModel.activeSession != nil {
             await MainActor.run {
                 paymentSessionReady = true
                 statusMessage = ""
+            }
+            return
+        }
+        if doctor.id == "doctor_registration" {
+            await MainActor.run {
+                paymentSessionReady = false
+                statusMessage = "Authentication expired. Please sign in again."
             }
             return
         }
@@ -2304,7 +2298,7 @@ struct PaymentCheckoutView: View {
     }
 
     private var activeProviders: [ProviderOption] {
-        selectedMethod == .mobileMoney ? mobileProviders : cardProviders
+        mobileProviders
     }
 
     private func paymentMethodCard(title: String, systemImage: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
@@ -2447,7 +2441,19 @@ struct PaymentCheckoutView: View {
             availableTimes: nil,
             verified: false
         )
-        guard selectedMethod == .cardPayment || !normalizedWalletNumber.isEmpty else { return }
+        guard !normalizedWalletNumber.isEmpty else { return }
+        guard amount >= HASETConstants.minPaymentAmount else {
+            await MainActor.run {
+                statusMessage = "Minimum payment amount is \(Int(HASETConstants.minPaymentAmount)) TZS."
+            }
+            return
+        }
+        guard amount <= HASETConstants.maxPaymentAmount else {
+            await MainActor.run {
+                statusMessage = "Amount exceeds maximum limit."
+            }
+            return
+        }
 
         isProcessing = true
         canRetryStatus = false
@@ -2461,9 +2467,9 @@ struct PaymentCheckoutView: View {
                 consultationId: consultationId,
                 idempotencyKey: idempotencyKey,
                 amount: amount,
-                paymentMethod: selectedMethod == .cardPayment ? "card" : "mobile_money",
+                paymentMethod: "mobile_money",
                 provider: selectedProvider,
-                paymentAccount: selectedMethod == .mobileMoney ? backendPaymentAccount : "",
+                paymentAccount: backendPaymentAccount,
                 idToken: idToken
             )
             guard let responseTransactionId = response.transactionId else {
@@ -2475,23 +2481,8 @@ struct PaymentCheckoutView: View {
             transactionId = responseTransactionId
             statusMessage = appViewModel.tr("payment_initiated")
             if response.isSuccess {
-                if selectedMethod == .cardPayment {
-                    guard let paymentUrl = response.paymentUrl,
-                          let url = URL(string: paymentUrl),
-                          url.scheme == "https" else {
-                        isProcessing = false
-                        canRetryStatus = true
-                        statusMessage = "The card checkout link was not returned. Please retry or use mobile money."
-                        return
-                    }
-                    await MainActor.run {
-                        hostedCheckout = HostedCheckoutDestination(url: url)
-                        statusMessage = appViewModel.tr("card_checkout_opened")
-                    }
-                } else {
-                    await MainActor.run {
-                        statusMessage = appViewModel.tr("check_phone_complete_payment")
-                    }
+                await MainActor.run {
+                    statusMessage = appViewModel.tr("check_phone_complete_payment")
                 }
                 startPolling()
             } else {
@@ -3528,6 +3519,7 @@ struct ChatThreadView: View {
             }
         }
         .alert("Attachment failed", isPresented: $showAttachmentError) { Button("OK", role: .cancel) {} }
+        .screenshotProtected()
     }
 
     private func startRecording() {
@@ -3716,6 +3708,19 @@ struct ProfileScreen: View {
                 sectionHeader(appViewModel.tr("general"))
                 CardContainer {
                     VStack(spacing: 0) {
+                        if let user = appViewModel.currentUser, user.role == .patient || user.role == .doctor {
+                            NavigationLink {
+                                MedicalRecordsView(role: user.role)
+                            } label: {
+                                ProfileOptionRow(
+                                    icon: "cross.case",
+                                    title: appViewModel.tr("medical_records"),
+                                    subtitle: appViewModel.tr("my_prescriptions")
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            rowDivider()
+                        }
                             NavigationLink { InAppWebContentView(title: appViewModel.tr("terms_of_use"), url: URL(string: HASETConstants.termsURL)!) } label: {
                                 ProfileOptionRow(icon: "doc.text", title: appViewModel.tr("terms_of_use"), subtitle: appViewModel.tr("terms_of_use_desc"))
                             }
@@ -4149,21 +4154,77 @@ struct DoctorsCatalogView: View {
 
 struct HospitalListView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var hospitals: [HospitalSummary] = []
+    @State private var loading = true
+
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
-                CardContainer {
-                    Text(appViewModel.tr("no_hospitals_found"))
-                        .font(HASETTheme.font(.medium, 15))
-                        .foregroundStyle(HASETTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 12)
+                if loading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
+                } else if hospitals.isEmpty {
+                    CardContainer {
+                        Text(appViewModel.tr("no_hospitals_found"))
+                            .font(HASETTheme.font(.medium, 15))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 12)
+                    }
+                } else {
+                    ForEach(hospitals) { hospital in
+                        Button {
+                            openInMaps(hospital)
+                        } label: {
+                            CardContainer {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(hospital.name)
+                                        .font(HASETTheme.font(.medium, 16))
+                                        .foregroundStyle(HASETTheme.textPrimary)
+                                    if !hospital.location.isEmpty {
+                                        Text(hospital.location)
+                                            .font(HASETTheme.font(.regular, 13))
+                                            .foregroundStyle(HASETTheme.textSecondary)
+                                    }
+                                    if let phone = hospital.phone, !phone.isEmpty {
+                                        Text(phone)
+                                            .font(HASETTheme.font(.regular, 12))
+                                            .foregroundStyle(HASETTheme.greenPrimary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
             .padding(20)
         }
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle(appViewModel.tr("hospitals"))
+        .task { await loadHospitals() }
+        .refreshable { await loadHospitals() }
+    }
+
+    private func loadHospitals() async {
+        loading = true
+        defer { loading = false }
+        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
+        hospitals = (try? await AuthService().fetchHospitals(idToken: token)) ?? []
+    }
+
+    private func openInMaps(_ hospital: HospitalSummary) {
+        let query = hospital.mapsQuery.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? hospital.name
+        if let latitude = hospital.latitude, let longitude = hospital.longitude,
+           let url = URL(string: "http://maps.apple.com/?ll=\(latitude),\(longitude)&q=\(query)") {
+            UIApplication.shared.open(url)
+            return
+        }
+        if let url = URL(string: "http://maps.apple.com/?q=\(query)") {
+            UIApplication.shared.open(url)
+        }
     }
 }
 
@@ -4764,17 +4825,83 @@ struct ArticleDetailView: View {
 
 struct PharmacyView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var selectedCategory: String?
+    @State private var products: [PharmacyProductSummary] = []
+    @State private var cartItems: [PharmacyCartItem] = []
+    @State private var searchText = ""
+    @State private var showCart = false
+    @State private var loading = true
+
+    private var filteredProducts: [PharmacyProductSummary] {
+        products.filter { product in
+            let matchesCategory = selectedCategory == nil || product.category == selectedCategory
+            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let matchesSearch = query.isEmpty
+                || product.name.localizedCaseInsensitiveContains(query)
+                || product.description.localizedCaseInsensitiveContains(query)
+            return matchesCategory && matchesSearch
+        }
+    }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                ForEach(StaticContentService.pharmacyCategories) { category in
+            VStack(spacing: 16) {
+                RoundedInputField(
+                    title: appViewModel.selectedLanguage == "sw" ? "Tafuta bidhaa" : "Search products",
+                    systemImage: "magnifyingglass",
+                    text: $searchText
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        categoryChip(title: appViewModel.selectedLanguage == "sw" ? "Zote" : "All", key: nil)
+                        ForEach(StaticContentService.pharmacyCategories) { category in
+                            categoryChip(title: category.title, key: category.id)
+                        }
+                    }
+                }
+
+                if showCart {
+                    cartSection
+                }
+
+                if loading {
+                    ProgressView().padding(.vertical, 20)
+                } else if filteredProducts.isEmpty {
                     CardContainer {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(category.title)
-                                .font(HASETTheme.font(.medium, 16))
-                            Text(category.subtitle)
-                                .font(HASETTheme.font(.regular, 13))
-                                .foregroundStyle(HASETTheme.textSecondary)
+                        Text(appViewModel.selectedLanguage == "sw" ? "Hakuna bidhaa zilizopatikana" : "No products found")
+                            .font(HASETTheme.font(.medium, 15))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 12)
+                    }
+                } else {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredProducts) { product in
+                            CardContainer {
+                                HStack(alignment: .top, spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(product.name)
+                                            .font(HASETTheme.font(.medium, 16))
+                                        if !product.description.isEmpty {
+                                            Text(product.description)
+                                                .font(HASETTheme.font(.regular, 13))
+                                                .foregroundStyle(HASETTheme.textSecondary)
+                                                .lineLimit(2)
+                                        }
+                                        Text(String(format: "TZS %.0f", product.price))
+                                            .font(HASETTheme.font(.medium, 14))
+                                            .foregroundStyle(HASETTheme.greenPrimary)
+                                    }
+                                    Spacer()
+                                    Button(product.inStock ? "Add" : "Out") {
+                                        Task { await addToCart(product) }
+                                    }
+                                    .font(HASETTheme.font(.medium, 13))
+                                    .foregroundStyle(product.inStock ? HASETTheme.greenPrimary : HASETTheme.textSecondary)
+                                    .disabled(!product.inStock)
+                                }
+                            }
                         }
                     }
                 }
@@ -4783,6 +4910,135 @@ struct PharmacyView: View {
         }
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle(appViewModel.selectedLanguage == "sw" ? "Duka la Dawa" : "Pharmacy")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showCart.toggle()
+                } label: {
+                    Label("Cart", systemImage: "cart")
+                        .overlay(alignment: .topTrailing) {
+                            if !cartItems.isEmpty {
+                                Text("\(cartItems.count)")
+                                    .font(.caption2)
+                                    .padding(4)
+                                    .background(HASETTheme.greenPrimary)
+                                    .foregroundStyle(.white)
+                                    .clipShape(Circle())
+                                    .offset(x: 8, y: -8)
+                            }
+                        }
+                }
+            }
+        }
+        .task {
+            AuditLogger.shared.logOpenPharmacy(
+                profile: appViewModel.currentUser,
+                idToken: appViewModel.activeSession?.idToken
+            )
+            await reload()
+        }
+        .refreshable { await reload() }
+    }
+
+    private var cartSection: some View {
+        CardContainer {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(appViewModel.selectedLanguage == "sw" ? "Kikapu" : "Cart")
+                    .font(HASETTheme.font(.medium, 16))
+                if cartItems.isEmpty {
+                    Text(appViewModel.selectedLanguage == "sw" ? "Kikapu kiko tupu" : "Your cart is empty")
+                        .foregroundStyle(HASETTheme.textSecondary)
+                } else {
+                    ForEach(cartItems) { item in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(item.name)
+                                Text("x\(item.quantity) • TZS \(Int(item.lineTotal))")
+                                    .font(HASETTheme.font(.regular, 12))
+                                    .foregroundStyle(HASETTheme.textSecondary)
+                            }
+                            Spacer()
+                            Button("-") { Task { await updateQuantity(item, delta: -1) } }
+                            Button("+") { Task { await updateQuantity(item, delta: 1) } }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func categoryChip(title: String, key: String?) -> some View {
+        Button {
+            selectedCategory = key
+            Task { await loadProducts() }
+        } label: {
+            Text(title)
+                .font(HASETTheme.font(.medium, 13))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(selectedCategory == key ? HASETTheme.greenPrimary : HASETTheme.backgroundCard)
+                .foregroundStyle(selectedCategory == key ? .white : HASETTheme.textPrimary)
+                .clipShape(Capsule())
+        }
+    }
+
+    private func reload() async {
+        loading = true
+        await loadProducts()
+        await loadCart()
+        loading = false
+    }
+
+    private func loadProducts() async {
+        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
+        products = (try? await AuthService().fetchPharmacyProducts(category: selectedCategory, idToken: token)) ?? []
+    }
+
+    private func loadCart() async {
+        guard let userId = appViewModel.currentUser?.userId else {
+            cartItems = []
+            return
+        }
+        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
+        cartItems = (try? await AuthService().fetchPharmacyCart(userId: userId, idToken: token)) ?? []
+    }
+
+    private func addToCart(_ product: PharmacyProductSummary) async {
+        guard let userId = appViewModel.currentUser?.userId else { return }
+        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
+        let existing = cartItems.first { $0.productId == product.id }
+        let quantity = (existing?.quantity ?? 0) + 1
+        let item = PharmacyCartItem(
+            id: product.id,
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: quantity,
+            imageUrl: product.imageUrl
+        )
+        try? await AuthService().upsertPharmacyCartItem(userId: userId, item: item, idToken: token)
+        await loadCart()
+    }
+
+    private func updateQuantity(_ item: PharmacyCartItem, delta: Int) async {
+        guard let userId = appViewModel.currentUser?.userId else { return }
+        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
+        let next = item.quantity + delta
+        if next <= 0 {
+            try? await AuthService().removePharmacyCartItem(userId: userId, productId: item.productId, idToken: token)
+        } else {
+            let updated = PharmacyCartItem(
+                id: item.id,
+                productId: item.productId,
+                name: item.name,
+                price: item.price,
+                quantity: next,
+                imageUrl: item.imageUrl
+            )
+            try? await AuthService().upsertPharmacyCartItem(userId: userId, item: updated, idToken: token)
+        }
+        await loadCart()
     }
 }
 
@@ -5326,12 +5582,18 @@ private struct SettingsDivider: View {
 }
 
 struct MedicalRecordsView: View {
+    let role: UserRole
     @EnvironmentObject private var appViewModel: AppViewModel
 
     var body: some View {
         List {
+            NavigationLink {
+                PrescriptionsListView(role: role)
+                    .environmentObject(appViewModel)
+            } label: {
+                Label(appViewModel.tr("my_prescriptions"), systemImage: "cross.case")
+            }
             Label("Consultation Summary", systemImage: "doc.text")
-            Label("Prescriptions", systemImage: "cross.case")
             Label("Lab Reports", systemImage: "waveform.path.ecg")
         }
         .navigationTitle(appViewModel.tr("medical_records"))

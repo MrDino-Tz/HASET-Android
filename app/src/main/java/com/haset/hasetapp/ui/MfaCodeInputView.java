@@ -2,17 +2,15 @@ package com.haset.hasetapp.ui;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.text.InputFilter;
 import android.text.InputType;
-import android.text.method.TransformationMethod;
 import android.text.TextWatcher;
 import android.text.Editable;
+import android.text.method.PasswordTransformationMethod;
 import android.util.AttributeSet;
 import android.view.Gravity;
-import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -24,13 +22,13 @@ public final class MfaCodeInputView extends LinearLayout {
     private static final int BORDER_ERROR = Color.rgb(211, 47, 47);
     private static final int BORDER_SUCCESS = Color.rgb(0, 136, 0);
     private static final int TEXT_COLOR = Color.rgb(31, 41, 55);
-    private static final TransformationMethod MASK_TRANSFORMATION = new TransformationMethod() {
-        @Override public CharSequence getTransformation(CharSequence source, View view) {
-            return source != null && source.length() > 0 ? "•" : "";
+    private static final InputFilter DIGIT_ONLY = (source, start, end, dest, dstart, dend) -> {
+        for (int i = start; i < end; i++) {
+            if (!Character.isDigit(source.charAt(i))) {
+                return "";
+            }
         }
-
-        @Override public void onFocusChanged(View view, CharSequence sourceText, boolean focused,
-                                             int direction, Rect previouslyFocusedRect) {}
+        return null;
     };
     private int borderColor = BORDER_DEFAULT;
 
@@ -60,13 +58,13 @@ public final class MfaCodeInputView extends LinearLayout {
             box.setTextSize(22);
             box.setTypeface(Typeface.create("sans-serif-rounded", Typeface.BOLD));
             box.setTextColor(TEXT_COLOR);
-            box.setInputType(InputType.TYPE_CLASS_NUMBER);
-            box.setTransformationMethod(MASK_TRANSFORMATION);
+            box.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            box.setTransformationMethod(PasswordTransformationMethod.getInstance());
             box.setSingleLine(true);
             box.setSelectAllOnFocus(true);
             box.setPadding(0, 0, 0, 0);
             box.setBackground(boxBackground(BORDER_DEFAULT, false));
-            box.setFilters(new InputFilter[]{new InputFilter.LengthFilter(1)});
+            box.setFilters(new InputFilter[]{new InputFilter.LengthFilter(1), DIGIT_ONLY});
             LayoutParams params = new LayoutParams(dp(40), dp(50));
             if (i > 0) params.setMarginStart(dp(8));
             addView(box, params);

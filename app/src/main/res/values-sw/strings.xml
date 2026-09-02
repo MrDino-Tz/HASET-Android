@@ -49,7 +49,8 @@
     <string name="send_reset_link">Tuma Kiungo cha Kuweka Upya</string>
     <string name="remember_password">Unakumbuka nenosiri lako?</string>
     <string name="sending_reset_email">Inatuma barua pepe ya kuweka upya...</string>
-    <string name="reset_email_sent">Ikiwa akaunti ipo kwa barua pepe hii, kiungo cha kubadili nenosiri kimetumwa.</string>
+    <string name="reset_email_sent">Kiungo cha kubadilisha nenosiri kimetumwa kwenye barua pepe yako. Angalia kikasha chako na folda ya barua taka.</string>
+    <string name="reset_email_not_found">Hakuna akaunti iliyosajiliwa kwa barua pepe hii. Angalia barua pepe au jisajili.</string>
     <string name="register">Jisajili</string>
     <string name="registration_successful">Usajili Umefanikiwa</string>
     <string name="email">Barua pepe</string>
@@ -910,6 +911,7 @@
 
     <!-- RegisterActivity fee dialog -->
     <string name="doctor_reg_fee_title">Ada ya Usajili wa Daktari</string>
+    <string name="doctor_awaiting_admin_approval">Akaunti yako inasubiri uidhinishaji wa msimamizi. Unaweza kutumia programu, lakini wagonjwa hawawezi kukupata au kukuwekea miadi hadi msimamizi athibitishe hati zako za MCT.</string>
     <string name="doctor_reg_fee_message">Ada ya lazima ya uthibitishaji wa MCT na usajili inahitajika.\n\nBonyeza \'Lipa kupitia USSD\' kuiga malipo.</string>
     <string name="doctor_reg_payment_required">Lipa ada ya usajili wa daktari ili kumaliza kuingia. Huwezi kutumia programu hadi malipo yakamilike.</string>
     <string name="pay_via_ussd">Lipa kupitia USSD</string>
@@ -984,6 +986,17 @@
     <string name="unarchive_chat">Toa Soga Kwenye Jalada</string>
     <string name="passwords_do_not_match">Nywila hazilingani</string>
     <string name="mct_reg_required">Namba ya Usajili ya MCT inahitajika</string>
+    <string name="hint_nin">NIN (tarakimu 20)</string>
+    <string name="nin_required">NIN inahitajika</string>
+    <string name="error_valid_nin">Weka NIN sahihi yenye tarakimu 20</string>
+    <string name="upload_nin_document">Pakia hati ya NIN (PDF)</string>
+    <string name="upload_mct_certificate">Pakia cheti cha MCT (PDF)</string>
+    <string name="nin_document_selected">PDF ya NIN imechaguliwa</string>
+    <string name="mct_certificate_selected">PDF ya cheti cha MCT imechaguliwa</string>
+    <string name="error_nin_document_required">Pakia NIN yako kama PDF</string>
+    <string name="error_mct_certificate_required">Pakia cheti cha usajili wa MCT kama PDF</string>
+    <string name="error_document_pdf_only">Hati za PDF pekee ndizo zinakubalika</string>
+    <string name="uploading_documents">Inapakia nyaraka…</string>
 
     <!-- SearchActivity -->
     <string name="try_different_keywords">Jaribu kutafuta kwa maneno tofauti</string>
@@ -1368,7 +1381,7 @@ Pakia bango kamili la picha</string>
     <string name="premium">Premium</string>
     <string name="healthcare">Healthcare</string>
     <string name="payment_confirmed_1">Payment Confirmed</string>
-    <string name="the_backend_returned_a_successful_paymen">The backend returned a successful payment response. You can now continue.</string>
+    <string name="the_backend_returned_a_successful_paymen">Malipo yako yamepokelewa kwa mafanikio. Unaweza kuendelea sasa.</string>
     <string name="title">Title</string>
     <string name="description_text">Description text</string>
     <string name="select_completed_appointments_to_export">Select Completed Appointments to Export</string>

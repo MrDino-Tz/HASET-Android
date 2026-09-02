@@ -27,6 +27,10 @@ final class AppViewModel: ObservableObject {
     @Published var doctorWalletLoading = false
     @Published var doctorWalletError: String?
     @Published var mfaError: String?
+    @Published var pendingDoctorRegistration: PendingDoctorRegistration?
+    @Published var blockingDialog: BlockingDialogState?
+    @Published var showUnpaidDoctorMessage = false
+    @Published var pendingPasswordResetCode: String?
 
     private let sessionStore = SessionStore()
     private let authService = AuthService()
@@ -38,12 +42,22 @@ final class AppViewModel: ObservableObject {
     private var didLoadNotifications = false
     private var lastPasswordResetRequestAt: Date?
     private let passwordResetCooldown: TimeInterval = 30
+    private var loginAttemptCount = 0
+    private var loginLockoutUntil: Date?
 
     init() {
         selectedLanguage = sessionStore.languageCode
         notificationEnabled = sessionStore.notificationEnabled
         themeMode = sessionStore.themeMode
         locationEnabled = sessionStore.locationEnabled
+        NotificationCenter.default.addObserver(
+            forName: .hasetFCMTokenUpdated,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let token = notification.object as? String else { return }
+            Task { await self?.syncDeviceToken(token) }
+        }
         Task {
             await bootstrap()
         }
@@ -69,15 +83,40 @@ final class AppViewModel: ObservableObject {
             }
 
             if let config, config.maintenanceMode {
-                alertState = AlertState(
+                blockingDialog = BlockingDialogState(
                     title: "Maintenance Mode",
-                    message: config.maintenanceMessage ?? "HASET App is undergoing maintenance. Please try again later."
+                    message: config.maintenanceMessage ?? "HASET App is undergoing maintenance. Please try again later.",
+                    updateURL: nil
+                )
+                return
+            }
+
+            if let config,
+               config.minVersionCode > currentAppVersionCode() {
+                blockingDialog = BlockingDialogState(
+                    title: "Update Required",
+                    message: "A new version of HASET is available. Please update to continue.",
+                    updateURL: config.updateUrl
                 )
                 return
             }
 
             if let storedSession = sessionStore.loadSession() {
                 let session = (try? await authService.refreshSessionIfNeeded(storedSession)) ?? storedSession
+                if session.role == .doctor {
+                    let pending = (try? await authService.isDoctorRegistrationPending(
+                        userId: session.userId,
+                        idToken: session.idToken
+                    )) ?? false
+                    if pending {
+                        sessionStore.clearSession()
+                        activeSession = nil
+                        currentUser = nil
+                        showUnpaidDoctorMessage = true
+                        route = .login
+                        return
+                    }
+                }
                 sessionStore.saveSession(session)
                 activeSession = session
                 currentUser = try? await authService.restoreProfile(session: session)
@@ -164,11 +203,55 @@ final class AppViewModel: ObservableObject {
                 sessionStore.notificationEnabled = granted
                 if !granted {
                     alertState = AlertState(title: tr("permission_required"), message: tr("notifications_permission_message"))
+                } else if currentUser?.role == .patient {
+                    HealthTipsScheduler.rescheduleDailyTips(tips: patientHealthTips)
                 }
             }
         } else {
             notificationEnabled = false
             sessionStore.notificationEnabled = false
+            HealthTipsScheduler.cancelAll()
+        }
+    }
+
+    func handleIncomingURL(_ url: URL) {
+        guard PasswordResetLinkParser.isResetPasswordLink(url),
+              let code = PasswordResetLinkParser.extractOobCode(from: url.absoluteString) else {
+            return
+        }
+        pendingPasswordResetCode = code
+    }
+
+    func openPasswordResetSheet(with linkOrCode: String?) {
+        if let linkOrCode, let code = PasswordResetLinkParser.extractOobCode(from: linkOrCode) {
+            pendingPasswordResetCode = code
+        } else {
+            pendingPasswordResetCode = ""
+        }
+    }
+
+    func confirmPasswordReset(oobCode: String, newPassword: String, confirmPassword: String) async -> Bool {
+        let code = PasswordResetLinkParser.extractOobCode(from: oobCode) ?? oobCode
+        guard ValidationService.isStrongPassword(newPassword) else {
+            alertState = AlertState(title: tr("error"), message: tr("strong_password_required"))
+            return false
+        }
+        guard newPassword == confirmPassword else {
+            alertState = AlertState(title: tr("error"), message: tr("passwords_do_not_match"))
+            return false
+        }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            _ = try await authService.verifyPasswordResetCode(code)
+            try await authService.confirmPasswordReset(oobCode: code, newPassword: newPassword)
+            pendingPasswordResetCode = nil
+            alertState = AlertState(title: tr("success"), message: tr("password_reset_success"))
+            route = .login
+            return true
+        } catch {
+            alertState = AlertState(title: tr("error"), message: error.localizedDescription)
+            return false
         }
     }
 
@@ -216,12 +299,18 @@ final class AppViewModel: ObservableObject {
     }
 
     func login(email: String, password: String) {
-        guard ValidationService.isValidEmail(email) else {
+        if isLoginLocked() {
+            alertState = AlertState(title: tr("error"), message: loginLockoutMessage())
+            return
+        }
+
+        let resolvedEmail = HASETConstants.resolveLoginEmail(email)
+        guard ValidationService.isValidEmail(resolvedEmail) else {
             alertState = AlertState(title: tr("error"), message: tr("valid_email_required"))
             return
         }
-        guard ValidationService.isValidPassword(password) else {
-            alertState = AlertState(title: tr("error"), message: tr("password_too_short"))
+        guard ValidationService.isStrongPassword(password) else {
+            alertState = AlertState(title: tr("error"), message: tr("strong_password_required"))
             return
         }
 
@@ -229,24 +318,32 @@ final class AppViewModel: ObservableObject {
         Task {
             defer { isLoading = false }
             do {
-                let result = try await authService.signIn(email: email, password: password)
-                // Keep the freshly authenticated Firebase session available to
-                // the MFA route even if SwiftUI recreates the enrollment view.
+                let result = try await authService.signIn(email: resolvedEmail, password: password)
+                loginAttemptCount = 0
+                loginLockoutUntil = nil
                 activeSession = result.0
                 let mfaEnabled = try await authService.mobileMFAStatus(idToken: result.0.idToken)
                 sessionStore.saveSession(result.0)
                 activeSession = result.0
-                if mfaEnabled { pendingMFASession = result.0; pendingMFAProfile = result.1; route = .mfaChallenge; return }
-                currentUser = result.1
-                if result.1.role == .patient { await loadPatientHomeContent(force: true) }
-                await loadDoctors(force: true); await loadAppointments(force: true); await loadConversations(force: true); await loadNotifications(force: true)
-                route = .dashboard(result.1.role)
+                if mfaEnabled {
+                    pendingMFASession = result.0
+                    pendingMFAProfile = result.1
+                    route = .mfaChallenge
+                    return
+                }
+                try await completeAuthenticatedLogin(session: result.0, profile: result.1)
             } catch ServiceError.emailNotVerified {
+                loginAttemptCount = 0
                 sessionStore.clearSession()
                 activeSession = nil
                 currentUser = nil
                 alertState = AlertState(title: tr("login_failed"), message: tr("verify_email_before_login"))
             } catch {
+                loginAttemptCount += 1
+                if loginAttemptCount >= HASETConstants.maxLoginAttempts {
+                    loginLockoutUntil = Date().addingTimeInterval(HASETConstants.loginLockoutSeconds)
+                    loginAttemptCount = 0
+                }
                 alertState = AlertState(title: tr("login_failed"), message: error.localizedDescription)
             }
         }
@@ -258,18 +355,54 @@ final class AppViewModel: ObservableObject {
         guard let session = pendingMFASession, let profile = pendingMFAProfile else { route = .login; return }
         guard code.count == 6 || code.count >= 8 else { mfaError = "Enter a valid authenticator or recovery code."; return }
         isLoading = true
-        Task { defer { isLoading = false }; do { _ = try await authService.verifyMobileMFA(code: code, idToken: session.idToken); currentUser = profile; pendingMFASession = nil; pendingMFAProfile = nil; route = .dashboard(profile.role) } catch { mfaError = error.localizedDescription } }
+        Task {
+            defer { isLoading = false }
+            do {
+                _ = try await authService.verifyMobileMFA(code: code, idToken: session.idToken)
+                pendingMFASession = nil
+                pendingMFAProfile = nil
+                try await completeAuthenticatedLogin(session: session, profile: profile)
+            } catch {
+                mfaError = error.localizedDescription
+            }
+        }
     }
 
     func completeMFAEnrollment() async {
         guard let session = pendingMFASession, let profile = pendingMFAProfile else { route = .login; return }
         do {
-            guard try await authService.mobileMFAStatus(idToken: session.idToken) else { throw ServiceError.message("MFA enrollment was not confirmed.") }
-            currentUser = profile
-            if profile.role == .patient { await loadPatientHomeContent(force: true) }
-            await loadDoctors(force: true); await loadAppointments(force: true); await loadConversations(force: true); await loadNotifications(force: true)
-            pendingMFASession = nil; pendingMFAProfile = nil; route = .dashboard(profile.role)
-        } catch { alertState = AlertState(title: "MFA enrollment", message: error.localizedDescription) }
+            guard try await authService.mobileMFAStatus(idToken: session.idToken) else {
+                throw ServiceError.message("MFA enrollment was not confirmed.")
+            }
+            pendingMFASession = nil
+            pendingMFAProfile = nil
+            try await completeAuthenticatedLogin(session: session, profile: profile)
+        } catch {
+            alertState = AlertState(title: "MFA enrollment", message: error.localizedDescription)
+        }
+    }
+
+    func completeDoctorRegistrationPayment() async {
+        guard let pending = pendingDoctorRegistration,
+              let session = activeSession ?? sessionStore.loadSession() else { return }
+        do {
+            try await authService.markDoctorRegistrationPaid(userId: session.userId, idToken: session.idToken)
+            pendingDoctorRegistration = nil
+            if let profile = currentUser {
+                try await finishDashboardEntry(session: session, profile: profile)
+            }
+        } catch {
+            alertState = AlertState(title: tr("error"), message: error.localizedDescription)
+        }
+    }
+
+    func cancelDoctorRegistrationPayment() {
+        pendingDoctorRegistration = nil
+        sessionStore.clearSession()
+        activeSession = nil
+        currentUser = nil
+        showUnpaidDoctorMessage = true
+        route = .login
     }
 
     func loadDoctorWithdrawals() async {
@@ -289,7 +422,17 @@ final class AppViewModel: ObservableObject {
         doctorWalletLoading = false
     }
 
-    func register(fullName: String, email: String, phoneDigits: String, password: String, role: UserRole, regNo: String) {
+    func register(
+        fullName: String,
+        email: String,
+        phoneDigits: String,
+        password: String,
+        role: UserRole,
+        regNo: String,
+        nin: String = "",
+        ninDocumentUrl: String? = nil,
+        mctCertificateUrl: String? = nil
+    ) {
         let formattedPhone = phoneDigits.hasPrefix("+255") ? phoneDigits : "+255\(phoneDigits)"
 
         guard ValidationService.isValidName(fullName) else {
@@ -312,6 +455,25 @@ final class AppViewModel: ObservableObject {
             alertState = AlertState(title: tr("error"), message: tr("mct_required"))
             return
         }
+        if role == .doctor {
+            let trimmedNin = nin.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedNin.isEmpty {
+                alertState = AlertState(title: tr("error"), message: tr("nin_required"))
+                return
+            }
+            if !ValidationService.isValidNin(trimmedNin) {
+                alertState = AlertState(title: tr("error"), message: tr("valid_nin_required"))
+                return
+            }
+            if ninDocumentUrl?.isEmpty != false {
+                alertState = AlertState(title: tr("error"), message: tr("nin_document_required"))
+                return
+            }
+            if mctCertificateUrl?.isEmpty != false {
+                alertState = AlertState(title: tr("error"), message: tr("mct_certificate_required"))
+                return
+            }
+        }
 
         isLoading = true
         Task {
@@ -323,8 +485,12 @@ final class AppViewModel: ObservableObject {
                     fullName: fullName,
                     phone: formattedPhone,
                     role: role,
-                    regNo: role == .doctor ? regNo : nil
+                    regNo: role == .doctor ? regNo : nil,
+                    nin: role == .doctor ? nin : nil,
+                    ninDocumentUrl: role == .doctor ? ninDocumentUrl : nil,
+                    mctCertificateUrl: role == .doctor ? mctCertificateUrl : nil
                 )
+                AuditLogger.shared.logRegistration(profile: result.1, idToken: result.0.idToken)
                 try? await authService.sendEmailVerificationViaSmtp(idToken: result.0.idToken)
                 sessionStore.clearSession()
                 activeSession = nil
@@ -338,7 +504,8 @@ final class AppViewModel: ObservableObject {
     }
 
     func sendResetEmail(_ email: String) {
-        guard ValidationService.isValidEmail(email) else {
+        let resolvedEmail = HASETConstants.resolveLoginEmail(email)
+        guard ValidationService.isValidEmail(resolvedEmail) else {
             alertState = AlertState(title: tr("error"), message: tr("valid_email_required"))
             return
         }
@@ -353,10 +520,10 @@ final class AppViewModel: ObservableObject {
         Task {
             defer { isLoading = false }
             do {
-                try await authService.sendPasswordReset(email: email)
-                alertState = AlertState(title: tr("success"), message: tr("reset_email_sent"))
+                let message = try await authService.sendPasswordReset(email: resolvedEmail)
+                alertState = AlertState(title: tr("success"), message: message)
             } catch {
-                alertState = AlertState(title: tr("success"), message: tr("reset_email_sent"))
+                alertState = AlertState(title: tr("error"), message: error.localizedDescription)
             }
         }
     }
@@ -497,7 +664,7 @@ final class AppViewModel: ObservableObject {
                 let session = try await authService.refreshSessionIfNeeded(storedSession)
                 sessionStore.saveSession(session)
                 activeSession = session
-                try await authService.createAppointment(
+                let appointmentId = try await authService.createAppointment(
                     patient: currentUser,
                     doctor: doctor,
                     date: trimmedDate,
@@ -507,6 +674,26 @@ final class AppViewModel: ObservableObject {
                     paymentConfirmed: paymentConfirmed,
                     idToken: session.idToken
                 )
+                AuditLogger.shared.logAppointmentBooked(
+                    profile: currentUser,
+                    appointmentId: appointmentId,
+                    idToken: session.idToken
+                )
+                let booked = AppointmentSummary(
+                    id: appointmentId,
+                    patientId: currentUser.userId,
+                    doctorId: doctor.id,
+                    title: doctor.name,
+                    subtitle: trimmedReason,
+                    date: trimmedDate,
+                    time: trimmedTime,
+                    dateText: trimmedDate,
+                    status: .pending,
+                    appointmentType: appointmentType,
+                    profileImage: doctor.profileImage,
+                    createdAt: Date().timeIntervalSince1970 * 1000
+                )
+                AppointmentReminderService.scheduleReminders(for: booked, doctorName: doctor.name)
                 await loadAppointments(force: true)
                 alertState = AlertState(
                     title: tr("booking_successful"),
@@ -541,6 +728,9 @@ final class AppViewModel: ObservableObject {
 
         do {
             patientHealthTips = try await authService.fetchHealthTips(idToken: idToken)
+            if notificationEnabled, currentUser?.role == .patient {
+                HealthTipsScheduler.rescheduleDailyTips(tips: patientHealthTips)
+            }
         } catch {
             patientHealthTips = []
         }
@@ -832,6 +1022,7 @@ final class AppViewModel: ObservableObject {
         activeSession = nil
         pendingMFASession = nil
         pendingMFAProfile = nil
+        pendingDoctorRegistration = nil
         currentUser = nil
         didLoadPatientHomeContent = false
         didLoadDoctors = false
@@ -859,5 +1050,97 @@ final class AppViewModel: ObservableObject {
                 alertState = AlertState(title: tr("error"), message: "Unable to delete account.")
             }
         }
+    }
+
+    private func completeAuthenticatedLogin(session: StoredSession, profile: UserProfile) async throws {
+        activeSession = session
+        currentUser = profile
+        sessionStore.saveSession(session)
+
+        if profile.role == .doctor {
+            let pending = try await authService.isDoctorRegistrationPending(
+                userId: session.userId,
+                idToken: session.idToken
+            )
+            if pending {
+                await refreshDoctorRegistrationFee()
+                if doctorRegistrationFee <= 0 {
+                    try await authService.markDoctorRegistrationPaid(userId: session.userId, idToken: session.idToken)
+                    try await finishDashboardEntry(session: session, profile: profile)
+                    return
+                }
+                pendingDoctorRegistration = PendingDoctorRegistration(
+                    doctor: DoctorSummary(
+                        id: "doctor_registration",
+                        name: profile.fullName,
+                        specialty: "Doctor Registration",
+                        hospital: "HASET Hospital",
+                        phoneNumber: profile.phone,
+                        email: profile.email,
+                        address: nil,
+                        bio: nil,
+                        rating: 0,
+                        experienceYears: nil,
+                        verified: false,
+                        isDemo: false,
+                        consultationFee: "TZS \(Int(doctorRegistrationFee))",
+                        availableToday: false,
+                        profileImage: profile.profileImage,
+                        availableTimes: nil
+                    ),
+                    amount: doctorRegistrationFee
+                )
+                return
+            }
+        }
+
+        try await finishDashboardEntry(session: session, profile: profile)
+    }
+
+    private func finishDashboardEntry(session: StoredSession, profile: UserProfile) async throws {
+        currentUser = profile
+        AuditLogger.shared.logLogin(profile: profile, idToken: session.idToken)
+        await syncDeviceToken(PushNotificationService.currentFCMToken())
+        if profile.role == .patient {
+            await loadPatientHomeContent(force: true)
+            if notificationEnabled {
+                HealthTipsScheduler.rescheduleDailyTips(tips: patientHealthTips)
+            }
+        } else if profile.role == .doctor {
+            await loadDoctorWallet(force: true)
+            await loadDoctorPresence(force: true)
+        }
+        await loadDoctors(force: true)
+        await loadAppointments(force: true)
+        await loadConversations(force: true)
+        await loadNotifications(force: true)
+        syncLocationPermission()
+        route = .dashboard(profile.role)
+    }
+
+    private func syncDeviceToken(_ token: String?) async {
+        guard let token, !token.isEmpty,
+              let profile = currentUser,
+              let session = activeSession ?? sessionStore.loadSession() else { return }
+        try? await authService.syncDeviceToken(
+            userId: profile.userId,
+            token: token,
+            idToken: session.idToken
+        )
+    }
+
+    private func currentAppVersionCode() -> Int {
+        Int(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0") ?? 0
+    }
+
+    private func isLoginLocked() -> Bool {
+        guard let loginLockoutUntil else { return false }
+        return Date() < loginLockoutUntil
+    }
+
+    private func loginLockoutMessage() -> String {
+        guard let loginLockoutUntil else { return tr("login_failed") }
+        let minutes = max(1, Int(ceil(loginLockoutUntil.timeIntervalSinceNow / 60)))
+        return tr("login_locked").replacingOccurrences(of: "%1$d", with: String(minutes))
     }
 }
