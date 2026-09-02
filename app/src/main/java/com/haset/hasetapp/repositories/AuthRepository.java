@@ -306,10 +306,14 @@ public class AuthRepository {
     }
 
     public void sendEmailVerificationViaSmtp(FirebaseUser user) {
-        sendEmailVerificationViaSmtp(user, null);
+        sendEmailVerificationViaSmtp(user, null, null);
     }
 
     public void sendEmailVerificationViaSmtp(FirebaseUser user, FirebaseHelper.OnCompleteListener<Void> callback) {
+        sendEmailVerificationViaSmtp(user, null, callback);
+    }
+
+    public void sendEmailVerificationViaSmtp(FirebaseUser user, String fullName, FirebaseHelper.OnCompleteListener<Void> callback) {
         if (user == null) {
             if (callback != null) callback.onError("Unable to send verification email.");
             return;
@@ -317,10 +321,20 @@ public class AuthRepository {
 
         user.getIdToken(true)
             .addOnSuccessListener(token -> {
+                StringBuilder payload = new StringBuilder("{\"email\":\"")
+                        .append(jsonEscape(user.getEmail()))
+                        .append("\"");
+                if (fullName != null) {
+                    String trimmedName = fullName.trim();
+                    if (!trimmedName.isEmpty()) {
+                        payload.append(",\"name\":\"").append(jsonEscape(trimmedName)).append("\"");
+                        payload.append(",\"full_name\":\"").append(jsonEscape(trimmedName)).append("\"");
+                    }
+                }
+                payload.append("}");
                 Request request = new Request.Builder()
                     .url(Constants.EMAIL_VERIFICATION_API_URL)
-                    .post(RequestBody.create(
-                        "{\"email\":\"" + jsonEscape(user.getEmail()) + "\"}", JSON))
+                    .post(RequestBody.create(payload.toString(), JSON))
                     .addHeader("Authorization", "Bearer " + token.getToken())
                     .build();
                 httpClient.newCall(request).enqueue(new Callback() {

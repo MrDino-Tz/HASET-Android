@@ -117,6 +117,9 @@ struct RoleHomeView: View {
                 } else if role == .doctor {
                     doctorTopHeader
                     doctorHeroCard
+                    if appViewModel.currentUser?.approved != true {
+                        doctorPendingApprovalBanner
+                    }
                 } else {
                     headerCard
                 }
@@ -134,7 +137,10 @@ struct RoleHomeView: View {
         }
         .background(HASETTheme.backgroundPrimary)
         .refreshable {
-            if role == .doctor { await appViewModel.loadDoctorWallet(force: true) }
+            if role == .doctor {
+                await appViewModel.refreshCurrentUser()
+                await appViewModel.loadDoctorWallet(force: true)
+            }
             await appViewModel.loadAppointments(force: true)
         }
         .navigationTitle("")
@@ -143,6 +149,7 @@ struct RoleHomeView: View {
             if role == .patient {
                 await appViewModel.loadPatientHomeContent(force: false)
             } else if role == .doctor {
+                await appViewModel.refreshCurrentUser()
                 await appViewModel.loadDoctorWallet(force: true)
                 await appViewModel.loadDoctorPresence(force: false)
             }
@@ -477,6 +484,29 @@ struct RoleHomeView: View {
         }
     }
 
+    private var doctorPendingApprovalBanner: some View {
+        CardContainer(
+            fill: HASETTheme.backgroundPrimary,
+            shadowColor: .clear,
+            cornerRadius: 12,
+            padding: 14
+        ) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.orange)
+                Text(appViewModel.tr("doctor_awaiting_admin_approval"))
+                    .font(HASETTheme.font(.medium, 14))
+                    .foregroundStyle(HASETTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.orange.opacity(0.55), lineWidth: 1)
+        )
+    }
+
     private var doctorContent: some View {
         Group {
             SectionTitle(appViewModel.tr("today_s_overview"))
@@ -546,11 +576,11 @@ struct RoleHomeView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 24)
 
-                    Text("No Pending Appointments")
+                    Text(appViewModel.tr("no_pending_appointments"))
                         .font(HASETTheme.font(.medium, 16))
                         .foregroundStyle(HASETTheme.textPrimary)
 
-                    Text("You're all caught up! New appointments will appear here.")
+                    Text(appViewModel.tr("all_caught_up"))
                         .font(HASETTheme.font(.regular, 12))
                         .foregroundStyle(HASETTheme.textSecondary)
                         .multilineTextAlignment(.center)
@@ -564,14 +594,14 @@ struct RoleHomeView: View {
                 }
             }
         }
-        .confirmationDialog("Filter appointments", isPresented: $showingDoctorFilterOptions, titleVisibility: .visible) {
-            Button("Pending") { selectedDoctorStatus = .pending }
-            Button("Approved") { selectedDoctorStatus = .approved }
-            Button("Completed") { selectedDoctorStatus = .completed }
-            Button("Cancelled") { selectedDoctorStatus = .cancelled }
-            Button("Clear Filter", role: .destructive) { selectedDoctorStatus = nil }
+        .confirmationDialog(appViewModel.tr("filter_appointments"), isPresented: $showingDoctorFilterOptions, titleVisibility: .visible) {
+            Button(appViewModel.tr("pending")) { selectedDoctorStatus = .pending }
+            Button(appViewModel.tr("approved")) { selectedDoctorStatus = .approved }
+            Button(appViewModel.tr("completed")) { selectedDoctorStatus = .completed }
+            Button(appViewModel.tr("canceled")) { selectedDoctorStatus = .cancelled }
+            Button(appViewModel.tr("clear_filter"), role: .destructive) { selectedDoctorStatus = nil }
         } message: {
-            Text("Show recent appointments by status.")
+            Text(appViewModel.tr("filter_appointments_by_status"))
         }
     }
 
@@ -1185,11 +1215,19 @@ private struct DoctorWalletView: View {
     @State private var payoutMethod = "mobile_money"
     @State private var showPayoutAccounts = false
     @State private var payoutSetupAfterMFA = false
-    @State private var destinationProvider = ""
+    @State private var selectedPayoutProvider = ""
     @State private var destinationPhone = ""
     @State private var destinationMFA = ""
     @State private var destinationMessage: String?
     @State private var savingDestination = false
+
+    private let payoutProviderOptions = [
+        "Vodacom M-Pesa",
+        "Airtel Money",
+        "Tigo Pesa",
+        "Halotel",
+        "Mixx by Yas"
+    ]
 
     private var balanceText: String {
         if !showBalance { return "•••••• TZS" }
@@ -1213,9 +1251,12 @@ private struct DoctorWalletView: View {
     }
 
     private var updatedText: String {
-        guard let updated = appViewModel.doctorWallet?.lastUpdated else { return "Unknown" }
+        guard let updated = appViewModel.doctorWallet?.lastUpdated else {
+            return appViewModel.tr("wallet_unknown_date")
+        }
         let date = Date(timeIntervalSince1970: updated / 1000)
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: appViewModel.selectedLanguage == "sw" ? "sw_TZ" : "en_US")
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
@@ -1224,7 +1265,7 @@ private struct DoctorWalletView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                SectionTitle("Wallet")
+                SectionTitle(appViewModel.tr("my_wallet"))
                 CardContainer {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -1234,7 +1275,7 @@ private struct DoctorWalletView: View {
                                 .scaledToFit()
                                 .frame(width: 22, height: 22)
                             Spacer()
-                            Text("Updated \(updatedText)")
+                            Text("\(appViewModel.tr("wallet_updated")) \(updatedText)")
                                 .font(HASETTheme.font(.regular, 12))
                                 .foregroundStyle(HASETTheme.textSecondary)
                             Button { showBalance.toggle() } label: {
@@ -1244,17 +1285,18 @@ private struct DoctorWalletView: View {
                                     .frame(width: 40, height: 40)
                                     .background(Circle().fill(HASETTheme.greenPrimary.opacity(0.08)))
                             }
-                            .accessibilityLabel(showBalance ? "Hide balance" : "Show balance")
+                            .accessibilityLabel(showBalance ? appViewModel.tr("hide_balance") : appViewModel.tr("show_balance"))
                         }
 
                         Text(balanceText)
                             .font(HASETTheme.font(.black, 28))
                             .foregroundStyle(HASETTheme.textPrimary)
 
+                        SectionTitle(appViewModel.tr("wallet_statistics"))
                         HStack(spacing: 12) {
                             CardContainer(fill: HASETTheme.greenPrimary.opacity(0.08), shadowColor: .clear, cornerRadius: 14, padding: 14) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Total Earnings")
+                                    Text(appViewModel.tr("total_earnings"))
                                         .font(HASETTheme.font(.regular, 12))
                                         .foregroundStyle(HASETTheme.textSecondary)
                                     Text(earningsText)
@@ -1262,11 +1304,10 @@ private struct DoctorWalletView: View {
                                         .foregroundStyle(HASETTheme.textPrimary)
                                 }
                             }
-
                         }
                     }
                 }
-                Button(checkingMFA ? "Checking security…" : "Withdraw") {
+                Button(checkingMFA ? appViewModel.tr("checking_security") : appViewModel.tr("btn_withdraw")) {
                     if (appViewModel.doctorWallet?.balance ?? 0) > 0 {
                         checkMfaThenWithdraw()
                     } else {
@@ -1276,16 +1317,24 @@ private struct DoctorWalletView: View {
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(checkingMFA)
                 Button { checkMfaThenConfigurePayout() } label: {
-                    Label("Payout accounts", systemImage: "wallet.pass.fill")
+                    Label(appViewModel.tr("payout_accounts"), systemImage: "wallet.pass.fill")
                         .frame(maxWidth: .infinity)
                 }
                     .buttonStyle(.borderedProminent)
                     .tint(HASETTheme.greenPrimary)
                     .disabled(checkingMFA)
-                SectionTitle("Withdrawal history")
+                SectionTitle(appViewModel.tr("withdrawal_history"))
                 if appViewModel.doctorWalletLoading && appViewModel.doctorWithdrawals.isEmpty { ProgressView() }
-                else if let error = appViewModel.doctorWalletError { VStack { Text(error); Button("Retry") { Task { await appViewModel.loadDoctorWithdrawals() } } } }
-                else if appViewModel.doctorWithdrawals.isEmpty { Text("No withdrawals yet.").foregroundStyle(HASETTheme.textSecondary) }
+                else if let error = appViewModel.doctorWalletError {
+                    VStack {
+                        Text(error)
+                        Button(appViewModel.tr("retry")) { Task { await appViewModel.loadDoctorWithdrawals() } }
+                    }
+                }
+                else if appViewModel.doctorWithdrawals.isEmpty {
+                    Text(appViewModel.tr("no_withdrawals_yet"))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                }
                 else { ForEach(appViewModel.doctorWithdrawals) { item in
                     CardContainer {
                         HStack {
@@ -1293,7 +1342,7 @@ private struct DoctorWalletView: View {
                                 Text(item.id).font(.caption)
                                 Text(String(format: "%,.0f TZS", item.amount)).font(.headline)
                                 if item.feeAmount > 0 {
-                                    Text(String(format: "Provider fee: %,.0f TZS", item.feeAmount))
+                                    Text(String(format: appViewModel.tr("provider_fee_format"), String(format: "%,.0f", item.feeAmount)))
                                         .font(.caption)
                                         .foregroundStyle(HASETTheme.textSecondary)
                                 }
@@ -1304,11 +1353,16 @@ private struct DoctorWalletView: View {
                         }
                     }
                 } }
+                Text(appViewModel.tr("wallet_consultation_fees_info"))
+                    .font(HASETTheme.font(.regular, 12))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
             }
             .padding(20)
         }
         .background(HASETTheme.backgroundPrimary)
-        .navigationTitle("Wallet")
+        .navigationTitle(appViewModel.tr("my_wallet"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { showBalance = !isHidden }
         .task {
@@ -1316,16 +1370,16 @@ private struct DoctorWalletView: View {
             await appViewModel.loadDoctorWithdrawals()
         }
         .refreshable { await appViewModel.loadDoctorWithdrawals() }
-        .alert("Withdrawal unavailable", isPresented: $showNoBalanceAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(appViewModel.tr("withdrawal_unavailable_title"), isPresented: $showNoBalanceAlert) {
+            Button(appViewModel.tr("ok"), role: .cancel) {}
         } message: {
-            Text("No balance is available for withdrawal.")
+            Text(appViewModel.tr("no_balance_withdrawal"))
         }
-        .alert("Enable MFA to withdraw", isPresented: $showMFARequired) {
-            Button("Cancel", role: .cancel) {}
-            Button("Enable MFA") { showMFAEnrollment = true }
+        .alert(appViewModel.tr("mfa_required_for_withdrawal_title"), isPresented: $showMFARequired) {
+            Button(appViewModel.tr("cancel"), role: .cancel) {}
+            Button(appViewModel.tr("enable_mfa")) { showMFAEnrollment = true }
         } message: {
-            Text("Withdrawals require multi-factor authentication. Enable MFA first; you may disable it later from Settings when you are not withdrawing.")
+            Text(appViewModel.tr("mfa_required_for_withdrawal_message"))
         }
         .sheet(isPresented: $showMFAEnrollment) {
             MFAEnrollmentView(
@@ -1342,54 +1396,88 @@ private struct DoctorWalletView: View {
         }
         .sheet(isPresented: $showWithdraw) {
             VStack(spacing: 16) {
-                Text("Request withdrawal").font(.title3.bold())
+                Text(appViewModel.tr("request_withdrawal")).font(.title3.bold())
                 if availablePayoutMethods.isEmpty {
-                    Text("No approved payout account is available. Contact finance support.").foregroundStyle(.red)
+                    Text(appViewModel.tr("no_verified_payout_destination")).foregroundStyle(.red)
                 } else {
-                    Picker("Payout account", selection: $payoutMethod) {
+                    Picker(appViewModel.tr("payout_account_label"), selection: $payoutMethod) {
                         ForEach(availablePayoutMethods, id: \.0) { method in Text(method.1).tag(method.0) }
                     }.pickerStyle(.segmented)
                     Text(selectedDestinationLabel).font(.caption).foregroundStyle(HASETTheme.textSecondary)
                 }
-                TextField("Amount", text: $amount).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
+                TextField(appViewModel.tr("withdrawal_amount"), text: $amount).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
                 SixDigitMFAInput(code: $mfaCode, isInvalid: false, isVerified: false) {}
                 if let message { Text(message).foregroundStyle(.red) }
-                Button(submitting ? "Submitting…" : "Submit") { submitWithdrawal() }.buttonStyle(PrimaryButtonStyle()).disabled(submitting || availablePayoutMethods.isEmpty)
-                Button("Cancel") { clearPayoutState(); showWithdraw = false }
+                Button(submitting ? appViewModel.tr("submitting") : appViewModel.tr("submit")) { submitWithdrawal() }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(submitting || availablePayoutMethods.isEmpty)
+                Button(appViewModel.tr("cancel")) { clearPayoutState(); showWithdraw = false }
             }.padding(24).interactiveDismissDisabled(submitting)
         }
         .sheet(isPresented: $showPayoutAccounts) {
             ScrollView {
                 VStack(spacing: 16) {
-                    Text("Payout accounts").font(.title3.bold())
-                    Text("Choose where you receive payouts. Finance must approve a change before it can be used.")
+                    Text(appViewModel.tr("payout_accounts")).font(.title3.bold())
+                    Text(appViewModel.tr("payout_accounts_desc"))
                         .font(.caption).foregroundStyle(HASETTheme.textSecondary)
-                    TextField("Provider (M-Pesa, Airtel Money, Mixx by Yas)", text: $destinationProvider).textFieldStyle(.roundedBorder)
-                    TextField("Mobile number", text: $destinationPhone).keyboardType(.phonePad).textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.center)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(appViewModel.tr("payment_provider"))
+                            .font(HASETTheme.font(.medium, 14))
+                            .foregroundStyle(HASETTheme.textPrimary)
+                        Picker(appViewModel.tr("payment_provider"), selection: $selectedPayoutProvider) {
+                            ForEach(payoutProviderOptions, id: \.self) { provider in
+                                Text(provider).tag(provider)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(HASETTheme.divider, lineWidth: 1)
+                        )
+                    }
+                    TextField(appViewModel.tr("mobile_number"), text: $destinationPhone)
+                        .keyboardType(.phonePad)
+                        .textFieldStyle(.roundedBorder)
                     SixDigitMFAInput(code: $destinationMFA, isInvalid: destinationMessage != nil, isVerified: false) {}
                     if let destinationMessage { Text(destinationMessage).foregroundStyle(.red).font(.caption) }
-                    Button(savingDestination ? "Submitting…" : "Submit for approval") { submitPayoutDestination() }
-                        .buttonStyle(PrimaryButtonStyle()).disabled(savingDestination)
-                    Button("Cancel") { clearDestinationState(); showPayoutAccounts = false }
+                    Button(savingDestination ? appViewModel.tr("submitting") : appViewModel.tr("submit_for_approval")) { submitPayoutDestination() }
+                        .buttonStyle(PrimaryButtonStyle()).disabled(savingDestination || selectedPayoutProvider.isEmpty)
+                    Button(appViewModel.tr("cancel")) { clearDestinationState(); showPayoutAccounts = false }
                 }.padding(24)
-            }.interactiveDismissDisabled(savingDestination)
+            }
+            .onAppear {
+                if selectedPayoutProvider.isEmpty {
+                    selectedPayoutProvider = payoutProviderOptions.first ?? ""
+                }
+            }
+            .interactiveDismissDisabled(savingDestination)
         }
     }
 
     private var availablePayoutMethods: [(String, String)] {
         var methods: [(String, String)] = []
-        if appViewModel.doctorWallet?.mobileMoneyDestination?.available == true { methods.append(("mobile_money", "Mobile Money")) }
-        if appViewModel.doctorWallet?.bankDestination?.available == true { methods.append(("bank", "Bank")) }
+        if appViewModel.doctorWallet?.mobileMoneyDestination?.available == true {
+            methods.append(("mobile_money", appViewModel.tr("mobile_money")))
+        }
+        if appViewModel.doctorWallet?.bankDestination?.available == true {
+            methods.append(("bank", appViewModel.tr("bank")))
+        }
         return methods
     }
 
     private var selectedDestinationLabel: String {
-        payoutMethod == "bank" ? (appViewModel.doctorWallet?.bankDestination?.label ?? "Bank") : (appViewModel.doctorWallet?.mobileMoneyDestination?.label ?? "Mobile Money")
+        payoutMethod == "bank"
+            ? (appViewModel.doctorWallet?.bankDestination?.label ?? appViewModel.tr("bank"))
+            : (appViewModel.doctorWallet?.mobileMoneyDestination?.label ?? appViewModel.tr("mobile_money"))
     }
 
     private func checkMfaThenWithdraw() {
         guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
-            appViewModel.alertState = AlertState(title: "Authentication", message: "Authentication expired. Please sign in again.")
+            appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: appViewModel.tr("authentication_expired"))
             return
         }
         checkingMFA = true
@@ -1406,14 +1494,14 @@ private struct DoctorWalletView: View {
                 else { showMFARequired = true }
             } catch {
                 checkingMFA = false
-                appViewModel.alertState = AlertState(title: "MFA", message: error.localizedDescription)
+                appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
             }
         }
     }
 
     private func checkMfaThenConfigurePayout() {
         guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
-            appViewModel.alertState = AlertState(title: "Authentication", message: "Authentication expired. Please sign in again.")
+            appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: appViewModel.tr("authentication_expired"))
             return
         }
         checkingMFA = true
@@ -1428,7 +1516,7 @@ private struct DoctorWalletView: View {
                 if enabled { showPayoutAccounts = true } else { showMFARequired = true }
             } catch {
                 checkingMFA = false
-                appViewModel.alertState = AlertState(title: "MFA", message: error.localizedDescription)
+                appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
             }
         }
     }
@@ -1440,13 +1528,22 @@ private struct DoctorWalletView: View {
     }
 
     private func submitWithdrawal() {
-        guard let value = Int(amount), value >= 5000, Double(value) <= (appViewModel.doctorWallet?.balance ?? 0) else { message = "Enter a valid amount within your available balance."; return }
-        guard mfaCode.count == 6 else { message = "Enter the six-digit MFA code."; return }
-        guard let session = SessionStore().loadSession() else { message = "Authentication expired."; return }
+        guard let value = Int(amount), value >= 5000, Double(value) <= (appViewModel.doctorWallet?.balance ?? 0) else {
+            message = appViewModel.tr("enter_valid_withdrawal_amount")
+            return
+        }
+        guard mfaCode.count == 6 else {
+            message = appViewModel.tr("enter_six_digit_mfa")
+            return
+        }
+        guard let session = SessionStore().loadSession() else {
+            message = appViewModel.tr("authentication_expired")
+            return
+        }
         submitting = true; message = nil
         Task { do {
             guard let token = try await AuthService().verifyMobileMFA(code: mfaCode, idToken: session.idToken) else {
-                throw ServiceError.message("Payouts require a current authenticator code; recovery codes are for account access only.")
+                throw ServiceError.message(appViewModel.tr("enter_six_digit_mfa"))
             }
             try await AuthService().requestDoctorWithdrawal(amount: value, reason: "Doctor payout request", payoutMethod: payoutMethod, idToken: session.idToken, mfaActionToken: token)
             await appViewModel.loadDoctorWithdrawals()
@@ -1454,14 +1551,26 @@ private struct DoctorWalletView: View {
         } catch { await MainActor.run { submitting = false; message = error.localizedDescription; mfaCode = "" } } }
     }
     private func submitPayoutDestination() {
-        let provider = destinationProvider.trimmingCharacters(in: .whitespacesAndNewlines)
+        let provider = selectedPayoutProvider.trimmingCharacters(in: .whitespacesAndNewlines)
         let phone = destinationPhone.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !provider.isEmpty, phone.range(of: "^(?:0\\d{9}|\\+255\\d{9})$", options: .regularExpression) != nil else { destinationMessage = "Use 07XXXXXXXX or +255XXXXXXXXX."; return }
-        guard destinationMFA.count == 6 else { destinationMessage = "Enter the six-digit MFA code."; return }
-        guard let session = SessionStore().loadSession() else { destinationMessage = "Authentication expired."; return }
+        guard !provider.isEmpty,
+              phone.range(of: "^(?:0\\d{9}|\\+255\\d{9})$", options: .regularExpression) != nil else {
+            destinationMessage = appViewModel.tr("invalid_phone_payout_format")
+            return
+        }
+        guard destinationMFA.count == 6 else {
+            destinationMessage = appViewModel.tr("enter_six_digit_mfa")
+            return
+        }
+        guard let session = SessionStore().loadSession() else {
+            destinationMessage = appViewModel.tr("authentication_expired")
+            return
+        }
         savingDestination = true; destinationMessage = nil
         Task { do {
-            guard let token = try await AuthService().verifyMobileMFA(code: destinationMFA, idToken: session.idToken) else { throw ServiceError.message("A current authenticator code is required.") }
+            guard let token = try await AuthService().verifyMobileMFA(code: destinationMFA, idToken: session.idToken) else {
+                throw ServiceError.message(appViewModel.tr("enter_six_digit_mfa"))
+            }
             try await AuthService().updateDoctorPayoutDestination(type: "mobile_money", provider: provider, phone: phone, bankCode: "", bankAccount: "", idToken: session.idToken, mfaActionToken: token)
             try await AuthService().mirrorPayoutDestinationForApproval(
                 doctorId: session.userId,
@@ -1474,13 +1583,19 @@ private struct DoctorWalletView: View {
             )
             await MainActor.run {
                 clearDestinationState(); showPayoutAccounts = false
-                appViewModel.alertState = AlertState(title: "Payout account submitted", message: "Finance approval and the security cooling-off period are required before withdrawal.")
+                appViewModel.alertState = AlertState(
+                    title: appViewModel.tr("payout_account_submitted_title"),
+                    message: appViewModel.tr("payout_account_submitted_message")
+                )
             }
         } catch { await MainActor.run { savingDestination = false; destinationMessage = error.localizedDescription; destinationMFA = "" } } }
     }
     private func clearDestinationState() {
-        destinationProvider = ""; destinationPhone = ""
-        destinationMFA = ""; destinationMessage = nil; savingDestination = false
+        selectedPayoutProvider = payoutProviderOptions.first ?? ""
+        destinationPhone = ""
+        destinationMFA = ""
+        destinationMessage = nil
+        savingDestination = false
     }
     private func clearPayoutState() { amount = ""; mfaCode = ""; submitting = false; message = nil }
 }
@@ -1754,19 +1869,13 @@ struct BookAppointmentView: View {
         CardContainer {
             HStack(spacing: 14) {
                 ZStack(alignment: .bottomTrailing) {
-                    ProfileAvatarView(
+                    ProfileAvatarWithVerifiedBadge(
                         imageSource: doctor.profileImage ?? "",
                         initials: doctor.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased(),
                         size: 60,
-                        fontSize: 18
+                        fontSize: 18,
+                        showVerified: doctor.verified
                     )
-                    if doctor.verified {
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(HASETTheme.greenPrimary)
-                            .padding(2)
-                            .background(Circle().fill(Color.white))
-                    }
                 }
 
                 VStack(alignment: .leading, spacing: 5) {
@@ -2040,9 +2149,18 @@ struct PaymentCheckoutView: View {
         self.onPaymentConfirmed = onPaymentConfirmed
         self.onCancelRegistrationPayment = onCancelRegistrationPayment
         _selectedMethod = State(initialValue: initialMethod)
-        _consultationId = State(initialValue: "consult-\(UUID().uuidString.lowercased())")
+        let registrationUserId = SessionStore().loadSession()?.userId ?? ""
+        if doctor.id == "doctor_registration", !registrationUserId.isEmpty {
+            _consultationId = State(initialValue: "registration-\(registrationUserId)")
+        } else {
+            _consultationId = State(initialValue: "consult-\(UUID().uuidString.lowercased())")
+        }
         // Keep margin below Snippe's 30-character processor limit.
         _idempotencyKey = State(initialValue: String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(24)).lowercased())
+    }
+
+    private var isDoctorRegistrationPayment: Bool {
+        doctor.id == "doctor_registration"
     }
 
     var body: some View {
@@ -2051,21 +2169,13 @@ struct PaymentCheckoutView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     CardContainer {
                         HStack(spacing: 14) {
-                            ZStack(alignment: .bottomTrailing) {
-                                ProfileAvatarView(
-                                    imageSource: doctor.profileImage ?? "",
-                                    initials: doctor.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased(),
-                                    size: 56,
-                                    fontSize: 18
-                                )
-                                if doctor.verified {
-                                    Image(systemName: "checkmark.seal.fill")
-                                        .font(.system(size: 15))
-                                        .foregroundStyle(HASETTheme.greenPrimary)
-                                        .padding(2)
-                                        .background(Circle().fill(Color.white))
-                                }
-                            }
+                            ProfileAvatarWithVerifiedBadge(
+                                imageSource: doctor.profileImage ?? "",
+                                initials: doctor.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased(),
+                                size: 56,
+                                fontSize: 18,
+                                showVerified: doctor.verified
+                            )
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(doctor.name)
@@ -2258,9 +2368,6 @@ struct PaymentCheckoutView: View {
             statusMessage = appViewModel.tr("preparing_payment")
             canRetryStatus = false
         }
-        // Reuse the signed-in session so the authenticated Firebase user and
-        // payment payload user_id stay aligned. Doctor registration is the only
-        // guest flow and receives a short-lived anonymous session.
         if paymentAuthSession != nil {
             await MainActor.run {
                 paymentSessionReady = true
@@ -2268,17 +2375,17 @@ struct PaymentCheckoutView: View {
             }
             return
         }
-        if sessionStore.loadSession() != nil || appViewModel.activeSession != nil {
+        if appViewModel.activeSession != nil || sessionStore.loadSession() != nil {
             await MainActor.run {
                 paymentSessionReady = true
                 statusMessage = ""
             }
             return
         }
-        if doctor.id == "doctor_registration" {
+        if isDoctorRegistrationPayment {
             await MainActor.run {
                 paymentSessionReady = false
-                statusMessage = "Authentication expired. Please sign in again."
+                statusMessage = appViewModel.tr("verify_email_before_login")
             }
             return
         }
@@ -2424,11 +2531,11 @@ struct PaymentCheckoutView: View {
             return
         }
         let user = appViewModel.currentUser ?? UserProfile(
-            userId: paymentAuthSession?.userId ?? sessionStore.loadSession()?.userId ?? "",
+            userId: paymentAuthSession?.userId ?? sessionStore.loadSession()?.userId ?? appViewModel.activeSession?.userId ?? "",
             email: doctor.email ?? "",
             fullName: doctor.name,
             phone: doctor.phoneNumber ?? "",
-            role: .patient,
+            role: isDoctorRegistrationPayment ? .doctor : .patient,
             profileImage: "",
             createdAt: Date().timeIntervalSince1970 * 1000,
             regNo: nil,
@@ -2541,6 +2648,20 @@ struct PaymentCheckoutView: View {
             let response = try await paymentService.checkPaymentStatus(transactionId: transactionId, idToken: idToken)
             if let transaction = response.transaction {
                 if transaction.isSuccess {
+                    if isDoctorRegistrationPayment {
+                        let userId = appViewModel.currentUser?.userId
+                            ?? appViewModel.activeSession?.userId
+                            ?? sessionStore.loadSession()?.userId
+                            ?? ""
+                        if !userId.isEmpty {
+                            try? await paymentService.markDoctorRegistrationPaid(
+                                userId: userId,
+                                consultationId: consultationId,
+                                transactionId: transactionId,
+                                idToken: idToken
+                            )
+                        }
+                    }
                     await MainActor.run {
                         isProcessing = false
                         canRetryStatus = false
@@ -2594,7 +2715,7 @@ struct PaymentCheckoutView: View {
     }
 
     private func refreshedPaymentToken() async throws -> String? {
-        guard let session = paymentAuthSession ?? sessionStore.loadSession() else { return nil }
+        guard let session = paymentAuthSession ?? appViewModel.activeSession ?? sessionStore.loadSession() else { return nil }
         let refreshedSession = try await paymentService.refreshSessionIfNeeded(session)
         if paymentAuthSession != nil {
             paymentAuthSession = refreshedSession
@@ -3673,16 +3794,29 @@ struct ProfileScreen: View {
 
                 if let user = appViewModel.currentUser {
                     VStack(spacing: 10) {
-                        ProfileAvatarView(
+                        ProfileAvatarWithVerifiedBadge(
                             imageSource: user.profileImage,
                             initials: profileInitials(from: user.fullName),
                             size: 100,
-                            fontSize: 30
+                            fontSize: 30,
+                            showVerified: user.isAdminVerifiedDoctor
                         )
 
                         Text(displayName(for: user, fallback: user.fullName))
                             .font(HASETTheme.font(.medium, 20))
                             .foregroundStyle(HASETTheme.textPrimary)
+
+                        if user.role == .doctor, !user.isAdminVerifiedDoctor {
+                            Text(appViewModel.tr("doctor_pending_admin_badge"))
+                                .font(HASETTheme.font(.medium, 12))
+                                .foregroundStyle(Color.orange)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.orange.opacity(0.12))
+                                )
+                        }
 
                         if let regNo = user.regNo, user.role == .doctor, !regNo.isEmpty {
                             Text(regNo)
@@ -3781,18 +3915,26 @@ struct ProfileScreen: View {
                                 ProfileValueRow(
                                     icon: "location",
                                     title: appViewModel.tr("location"),
-                                    value: appViewModel.locationEnabled ? "Enabled" : "Disabled"
+                                    value: appViewModel.locationEnabled ? appViewModel.tr("location_enabled") : appViewModel.tr("location_disabled")
                                 )
                             }
                             .buttonStyle(.plain)
                             rowDivider()
                             NavigationLink { EditProfileView() } label: {
-                                ProfileOptionRow(icon: "pencil", title: "Edit professional information", subtitle: "Specialization, consultation fee, times and bio")
+                                ProfileOptionRow(
+                                    icon: "pencil",
+                                    title: appViewModel.tr("edit_professional_info"),
+                                    subtitle: appViewModel.tr("edit_professional_info_desc")
+                                )
                             }
                             .buttonStyle(.plain)
                             rowDivider()
                             NavigationLink { DoctorPolicyView() } label: {
-                                ProfileOptionRow(icon: "checkmark.shield", title: "Doctor policy", subtitle: "Professional account and consultation policy")
+                                ProfileOptionRow(
+                                    icon: "checkmark.shield",
+                                    title: appViewModel.tr("doctor_policy"),
+                                    subtitle: appViewModel.tr("doctor_policy_desc")
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -3804,12 +3946,22 @@ struct ProfileScreen: View {
                 CardContainer {
                     VStack(spacing: 0) {
                         Button { showDeleteConfirmation = true } label: {
-                            ProfileOptionRow(icon: "trash.fill", title: appViewModel.tr("delete_account"), subtitle: "Delete your account and data", tint: .red)
+                            ProfileOptionRow(
+                                icon: "trash.fill",
+                                title: appViewModel.tr("delete_account"),
+                                subtitle: appViewModel.tr("permanently_delete_your_account"),
+                                tint: .red
+                            )
                         }
                         .buttonStyle(.plain)
                         rowDivider()
                         Button { appViewModel.logout() } label: {
-                            ProfileOptionRow(icon: "rectangle.portrait.and.arrow.right.fill", title: appViewModel.tr("logout"), subtitle: "Sign out of this device", tint: .red)
+                            ProfileOptionRow(
+                                icon: "rectangle.portrait.and.arrow.right.fill",
+                                title: appViewModel.tr("logout"),
+                                subtitle: appViewModel.tr("securely_log_out_of_account"),
+                                tint: .red
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -3820,11 +3972,11 @@ struct ProfileScreen: View {
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Delete account?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            Button("Delete permanently", role: .destructive) { appViewModel.deleteAccount() }
-            Button("Cancel", role: .cancel) {}
+        .confirmationDialog(appViewModel.tr("delete_account_confirm_title"), isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+            Button(appViewModel.tr("delete_permanently"), role: .destructive) { appViewModel.deleteAccount() }
+            Button(appViewModel.tr("cancel"), role: .cancel) {}
         } message: {
-            Text("This permanently removes your account and data. Continue only if you really want to delete it.")
+            Text(appViewModel.tr("delete_account_confirm_message"))
         }
         .task {
             await appViewModel.refreshCurrentUser()
@@ -3927,6 +4079,45 @@ private struct ProfileValueRow: View {
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DoctorVerifiedBadge: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(HASETTheme.greenPrimary)
+            Circle()
+                .stroke(Color.white, lineWidth: 2)
+            Image(systemName: "checkmark")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: 22, height: 22)
+        .shadow(color: Color.black.opacity(0.12), radius: 2, x: 0, y: 1)
+    }
+}
+
+private struct ProfileAvatarWithVerifiedBadge: View {
+    let imageSource: String
+    let initials: String
+    let size: CGFloat
+    let fontSize: CGFloat
+    let showVerified: Bool
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            ProfileAvatarView(
+                imageSource: imageSource,
+                initials: initials,
+                size: size,
+                fontSize: fontSize
+            )
+            if showVerified {
+                DoctorVerifiedBadge()
+                    .offset(x: 3, y: 3)
+            }
+        }
     }
 }
 
@@ -5115,7 +5306,7 @@ struct SettingsView: View {
 
                 CardContainer {
                     VStack(spacing: 0) {
-                        SettingsRow(icon: "bell", title: appViewModel.tr("notification"), subtitle: "Appointment and account alerts") {
+                        SettingsRow(icon: "bell", title: appViewModel.tr("notification"), subtitle: appViewModel.tr("notification_subtitle")) {
                             Toggle("", isOn: Binding(
                                 get: { appViewModel.notificationEnabled },
                                 set: { appViewModel.setNotificationEnabled($0) }
@@ -5168,7 +5359,7 @@ struct SettingsView: View {
                         }
                         SettingsDivider()
                         NavigationLink {
-                            ForgotPasswordView()
+                            ForgotPasswordView(useAuthBackNavigation: false)
                         } label: {
                             SettingsRow(icon: "lock", title: appViewModel.tr("change_password"), subtitle: appViewModel.tr("reset_account_password"))
                         }
@@ -5375,20 +5566,28 @@ struct InAppWebContentView: View {
 }
 
 struct DoctorPolicyView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Per Service Fee Policy").font(HASETTheme.font(.medium, 20)).foregroundStyle(HASETTheme.greenPrimary)
-                Text("The per service fee is a fixed amount charged for each consultation or procedure performed. This fee covers professional expertise, facility equipment and administrative costs.\n\nKey points:\n1. The fee is non-refundable once the service is rendered.\n2. Emergency services may incur additional charges.\n3. Cancellation less than 2 hours before an appointment may result in a partial fee charge.\n4. Payments are processed securely through HASET.")
-                    .font(HASETTheme.font(.regular, 14)).foregroundStyle(HASETTheme.textSecondary)
-                Text("Location Tracking & Access Policy").font(HASETTheme.font(.medium, 20)).foregroundStyle(HASETTheme.greenPrimary)
-                Text("Location is accessed only when you add or update your clinic address. HASET does not continuously track your location in the background. Your clinic location is shown to patients for navigation and appointment booking, and permission can be revoked in device settings.")
-                    .font(HASETTheme.font(.regular, 14)).foregroundStyle(HASETTheme.textSecondary)
+                Text(appViewModel.tr("per_service_fee_policy"))
+                    .font(HASETTheme.font(.medium, 20))
+                    .foregroundStyle(HASETTheme.greenPrimary)
+                Text(appViewModel.tr("per_service_fee_policy_body"))
+                    .font(HASETTheme.font(.regular, 14))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                Text(appViewModel.tr("location_tracking_access_policy"))
+                    .font(HASETTheme.font(.medium, 20))
+                    .foregroundStyle(HASETTheme.greenPrimary)
+                Text(appViewModel.tr("location_tracking_policy_body"))
+                    .font(HASETTheme.font(.regular, 14))
+                    .foregroundStyle(HASETTheme.textSecondary)
             }
             .padding(20)
         }
         .background(HASETTheme.backgroundPrimary)
-        .navigationTitle("Doctor policy")
+        .navigationTitle(appViewModel.tr("doctor_policy"))
     }
 }
 
@@ -5442,22 +5641,13 @@ private struct DoctorDirectoryCard: View {
             CardContainer {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 12) {
-                        ZStack(alignment: .bottomTrailing) {
-                            ProfileAvatarView(
-                                imageSource: doctor.profileImage ?? "",
-                                initials: doctor.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased(),
-                                size: 60,
-                                fontSize: 18
-                            )
-
-                            if doctor.verified {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(HASETTheme.greenPrimary)
-                                    .padding(2)
-                                    .background(Circle().fill(Color.white))
-                            }
-                        }
+                        ProfileAvatarWithVerifiedBadge(
+                            imageSource: doctor.profileImage ?? "",
+                            initials: doctor.name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased(),
+                            size: 60,
+                            fontSize: 18,
+                            showVerified: doctor.verified
+                        )
 
                         VStack(alignment: .leading, spacing: 5) {
                             Text(doctor.name)

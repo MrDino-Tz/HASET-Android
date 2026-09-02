@@ -10,6 +10,9 @@ public class PaymentRequest {
     private String payment_account;
     private String redirect_url;
     private String cancel_url;
+    private String buyer_email;
+    private String buyer_name;
+    private String buyer_phone;
     private CardCustomer customer;
 
     public static class CardCustomer {
@@ -76,7 +79,16 @@ public class PaymentRequest {
         this.payment_method = requestedMethod;
         if ("mobile_money".equals(this.payment_method)) {
             this.provider = safeString(provider, "unknown");
-            this.payment_account = safeString(paymentAccount, "unknown");
+            this.payment_account = normalizePaymentAccount(paymentAccount);
+            if (buyerEmail != null && !buyerEmail.trim().isEmpty()) {
+                this.buyer_email = buyerEmail.trim();
+            }
+            if (buyerName != null && !buyerName.trim().isEmpty()) {
+                this.buyer_name = buyerName.trim();
+            }
+            if (buyerPhone != null && !buyerPhone.trim().isEmpty()) {
+                this.buyer_phone = normalizePaymentAccount(buyerPhone);
+            }
         } else {
             // Card payments prohibit direct mobile-money provider/account fields.
             this.provider = null;
@@ -100,6 +112,22 @@ public class PaymentRequest {
 
     private static String safeString(String value, String fallback) {
         return value == null || value.trim().isEmpty() ? fallback : value.trim();
+    }
+
+    /** Snippe/mobile API accepts 0XXXXXXXXX; normalize from +255/255 variants. */
+    public static String normalizePaymentAccount(String value) {
+        String fallback = safeString(value, "unknown");
+        String digits = fallback.replaceAll("\\s", "");
+        if (digits.startsWith("+255") && digits.length() == 13) {
+            return "0" + digits.substring(4);
+        }
+        if (digits.startsWith("255") && digits.length() == 12) {
+            return "0" + digits.substring(3);
+        }
+        if (digits.matches("^\\d{9}$")) {
+            return "0" + digits;
+        }
+        return fallback;
     }
 
     // Getters

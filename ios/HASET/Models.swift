@@ -33,6 +33,12 @@ struct UserProfile: Codable, Equatable {
     var consultationFee: String?
     var availableTimes: [String]?
     var verified: Bool?
+    var approved: Bool?
+
+    var isAdminVerifiedDoctor: Bool {
+        guard role == .doctor, approved == true else { return false }
+        return verified != false
+    }
 }
 
 struct RemoteAppConfig: Codable, Equatable {

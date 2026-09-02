@@ -299,13 +299,20 @@ final class AuthService {
         let refreshToken: String?
         // Anonymous Firebase sign-up responses do not include an email field.
         let email: String?
-        let emailVerified: Bool?
+    }
+
+    private struct AccountLookupResponse: Decodable {
+        struct AccountInfo: Decodable {
+            let emailVerified: Bool?
+        }
+
+        let users: [AccountInfo]?
     }
 
     private struct RefreshTokenResponse: Decodable {
         let idToken: String
-        let refreshToken: String
-        let userId: String
+        let refreshToken: String?
+        let userId: String?
 
         enum CodingKeys: String, CodingKey {
             case idToken = "id_token"
@@ -338,8 +345,21 @@ final class AuthService {
             path: "accounts:signInWithPassword",
             payload: ["email": email, "password": password, "returnSecureToken": true]
         )
-        if identity.emailVerified != true {
-            try? await sendEmailVerificationViaSmtp(idToken: identity.idToken)
+        // signInWithPassword does not return emailVerified; match Android's reload + isEmailVerified().
+        let emailVerified = try await fetchEmailVerified(idToken: identity.idToken)
+        if !emailVerified {
+            let profile = try? await fetchUserProfile(
+                userId: identity.localId,
+                idToken: identity.idToken,
+                fallbackEmail: identity.email ?? email,
+                fallbackName: nil,
+                fallbackPhone: nil
+            )
+            try? await sendEmailVerificationViaSmtp(
+                idToken: identity.idToken,
+                email: identity.email ?? email,
+                fullName: profile?.fullName ?? ""
+            )
             throw ServiceError.emailNotVerified
         }
 
@@ -414,7 +434,8 @@ final class AuthService {
             specialization: role == .doctor ? StaticContentService.specialties.first : nil,
             consultationFee: nil,
             availableTimes: role == .doctor ? nil : nil,
-            verified: role == .doctor ? false : nil
+            verified: role == .doctor ? false : nil,
+            approved: role == .doctor ? false : nil
         )
 
         try await saveUserProfile(profile, idToken: identity.idToken)
@@ -461,16 +482,36 @@ final class AuthService {
             throw ServiceError.message("Authentication expired. Please sign in again.")
         }
 
-        let refreshed = try decoder.decode(RefreshTokenResponse.self, from: data)
-        return StoredSession(
-            userId: refreshed.userId,
-            idToken: refreshed.idToken,
-            refreshToken: refreshed.refreshToken,
-            role: session.role,
-            userName: session.userName,
-            email: session.email,
-            phone: session.phone
-        )
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let idToken = json["id_token"] as? String,
+           !idToken.isEmpty {
+            let userId = (json["user_id"] as? String)?.nonEmpty ?? session.userId
+            let nextRefresh = (json["refresh_token"] as? String)?.nonEmpty ?? refreshToken
+            return StoredSession(
+                userId: userId,
+                idToken: idToken,
+                refreshToken: nextRefresh,
+                role: session.role,
+                userName: session.userName,
+                email: session.email,
+                phone: session.phone
+            )
+        }
+
+        if let refreshed = try? decoder.decode(RefreshTokenResponse.self, from: data),
+           !refreshed.idToken.isEmpty {
+            return StoredSession(
+                userId: refreshed.userId?.nonEmpty ?? session.userId,
+                idToken: refreshed.idToken,
+                refreshToken: refreshed.refreshToken?.nonEmpty ?? refreshToken,
+                role: session.role,
+                userName: session.userName,
+                email: session.email,
+                phone: session.phone
+            )
+        }
+
+        throw ServiceError.message("Authentication expired. Please sign in again.")
     }
 
     func sendPasswordReset(email: String) async throws -> String {
@@ -504,13 +545,19 @@ final class AuthService {
             : message)
     }
 
-    func sendEmailVerificationViaSmtp(idToken: String) async throws {
+    func sendEmailVerificationViaSmtp(idToken: String, email: String, fullName: String = "") async throws {
         let url = URL(string: HASETConstants.emailVerificationURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
-        request.httpBody = Data("{}".utf8)
+        var payload: [String: Any] = ["email": email.trimmingCharacters(in: .whitespacesAndNewlines)]
+        let trimmedName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty {
+            payload["name"] = trimmedName
+            payload["full_name"] = trimmedName
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await URLSession.shared.data(for: request)
         try validate(response: response, data: data)
     }
@@ -548,6 +595,12 @@ final class AuthService {
                     ?? stringValue(doctor["address"])?.nonEmpty
                     ?? profile.location
                 profile.profileImage = profileImageValue(doctor) ?? profile.profileImage
+                profile.approved = boolValue(doctor["approved"])
+                if let verified = boolValue(doctor["verified"]) {
+                    profile.verified = verified
+                } else if profile.verified == nil {
+                    profile.verified = profile.approved
+                }
             }
         }
         return profile
@@ -971,7 +1024,7 @@ final class AuthService {
                     intValue(doctorNode?["experienceYears"]) ??
                     intValue(user["experience"]) ??
                     intValue(user["experienceYears"]),
-                verified: boolValue(doctorNode?["verified"]) ?? approved ?? false,
+                verified: boolValue(doctorNode?["approved"]) == true,
                 isDemo: boolValue(doctorNode?["isDemo"]) ?? boolValue(user["isDemo"]) ?? false,
                 consultationFee: consultationFeeValue(doctorNode?["consultationFee"]) ??
                     consultationFeeValue(user["consultationFee"]) ??
@@ -1286,12 +1339,14 @@ final class AuthService {
         paymentAccount: String,
         idToken: String?
     ) async throws -> PaymentInitiationResponse {
+        let billingDoctorId = doctor.id == "doctor_registration" ? user.userId : doctor.id
         try await ensurePaymentPriceRecord(
             user: user,
             doctor: doctor,
             consultationId: consultationId,
             amount: amount,
-            idToken: idToken
+            idToken: idToken,
+            billingDoctorId: billingDoctorId
         )
 
         let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/payment/initiate")!
@@ -1306,14 +1361,25 @@ final class AuthService {
 
         var payload: [String: Any] = [
             "user_id": user.userId,
-            "doctor_id": doctor.id,
+            "doctor_id": billingDoctorId,
             "consultation_id": consultationId,
             "amount": Int(amount.rounded()),
             "payment_method": paymentMethod == "card" ? "checkout" : paymentMethod
         ]
         if paymentMethod == "mobile_money" {
             payload["provider"] = provider
-            payload["payment_account"] = paymentAccount
+            payload["payment_account"] = Self.normalizePaymentAccount(paymentAccount)
+            let buyerEmail = user.email.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !buyerEmail.isEmpty {
+                payload["buyer_email"] = buyerEmail
+            }
+            if !user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                payload["buyer_name"] = user.fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            let buyerPhone = user.phone.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !buyerPhone.isEmpty {
+                payload["buyer_phone"] = Self.normalizePaymentAccount(buyerPhone)
+            }
         } else {
             let nameParts = user.fullName.split(separator: " ").map(String.init)
             payload["redirect_url"] = "https://hasethospital.or.tz/payment/success"
@@ -1347,9 +1413,12 @@ final class AuthService {
         doctor: DoctorSummary,
         consultationId: String,
         amount: Double,
-        idToken: String?
+        idToken: String?,
+        billingDoctorId: String? = nil
     ) async throws {
+        let resolvedDoctorId = billingDoctorId ?? doctor.id
         let synthetic = doctor.id == "doctor_registration"
+            || consultationId.hasPrefix("registration-")
             || consultationId.hasPrefix("consult-")
             || consultationId.hasPrefix("service-")
         let root = synthetic ? HASETConstants.registrationPaymentsPath : "appointments"
@@ -1365,7 +1434,7 @@ final class AuthService {
             "appointmentId": consultationId,
             "consultationId": consultationId,
             "patientId": user.userId,
-            "doctorId": doctor.id,
+            "doctorId": resolvedDoctorId,
             "patientName": user.fullName,
             "doctorName": doctor.name,
             "date": "",
@@ -1424,9 +1493,12 @@ final class AuthService {
 
     func setupMobileMFA(idToken: String) async throws -> MobileMFASetupResponse {
         let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/setup")!
-        var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
-        let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
-        return try decoder.decode(MobileMFASetupResponse.self, from: data)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validate(response: response, data: data)
+        return try parseMobileMFASetupResponse(from: data)
     }
 
     func confirmMobileMFA(code: String, idToken: String) async throws {
@@ -1434,6 +1506,45 @@ final class AuthService {
         var request = URLRequest(url: url); request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type"); request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code])
         let (data, response) = try await URLSession.shared.data(for: request); try validate(response: response, data: data)
+    }
+
+    func verifyLoginMobileMFA(code: String, idToken: String) async throws {
+        let url = URL(string: "\(HASETConstants.productionAPIURL)mobile/mfa/verify")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code.trimmingCharacters(in: .whitespacesAndNewlines)])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ServiceError.message("MFA verification failed. Try again.")
+        }
+        guard (200 ... 299).contains(httpResponse.statusCode) else {
+            throw ServiceError.message("Invalid or expired MFA code.")
+        }
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let status = json["status"] as? String, status.lowercased() == "error" {
+                throw ServiceError.message((json["message"] as? String) ?? "Invalid or expired MFA code.")
+            }
+        }
+    }
+
+    private func parseMobileMFASetupResponse(from data: Data) throws -> MobileMFASetupResponse {
+        if let decoded = try? decoder.decode(MobileMFASetupResponse.self, from: data) {
+            return decoded
+        }
+        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ServiceError.message("Unable to start MFA setup.")
+        }
+        let payload = (root["data"] as? [String: Any]) ?? root
+        guard
+            let secret = payload["secret"] as? String,
+            let otpauthURI = (payload["otpauth_uri"] as? String) ?? (payload["otpauthURI"] as? String),
+            let recoveryCodes = (payload["recovery_codes"] as? [String]) ?? (payload["recoveryCodes"] as? [String])
+        else {
+            throw ServiceError.message("Unable to start MFA setup.")
+        }
+        return MobileMFASetupResponse(secret: secret, otpauthURI: otpauthURI, recoveryCodes: recoveryCodes)
     }
 
     func verifyMobileMFA(code: String, idToken: String) async throws -> String? {
@@ -1940,9 +2051,43 @@ final class AuthService {
         return json.lowercased() == "pending"
     }
 
-    func markDoctorRegistrationPaid(userId: String, idToken: String?) async throws {
-        let url = try databaseURL(path: "doctors/\(userId)", authToken: idToken)
-        try await patch(["registrationPaymentStatus": "paid"], url: url)
+    func markDoctorRegistrationPaid(
+        userId: String,
+        consultationId: String? = nil,
+        transactionId: Int? = nil,
+        idToken: String?
+    ) async throws {
+        let doctorURL = try databaseURL(path: "doctors/\(userId)", authToken: idToken)
+        try await patch(["registrationPaymentStatus": "paid"], url: doctorURL)
+
+        let paymentId = consultationId ?? "registration-\(userId)"
+        var paymentUpdates: [String: Any] = [
+            "status": "paid",
+            "paymentStatus": "paid",
+            "paidAt": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        if let transactionId, transactionId > 0 {
+            paymentUpdates["transactionId"] = transactionId
+        }
+        let paymentURL = try databaseURL(
+            path: "\(HASETConstants.registrationPaymentsPath)/\(paymentId)",
+            authToken: idToken
+        )
+        try await patch(paymentUpdates, url: paymentURL)
+    }
+
+    static func normalizePaymentAccount(_ value: String) -> String {
+        let digits = value.replacingOccurrences(of: " ", with: "")
+        if digits.hasPrefix("+255"), digits.count == 13 {
+            return "0" + String(digits.dropFirst(4))
+        }
+        if digits.hasPrefix("255"), digits.count == 12 {
+            return "0" + String(digits.dropFirst(3))
+        }
+        if digits.count == 9, digits.allSatisfy(\.isNumber) {
+            return "0" + digits
+        }
+        return digits
     }
 
     func syncDeviceToken(userId: String, token: String, idToken: String?) async throws {
@@ -2299,6 +2444,25 @@ final class AuthService {
         try await put(payload, url: url)
     }
 
+    private func fetchEmailVerified(idToken: String) async throws -> Bool {
+        let url = URL(string: "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=\(HASETConstants.firebaseAPIKey)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["idToken": idToken])
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200 ... 299).contains(httpResponse.statusCode) {
+            if let serviceError = try? decoder.decode(IdentityErrorEnvelope.self, from: data) {
+                throw ServiceError.message(mapIdentityError(serviceError.error.message))
+            }
+            throw ServiceError.invalidResponse
+        }
+
+        let lookup = try decoder.decode(AccountLookupResponse.self, from: data)
+        return lookup.users?.first?.emailVerified ?? false
+    }
+
     private func performIdentityRequest(path: String, payload: [String: Any]) async throws -> IdentityResponse {
         let url = URL(string: "https://identitytoolkit.googleapis.com/v1/\(path)?key=\(HASETConstants.firebaseAPIKey)")!
         var request = URLRequest(url: url)
@@ -2311,7 +2475,13 @@ final class AuthService {
             if let serviceError = try? decoder.decode(IdentityErrorEnvelope.self, from: data) {
                 throw ServiceError.message(mapIdentityError(serviceError.error.message))
             }
-            throw ServiceError.invalidResponse
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let errorObject = json["error"] as? [String: Any],
+               let message = errorObject["message"] as? String,
+               !message.isEmpty {
+                throw ServiceError.message(mapIdentityError(message))
+            }
+            throw ServiceError.message("Incorrect email or password.")
         }
         return try decoder.decode(IdentityResponse.self, from: data)
     }
@@ -2401,7 +2571,8 @@ final class AuthService {
             availableTimes: stringArrayValue(json["availableTimes"])
                 ?? stringArrayValue(json["available_times"])
                 ?? stringArrayValue(json["availableTime"]),
-            verified: boolValue(json["verified"])
+            verified: boolValue(json["verified"]),
+            approved: boolValue(json["approved"])
         )
     }
 
@@ -2618,6 +2789,11 @@ final class AuthService {
                 if let message = json["message"] as? String, !message.isEmpty {
                     throw ServiceError.message(message)
                 }
+                if let errorObject = json["error"] as? [String: Any],
+                   let message = errorObject["message"] as? String,
+                   !message.isEmpty {
+                    throw ServiceError.message(message)
+                }
                 if let error = json["error"] as? String, !error.isEmpty {
                     throw ServiceError.message(error)
                 }
@@ -2662,8 +2838,8 @@ final class AuthService {
         switch message {
         case "EMAIL_NOT_FOUND":
             return "No account found with that email"
-        case "INVALID_PASSWORD":
-            return "Incorrect password"
+        case "INVALID_PASSWORD", "INVALID_LOGIN_CREDENTIALS":
+            return "Incorrect email or password."
         case "EMAIL_EXISTS":
             return "An account with this email already exists"
         case "WEAK_PASSWORD : Password should be at least 6 characters":

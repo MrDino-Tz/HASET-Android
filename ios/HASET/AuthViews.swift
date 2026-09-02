@@ -92,43 +92,6 @@ struct LanguageToggle: View {
     }
 }
 
-private struct GoogleBadge: View {
-    var body: some View {
-        GoogleIcon()
-            .frame(width: 56, height: 56)
-        .background(
-            Circle()
-                .fill(.white)
-                .shadow(color: HASETTheme.greenPrimary.opacity(0.08), radius: 10, x: 0, y: 6)
-        )
-    }
-}
-
-private struct GoogleIcon: View {
-    var body: some View {
-        ZStack {
-            Circle().fill(.white)
-            Text("G")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.91, green: 0.30, blue: 0.24),
-                            Color(red: 0.98, green: 0.73, blue: 0.06),
-                            Color(red: 0.20, green: 0.64, blue: 0.31),
-                            Color(red: 0.25, green: 0.50, blue: 0.95)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .overlay(
-            Circle().stroke(Color(red: 0.91, green: 0.92, blue: 0.94), lineWidth: 1)
-        )
-    }
-}
-
 struct RoundedInputField: View {
     let title: String
     let systemImage: String
@@ -184,7 +147,7 @@ struct SplashView: View {
             VStack {
                 Spacer()
 
-                VStack(spacing: 18) {
+                VStack(spacing: 16) {
                     Image("SplashLogo")
                         .resizable()
                         .scaledToFit()
@@ -201,17 +164,12 @@ struct SplashView: View {
 
                 Spacer()
 
-                HStack(spacing: 6) {
-                    Text(appViewModel.selectedLanguage == "sw" ? "Kutoka" : "From")
-                    Image("BrandLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 17, height: 17)
-                    Text("HASET Hospital")
-                }
-                .font(HASETTheme.font(.regular, 15))
-                .foregroundStyle(HASETTheme.textSecondary)
-                .padding(.bottom, 48)
+                Text(appViewModel.tr("tagline"))
+                    .font(HASETTheme.font(.regular, 20))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 48)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -219,7 +177,7 @@ struct SplashView: View {
 
     private func startTypewriterAnimation() {
         guard typedTitle.isEmpty else { return }
-        let fullTitle = "HASET"
+        let fullTitle = appViewModel.tr("app_name")
         for (index, _) in fullTitle.enumerated() {
             let delay = Double(index) * 0.15
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
@@ -272,7 +230,7 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
 
-            Button(page == pages.count - 1 ? appViewModel.tr("sign_in") : appViewModel.tr("next")) {
+            Button(page == pages.count - 1 ? appViewModel.tr("get_started") : appViewModel.tr("next")) {
                 if page == pages.count - 1 {
                     appViewModel.completeOnboarding()
                 } else {
@@ -290,7 +248,6 @@ struct OnboardingView: View {
 
 struct LoginView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
-    @Environment(\.openURL) private var openURL
     @State private var email = ""
     @State private var password = ""
     @State private var rememberMe = false
@@ -306,7 +263,7 @@ struct LoginView: View {
                 Image("BrandLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 320, height: 100)
+                    .frame(maxWidth: 400, maxHeight: 100)
                     .padding(.top, 40)
 
                 Text(appViewModel.tr("login"))
@@ -315,9 +272,36 @@ struct LoginView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 24)
 
+                if let registrationSuccess = appViewModel.registrationSuccessMessage, !registrationSuccess.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(appViewModel.tr("registration_successful"))
+                            .font(HASETTheme.font(.medium, 15))
+                            .foregroundStyle(HASETTheme.greenPrimary)
+                        Text(registrationSuccess)
+                            .font(HASETTheme.font(.regular, 13))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(HASETTheme.greenPrimary.opacity(0.08))
+                    )
+                    .padding(.bottom, 16)
+                }
+
                 VStack(spacing: 16) {
                     RoundedInputField(title: appViewModel.tr("email"), systemImage: "envelope", text: $email, keyboardType: .emailAddress)
+                        .onChange(of: email) { _ in appViewModel.loginErrorMessage = nil }
                     RoundedInputField(title: appViewModel.tr("password"), systemImage: "lock", text: $password, isSecure: true)
+                        .onChange(of: password) { _ in appViewModel.loginErrorMessage = nil }
+
+                    if let loginError = appViewModel.loginErrorMessage, !loginError.isEmpty {
+                        Text(loginError)
+                            .font(HASETTheme.font(.regular, 13))
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
                     if appViewModel.showUnpaidDoctorMessage {
                         Text(appViewModel.tr("doctor_reg_payment_required"))
@@ -353,20 +337,6 @@ struct LoginView: View {
                         appViewModel.login(email: email, password: password)
                     }
                     .buttonStyle(PrimaryButtonStyle())
-
-                    Text(appViewModel.tr("or"))
-                        .font(HASETTheme.font(.medium, 14))
-                        .foregroundStyle(HASETTheme.textSecondary)
-                        .padding(.vertical, 8)
-
-                    Button {
-                        if let url = URL(string: "https://accounts.google.com/") {
-                            openURL(url)
-                        }
-                    } label: {
-                        GoogleBadge()
-                    }
-                    .buttonStyle(.plain)
                     .padding(.bottom, 24)
 
                     HStack(spacing: 4) {
@@ -426,12 +396,19 @@ struct MFAChallengeView: View {
             Button("Verify") { appViewModel.verifyLoginMFA(code: code) }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(code.count != (useRecoveryCode ? 10 : 6))
+            if let error = appViewModel.mfaError, !error.isEmpty {
+                Text(error)
+                    .font(HASETTheme.font(.regular, 14))
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
             Button(useRecoveryCode ? "Use authenticator code" : "Use a recovery code") {
                 code = ""
                 invalid = false
+                appViewModel.mfaError = nil
                 useRecoveryCode.toggle()
             }
-            Button("Cancel") { appViewModel.logout() }
+            Button("Cancel") { appViewModel.cancelMFALogin() }
         }.padding(24).onChange(of: appViewModel.mfaError) { _ in invalid = true }
     }
 }
@@ -542,7 +519,7 @@ struct MFAEnrollmentView: View {
         Task {
             do {
                 let service = AuthService()
-                let freshSession = try await service.refreshSessionIfNeeded(session)
+                let freshSession = (try? await service.refreshSessionIfNeeded(session)) ?? session
                 if freshSession.idToken != session.idToken || freshSession.refreshToken != session.refreshToken {
                     SessionStore().saveSession(freshSession)
                 }
@@ -661,7 +638,6 @@ struct RoleSelectionView: View {
 
 struct RegisterView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
-    @Environment(\.openURL) private var openURL
     let role: UserRole
 
     @State private var fullName = ""
@@ -689,6 +665,18 @@ struct RegisterView: View {
             && ninDocumentData != nil
             && mctCertificateData != nil
             && !uploadingDocuments
+    }
+
+    private var passwordHintText: String {
+        if password.isEmpty { return appViewModel.tr("strong_password_required") }
+        return ValidationService.isStrongPassword(password)
+            ? appViewModel.tr("password_auth_ok")
+            : appViewModel.tr("strong_password_required")
+    }
+
+    private var passwordHintColor: Color {
+        if password.isEmpty { return HASETTheme.textSecondary }
+        return ValidationService.isStrongPassword(password) ? HASETTheme.greenPrimary : .red
     }
 
     var body: some View {
@@ -751,13 +739,18 @@ struct RegisterView: View {
 
                     RoundedInputField(title: appViewModel.tr("password"), systemImage: "lock", text: $password, isSecure: true)
 
+                    Text(passwordHintText)
+                        .font(HASETTheme.font(.regular, 12))
+                        .foregroundStyle(passwordHintColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     Button(uploadingDocuments ? appViewModel.tr("uploading_documents") : appViewModel.tr("sign_up")) {
                         guard canSubmitRegistration else {
                             appViewModel.alertState = AlertState(
                                 title: appViewModel.tr("error"),
                                 message: role == .doctor
                                     ? appViewModel.tr("doctor_registration_pdf_details_required")
-                                    : "Enter a valid name, email, 9-digit phone number, and a password with at least 12 characters, uppercase, lowercase, and a number."
+                                    : appViewModel.tr("registration_fields_required")
                             )
                             return
                         }
@@ -766,20 +759,6 @@ struct RegisterView: View {
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(!canSubmitRegistration)
                     .opacity(canSubmitRegistration ? 1 : 0.55)
-
-                    Text(appViewModel.tr("or"))
-                        .font(HASETTheme.font(.medium, 14))
-                        .foregroundStyle(HASETTheme.textSecondary)
-                        .padding(.vertical, 8)
-
-                    Button {
-                        if let url = URL(string: "https://accounts.google.com/") {
-                            openURL(url)
-                        }
-                    } label: {
-                        GoogleBadge()
-                    }
-                    .buttonStyle(.plain)
                     .padding(.bottom, 24)
 
                     HStack(spacing: 4) {
@@ -958,16 +937,39 @@ extension ToggleStyle where Self == CheckboxToggleStyle {
 
 struct ForgotPasswordView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
     @State private var email = ""
+    /// When opened from login, show an explicit back control. Settings uses NavigationStack back.
+    var useAuthBackNavigation: Bool = true
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                Text(appViewModel.tr("forgot_password"))
-                    .font(HASETTheme.font(.medium, 20))
-                    .foregroundStyle(HASETTheme.greenPrimary)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                if useAuthBackNavigation {
+                    HStack(spacing: 16) {
+                        Button(action: goBack) {
+                            Image(systemName: "chevron.left")
+                                .foregroundStyle(HASETTheme.greenPrimary)
+                                .frame(width: 40, height: 40)
+                                .background(Circle().fill(Color.white))
+                        }
+
+                        Text(appViewModel.tr("forgot_password"))
+                            .font(HASETTheme.font(.medium, 20))
+                            .foregroundStyle(HASETTheme.greenPrimary)
+                            .frame(maxWidth: .infinity)
+
+                        Color.clear
+                            .frame(width: 40, height: 40)
+                    }
                     .padding(.bottom, 16)
+                } else {
+                    Text(appViewModel.tr("forgot_password"))
+                        .font(HASETTheme.font(.medium, 20))
+                        .foregroundStyle(HASETTheme.greenPrimary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.bottom, 16)
+                }
 
                 Text(appViewModel.tr("forgot_password_description"))
                     .font(HASETTheme.font(.regular, 14))
@@ -990,13 +992,21 @@ struct ForgotPasswordView: View {
                         .font(HASETTheme.font(.regular, 14))
                         .foregroundStyle(HASETTheme.textSecondary)
                     Button(appViewModel.tr("sign_in")) {
-                        appViewModel.showLogin()
+                        goBack()
                     }
                     .font(HASETTheme.font(.medium, 14))
                     .foregroundStyle(HASETTheme.greenPrimary)
                 }
             }
             .padding(24)
+        }
+    }
+
+    private func goBack() {
+        if useAuthBackNavigation {
+            appViewModel.showLogin()
+        } else {
+            dismiss()
         }
     }
 }

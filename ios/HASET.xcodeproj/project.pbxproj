@@ -31,7 +31,6 @@
 		5D3C8C1C5384A321BE7AEA97 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E49C941B789C258E764DAF4D /* Theme.swift */; };
 		765DC66D3C1B1DCA6BEAD9DC /* onboard_img1.png in Resources */ = {isa = PBXBuildFile; fileRef = 61166AD2CAB696D1B970684E /* onboard_img1.png */; };
 		77B2CA53F5EDCA7B3126CE01 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78245DA81ACAB1C1B5F21654 /* RootView.swift */; };
-		84F77F427DB7455CD7B04184 /* full_afyaplus_logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 69811585B8EF0E3DE41CB246 /* full_afyaplus_logo.png */; };
 		A5ACB779078E008AA9634630 /* Poppins-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 97091D980D98348868B985C0 /* Poppins-Italic.ttf */; };
 		B1952A18512C2A58FAABE70E /* HASETApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20CE8F9D8F93CCDE21CA92E6 /* HASETApp.swift */; };
 		B6FB865A7A327571F5FE1C9C /* AuthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8CEC8F18A08B49B0C3016A /* AuthViews.swift */; };
@@ -61,7 +60,6 @@
 		4C11A01E0A0010000A001000 /* HASETRelease.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = HASETRelease.entitlements; sourceTree = "<group>"; };
 		59FFA93A8DFF1DE3D57F3442 /* Poppins-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Poppins-Medium.ttf"; sourceTree = "<group>"; };
 		61166AD2CAB696D1B970684E /* onboard_img1.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = onboard_img1.png; sourceTree = "<group>"; };
-		69811585B8EF0E3DE41CB246 /* full_afyaplus_logo.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = full_afyaplus_logo.png; sourceTree = "<group>"; };
 		78245DA81ACAB1C1B5F21654 /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		7A8CEC8F18A08B49B0C3016A /* AuthViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
 		810789846529A7DEE76AB742 /* Poppins-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Poppins-Regular.ttf"; sourceTree = "<group>"; };
@@ -166,7 +164,6 @@
 				4C11A0060A0010000A001000 /* a_halopesa_1.png */,
 				4C11A0080A0010000A001000 /* a_airtel_money.png */,
 				4C11A00A0A0010000A001000 /* a_ttcl_pesa.png */,
-				69811585B8EF0E3DE41CB246 /* full_afyaplus_logo.png */,
 				61166AD2CAB696D1B970684E /* onboard_img1.png */,
 				DF89F90750736592CA0FC07B /* onboard_img2.png */,
 				CA371728F2BB16DFEDB9B6EB /* onboard_img3.png */,
@@ -256,7 +253,6 @@
 				4C11A0050A0010000A001000 /* a_halopesa_1.png in Resources */,
 				4C11A0070A0010000A001000 /* a_airtel_money.png in Resources */,
 				4C11A0090A0010000A001000 /* a_ttcl_pesa.png in Resources */,
-				84F77F427DB7455CD7B04184 /* full_afyaplus_logo.png in Resources */,
 				765DC66D3C1B1DCA6BEAD9DC /* onboard_img1.png in Resources */,
 				DCE2F210EF746C2618281709 /* onboard_img2.png in Resources */,
 				EFC3B3B966881C2899DA2815 /* onboard_img3.png in Resources */,

@@ -23,6 +23,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
+import com.haset.hasetapp.models.PaymentRequest;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.CustomDialog;
@@ -952,6 +953,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         if (doctor != null) {
             String doctorId = doctor.getDoctorId() != null ? doctor.getDoctorId() : doctor.getUserId();
             String userId = getCurrentUserId();
+            String billingDoctorId = resolveBillingDoctorId(doctorId, userId);
             
             if (doctorId != null) {
                 // Mark payment as initiated
@@ -975,14 +977,21 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                     firebaseUser != null ? firebaseUser.getPhoneNumber() : null,
                     preferences.getUserPhone()
                 );
-                ensurePriceVerificationRecord(userId, doctorId, new PaymentStartCallback() {
+                paymentAccount = PaymentRequest.normalizePaymentAccount(paymentAccount);
+                android.util.Log.d("HASETDoctorFlow",
+                        "Payment init user=" + userId + " doctor=" + billingDoctorId
+                                + " consultation=" + consultationId + " amount=" + consultationFee
+                                + " provider=" + paymentProvider + " account=" + paymentAccount
+                                + " buyerEmail=" + buyerEmail + " registration="
+                                + isDoctorRegistrationPayment());
+                ensurePriceVerificationRecord(userId, billingDoctorId, new PaymentStartCallback() {
                     @Override
                     public void onReady() {
                         CrashMonitor.setScreen("PaymentActivity");
-                        CrashMonitor.breadcrumb("payment start user=" + userId + " doctor=" + doctorId + " amount=" + consultationFee);
+                        CrashMonitor.breadcrumb("payment start user=" + userId + " doctor=" + billingDoctorId + " amount=" + consultationFee);
                         viewModel.processPayment(
                             userId,
-                            doctorId,
+                            billingDoctorId,
                             consultationId,
                             consultationFee,
                             paymentMethodCode,
@@ -1028,19 +1037,21 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             callback.onError("Unable to prepare payment price verification.");
             return;
         }
+        if (TextUtils.isEmpty(userId)) {
+            callback.onError("Your session expired. Please sign in again and retry payment.");
+            return;
+        }
 
         boolean synthetic = isSyntheticPaymentConsultation(doctorId);
         DatabaseReference recordRef = synthetic
                 ? com.haset.hasetapp.utils.FirebaseHelper.getRegistrationPaymentsRef().child(consultationId)
                 : com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef().child(consultationId);
-        if (synthetic) {
-            writePriceVerificationRecord(recordRef, userId, doctorId, callback);
-            return;
-        }
         recordRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 if (snapshot.exists()) {
+                    android.util.Log.d("HASETDoctorFlow",
+                            "Price record already exists for " + consultationId + ", continuing payment init");
                     callback.onReady();
                     return;
                 }
@@ -1108,6 +1119,13 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 
     private boolean isDoctorRegistrationPayment() {
         return doctor != null && "doctor_registration".equals(doctor.getDoctorId());
+    }
+
+    private String resolveBillingDoctorId(String doctorId, String userId) {
+        if (isDoctorRegistrationPayment() && !TextUtils.isEmpty(userId)) {
+            return userId;
+        }
+        return doctorId;
     }
 
     private String buildDefaultConsultationId() {

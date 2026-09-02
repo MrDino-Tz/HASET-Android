@@ -130,7 +130,7 @@ public class AuthViewModel extends AndroidViewModel {
         repository.registerWithEmail(email, password, userData, new FirebaseHelper.OnCompleteListener<FirebaseUser>() {
             @Override
             public void onSuccess(FirebaseUser result) {
-                repository.sendEmailVerificationViaSmtp(result, new FirebaseHelper.OnCompleteListener<Void>() {
+                repository.sendEmailVerificationViaSmtp(result, userData.getFullName(), new FirebaseHelper.OnCompleteListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
                         completeRegistrationPendingVerification();

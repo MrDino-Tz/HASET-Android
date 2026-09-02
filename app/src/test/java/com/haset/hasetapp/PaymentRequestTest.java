@@ -30,6 +30,29 @@ public class PaymentRequestTest {
     }
 
     @Test
+    public void mobileMoneyRequestNormalizesAccountAndIncludesBuyerFields() {
+        PaymentRequest request = new PaymentRequest(
+                "user-123",
+                "doctor_registration",
+                "registration-user-123",
+                2000.0,
+                "mobile_money",
+                "Vodacom",
+                "+255712345678",
+                "doctor@example.com",
+                "Dr Asha",
+                "+255683859574",
+                null
+        );
+
+        JsonObject json = new Gson().toJsonTree(request).getAsJsonObject();
+        assertEquals("0712345678", json.get("payment_account").getAsString());
+        assertEquals("doctor@example.com", json.get("buyer_email").getAsString());
+        assertEquals("Dr Asha", json.get("buyer_name").getAsString());
+        assertEquals("0683859574", json.get("buyer_phone").getAsString());
+    }
+
+    @Test
     public void cardRequestOmitsMobileMoneyFieldsAndUsesApprovedCallbacks() {
         PaymentRequest request = new PaymentRequest(
                 "temporary-user",

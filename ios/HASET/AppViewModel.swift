@@ -27,6 +27,8 @@ final class AppViewModel: ObservableObject {
     @Published var doctorWalletLoading = false
     @Published var doctorWalletError: String?
     @Published var mfaError: String?
+    @Published var loginErrorMessage: String?
+    @Published var registrationSuccessMessage: String?
     @Published var pendingDoctorRegistration: PendingDoctorRegistration?
     @Published var blockingDialog: BlockingDialogState?
     @Published var showUnpaidDoctorMessage = false
@@ -67,25 +69,55 @@ final class AppViewModel: ObservableObject {
         L10n.tr(key, languageCode: selectedLanguage)
     }
 
-    func bootstrap() async {
-        // Match Android: first launch goes straight to onboarding instead of
-        // waiting on remote configuration behind the splash screen.
-        if !sessionStore.onboardingSeen {
-            route = .onboarding
-            return
+    private func localizedLoginError(_ message: String) -> String {
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch trimmed.uppercased() {
+        case "EMAIL_NOT_FOUND", "INVALID_PASSWORD", "INVALID_LOGIN_CREDENTIALS":
+            return tr("login_failed")
+        default:
+            break
         }
+        let lower = trimmed.lowercased()
+        if lower.contains("incorrect email")
+            || lower.contains("invalid login")
+            || lower.contains("invalid password")
+            || lower.contains("wrong password")
+            || lower.contains("invalid_login_credentials") {
+            return tr("login_failed")
+        }
+        if lower.contains("verify your email") || lower.contains("email not verified") {
+            return tr("verify_email_before_login")
+        }
+        if lower.contains("authentication expired") {
+            return tr("authentication_expired")
+        }
+        return trimmed
+    }
+
+    func bootstrap() async {
+        let splashStarted = Date()
+        let minimumSplashDuration: TimeInterval = 2.5
+
+        func ensureMinimumSplashTime() async {
+            let elapsed = Date().timeIntervalSince(splashStarted)
+            if elapsed < minimumSplashDuration {
+                try? await Task.sleep(for: .seconds(minimumSplashDuration - elapsed))
+            }
+        }
+
         do {
             let config = try await authService.fetchAppConfig()
-            try? await Task.sleep(for: .milliseconds(2500))
 
             if let config {
                 doctorRegistrationFee = config.doctorRegistrationFee ?? doctorRegistrationFee
             }
 
+            await ensureMinimumSplashTime()
+
             if let config, config.maintenanceMode {
                 blockingDialog = BlockingDialogState(
                     title: "Maintenance Mode",
-                    message: config.maintenanceMessage ?? "HASET App is undergoing maintenance. Please try again later.",
+                    message: config.maintenanceMessage ?? "AfyaHASET is undergoing maintenance. Please try again later.",
                     updateURL: nil
                 )
                 return
@@ -95,9 +127,14 @@ final class AppViewModel: ObservableObject {
                config.minVersionCode > currentAppVersionCode() {
                 blockingDialog = BlockingDialogState(
                     title: "Update Required",
-                    message: "A new version of HASET is available. Please update to continue.",
+                    message: "A new version of AfyaHASET is available. Please update to continue.",
                     updateURL: config.updateUrl
                 )
+                return
+            }
+
+            if !sessionStore.onboardingSeen {
+                route = .onboarding
                 return
             }
 
@@ -156,7 +193,7 @@ final class AppViewModel: ObservableObject {
                 route = .login
             }
         } catch {
-            try? await Task.sleep(for: .milliseconds(2500))
+            await ensureMinimumSplashTime()
             route = sessionStore.onboardingSeen ? .login : .onboarding
         }
     }
@@ -295,6 +332,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func showLogin() {
+        loginErrorMessage = nil
         route = .login
     }
 
@@ -306,14 +344,18 @@ final class AppViewModel: ObservableObject {
 
         let resolvedEmail = HASETConstants.resolveLoginEmail(email)
         guard ValidationService.isValidEmail(resolvedEmail) else {
+            loginErrorMessage = tr("valid_email_required")
             alertState = AlertState(title: tr("error"), message: tr("valid_email_required"))
             return
         }
-        guard ValidationService.isStrongPassword(password) else {
-            alertState = AlertState(title: tr("error"), message: tr("strong_password_required"))
+        guard !password.isEmpty else {
+            loginErrorMessage = tr("password_too_short")
+            alertState = AlertState(title: tr("error"), message: tr("password_too_short"))
             return
         }
 
+        loginErrorMessage = nil
+        registrationSuccessMessage = nil
         isLoading = true
         Task {
             defer { isLoading = false }
@@ -321,30 +363,43 @@ final class AppViewModel: ObservableObject {
                 let result = try await authService.signIn(email: resolvedEmail, password: password)
                 loginAttemptCount = 0
                 loginLockoutUntil = nil
+                loginErrorMessage = nil
                 activeSession = result.0
                 let mfaEnabled = try await authService.mobileMFAStatus(idToken: result.0.idToken)
-                sessionStore.saveSession(result.0)
-                activeSession = result.0
                 if mfaEnabled {
                     pendingMFASession = result.0
                     pendingMFAProfile = result.1
+                    mfaError = nil
                     route = .mfaChallenge
                     return
                 }
+                sessionStore.saveSession(result.0)
                 try await completeAuthenticatedLogin(session: result.0, profile: result.1)
             } catch ServiceError.emailNotVerified {
                 loginAttemptCount = 0
                 sessionStore.clearSession()
                 activeSession = nil
                 currentUser = nil
-                alertState = AlertState(title: tr("login_failed"), message: tr("verify_email_before_login"))
+                loginErrorMessage = tr("verify_email_before_login")
+                alertState = AlertState(title: tr("error"), message: tr("verify_email_before_login"))
+            } catch ServiceError.message(let message) {
+                loginAttemptCount += 1
+                if loginAttemptCount >= HASETConstants.maxLoginAttempts {
+                    loginLockoutUntil = Date().addingTimeInterval(HASETConstants.loginLockoutSeconds)
+                    loginAttemptCount = 0
+                }
+                let localized = localizedLoginError(message)
+                loginErrorMessage = localized
+                alertState = AlertState(title: tr("error"), message: localized)
             } catch {
                 loginAttemptCount += 1
                 if loginAttemptCount >= HASETConstants.maxLoginAttempts {
                     loginLockoutUntil = Date().addingTimeInterval(HASETConstants.loginLockoutSeconds)
                     loginAttemptCount = 0
                 }
-                alertState = AlertState(title: tr("login_failed"), message: error.localizedDescription)
+                let message = tr("login_failed")
+                loginErrorMessage = message
+                alertState = AlertState(title: tr("error"), message: message)
             }
         }
     }
@@ -352,20 +407,57 @@ final class AppViewModel: ObservableObject {
     @Published var pendingMFASession: StoredSession?
     @Published var pendingMFAProfile: UserProfile?
     func verifyLoginMFA(code: String) {
-        guard let session = pendingMFASession, let profile = pendingMFAProfile else { route = .login; return }
-        guard code.count == 6 || code.count >= 8 else { mfaError = "Enter a valid authenticator or recovery code."; return }
+        guard let session = pendingMFASession, let profile = pendingMFAProfile else {
+            mfaError = "Login session expired. Please sign in again."
+            return
+        }
+        let trimmedCode = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let isRecoveryCode = trimmedCode.count == 10
+        guard trimmedCode.count == 6 || isRecoveryCode else {
+            mfaError = "Enter a valid authenticator or recovery code."
+            return
+        }
+        if isRecoveryCode && trimmedCode.range(of: #"^[A-F0-9]{10}$"#, options: .regularExpression) == nil {
+            mfaError = "Enter a valid 10-character recovery code."
+            return
+        }
         isLoading = true
+        mfaError = nil
         Task {
             defer { isLoading = false }
             do {
-                _ = try await authService.verifyMobileMFA(code: code, idToken: session.idToken)
+                let sessionForMFA = try await authService.refreshSessionIfNeeded(session)
+                pendingMFASession = sessionForMFA
+                try await authService.verifyLoginMobileMFA(code: trimmedCode, idToken: sessionForMFA.idToken)
+                sessionStore.saveSession(sessionForMFA)
+                activeSession = sessionForMFA
+                currentUser = profile
+                do {
+                    try await completeAuthenticatedLogin(session: sessionForMFA, profile: profile)
+                } catch {
+                    route = .dashboard(profile.role)
+                }
                 pendingMFASession = nil
                 pendingMFAProfile = nil
-                try await completeAuthenticatedLogin(session: session, profile: profile)
+                mfaError = nil
+            } catch ServiceError.message(let message) {
+                mfaError = message
+                route = .mfaChallenge
             } catch {
-                mfaError = error.localizedDescription
+                mfaError = "Invalid or expired MFA code."
+                route = .mfaChallenge
             }
         }
+    }
+
+    func cancelMFALogin() {
+        pendingMFASession = nil
+        pendingMFAProfile = nil
+        mfaError = nil
+        sessionStore.clearSession()
+        activeSession = nil
+        currentUser = nil
+        route = .login
     }
 
     func completeMFAEnrollment() async {
@@ -491,11 +583,15 @@ final class AppViewModel: ObservableObject {
                     mctCertificateUrl: role == .doctor ? mctCertificateUrl : nil
                 )
                 AuditLogger.shared.logRegistration(profile: result.1, idToken: result.0.idToken)
-                try? await authService.sendEmailVerificationViaSmtp(idToken: result.0.idToken)
+                try await authService.sendEmailVerificationViaSmtp(
+                    idToken: result.0.idToken,
+                    email: email,
+                    fullName: fullName
+                )
                 sessionStore.clearSession()
                 activeSession = nil
                 currentUser = nil
-                alertState = AlertState(title: tr("registration_successful"), message: tr("verify_email_after_registration"))
+                registrationSuccessMessage = tr("verification_email_sent")
                 route = .login
             } catch {
                 alertState = AlertState(title: tr("registration_failed"), message: error.localizedDescription)
