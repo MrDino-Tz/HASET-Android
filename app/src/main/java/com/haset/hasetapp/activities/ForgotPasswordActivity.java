@@ -26,6 +26,7 @@ public class ForgotPasswordActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_forgot_password);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         initViews();
@@ -122,6 +123,12 @@ public class ForgotPasswordActivity extends BaseActivity {
             finish();
         });
         sheet.show(getSupportFragmentManager(), "ResetPasswordBottomSheet");
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 
 }
