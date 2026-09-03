@@ -38,7 +38,7 @@ import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.models.AppConfig;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
-public class RegisterActivity extends BaseActivity {
+public class RegisterActivity extends BaseActivity implements com.haset.hasetapp.fragments.WelcomeBottomSheet.WelcomeCallback {
     private static final String TAG = "HASETDoctorFlow";
     private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo, etNin;
     private com.google.android.material.textfield.TextInputLayout tilRegNo, tilNin;
@@ -106,6 +106,7 @@ public class RegisterActivity extends BaseActivity {
         // Theme is initialized globally in HASETApplication
         
         setContentView(R.layout.activity_register);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         userRole = getIntent().getStringExtra("role");
         if (userRole == null) {
@@ -366,19 +367,15 @@ public class RegisterActivity extends BaseActivity {
                 case SUCCESS:
                     CustomDialog.hideLoading();
                     if (Constants.ROLE_DOCTOR.equals(userRole)) {
-                        CustomDialog.showSuccess(
-                            this,
-                            "Verification email sent",
-                            "Check your inbox and verify your email before logging in. Payment will resume after verification.",
-                            "Continue to login",
-                            v -> {
-                                FirebaseAuth.getInstance().signOut();
-                                showSuccessAndNavigate(LoginActivity.class,
-                                    getString(R.string.registration_successful), state.message);
-                            });
+                        com.haset.hasetapp.fragments.WelcomeBottomSheet welcome =
+                                com.haset.hasetapp.fragments.WelcomeBottomSheet.newInstance(
+                                        getString(R.string.verification_email_sent),
+                                        getString(R.string.verify_email_before_login_payment));
+                        welcome.show(getSupportFragmentManager(), com.haset.hasetapp.fragments.WelcomeBottomSheet.TAG);
                     } else {
-                        com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content), state.message);
-                        showSuccessAndNavigate(LoginActivity.class, getString(R.string.registration_successful), state.message);
+                        com.haset.hasetapp.fragments.WelcomeBottomSheet welcome =
+                                new com.haset.hasetapp.fragments.WelcomeBottomSheet();
+                        welcome.show(getSupportFragmentManager(), com.haset.hasetapp.fragments.WelcomeBottomSheet.TAG);
                     }
                     break;
                 case AUTHENTICATED:
@@ -680,5 +677,23 @@ public class RegisterActivity extends BaseActivity {
             overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
             finish();
         }, 500);
+    }
+
+    @Override
+    public void onWelcomeDone() {
+        // The welcome sheet has been shown and dismissed: send the user to login
+        // so they can sign in after verifying their email.
+        FirebaseAuth.getInstance().signOut();
+        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

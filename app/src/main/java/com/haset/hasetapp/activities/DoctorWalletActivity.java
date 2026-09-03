@@ -67,6 +67,7 @@ public class DoctorWalletActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         setContentView(R.layout.activity_doctor_wallet);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         // maybeShowSecurityWarning();
 
         preferenceManager = new PreferenceManager(this);
@@ -850,5 +851,11 @@ public class DoctorWalletActivity extends BaseActivity {
         String doctorId = preferenceManager.getUserId();
         viewModel.refreshWalletBalance(doctorId);
         viewModel.refreshWithdrawalRequests(doctorId);
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

@@ -63,6 +63,7 @@ public class DoctorsActivity extends BaseActivity implements DoctorAdapter.OnDoc
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctors);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         
         initViews();
         setupRecyclerView();
@@ -407,5 +408,11 @@ public class DoctorsActivity extends BaseActivity implements DoctorAdapter.OnDoc
             loadMoreHandler.removeCallbacksAndMessages(null);
             loadMoreHandler = null;
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

@@ -21,6 +21,7 @@ public class ServiceAgreementActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_service_agreement);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         
         initViews();
         setupClickListeners();
@@ -65,8 +66,14 @@ public class ServiceAgreementActivity extends LocalizedAppCompatActivity {
             customTabsIntent.launchUrl(this, Uri.parse(url));
         } catch (Exception e) {
             // Fallback to external browser if Chrome Custom Tabs fails
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            Intent             browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(browserIntent);
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

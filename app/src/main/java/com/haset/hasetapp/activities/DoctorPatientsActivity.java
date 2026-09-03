@@ -30,6 +30,7 @@ public class DoctorPatientsActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctor_patients);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         ImageView backButton = findViewById(R.id.btnBack);
         patientList = findViewById(R.id.patientList);
@@ -109,5 +110,11 @@ public class DoctorPatientsActivity extends LocalizedAppCompatActivity {
         PatientRow(String name) {
             this.name = name;
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

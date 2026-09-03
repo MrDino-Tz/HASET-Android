@@ -41,6 +41,7 @@ public class PharmacyActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pharmacy);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         preferenceManager = new PreferenceManager(this);
         viewModel = new ViewModelProvider(this).get(PharmacyViewModel.class);
@@ -167,5 +168,11 @@ public class PharmacyActivity extends BaseActivity {
         } else {
             tvCartBadge.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

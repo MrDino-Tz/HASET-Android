@@ -85,6 +85,7 @@ public class BookAppointmentActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_book_appointment);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         initViews();
         preferenceManager = new PreferenceManager(this);
@@ -541,5 +542,11 @@ public class BookAppointmentActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         safetyHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

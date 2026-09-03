@@ -35,6 +35,7 @@ public class HospitalsActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hospitals);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         
         rvHospitals = findViewById(R.id.rvHospitals);
         layoutEmptyState = findViewById(R.id.layoutEmptyState);
@@ -179,5 +180,11 @@ public class HospitalsActivity extends LocalizedAppCompatActivity {
             layoutEmptyState.setVisibility(View.GONE);
             if (rvHospitals != null) rvHospitals.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

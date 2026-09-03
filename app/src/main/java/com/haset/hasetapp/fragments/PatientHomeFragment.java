@@ -1103,7 +1103,7 @@ public class PatientHomeFragment extends Fragment {
                 "Consultation",
                 "Live Now",
                 "Chat Now",
-                R.drawable.doctor_2785482,
+                R.drawable.doctor2,
                 PatientBannerAdapter.BannerItem.BannerType.MESSAGING
         ));
 

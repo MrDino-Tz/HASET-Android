@@ -70,6 +70,8 @@
     <string name="verify_email_before_login">Tafadhali thibitisha barua pepe yako kabla ya kuingia. Tumekutumia barua pepe mpya ya uthibitisho.</string>
     <string name="verify_email_login_expired">Kipindi chako kimeisha. Tafadhali ingia tena ili kutuma tena barua pepe ya uthibitisho.</string>
     <string name="resend_verification_email">Tuma Tena</string>
+    <string name="verification_email_sent">Barua pepe ya uthibitisho imetumwa</string>
+    <string name="verify_email_before_login_payment">Angalia kikasha chako na uthibitishe barua pepe yako kabla ya kuingia. Malipo yataendelea baada ya uthibitisho.</string>
     <!-- Kubadilisha nenosiri ndani ya app -->
     <string name="reset_password_title">Badilisha Nenosiri</string>
     <string name="reset_password_sheet_description">Fungua kiungo tulichokutumea barua pepe — kitafunguka programu hii moja kwa moja. Unaweza pia kunakili kiungo na kuweka hapa chini, kisha weka nenosiri jipya.</string>
@@ -1466,7 +1468,7 @@ Pakia bango kamili la picha</string>
     <string name="name">Name</string>
     <string name="refresh">Onyesha Upya</string>
     <string name="hello_world">Hello World!</string>
-    <string name="app_version_100dtc">App Version: 1.0.0.DTC</string>
+    <string name="app_version_100dtc">AfyaHASET v1.0.0.DTC</string>
     <string name="str_2026_haset_all_rights_reserved">© 2026 AfyaHASET. All rights reserved.</string>
     <string name="choose_goodnmedicine">Choose good\nMedicine</string>
     <string name="users_list">Users List</string>

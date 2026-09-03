@@ -11,6 +11,7 @@ public class PrescriptionActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prescription);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -48,4 +49,10 @@ public class PrescriptionActivity extends BaseActivity {
 
     @Override
     public void onNetworkUnavailable() {}
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
+    }
 }

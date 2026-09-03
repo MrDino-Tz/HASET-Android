@@ -46,6 +46,7 @@ public class DashboardActivity extends BaseActivity {
         redirectUnpaidDoctorIfNeeded();
         
         setContentView(R.layout.activity_dashboard);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -325,5 +326,11 @@ public class DashboardActivity extends BaseActivity {
         exitDialog.setNegativeButton("Stay", v -> exitDialog.dismiss());
         
         exitDialog.show();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

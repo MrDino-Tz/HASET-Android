@@ -24,6 +24,7 @@ public class AboutUsActivity extends LocalizedAppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_about_us);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         
         // Setup window insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -63,5 +64,11 @@ public class AboutUsActivity extends LocalizedAppCompatActivity {
             android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url));
             startActivity(intent);
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

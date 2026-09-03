@@ -17,7 +17,7 @@
         android:elevation="4dp"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:background="?attr/colorSurface">
+        android:background="@color/white_primary">
 
         <!-- Header Layout -->
         <LinearLayout

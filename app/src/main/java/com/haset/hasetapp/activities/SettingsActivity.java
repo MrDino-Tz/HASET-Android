@@ -63,6 +63,7 @@ public class SettingsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         preferenceManager = new PreferenceManager(this);
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
@@ -537,15 +538,10 @@ public class SettingsActivity extends BaseActivity {
     private void showThemeDialog() {
         if (preferenceManager == null) return;
 
+        com.google.android.material.bottomsheet.BottomSheetDialog sheet =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_theme_selector, null);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setView(dialogView);
-        AlertDialog dialog = builder.create();
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
+        sheet.setContentView(dialogView);
 
         LinearLayout layoutLight = dialogView.findViewById(R.id.layoutLight);
         LinearLayout layoutDark = dialogView.findViewById(R.id.layoutDark);
@@ -562,7 +558,7 @@ public class SettingsActivity extends BaseActivity {
             ThemeHelper.applyTheme(this, PreferenceManager.THEME_LIGHT);
             updateThemeText();
             updateThemeCheckmarks(ivLightCheck, ivDarkCheck, ivSystemCheck, PreferenceManager.THEME_LIGHT);
-            dialog.dismiss();
+            sheet.dismiss();
             overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
             recreate();
             overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
@@ -573,7 +569,7 @@ public class SettingsActivity extends BaseActivity {
             ThemeHelper.applyTheme(this, PreferenceManager.THEME_DARK);
             updateThemeText();
             updateThemeCheckmarks(ivLightCheck, ivDarkCheck, ivSystemCheck, PreferenceManager.THEME_DARK);
-            dialog.dismiss();
+            sheet.dismiss();
             overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
             recreate();
             overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
@@ -584,13 +580,13 @@ public class SettingsActivity extends BaseActivity {
             ThemeHelper.applyTheme(this, PreferenceManager.THEME_SYSTEM);
             updateThemeText();
             updateThemeCheckmarks(ivLightCheck, ivDarkCheck, ivSystemCheck, PreferenceManager.THEME_SYSTEM);
-            dialog.dismiss();
+            sheet.dismiss();
             overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
             recreate();
             overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
         });
 
-        dialog.show();
+        sheet.show();
     }
 
     private void updateThemeCheckmarks(ImageView ivLight, ImageView ivDark, ImageView ivSystem, int currentTheme) {
@@ -613,7 +609,7 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void showChangePasswordBottomSheet() {
-        com.google.android.material.bottomsheet.BottomSheetDialog bottomSheetDialog = new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        com.google.android.material.bottomsheet.BottomSheetDialog bottomSheetDialog = new com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.BottomSheetDialogAnimation);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_change_password, null);
         bottomSheetDialog.setContentView(view);
 
@@ -670,5 +666,11 @@ public class SettingsActivity extends BaseActivity {
         });
 
         bottomSheetDialog.show();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

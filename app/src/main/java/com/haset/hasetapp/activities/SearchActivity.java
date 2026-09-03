@@ -51,6 +51,7 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         initViews();
         setupRecyclerView();
@@ -343,5 +344,11 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         noResultsLayout = null;
         tvNoResultsSubtitle = null;
         btnBack = null;
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

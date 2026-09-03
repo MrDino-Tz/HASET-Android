@@ -76,6 +76,7 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctor_edit);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         preferenceManager = new PreferenceManager(this);
 
@@ -459,5 +460,11 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         safeHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

@@ -23,6 +23,7 @@ public class RoleSelectionActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_role_selection);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         authViewModel = new androidx.lifecycle.ViewModelProvider(this).get(AuthViewModel.class);
 
@@ -76,5 +77,11 @@ public class RoleSelectionActivity extends BaseActivity {
         
         startActivity(intent);
         overridePendingTransition(R.anim.fade_through_enter, R.anim.fade_through_exit);
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

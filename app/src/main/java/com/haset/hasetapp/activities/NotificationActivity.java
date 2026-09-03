@@ -59,6 +59,7 @@ public class NotificationActivity extends LocalizedAppCompatActivity implements
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_notification);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -379,5 +380,11 @@ public class NotificationActivity extends LocalizedAppCompatActivity implements
             shimmerPayment.setVisibility(View.GONE);
             rvPaymentNotifications.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

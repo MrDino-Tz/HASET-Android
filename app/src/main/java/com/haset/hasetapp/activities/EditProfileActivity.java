@@ -50,6 +50,7 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_profile);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         initViews();
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
@@ -347,5 +348,11 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
         if (profilePhotoHelper != null) {
             profilePhotoHelper.handlePermissionResult(requestCode, grantResults);
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

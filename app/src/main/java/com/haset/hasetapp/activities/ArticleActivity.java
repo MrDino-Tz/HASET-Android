@@ -39,6 +39,7 @@ public class ArticleActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_article);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         
         if (getIntent() != null) {
             highlightArticleId = getIntent().getStringExtra(EXTRA_ARTICLE_ID);
@@ -250,5 +251,11 @@ public class ArticleActivity extends LocalizedAppCompatActivity {
         }
         @Override
         public int getItemCount() { return TAB_TITLES.length; }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

@@ -73,6 +73,7 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
         root.addView(checkoutView, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         setContentView(root);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() {
@@ -160,5 +161,11 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
             checkoutView = null;
         }
         super.onDestroy();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

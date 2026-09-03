@@ -170,6 +170,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
 //        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_chat);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -2017,5 +2018,11 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         btnOk.setOnClickListener(v -> dialog.dismiss());
         
         dialog.show();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

@@ -75,6 +75,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 //        com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         setContentView(R.layout.activity_payment);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
         // maybeShowSecurityWarning();
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
             @Override
@@ -1154,5 +1155,11 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             }
         }
         return "consult-" + UUID.randomUUID();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

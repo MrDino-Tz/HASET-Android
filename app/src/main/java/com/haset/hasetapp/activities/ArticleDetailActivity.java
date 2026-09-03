@@ -62,6 +62,7 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_article_detail);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         articlePostHelper = ArticlePostHelper.getInstance();
         firebaseHelper = FirebaseHelper.getInstance();
@@ -72,11 +73,11 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
         loadArticle();
         setupClickListeners();
     }
-    
+
     private void setupStatusBar() {
         Window window = getWindow();
         View decorView = window.getDecorView();
-        
+
         if ((getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES) {
             window.setStatusBarColor(getColor(R.color.background_primary));
             decorView.setSystemUiVisibility(decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
@@ -234,12 +235,12 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
         if (ivLikeIcon == null) return;
         if (isLiked) {
             ivLikeIcon.setImageResource(R.drawable.ic_like_red);
-            androidx.core.widget.ImageViewCompat.setImageTintList(ivLikeIcon, 
+            androidx.core.widget.ImageViewCompat.setImageTintList(ivLikeIcon,
                     android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.red_primary, null)));
             tvLikesCount.setText(formatCount(article.getLikes()) + " " + getString(R.string.likes));
         } else {
             ivLikeIcon.setImageResource(R.drawable.ic_like);
-            androidx.core.widget.ImageViewCompat.setImageTintList(ivLikeIcon, 
+            androidx.core.widget.ImageViewCompat.setImageTintList(ivLikeIcon,
                     android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.text_secondary, null)));
             tvLikesCount.setText(formatCount(article.getLikes()) + " " + getString(R.string.likes));
         }
@@ -378,7 +379,7 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
                 });
     }
 
-    private void saveComment(String userId, String commentText, List<Map<String, Object>> commentsList, 
+    private void saveComment(String userId, String commentText, List<Map<String, Object>> commentsList,
                              CommentsAdapter adapter, EditText etCommentInput) {
         String commentId = firebaseHelper.getDatabaseReference()
                 .child("post_comments")
@@ -476,7 +477,7 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
             holder.tvCommentContent.setText((String) comment.get("commentText"));
             String userName = (String) comment.get("userName");
             holder.tvCommentAuthor.setText(userName != null ? userName : "User");
-            
+
             Long timestamp = (Long) comment.get("timestamp");
             if (timestamp != null) {
                 holder.tvCommentTimestamp.setText(getTimeAgo(timestamp));
@@ -498,7 +499,7 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
         private String getTimeAgo(long timestamp) {
             long now = System.currentTimeMillis();
             long diff = now - timestamp;
-            
+
             if (diff < 60000) {
                 return getString(R.string.just_now);
             } else if (diff < 3600000) {
@@ -525,5 +526,11 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
                 tvCommentTimestamp = itemView.findViewById(R.id.tvCommentTimestamp);
             }
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }

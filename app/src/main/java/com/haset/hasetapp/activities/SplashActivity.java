@@ -55,6 +55,7 @@ public class SplashActivity extends BaseActivity {
         getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_splash);
+        overridePendingTransition(R.anim.anim_slide_up, 0);
 
         // Start typing animation for app name
         TextView tvAppName = findViewById(R.id.tvAppName);
@@ -232,5 +233,11 @@ public class SplashActivity extends BaseActivity {
         } catch (PackageManager.NameNotFoundException e) {
             return 0;
         }
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(0, R.anim.anim_slide_down);
     }
 }
