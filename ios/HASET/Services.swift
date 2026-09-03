@@ -1408,6 +1408,14 @@ final class AuthService {
         return try decoder.decode(PaymentInitiationResponse.self, from: data)
     }
 
+    private func isDoctorRegistrationPayment(
+        doctor: DoctorSummary,
+        consultationId: String,
+        userId: String
+    ) -> Bool {
+        doctor.id == "doctor_registration" || consultationId == "registration-\(userId)"
+    }
+
     func ensurePaymentPriceRecord(
         user: UserProfile,
         doctor: DoctorSummary,
@@ -1417,7 +1425,12 @@ final class AuthService {
         billingDoctorId: String? = nil
     ) async throws {
         let resolvedDoctorId = billingDoctorId ?? doctor.id
-        let synthetic = doctor.id == "doctor_registration"
+        let registrationPayment = isDoctorRegistrationPayment(
+            doctor: doctor,
+            consultationId: consultationId,
+            userId: user.userId
+        )
+        let synthetic = registrationPayment
             || consultationId.hasPrefix("registration-")
             || consultationId.hasPrefix("consult-")
             || consultationId.hasPrefix("service-")
@@ -1426,6 +1439,24 @@ final class AuthService {
         let (data, response) = try await URLSession.shared.data(from: url)
         try validate(response: response, data: data)
         if data != Data("null".utf8) {
+            if registrationPayment,
+               let existing = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                var fixes: [String: Any] = [:]
+                let storedDoctorId = stringValue(existing["doctorId"])
+                if storedDoctorId == "doctor_registration" || storedDoctorId != resolvedDoctorId {
+                    fixes["doctorId"] = resolvedDoctorId
+                }
+                if stringValue(existing["appointmentType"]) != "Doctor Registration" {
+                    fixes["appointmentType"] = "Doctor Registration"
+                }
+                let storedReason = stringValue(existing["reason"])?.lowercased() ?? ""
+                if !storedReason.contains("registration") {
+                    fixes["reason"] = "Doctor registration payment"
+                }
+                if !fixes.isEmpty {
+                    try await patch(fixes, url: url)
+                }
+            }
             return
         }
 
@@ -1439,9 +1470,9 @@ final class AuthService {
             "doctorName": doctor.name,
             "date": "",
             "time": "",
-            "reason": doctor.id == "doctor_registration" ? "Doctor registration payment" : "Service payment",
+            "reason": registrationPayment ? "Doctor registration payment" : "Service payment",
             "status": "pending",
-            "appointmentType": doctor.id == "doctor_registration" ? "Doctor Registration" : "Service",
+            "appointmentType": registrationPayment ? "Doctor Registration" : "Service",
             "amount": Int(amount.rounded()),
             "createdAt": now
         ]
@@ -2064,7 +2095,11 @@ final class AuthService {
         var paymentUpdates: [String: Any] = [
             "status": "paid",
             "paymentStatus": "paid",
-            "paidAt": Int(Date().timeIntervalSince1970 * 1000)
+            "paidAt": Int(Date().timeIntervalSince1970 * 1000),
+            "appointmentType": "Doctor Registration",
+            "reason": "Doctor registration payment",
+            "doctorId": userId,
+            "patientId": userId
         ]
         if let transactionId, transactionId > 0 {
             paymentUpdates["transactionId"] = transactionId

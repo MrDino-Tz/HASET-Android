@@ -363,6 +363,12 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 paymentUpdates.put("status", "paid");
                 paymentUpdates.put("paymentStatus", "paid");
                 paymentUpdates.put("paidAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+                paymentUpdates.put("appointmentType", "Doctor Registration");
+                paymentUpdates.put("reason", "Doctor registration payment");
+                if (!TextUtils.isEmpty(userId)) {
+                    paymentUpdates.put("doctorId", userId);
+                    paymentUpdates.put("patientId", userId);
+                }
                 int transactionId = viewModel.getCurrentTransactionId();
                 if (transactionId > 0) {
                     paymentUpdates.put("transactionId", transactionId);
@@ -1061,7 +1067,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
             return;
         }
 
-        boolean synthetic = isSyntheticPaymentConsultation(doctorId);
+        boolean synthetic = isSyntheticPaymentConsultation();
         DatabaseReference recordRef = synthetic
                 ? com.haset.hasetapp.utils.FirebaseHelper.getRegistrationPaymentsRef().child(consultationId)
                 : com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef().child(consultationId);
@@ -1071,6 +1077,15 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 if (snapshot.exists()) {
                     android.util.Log.d("HASETDoctorFlow",
                             "Price record already exists for " + consultationId + ", continuing payment init");
+                    if (isDoctorRegistrationPayment()) {
+                        Map<String, Object> registrationFixes = buildRegistrationRecordFixes(snapshot, userId, doctorId);
+                        if (!registrationFixes.isEmpty()) {
+                            recordRef.updateChildren(registrationFixes)
+                                    .addOnSuccessListener(ignored -> callback.onReady())
+                                    .addOnFailureListener(error -> callback.onReady());
+                            return;
+                        }
+                    }
                     callback.onReady();
                     return;
                 }
@@ -1085,15 +1100,18 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         });
     }
 
-    private boolean isSyntheticPaymentConsultation(String doctorId) {
-        return "doctor_registration".equals(doctorId)
-                || consultationId.startsWith("registration-")
+    private boolean isSyntheticPaymentConsultation() {
+        if (isDoctorRegistrationPayment()) {
+            return true;
+        }
+        return consultationId.startsWith("registration-")
                 || consultationId.startsWith("service-")
                 || consultationId.startsWith("consult-");
     }
 
     private void writePriceVerificationRecord(DatabaseReference recordRef, String userId,
                                               String doctorId, PaymentStartCallback callback) {
+        boolean registrationPayment = isDoctorRegistrationPayment();
         Map<String, Object> record = new HashMap<>();
         record.put("appointmentId", consultationId);
         record.put("consultationId", consultationId);
@@ -1103,11 +1121,11 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         record.put("doctorName", doctor != null ? doctor.getFullName() : "");
         record.put("date", "");
         record.put("time", "");
-        record.put("reason", "doctor_registration".equals(doctorId)
+        record.put("reason", registrationPayment
                 ? "Doctor registration payment"
                 : "Service payment");
         record.put("status", "pending");
-        record.put("appointmentType", "doctor_registration".equals(doctorId)
+        record.put("appointmentType", registrationPayment
                 ? "Doctor Registration"
                 : "Service");
         record.put("amount", Math.round(consultationFee));
@@ -1137,7 +1155,40 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
     }
 
     private boolean isDoctorRegistrationPayment() {
-        return doctor != null && "doctor_registration".equals(doctor.getDoctorId());
+        if (doctor != null) {
+            if ("doctor_registration".equals(doctor.getDoctorId())
+                    || "doctor_registration".equals(doctor.getUserId())) {
+                return true;
+            }
+        }
+        String userId = getCurrentUserId();
+        return isRegistrationConsultationForUser(consultationId, userId);
+    }
+
+    private static boolean isRegistrationConsultationForUser(String consultationId, String userId) {
+        return !TextUtils.isEmpty(consultationId)
+                && consultationId.startsWith("registration-")
+                && !TextUtils.isEmpty(userId)
+                && consultationId.equals("registration-" + userId);
+    }
+
+    private Map<String, Object> buildRegistrationRecordFixes(DataSnapshot snapshot, String userId, String doctorId) {
+        Map<String, Object> fixes = new HashMap<>();
+        String storedDoctorId = snapshot.child("doctorId").getValue(String.class);
+        if ("doctor_registration".equals(storedDoctorId) && !TextUtils.isEmpty(userId)) {
+            fixes.put("doctorId", userId);
+        } else if (!TextUtils.isEmpty(doctorId) && !doctorId.equals(storedDoctorId)) {
+            fixes.put("doctorId", doctorId);
+        }
+        String storedType = snapshot.child("appointmentType").getValue(String.class);
+        if (!"Doctor Registration".equals(storedType)) {
+            fixes.put("appointmentType", "Doctor Registration");
+        }
+        String storedReason = snapshot.child("reason").getValue(String.class);
+        if (storedReason == null || !storedReason.toLowerCase(Locale.ROOT).contains("registration")) {
+            fixes.put("reason", "Doctor registration payment");
+        }
+        return fixes;
     }
 
     private String resolveBillingDoctorId(String doctorId, String userId) {

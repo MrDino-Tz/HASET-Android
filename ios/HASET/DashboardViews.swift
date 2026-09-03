@@ -2160,7 +2160,7 @@ struct PaymentCheckoutView: View {
     }
 
     private var isDoctorRegistrationPayment: Bool {
-        doctor.id == "doctor_registration"
+        doctor.id == "doctor_registration" || consultationId == "registration-\(appViewModel.currentUser?.userId ?? "")"
     }
 
     var body: some View {
