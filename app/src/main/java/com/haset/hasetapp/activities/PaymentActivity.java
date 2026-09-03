@@ -270,6 +270,12 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            android.view.Window window = dialog.getWindow();
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                    | android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
 
         TextView tvDialogMessage = dialogView.findViewById(R.id.tvDialogMessage);
@@ -328,6 +334,12 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         androidx.appcompat.app.AlertDialog dialog = builder.create();
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            android.view.Window window = dialog.getWindow();
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                    | android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
 
         MaterialButton btnDone = dialogView.findViewById(R.id.btnDone);
