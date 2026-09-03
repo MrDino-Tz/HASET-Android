@@ -2,36 +2,21 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/dialog_background"
-    android:padding="24dp">
+    android:gravity="center"
+    android:background="?attr/colorSurface"
+    android:paddingHorizontal="32dp"
+    android:paddingVertical="48dp">
 
-    <!-- Header Icon -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:layout_marginBottom="16dp">
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="74dp"
-            android:layout_height="74dp"
-            app:cardCornerRadius="32dp"
-            app:cardBackgroundColor="@color/red_primary"
-            app:cardElevation="4dp">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/ic_cancel"
-                android:padding="16dp"
-                app:tint="@color/white_primary"
-                android:contentDescription="Error Icon" />
-
-        </com.google.android.material.card.MaterialCardView>
-
-    </LinearLayout>
+    <!-- Header Illustration / Icon Badge -->
+    <ImageView
+        android:id="@+id/imgErrorState"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginBottom="32dp"
+        android:src="@drawable/ic_error1"
+        android:contentDescription="Error Icon" />
 
     <!-- Title -->
     <TextView
@@ -39,12 +24,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/payment_error"
-        android:textColor="@color/red_primary"
-        android:textSize="22sp"
-        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="24sp"
         android:gravity="center"
-        android:fontFamily="@font/poppins_medium"
-        android:layout_marginBottom="8dp" />
+        android:fontFamily="@font/poppins_black"
+        android:layout_marginBottom="12dp" />
 
     <!-- Message -->
     <TextView
@@ -52,12 +36,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/the_payment_request_was_rejected_or_did_"
-        android:textColor="@color/text_primary"
-        android:textSize="16sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="15sp"
         android:gravity="center"
         android:fontFamily="@font/poppins_regular"
         android:lineSpacingExtra="4dp"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="40dp" />
 
     <!-- Action Buttons -->
     <LinearLayout
@@ -69,25 +53,27 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRetry"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:text="@string/retry_request"
             android:textSize="16sp"
             android:fontFamily="@font/poppins_medium"
             android:textColor="@color/white_primary"
+            android:stateListAnimator="@animator/press_scale"
             app:backgroundTint="@color/green_primary"
-            app:cornerRadius="12dp"
+            app:cornerRadius="14dp"
             android:layout_marginBottom="12dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirmPaid"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:text="@string/i_have_paid"
             android:textSize="16sp"
             android:fontFamily="@font/poppins_medium"
             android:textColor="@color/white_primary"
+            android:stateListAnimator="@animator/press_scale"
             app:backgroundTint="@color/green_primary"
-            app:cornerRadius="12dp"
+            app:cornerRadius="14dp"
             android:visibility="gone"
             android:layout_marginBottom="12dp"/>
 
@@ -95,12 +81,13 @@
             android:id="@+id/btnSecondary"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:text="@string/dismiss"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:fontFamily="@font/poppins_medium"
-            android:textColor="@color/text_secondary"
-            app:cornerRadius="12dp" />
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:stateListAnimator="@animator/press_scale"
+            app:cornerRadius="14dp" />
 
     </LinearLayout>
 

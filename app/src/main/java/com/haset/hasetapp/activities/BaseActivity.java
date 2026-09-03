@@ -90,8 +90,7 @@ public abstract class BaseActivity extends AppCompatActivity implements NoIntern
             onNetworkAvailable();
         } else {
             if (noInternetBottomSheet == null || !noInternetBottomSheet.isAdded()) {
-                noInternetBottomSheet = new NoInternetBottomSheet();
-                noInternetBottomSheet.show(getSupportFragmentManager(), NoInternetBottomSheet.TAG);
+                showNoInternetBottomSheet();
             }
             onNetworkUnavailable();
         }
@@ -145,10 +144,48 @@ public abstract class BaseActivity extends AppCompatActivity implements NoIntern
         if (isFinishing() || isDestroyed()) return;
         try {
             if (noInternetBottomSheet != null && noInternetBottomSheet.isAdded()) {
-                noInternetBottomSheet.dismiss();
+                noInternetBottomSheet.showNetworkRestoredState(() -> {
+                    try {
+                        if (noInternetBottomSheet != null && noInternetBottomSheet.isAdded()) {
+                            noInternetBottomSheet.dismissAllowingStateLoss();
+                        }
+                    } catch (Exception ignored) {}
+                });
             }
         } catch (IllegalStateException e) {
             // FragmentManager state issue - ignore
+        }
+    }
+
+    /**
+     * Shows the full-screen session expired state using the same NoInternetBottomSheet
+     * infrastructure, but with session_time.png icon and a login redirect on OK.
+     * Call this from any Activity or error handler when AUTH_EXPIRED is detected.
+     */
+    public void showSessionExpiredScreen() {
+        if (isFinishing() || isDestroyed()) return;
+        runOnUiThread(() -> {
+            try {
+                // Dismiss any existing no-internet sheet first
+                if (noInternetBottomSheet != null && noInternetBottomSheet.isAdded()) {
+                    noInternetBottomSheet.dismissAllowingStateLoss();
+                }
+                noInternetBottomSheet = NoInternetBottomSheet.newInstanceForSessionExpired();
+                noInternetBottomSheet.show(getSupportFragmentManager(), NoInternetBottomSheet.TAG);
+            } catch (IllegalStateException e) {
+                // FragmentManager state issue — fall back to direct navigation
+                com.haset.hasetapp.utils.ErrorDisplay.navigateToLogin(this);
+            }
+        });
+    }
+
+    /**
+     * Call this from any error handler when a session-auth error is detected.
+     * Handles both the full-screen session expired UI and the login redirect.
+     */
+    public void handleAuthError(String errorMessage) {
+        if (com.haset.hasetapp.utils.ErrorDisplay.isAuthError(errorMessage)) {
+            showSessionExpiredScreen();
         }
     }
 

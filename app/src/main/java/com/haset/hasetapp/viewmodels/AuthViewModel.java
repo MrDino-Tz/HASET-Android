@@ -164,6 +164,27 @@ public class AuthViewModel extends AndroidViewModel {
         authState.postValue(AuthState.success(getApplication().getString(com.haset.hasetapp.R.string.verify_email_after_registration)));
     }
 
+    /** Re-send the verification email for the currently signed-in user (e.g. from a 'Resend' action). */
+    public void resendVerificationEmail() {
+        FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            authState.postValue(AuthState.error(getApplication().getString(com.haset.hasetapp.R.string.verify_email_login_expired)));
+            return;
+        }
+        authState.setValue(AuthState.loading("Resending verification email..."));
+        repository.sendEmailVerificationViaSmtp(user, new FirebaseHelper.OnCompleteListener<Void>() {
+            @Override
+            public void onSuccess(Void unused) {
+                authState.postValue(AuthState.success(getApplication().getString(com.haset.hasetapp.R.string.verify_email_after_registration)));
+            }
+
+            @Override
+            public void onError(String error) {
+                authState.postValue(AuthState.error(error != null ? error : "Unable to send verification email."));
+            }
+        });
+    }
+
     /*
     public void loginWithGoogle(String idToken) {
         authState.setValue(AuthState.loading("Connecting with Google..."));
@@ -189,10 +210,10 @@ public class AuthViewModel extends AndroidViewModel {
         }
         lastPasswordResetRequestAt = now;
         authState.setValue(AuthState.loading(getApplication().getString(com.haset.hasetapp.R.string.sending_reset_email)));
-        repository.sendPasswordResetEmail(email, new FirebaseHelper.OnCompleteListener<String>() {
+        repository.sendPasswordResetEmail(email, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override
-            public void onSuccess(String message) {
-                authState.postValue(AuthState.success(message));
+            public void onSuccess(Void unused) {
+                authState.postValue(AuthState.success(getApplication().getString(com.haset.hasetapp.R.string.reset_email_sent)));
             }
 
             @Override
@@ -214,10 +235,10 @@ public class AuthViewModel extends AndroidViewModel {
         }
         lastPasswordResetRequestAt = now;
         authState.setValue(AuthState.loading(getApplication().getString(com.haset.hasetapp.R.string.sending_reset_email)));
-        repository.sendPasswordResetEmail(email, settings, new FirebaseHelper.OnCompleteListener<String>() {
+        repository.sendPasswordResetEmail(email, settings, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override
-            public void onSuccess(String message) {
-                authState.postValue(AuthState.success(message));
+            public void onSuccess(Void unused) {
+                authState.postValue(AuthState.success(getApplication().getString(com.haset.hasetapp.R.string.reset_email_sent)));
             }
 
             @Override

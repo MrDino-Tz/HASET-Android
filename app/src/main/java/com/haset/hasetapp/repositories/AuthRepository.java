@@ -150,11 +150,6 @@ public class AuthRepository {
                     java.util.Map<String, Object> doctorUpdates = new java.util.HashMap<>();
                     doctorUpdates.put("doctorId", user.getUserId());
                     doctorUpdates.put("regNo", user.getRegNo());
-                    doctorUpdates.put("nin", user.getNin());
-                    doctorUpdates.put("ninDocumentUrl", user.getNinDocumentUrl());
-                    doctorUpdates.put("mctCertificateUrl", user.getMctCertificateUrl());
-                    doctorUpdates.put("documentsStatus", "pending");
-                    doctorUpdates.put("documentsVerified", false);
                     doctorUpdates.put("approved", false);
                     doctorUpdates.put("verified", false);
                     doctorUpdates.put("registrationPaymentStatus", "pending");
@@ -168,7 +163,7 @@ public class AuthRepository {
             .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
-    public void sendPasswordResetEmail(String email, FirebaseHelper.OnCompleteListener<String> callback) {
+    public void sendPasswordResetEmail(String email, FirebaseHelper.OnCompleteListener<Void> callback) {
         // Keep password-reset mail on the Hostinger SMTP implementation.
         // Falling back to Firebase here would send the outdated Firebase template.
         sendPasswordResetEmailViaBackend(email, callback);
@@ -180,13 +175,13 @@ public class AuthRepository {
      * AfyaHASET carrying the oobCode, so no Firebase web form is shown.
      */
     public void sendPasswordResetEmail(String email, com.google.firebase.auth.ActionCodeSettings settings,
-                                       FirebaseHelper.OnCompleteListener<String> callback) {
+                                       FirebaseHelper.OnCompleteListener<Void> callback) {
         sendPasswordResetEmailViaFirebase(email, settings, callback);
     }
 
     private void sendPasswordResetEmailViaBackend(
             String email,
-            FirebaseHelper.OnCompleteListener<String> callback
+            FirebaseHelper.OnCompleteListener<Void> callback
     ) {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) {
@@ -208,7 +203,7 @@ public class AuthRepository {
     private void sendPasswordResetEmailViaBackend(
             String email,
             String bearerToken,
-            FirebaseHelper.OnCompleteListener<String> callback
+            FirebaseHelper.OnCompleteListener<Void> callback
     ) {
         String body = "{\"email\":\"" + jsonEscape(email) + "\"}";
         Request.Builder requestBuilder = new Request.Builder()
@@ -223,72 +218,42 @@ public class AuthRepository {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 Log.w(TAG, "Password reset email request failed", e);
-                callback.onError("Unable to send password reset email. Check your connection and try again.");
+                callback.onError("Unable to send password reset email.");
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull okhttp3.Response response) {
-                String responseBody = "";
-                try {
-                    if (response.body() != null) {
-                        responseBody = response.body().string();
-                    }
-                } catch (IOException e) {
-                    Log.w(TAG, "Unable to read password reset response", e);
-                } finally {
-                    response.close();
+                boolean successful = response.isSuccessful();
+                response.close();
+                if (successful) {
+                    callback.onSuccess(null);
+                } else {
+                    Log.w(TAG, "Password reset email backend returned HTTP " + response.code());
+                    callback.onError("Unable to send password reset email.");
                 }
-                handlePasswordResetResponse(response.code(), responseBody, callback);
             }
         });
     }
 
-    private void handlePasswordResetResponse(
-            int code,
-            String responseBody,
-            FirebaseHelper.OnCompleteListener<String> callback
-    ) {
-        String message = "";
-        String status = "";
-        try {
-            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
-            if (json.has("message") && !json.get("message").isJsonNull()) {
-                message = json.get("message").getAsString();
-            }
-            if (json.has("status") && !json.get("status").isJsonNull()) {
-                status = json.get("status").getAsString();
-            }
-        } catch (Exception ignored) {
-            // Fall back to HTTP status handling below.
-        }
-
-        if (code >= 200 && code < 300 && "success".equals(status)) {
-            callback.onSuccess(message.isEmpty()
-                ? "A password reset link has been sent to your email. Please check your inbox and spam folder."
-                : message);
-            return;
-        }
-        if (code == 404 || "not_found".equals(status)) {
-            callback.onError(message.isEmpty()
-                ? "No account found with this email address. Please check the email or register."
-                : message);
-            return;
-        }
-        if (message.isEmpty()) {
-            message = "Unable to send password reset email.";
-        }
-        Log.w(TAG, "Password reset email backend returned HTTP " + code + ": " + responseBody);
-        callback.onError(message);
+    private void sendPasswordResetEmailViaFirebase(String email, FirebaseHelper.OnCompleteListener<Void> callback) {
+        mAuth.sendPasswordResetEmail(email)
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Failed to send reset email"));
+                }
+            });
     }
 
     private void sendPasswordResetEmailViaFirebase(String email, com.google.firebase.auth.ActionCodeSettings settings,
-                                                   FirebaseHelper.OnCompleteListener<String> callback) {
+                                                   FirebaseHelper.OnCompleteListener<Void> callback) {
         mAuth.sendPasswordResetEmail(email, settings)
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
-                    callback.onSuccess("A password reset link has been sent to your email. Please check your inbox and spam folder.");
+                    callback.onSuccess(null);
                 } else {
-                    callback.onError(mapPasswordResetFirebaseError(task.getException()));
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Failed to send reset email"));
                 }
             });
     }
@@ -340,8 +305,10 @@ public class AuthRepository {
                 httpClient.newCall(request).enqueue(new Callback() {
                     @Override
                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        Log.w(TAG, "SMTP email verification request failed; trying Firebase fallback", e);
-                        sendEmailVerificationViaFirebase(user, callback);
+                        Log.w(TAG, "SMTP email verification request failed", e);
+                        CrashMonitor.report("auth", "AuthRepository.sendEmailVerification",
+                                "SMTP verification request failed (network): " + e.getMessage(), e);
+                        if (callback != null) callback.onError("Unable to send verification email. Check your connection and try again.");
                     }
 
                     @Override
@@ -364,19 +331,22 @@ public class AuthRepository {
                             } catch (Exception ignored) {
                             }
                         }
-                        if (successful) {
-                            if (callback != null) callback.onSuccess(null);
-                        } else {
-                            Log.w(TAG, "Backend verification email failed with HTTP "
-                                    + response.code() + "; trying Firebase fallback");
-                            sendEmailVerificationViaFirebase(user, callback);
+                        CrashMonitor.report("auth", "AuthRepository.sendEmailVerification",
+                                "SMTP verification result success=" + successful + " http=" + response.code()
+                                        + " body=" + (responseBody.length() > 200 ? responseBody.substring(0, 200) : responseBody),
+                                successful ? null : new IllegalStateException("SMTP verification email not sent"));
+                        if (callback != null) {
+                            if (successful) callback.onSuccess(null);
+                            else callback.onError("We couldn't send the verification email. Please try again or use 'Resend'.");
                         }
                     }
                 });
             })
             .addOnFailureListener(error -> {
-                Log.w(TAG, "Unable to refresh token for SMTP email verification; trying Firebase fallback", error);
-                sendEmailVerificationViaFirebase(user, callback);
+                Log.w(TAG, "Unable to refresh token for SMTP email verification", error);
+                CrashMonitor.report("auth", "AuthRepository.sendEmailVerification",
+                        "SMTP verification token refresh failed: " + error.getMessage(), error);
+                if (callback != null) callback.onError("Unable to send verification email. Please try again.");
             });
     }
 
@@ -427,22 +397,6 @@ public class AuthRepository {
             return user;
         }
         return null;
-    }
-
-    private String mapPasswordResetFirebaseError(Exception exception) {
-        if (exception instanceof FirebaseAuthException) {
-            String errorCode = ((FirebaseAuthException) exception).getErrorCode();
-            if ("ERROR_USER_NOT_FOUND".equals(errorCode) || "user-not-found".equalsIgnoreCase(errorCode)) {
-                return "No account found with this email address. Please check the email or register.";
-            }
-            if ("ERROR_INVALID_EMAIL".equals(errorCode) || "invalid-email".equalsIgnoreCase(errorCode)) {
-                return "Please enter a valid email address.";
-            }
-            if ("ERROR_TOO_MANY_REQUESTS".equals(errorCode) || "too-many-requests".equalsIgnoreCase(errorCode)) {
-                return "Too many attempts. Please try again later.";
-            }
-        }
-        return mapFirebaseAuthError(exception, "Failed to send reset email.");
     }
 
     private String safeEmail(String email) {

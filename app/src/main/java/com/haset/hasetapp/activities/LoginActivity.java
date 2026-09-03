@@ -284,7 +284,18 @@ public class LoginActivity extends BaseActivity {
                     CustomDialog.hideLoading();
                     String loginDetail = com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(LoginActivity.this, state.message);
                     com.haset.hasetapp.utils.ErrorLogger.log(loginDetail, state.message);
-                    com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), loginDetail);
+                    // If login was blocked because the email is unverified, offer to resend the
+                    // verification email right from the error message.
+                    if (getString(com.haset.hasetapp.R.string.verify_email_before_login).equals(state.message)
+                            || getString(com.haset.hasetapp.R.string.verify_email_before_login).equals(loginDetail)) {
+                        final com.google.android.material.snackbar.Snackbar vb = com.google.android.material.snackbar.Snackbar
+                                .make(findViewById(android.R.id.content), loginDetail, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                                .setAnchorView(findViewById(com.haset.hasetapp.R.id.btnLogin))
+                                .setAction(getString(com.haset.hasetapp.R.string.resend_verification_email), v -> authViewModel.resendVerificationEmail());
+                        vb.show();
+                    } else {
+                        com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content), loginDetail);
+                    }
                     if (state.credentialFailure) {
                         loginAttemptCount++;
                         if (loginAttemptCount >= MAX_LOGIN_ATTEMPTS) {
@@ -327,6 +338,17 @@ public class LoginActivity extends BaseActivity {
                     break;
                 */
                 case IDLE:
+                    CustomDialog.hideLoading();
+                    break;
+                case SUCCESS:
+                    // E.g. a verification email was re-sent; show a confirmation.
+                    CustomDialog.hideLoading();
+                    resetLoginButton();
+                    if (state.message != null) {
+                        com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content), state.message);
+                    }
+                    break;
+                default:
                     CustomDialog.hideLoading();
                     break;
             }

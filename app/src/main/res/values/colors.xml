@@ -31,6 +31,7 @@
     <color name="red_primary">#DD0000</color>
     <color name="red_light">#FF2222</color>
     <color name="red_dark">#BB0000</color>
+    <color name="coral_primary">#FF4D2D</color>
     
     <!-- Purple Theme Colors -->
     <color name="purple_primary">#6A5ACD</color>

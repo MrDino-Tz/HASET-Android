@@ -263,7 +263,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
     }
 
     private void showErrorDialog(String errorMessage) {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.CustomDialogTheme);
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.FullScreenDialogTheme);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_payment_error, null);
         builder.setView(dialogView);
         
@@ -314,10 +314,13 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         }
 
         dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+        }
     }
 
     private void showSuccessDialog() {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.CustomDialogTheme);
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.FullScreenDialogTheme);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_payment_success, null);
         builder.setView(dialogView);
         builder.setCancelable(false);
@@ -366,6 +369,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         });
 
         dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+        }
     }
 
     private void showAbortDialog() {

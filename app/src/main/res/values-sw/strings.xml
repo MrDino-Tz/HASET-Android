@@ -66,8 +66,10 @@
     <string name="confirm_password">Thibitisha Nenosiri</string>
     <string name="forgot_password">Umesahau Nenosiri?</string>
     <string name="lets_retrieve_account">Wacha TuRefishe Akaunti Yako</string>
-    <string name="verify_email_after_registration">Karibu HASET. Tafadhali angalia barua pepe yako na uthibitishe akaunti yako.</string>
+    <string name="verify_email_after_registration">Karibu AfyaHASET. Tafadhali angalia barua pepe yako na uthibitishe akaunti yako.</string>
     <string name="verify_email_before_login">Tafadhali thibitisha barua pepe yako kabla ya kuingia. Tumekutumia barua pepe mpya ya uthibitisho.</string>
+    <string name="verify_email_login_expired">Kipindi chako kimeisha. Tafadhali ingia tena ili kutuma tena barua pepe ya uthibitisho.</string>
+    <string name="resend_verification_email">Tuma Tena</string>
     <!-- Kubadilisha nenosiri ndani ya app -->
     <string name="reset_password_title">Badilisha Nenosiri</string>
     <string name="reset_password_sheet_description">Fungua kiungo tulichokutumea barua pepe — kitafunguka programu hii moja kwa moja. Unaweza pia kunakili kiungo na kuweka hapa chini, kisha weka nenosiri jipya.</string>
@@ -529,9 +531,12 @@
     <string name="thank_you_rating">Asante kwa ukadiriaji wako!</string>
     <string name="failed_to_submit_rating">Imeshindwa kutuma ukadiriaji: %s</string>
     
-    <!-- Internet Strings -->
+    <!-- Internet & Session Strings -->
     <string name="internet_restored">Muunganisho wa mtandao umerejeshwa!</string>
     <string name="still_no_internet">Bado hakuna muunganisho wa mtandao.</string>
+    <string name="session_expired_title">Kikao chako kimekwisha</string>
+    <string name="session_expired_desc">Kikao chako kimekwisha na umefutwa kwenye mfumo. Bonyeza Sawa ili kurudi kwenye skrini ya kuingia.</string>
+    <string name="btn_ok">Sawa</string>
     
     <!-- File Selection Strings -->
     <string name="select_document_picker">Chagua Hati</string>
