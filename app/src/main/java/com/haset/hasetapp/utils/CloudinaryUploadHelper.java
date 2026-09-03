@@ -75,9 +75,14 @@ public class CloudinaryUploadHelper {
             
             // Prepare upload options
             Map<String, Object> options = new HashMap<>();
-            options.put("public_id", folder + "/" + uniqueFileName.replaceAll("\\.[^.]*$", "")); // Remove extension for public_id
+            String resourceType = getResourceType(fileType);
+            String publicId = folder + "/" + uniqueFileName;
+            if (!"raw".equals(resourceType)) {
+                publicId = publicId.replaceAll("\\.[^.]*$", "");
+            }
+            options.put("public_id", publicId);
             options.put("folder", folder);
-            options.put("resource_type", getResourceType(fileType));
+            options.put("resource_type", resourceType);
             
             // For images, add optimization
             if (fileType.equals("image")) {
@@ -93,7 +98,7 @@ public class CloudinaryUploadHelper {
             
             // Convert URI to File if needed
             long maxUploadBytes = getMaxUploadBytes(fileType);
-            File file = uriToFile(context, fileUri, maxUploadBytes);
+            File file = uriToFile(context, fileUri, maxUploadBytes, fileName);
             if (file == null) {
                 Log.e(TAG, "Failed to convert URI to File");
                 if (listener != null) {
@@ -190,14 +195,14 @@ public class CloudinaryUploadHelper {
     /**
      * Convert URI to File
      */
-    private static File uriToFile(Context context, Uri uri, long maxBytes) {
+    private static File uriToFile(Context context, Uri uri, long maxBytes, String fileName) {
         try {
             String scheme = uri.getScheme();
             if (scheme == null || scheme.equals("file")) {
                 return new File(uri.getPath());
             } else if (scheme.equals("content")) {
                 // Copy content URI to temp file
-                File tempFile = File.createTempFile("upload_", ".tmp", context.getCacheDir());
+                File tempFile = File.createTempFile("upload_", getTempFileSuffix(fileName), context.getCacheDir());
                 try (InputStream inputStream = context.getContentResolver().openInputStream(uri);
                      FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                     if (inputStream == null) {
@@ -236,10 +241,24 @@ public class CloudinaryUploadHelper {
             case "video":
                 return "video";
             case "audio":
-                return "raw"; // Cloudinary doesn't have audio type, use raw
+            case "document":
+            case "raw":
+                return "raw"; // Cloudinary stores non-image/video files as raw.
             default:
                 return "auto";
         }
+    }
+
+    private static String getTempFileSuffix(String fileName) {
+        if (fileName == null) return ".tmp";
+
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) return ".tmp";
+
+        String extension = fileName.substring(dotIndex + 1).toLowerCase(Locale.US);
+        if (!extension.matches("[a-z0-9]{1,10}")) return ".tmp";
+
+        return "." + extension;
     }
 
     private static long getMaxUploadBytes(String fileType) {

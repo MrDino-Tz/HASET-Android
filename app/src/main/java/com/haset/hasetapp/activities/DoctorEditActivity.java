@@ -60,6 +60,7 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
     private ProfilePhotoHelper profilePhotoHelper;
     private DoctorEditViewModel viewModel;
     private String currentProfileImagePath; // To store the selected image path
+    private String registeredRegNo;
     private final android.os.Handler safeHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     
     private int fromHour = 9;
@@ -105,7 +106,8 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
 
         viewModel.getSaveSuccess().observe(this, success -> {
             if (success != null && success) {
-                com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), "Professional information updated successfully!", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+                com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                        R.string.professional_info_updated, com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
                 safeHandler.postDelayed(() -> {
                     if (!isFinishing()) finish();
                 }, 1000);
@@ -126,6 +128,7 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
         layoutProgress = findViewById(R.id.layoutProgress);
         progressBar = findViewById(R.id.progressBar);
         switchOnlineStatus = findViewById(R.id.switchOnlineStatus);
+        lockRegNoField();
         
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         
@@ -172,8 +175,10 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
                 etLocation.setText(doctorEntity.getLocation() != null ? doctorEntity.getLocation() : "");
                 etBio.setText(doctorEntity.getAbout() != null ? doctorEntity.getAbout() : "");
                 if (etRegNo != null) {
-                    etRegNo.setText(doctorEntity.getRegNo() != null ? doctorEntity.getRegNo() : "");
+                    registeredRegNo = doctorEntity.getRegNo();
+                    etRegNo.setText(registeredRegNo != null ? registeredRegNo : "");
                 }
+                loadRegisteredRegNoFallback(doctorId);
                 
                 // Load online status
                 if (switchOnlineStatus != null) {
@@ -318,7 +323,7 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
         String feeStr = etConsultationFee.getText() != null ? etConsultationFee.getText().toString().trim() : "";
         String location = etLocation.getText() != null ? etLocation.getText().toString().trim() : "";
         String about = etBio.getText() != null ? etBio.getText().toString().trim() : "";
-        String regNo = (etRegNo != null && etRegNo.getText() != null) ? etRegNo.getText().toString().trim() : "";
+        String regNo = getRegisteredRegNo();
         
         // Validation
         if (TextUtils.isEmpty(specialty)) {
@@ -436,7 +441,7 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
         doctorEntity.setAvailableTimes(availableTimes);
         doctorEntity.setLocation(location); // Set location
         doctorEntity.setAbout(about); // Set bio
-        doctorEntity.setRegNo(regNo); // Set MCT reg no
+        doctorEntity.setRegNo(regNo); // Preserve registered MCT reg no
         doctorEntity.setProfileImage(currentProfileImagePath); // Save profile image path
         doctorEntity.setLastUpdated(System.currentTimeMillis());
         
@@ -447,6 +452,34 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
         }
         
         viewModel.saveDoctorProfile(doctorEntity);
+    }
+
+    private void lockRegNoField() {
+        if (etRegNo == null) return;
+        etRegNo.setEnabled(false);
+        etRegNo.setFocusable(false);
+        etRegNo.setCursorVisible(false);
+    }
+
+    private void loadRegisteredRegNoFallback(String doctorId) {
+        if (!TextUtils.isEmpty(registeredRegNo) || TextUtils.isEmpty(doctorId)) return;
+
+        FirebaseHelper.getUsersRef().child(doctorId).child("regNo").get()
+                .addOnSuccessListener(snapshot -> {
+                    String regNo = snapshot.getValue(String.class);
+                    if (!TextUtils.isEmpty(regNo)) {
+                        registeredRegNo = regNo;
+                        if (etRegNo != null) etRegNo.setText(regNo);
+                    }
+                });
+    }
+
+    private String getRegisteredRegNo() {
+        if (!TextUtils.isEmpty(registeredRegNo)) return registeredRegNo.trim();
+        if (currentDoctorEntity != null && !TextUtils.isEmpty(currentDoctorEntity.getRegNo())) {
+            return currentDoctorEntity.getRegNo().trim();
+        }
+        return "";
     }
 
     private void showProgress(boolean show) {

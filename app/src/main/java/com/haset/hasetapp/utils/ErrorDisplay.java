@@ -163,6 +163,15 @@ public final class ErrorDisplay {
                 || lower.contains("internal error") || lower.contains("unknown error")) {
             return context.getString(R.string.error_server);
         }
+        if ("password_change_not_available".equals(lower)
+                || lower.contains("password_change_not_available")
+                || (lower.contains("operation is not allowed") && lower.contains("provider"))) {
+            return context.getString(R.string.error_password_not_available);
+        }
+        if ("doctor_profile_update_denied".equals(lower)
+                || lower.contains("doctor_profile_update_denied")) {
+            return context.getString(R.string.error_doctor_profile_update);
+        }
         if (lower.contains("permission") || lower.contains("not allowed")
                 || lower.contains("forbidden")) {
             return context.getString(R.string.error_forbidden);

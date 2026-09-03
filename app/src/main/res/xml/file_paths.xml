@@ -7,6 +7,7 @@
     <files-path name="article_media" path="article_media/" />
     <files-path name="chat_images" path="chat_images/" />
     <cache-path name="prescription_previews" path="prescription_previews/" />
+    <cache-path name="chat_documents" path="chat_documents/" />
     <cache-path name="qr_codes" path="qr_codes/" />
     <external-files-path name="prescriptions" path="Documents/HASET/Prescriptions/" />
 </paths>

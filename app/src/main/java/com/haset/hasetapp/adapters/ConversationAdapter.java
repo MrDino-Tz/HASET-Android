@@ -1,6 +1,7 @@
 package com.haset.hasetapp.adapters;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -121,30 +122,15 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
                 String msg = lastMessage.toLowerCase();
                 
                 if (msg.contains("image") || msg.contains("photo") || msg.contains("pic")) {
-                    icon = context.getDrawable(R.drawable.ic_image_icon);
-                    if (icon != null) icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
-                    tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
-                    tvLastMessage.setText("Photo");
+                    setLastMessagePreview(R.drawable.ic_image_icon, "Photo");
                 } else if (msg.contains("voice") || msg.contains("audio") || msg.contains("recording")) {
-                    icon = context.getDrawable(R.drawable.ic_microphone);
-                    if (icon != null) icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
-                    tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
-                    tvLastMessage.setText("Voice note");
+                    setLastMessagePreview(R.drawable.ic_microphone, "Voice note");
                 } else if (msg.contains("file") || msg.contains("document") || msg.contains("pdf") || msg.contains("doc")) {
-                    icon = context.getDrawable(R.drawable.ic_document);
-                    if (icon != null) icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
-                    tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
-                    tvLastMessage.setText("Document");
+                    setLastMessagePreview(R.drawable.ic_document, "Document");
                 } else if (msg.contains("prescription") || msg.contains("prescribed")) {
-                    icon = context.getDrawable(R.drawable.ic_prescription);
-                    if (icon != null) icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
-                    tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
-                    tvLastMessage.setText("Prescription");
+                    setLastMessagePreview(R.drawable.ic_prescription, "Prescription");
                 } else if (msg.contains("fee") || msg.contains("payment") || msg.contains("service") || msg.contains("charge")) {
-                    icon = context.getDrawable(R.drawable.ic_money);
-                    if (icon != null) icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
-                    tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
-                    tvLastMessage.setText("Payment sent");
+                    setLastMessagePreview(R.drawable.ic_money, "Payment sent");
                 } else {
                     tvLastMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null);
                     tvLastMessage.setText(lastMessage);
@@ -165,6 +151,17 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
             String conversationId = conversation.getConversationId();
             int unreadCount = badgeHelper.getConversationUnreadCount(conversationId);
             NotificationBadgeHelper.updateConversationBadge(tvUnreadCount, unreadCount);
+        }
+
+        private void setLastMessagePreview(int iconResId, String text) {
+            Drawable icon = context.getDrawable(iconResId);
+            if (icon != null) {
+                int size = (int) (18 * context.getResources().getDisplayMetrics().density);
+                icon.setBounds(0, 0, size, size);
+                icon.setTint(context.getResources().getColor(R.color.text_secondary, context.getTheme()));
+            }
+            tvLastMessage.setCompoundDrawablesRelative(icon, null, null, null);
+            tvLastMessage.setText(text);
         }
     }
 }
