@@ -16,6 +16,9 @@
     <string name="error_unknown">Something went wrong. Please try again.</string>
     <string name="error_validation">Please check the highlighted fields and try again.</string>
     <string name="error_forbidden">You are not allowed to perform this action.</string>
+    <string name="error_password_not_available">Password change is not available for Google sign-in accounts. Manage your password in your Google account settings.</string>
+    <string name="error_doctor_profile_update">Unable to save professional information. Please sign in again, or contact support if this continues.</string>
+    <string name="professional_info_updated">Professional information updated successfully!</string>
     <string name="error_not_found">The requested information was not found.</string>
     <string name="error_account_exists">An account already exists with this email.</string>
     <string name="error_invalid_credential">Incorrect email or password.</string>

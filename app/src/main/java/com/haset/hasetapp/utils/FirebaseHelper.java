@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import android.util.Log;
 import com.google.firebase.database.DataSnapshot;
@@ -163,12 +164,33 @@ public class FirebaseHelper {
         return mStorage;
     }
 
+    /** True when the signed-in user has an email/password provider and can change password in-app. */
+    public static boolean canChangePassword() {
+        FirebaseUser user = getFirebaseAuth().getCurrentUser();
+        if (user == null) {
+            return false;
+        }
+        for (com.google.firebase.auth.UserInfo profile : user.getProviderData()) {
+            if (EmailAuthProvider.PROVIDER_ID.equals(profile.getProviderId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Password Management Methods
     public static void reauthenticateUser(String password, OnCompleteListener<Void> listener) {
         FirebaseUser user = getFirebaseAuth().getCurrentUser();
-        if (user != null && user.getEmail() != null) {
-            com.google.firebase.auth.AuthCredential credential = com.google.firebase.auth.EmailAuthProvider
-                    .getCredential(user.getEmail(), password);
+        if (user == null) {
+            listener.onError("User not authenticated or email not found.");
+            return;
+        }
+        if (!canChangePassword()) {
+            listener.onError("PASSWORD_CHANGE_NOT_AVAILABLE");
+            return;
+        }
+        if (user.getEmail() != null) {
+            AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
 
             user.reauthenticate(credential)
                     .addOnSuccessListener(aVoid -> listener.onSuccess(null))
@@ -1572,8 +1594,46 @@ public class FirebaseHelper {
             return;
         }
 
+        FirebaseUser authUser = getFirebaseAuth().getCurrentUser();
+        if (authUser == null) {
+            listener.onError(ErrorDisplay.AUTH_EXPIRED);
+            return;
+        }
+        if (!doctorId.equals(authUser.getUid())) {
+            listener.onError("DOCTOR_PROFILE_UPDATE_DENIED");
+            return;
+        }
+
+        Map<String, Object> updates = buildDoctorProfileUpdates(doctorEntity);
+        DatabaseReference doctorRef = getDoctorsNodeRef().child(doctorId);
+        doctorRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<String, Object> doctorUpdates = new HashMap<>(updates);
+                if (!snapshot.exists()) {
+                    // First write must satisfy enrollment validation on /doctors.
+                    doctorUpdates.put("approved", false);
+                    doctorUpdates.put("verified", false);
+                }
+
+                doctorRef.updateChildren(doctorUpdates)
+                        .addOnSuccessListener(aVoid -> {
+                            syncDoctorProfileToUsers(doctorId, doctorUpdates);
+                            listener.onSuccess(true);
+                        })
+                        .addOnFailureListener(e -> listener.onError(mapDoctorProfileSaveError(e.getMessage())));
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                listener.onError(mapDoctorProfileSaveError(error.getMessage()));
+            }
+        });
+    }
+
+    private static Map<String, Object> buildDoctorProfileUpdates(DoctorEntity doctorEntity) {
         Map<String, Object> updates = new HashMap<>();
-        updates.put("doctorId", doctorId);
+        updates.put("doctorId", doctorEntity.getDoctorId());
         updates.put("specialty", doctorEntity.getSpecialty());
         updates.put("consultationFee", doctorEntity.getConsultationFee());
         updates.put("availableTimes", doctorEntity.getAvailableTimes());
@@ -1584,24 +1644,53 @@ public class FirebaseHelper {
         updates.put("online", doctorEntity.isOnline());
         updates.put("onlineStatus", doctorEntity.getOnlineStatus());
         updates.put("lastUpdated", doctorEntity.getLastUpdated());
-
-        // Update only mutable profile/presence fields. Replacing the entire
-        // record would overwrite immutable approved/verified values and be
-        // rejected by the database rules.
-        getDoctorsNodeRef().child(doctorId).updateChildren(updates)
-                .addOnSuccessListener(aVoid -> {
-                    getUsersRef().child(doctorId).updateChildren(updates)
-                            .addOnSuccessListener(v -> listener.onSuccess(true))
-                            .addOnFailureListener(e -> listener.onError(e.getMessage()));
-                })
-                .addOnFailureListener(e -> listener.onError(e.getMessage()));
+        return updates;
     }
+
+    /** Best-effort denormalization; /doctors remains the source of truth. */
+    private static void syncDoctorProfileToUsers(String doctorId, Map<String, Object> doctorUpdates) {
+        Map<String, Object> userUpdates = new HashMap<>();
+        String[] mirroredFields = {
+                "specialty", "consultationFee", "availableTimes", "location",
+                "regNo", "about", "profileImage", "online", "onlineStatus", "lastUpdated"
+        };
+        for (String field : mirroredFields) {
+            if (doctorUpdates.containsKey(field)) {
+                userUpdates.put(field, doctorUpdates.get(field));
+            }
+        }
+        if (userUpdates.isEmpty()) {
+            return;
+        }
+        getUsersRef().child(doctorId).updateChildren(userUpdates)
+                .addOnFailureListener(e -> Log.w("FirebaseHelper",
+                        "Doctor profile user mirror failed for " + doctorId + ": " + e.getMessage()));
+    }
+
+    private static String mapDoctorProfileSaveError(@Nullable String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return "DOCTOR_PROFILE_UPDATE_DENIED";
+        }
+        String lower = message.toLowerCase(Locale.ROOT);
+        if (lower.contains("permission") || lower.contains("not allowed") || lower.contains("forbidden")) {
+            return "DOCTOR_PROFILE_UPDATE_DENIED";
+        }
+        return message;
+    }
+
     // Auth methods
     public static void updatePassword(String oldPassword, String newPassword, OnCompleteListener<Void> listener) {
         com.google.firebase.auth.FirebaseUser user = getFirebaseAuth().getCurrentUser();
-        if (user != null && user.getEmail() != null) {
-            com.google.firebase.auth.AuthCredential credential = com.google.firebase.auth.EmailAuthProvider
-                    .getCredential(user.getEmail(), oldPassword);
+        if (user == null) {
+            listener.onError("User not authenticated");
+            return;
+        }
+        if (!canChangePassword()) {
+            listener.onError("PASSWORD_CHANGE_NOT_AVAILABLE");
+            return;
+        }
+        if (user.getEmail() != null) {
+            AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), oldPassword);
 
             user.reauthenticate(credential)
                     .addOnCompleteListener(task -> {

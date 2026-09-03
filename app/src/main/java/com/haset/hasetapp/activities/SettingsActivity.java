@@ -42,6 +42,7 @@ public class SettingsActivity extends BaseActivity {
 
     private ImageView btnBack;
     private LinearLayout btnChangePassword;
+    private View dividerChangePassword;
     private LinearLayout btnSupport;
     private LinearLayout tvLanguage;
     private LinearLayout tvTheme;
@@ -72,6 +73,7 @@ public class SettingsActivity extends BaseActivity {
         setupNotificationSwitch();
         setupLocationSwitch();
         setupMfaSwitch();
+        setupChangePasswordOption();
         checkUserRole();
         updateLanguageText();
         updateThemeText();
@@ -81,6 +83,7 @@ public class SettingsActivity extends BaseActivity {
     private void initializeViews() {
         btnBack = findViewById(R.id.btnBack);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        dividerChangePassword = findViewById(R.id.dividerChangePassword);
         btnSupport = findViewById(R.id.btnSupport);
         tvLanguage = findViewById(R.id.tvLanguage);
         tvTheme = findViewById(R.id.tvTheme);
@@ -95,6 +98,17 @@ public class SettingsActivity extends BaseActivity {
         TextView tvVersion = findViewById(R.id.tvVersion);
         if (tvVersion != null) {
             tvVersion.setText(R.string.app_version_100dtc);
+        }
+    }
+
+    private void setupChangePasswordOption() {
+        boolean canChangePassword = FirebaseHelper.canChangePassword();
+        int visibility = canChangePassword ? View.VISIBLE : View.GONE;
+        if (btnChangePassword != null) {
+            btnChangePassword.setVisibility(visibility);
+        }
+        if (dividerChangePassword != null) {
+            dividerChangePassword.setVisibility(visibility);
         }
     }
 
@@ -356,7 +370,13 @@ public class SettingsActivity extends BaseActivity {
         }
 
         if (btnChangePassword != null) {
-            btnChangePassword.setOnClickListener(v -> showChangePasswordBottomSheet());
+            btnChangePassword.setOnClickListener(v -> {
+                if (!FirebaseHelper.canChangePassword()) {
+                    Toast.makeText(this, R.string.error_password_not_available, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                showChangePasswordBottomSheet();
+            });
         }
 
         if (tvLanguage != null) {

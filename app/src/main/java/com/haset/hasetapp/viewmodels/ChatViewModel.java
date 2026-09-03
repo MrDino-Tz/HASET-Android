@@ -85,6 +85,11 @@ public class ChatViewModel extends AndroidViewModel {
 
     public void uploadAttachment(android.content.Context context, android.net.Uri uri, String type, String fileName, long fileSize, String messageId) {
         uploadStatus.setValue("Uploading...");
+        if ("document".equalsIgnoreCase(type)) {
+            uploadDocumentAttachment(context, uri, fileName, messageId);
+            return;
+        }
+
         com.haset.hasetapp.utils.CloudinaryUploadHelper.uploadFile(context, uri, type, fileName, "chat_attachments",
             new com.haset.hasetapp.utils.CloudinaryUploadHelper.OnFileUploadListener() {
                 @Override
@@ -109,6 +114,32 @@ public class ChatViewModel extends AndroidViewModel {
                     uploadStatus.postValue("Upload failed: " + error);
                 }
             });
+    }
+
+    private void uploadDocumentAttachment(android.content.Context context, android.net.Uri uri, String fileName, String messageId) {
+        com.haset.hasetapp.utils.FileUploadHelper.uploadFile(context, uri, "document", fileName, "chat_attachments",
+                new com.haset.hasetapp.utils.FileUploadHelper.OnFileUploadListener() {
+                    @Override
+                    public void onUploadStart() {
+                        uploadStatus.postValue("Starting upload...");
+                    }
+
+                    @Override
+                    public void onUploadProgress(double progress) {
+                        uploadProgress.postValue(progress);
+                    }
+
+                    @Override
+                    public void onUploadSuccess(String downloadUrl, String uploadedFileName, long uploadedFileSize) {
+                        uploadStatus.postValue("Upload successful");
+                        uploadSuccess.postValue(new AttachmentResult(downloadUrl, fileName, uploadedFileSize, "document", messageId));
+                    }
+
+                    @Override
+                    public void onUploadError(String error) {
+                        uploadStatus.postValue("Upload failed: " + error);
+                    }
+                });
     }
 
     public static class AttachmentResult {

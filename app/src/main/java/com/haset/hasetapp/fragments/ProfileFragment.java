@@ -75,6 +75,7 @@ public class ProfileFragment extends Fragment {
     private ImageView btnSettings;
     private PreferenceManager preferenceManager;
     private ProfileViewModel viewModel;
+    private String registeredRegNo;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -288,6 +289,9 @@ public class ProfileFragment extends Fragment {
 
         // Only doctors can have verified badge - not patients or admins
         if (Constants.ROLE_DOCTOR.equals(role)) {
+            registeredRegNo = user.getRegNo();
+            showMctRegistration(registeredRegNo);
+
             if (tvProfessionalInfoTitle != null) tvProfessionalInfoTitle.setVisibility(View.VISIBLE);
             cardMedicalInfo.setVisibility(View.VISIBLE);
             cardMedicalInfo2.setVisibility(View.VISIBLE);
@@ -349,12 +353,10 @@ public class ProfileFragment extends Fragment {
         if (tvBio != null) tvBio.setText(doctor.getAbout());
         if (tvLocation != null) tvLocation.setText(doctor.getLocation());
         
-        if (tvUserRegNo != null && doctor.getRegNo() != null && !doctor.getRegNo().isEmpty()) {
-            tvUserRegNo.setText(getString(R.string.mct_reg_no_label, doctor.getRegNo()));
-            tvUserRegNo.setVisibility(View.VISIBLE);
-        } else if (tvUserRegNo != null) {
-            tvUserRegNo.setVisibility(View.GONE);
-        }
+        String regNo = doctor.getRegNo() != null && !doctor.getRegNo().trim().isEmpty()
+                ? doctor.getRegNo()
+                : registeredRegNo;
+        showMctRegistration(regNo);
         
         if (doctor.isVerified()) {
             if (ivVerified != null) {
@@ -369,6 +371,16 @@ public class ProfileFragment extends Fragment {
                 Log.d("ProfileFragment", "Doctor is NOT verified - hiding badge");
             }
             tvUserName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+        }
+    }
+
+    private void showMctRegistration(String regNo) {
+        if (tvUserRegNo == null) return;
+        if (regNo != null && !regNo.trim().isEmpty()) {
+            tvUserRegNo.setText(getString(R.string.mct_reg_no_label, regNo.trim()));
+            tvUserRegNo.setVisibility(View.VISIBLE);
+        } else {
+            tvUserRegNo.setVisibility(View.GONE);
         }
     }
 

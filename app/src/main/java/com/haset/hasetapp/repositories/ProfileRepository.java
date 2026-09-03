@@ -37,6 +37,7 @@ public class ProfileRepository {
                         
                         user.setRole(snapshot.child("role").getValue(String.class));
                         user.setProfileImage(snapshot.child("profileImage").getValue(String.class));
+                        user.setRegNo(snapshot.child("regNo").getValue(String.class));
                         Object ageValue = snapshot.child("age").getValue();
                         if (ageValue instanceof Number) {
                             user.setAge(((Number) ageValue).intValue());

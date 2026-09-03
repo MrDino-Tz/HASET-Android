@@ -389,12 +389,7 @@ public class PrescriptionDetailFragment extends Fragment {
                         .make(requireView(),
                                 "Saved: " + displayPath,
                                 com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
-                        .setAction("OPEN", v -> {
-                            Intent open = new Intent(Intent.ACTION_VIEW);
-                            open.setDataAndType(finalUri, "application/pdf");
-                            open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            startActivity(Intent.createChooser(open, "Open PDF"));
-                        })
+                        .setAction("OPEN", v -> openPdf(finalUri))
                         .show();
             });
         } else {
@@ -417,6 +412,17 @@ public class PrescriptionDetailFragment extends Fragment {
         if (requireActivity() instanceof com.haset.hasetapp.activities.PrescriptionActivity) {
             ((com.haset.hasetapp.activities.PrescriptionActivity) requireActivity()).setDownloadButtonVisible(false, null);
             ((com.haset.hasetapp.activities.PrescriptionActivity) requireActivity()).setToolbarTitle(getString(R.string.prescriptions));
+        }
+    }
+
+    private void openPdf(Uri uri) {
+        try {
+            Intent open = new Intent(Intent.ACTION_VIEW);
+            open.setDataAndType(uri, "application/pdf");
+            open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(open, "Open PDF"));
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), R.string.no_app_to_open_file, Toast.LENGTH_SHORT).show();
         }
     }
 }

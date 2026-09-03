@@ -119,7 +119,7 @@ public class BookAppointmentActivity extends BaseActivity {
         headerInstantAppointment.setOnClickListener(v -> toggleCardExpansion("instant"));
         headerScheduleAppointment.setOnClickListener(v -> toggleCardExpansion("schedule"));
         
-        optionOnlineChat.setOnClickListener(v -> selectInstantAppointment("Online Chat"));
+        optionOnlineChat.setOnClickListener(v -> selectInstantAppointment(Constants.APPOINTMENT_TYPE_ONLINE_CHAT));
     }
 
     private void setupObservers() {
@@ -237,6 +237,8 @@ public class BookAppointmentActivity extends BaseActivity {
         } else if (ivVerifiedBadge != null) {
             ivVerifiedBadge.setVisibility(View.GONE);
         }
+
+        updateInstantAppointmentAvailability();
     }
 
     private void loadDoctorDetails() {
@@ -295,6 +297,11 @@ public class BookAppointmentActivity extends BaseActivity {
             com.google.android.material.snackbar.Snackbar.make(rootView, "Doctor not loaded", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
                     .show();
+            return;
+        }
+
+        if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType) && !isDoctorOnline()) {
+            showDoctorOfflineMessage();
             return;
         }
 
@@ -473,7 +480,13 @@ public class BookAppointmentActivity extends BaseActivity {
             iconToRotate.animate().rotation(180f).setDuration(300).start();
             
             if (isInstant) {
-                selectInstantAppointment("Online Chat");
+                if (!isDoctorOnline()) {
+                    contentToToggle.setVisibility(View.GONE);
+                    iconToRotate.animate().rotation(0f).setDuration(300).start();
+                    showDoctorOfflineMessage();
+                    return;
+                }
+                selectInstantAppointment(Constants.APPOINTMENT_TYPE_ONLINE_CHAT);
             } else {
                 appointmentType = "Visit";
                 btnConfirmBooking.setText(R.string.schedule_appointment);
@@ -484,6 +497,11 @@ public class BookAppointmentActivity extends BaseActivity {
 
 
     private void selectInstantAppointment(String type) {
+        if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(type) && !isDoctorOnline()) {
+            showDoctorOfflineMessage();
+            return;
+        }
+
         appointmentType = type;
         java.util.Calendar calendar = java.util.Calendar.getInstance();
         java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
@@ -512,11 +530,34 @@ public class BookAppointmentActivity extends BaseActivity {
         ((ImageView) ((android.widget.LinearLayout) optionOnlineChat).getChildAt(0)).setColorFilter(colorGreen);
         ((TextView) ((android.widget.LinearLayout) optionOnlineChat).getChildAt(1)).setTextColor(colorTextPrimary);
         
-        if ("Online Chat".equals(selectedType)) {
+        if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equals(selectedType)) {
             optionOnlineChat.setBackgroundTintList(ColorStateList.valueOf(colorGreen));
             ((ImageView) ((android.widget.LinearLayout) optionOnlineChat).getChildAt(0)).setColorFilter(colorWhite);
             ((TextView) ((android.widget.LinearLayout) optionOnlineChat).getChildAt(1)).setTextColor(colorWhite);
         }
+    }
+
+    private void updateInstantAppointmentAvailability() {
+        boolean online = isDoctorOnline();
+        optionOnlineChat.setEnabled(online);
+        optionOnlineChat.setAlpha(online ? 1.0f : 0.45f);
+        cardInstantAppointment.setAlpha(online ? 1.0f : 0.65f);
+        if (!online && Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType)) {
+            appointmentType = "Visit";
+            btnConfirmBooking.setText(R.string.schedule_appointment);
+        }
+    }
+
+    private boolean isDoctorOnline() {
+        if (doctor == null) return false;
+        String onlineStatus = doctor.getOnlineStatus();
+        return doctor.isOnline() && (onlineStatus == null || "online".equalsIgnoreCase(onlineStatus));
+    }
+
+    private void showDoctorOfflineMessage() {
+        Snackbar.make(rootView, "Doctor is offline. Please schedule a visit instead.", Snackbar.LENGTH_SHORT)
+                .setBackgroundTint(getResources().getColor(R.color.colorError))
+                .show();
     }
 
     private void showComingSoonDialog(String featureName) {

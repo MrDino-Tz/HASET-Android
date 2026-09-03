@@ -74,8 +74,13 @@ import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.ChatViewModel;
 import com.haset.hasetapp.utils.AddServiceBottomSheet;
 import com.haset.hasetapp.utils.AuditLogger;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomSheet.OnOptionSelectedListener { // Implement the listener
+    private static final OkHttpClient DOCUMENT_HTTP_CLIENT = new OkHttpClient();
+
     private ImageView btnBack; // Changed from MaterialToolbar
     // Removed private MaterialToolbar toolbar;
     private TextView tvChatName;
@@ -1082,16 +1087,7 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
                 startActivity(intent);
                 overridePendingTransition(R.anim.scale_up_enter, R.anim.scale_down_exit);
             } else if ("document".equalsIgnoreCase(type)) {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(Uri.parse(url), getMimeType(type, url));
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    startActivity(Intent.createChooser(intent, "Open with"));
-                } catch (Exception e) {
-                    // Fallback to simple browser if ACTION_VIEW with type fails
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    startActivity(intent);
-                }
+                openDocumentMessage(message);
             } else if ("audio".equalsIgnoreCase(type)) {
                 // Play audio inline and bind UI for wave visualization
                 String audioUrl = message.getAttachmentUrl();
@@ -1935,7 +1931,13 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
         if ("audio".equalsIgnoreCase(type)) return "audio/*";
         
         // For documents, try to be more specific based on extension
-        String extension = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+        String path = Uri.parse(url).getPath();
+        if (path == null) return "*/*";
+
+        int extensionStart = path.lastIndexOf('.');
+        if (extensionStart < 0 || extensionStart == path.length() - 1) return "*/*";
+
+        String extension = path.substring(extensionStart + 1).toLowerCase(java.util.Locale.US);
         switch (extension) {
             case "pdf": return "application/pdf";
             case "doc":
@@ -1947,6 +1949,92 @@ public class ChatActivity extends BaseActivity implements ChatMoreOptionsBottomS
             case "txt": return "text/plain";
             default: return "*/*";
         }
+    }
+
+    private void openDocumentMessage(ChatMessage message) {
+        String url = message.getAttachmentUrl();
+        if (url == null || url.isEmpty()) return;
+
+        String mimeType = getMimeType(message.getMessageType(), url);
+        String fileName = message.getAttachmentFileName();
+        Uri uri = Uri.parse(url);
+
+        if ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) {
+            downloadAndOpenDocument(url, mimeType, fileName);
+        } else {
+            openDocumentUri(uri, mimeType);
+        }
+    }
+
+    private void downloadAndOpenDocument(String url, String mimeType, String fileName) {
+        Toast.makeText(this, "Opening file...", Toast.LENGTH_SHORT).show();
+
+        new Thread(() -> {
+            try {
+                Request request = new Request.Builder().url(url).build();
+                try (Response response = DOCUMENT_HTTP_CLIENT.newCall(request).execute()) {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        throw new IOException("HTTP " + response.code());
+                    }
+
+                    File cacheDir = new File(getCacheDir(), "chat_documents");
+                    if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                        throw new IOException("Unable to create cache directory");
+                    }
+
+                    File file = new File(cacheDir, sanitizeFileName(fileName, url, mimeType));
+                    try (InputStream inputStream = response.body().byteStream();
+                         FileOutputStream outputStream = new FileOutputStream(file)) {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+
+                    Uri localUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
+                    runOnUiThread(() -> openDocumentUri(localUri, mimeType));
+                }
+            } catch (Exception e) {
+                Log.e("ChatActivity", "Failed to download document before opening", e);
+                runOnUiThread(() -> Toast.makeText(this, "File is not accessible. Please upload it again.", Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    private void openDocumentUri(Uri uri, String mimeType) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, mimeType);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(intent, "Open with"));
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.no_app_to_open_file, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String sanitizeFileName(String fileName, String url, String mimeType) {
+        String safeName = fileName;
+        if (safeName == null || safeName.trim().isEmpty()) {
+            String path = Uri.parse(url).getPath();
+            if (path != null) {
+                int cut = path.lastIndexOf('/');
+                safeName = cut >= 0 ? path.substring(cut + 1) : path;
+            }
+        }
+        if (safeName == null || safeName.trim().isEmpty()) safeName = "document.pdf";
+        safeName = safeName.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (safeName.contains(".")) return safeName;
+        return safeName + getExtensionForMimeType(mimeType);
+    }
+
+    private String getExtensionForMimeType(String mimeType) {
+        if ("application/pdf".equalsIgnoreCase(mimeType)) return ".pdf";
+        if ("text/plain".equalsIgnoreCase(mimeType)) return ".txt";
+        if ("application/msword".equalsIgnoreCase(mimeType)) return ".doc";
+        if ("application/vnd.ms-excel".equalsIgnoreCase(mimeType)) return ".xls";
+        if ("application/vnd.ms-powerpoint".equalsIgnoreCase(mimeType)) return ".ppt";
+        return ".bin";
     }
     
     /**
