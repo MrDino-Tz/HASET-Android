@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:gravity="center"
+    android:background="?attr/colorSurface">
+
+    <ImageView
+        android:id="@+id/imgWelcome"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:src="@drawable/welcome_14703961"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/registration_successful"
+        android:layout_marginBottom="28dp" />
+
+    <TextView
+        android:id="@+id/tvWelcomeTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/registration_successful"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:fontFamily="@font/poppins_medium"
+        android:gravity="center"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:id="@+id/tvWelcomeDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/verify_email_after_registration"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_regular"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginHorizontal="16dp" />
+
+</LinearLayout>
