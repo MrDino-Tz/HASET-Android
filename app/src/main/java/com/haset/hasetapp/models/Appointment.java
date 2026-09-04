@@ -3,6 +3,8 @@ package com.haset.hasetapp.models;
 import java.util.Locale;
 
 public class Appointment {
+    private static final long AUTO_COMPLETE_AFTER_MILLIS = 24 * 60 * 60 * 1000L;
+
     private String appointmentId;
     private String patientId;
     private String patientName;
@@ -126,6 +128,13 @@ public class Appointment {
 
     public boolean isCancelled() {
         return status != null && "cancelled".equalsIgnoreCase(this.status);
+    }
+
+    public boolean shouldAutoComplete() {
+        if (!"approved".equalsIgnoreCase(this.status)) return false;
+
+        long apptTime = parseToMillis(this.date, this.time);
+        return System.currentTimeMillis() >= apptTime + AUTO_COMPLETE_AFTER_MILLIS;
     }
 
     // Helper to parse date+time to millis (supports multiple formats)

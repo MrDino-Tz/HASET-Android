@@ -54,6 +54,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
     private String serviceMessageId = null;
     private String chatRoomId = null;
     private String consultationId;
+    private String currentBuyerEmail;
+    private String currentBuyerName;
+    private String currentBuyerPhone;
     // private boolean cardCheckoutOpened = false;
     private DatabaseReference registrationFeeRef;
     private ValueEventListener registrationFeeListener;
@@ -358,6 +361,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 String userId = getCurrentUserId();
                 Map<String, Object> doctorUpdates = new HashMap<>();
                 doctorUpdates.put("registrationPaymentStatus", "paid");
+                addDoctorContactFields(doctorUpdates);
 
                 Map<String, Object> paymentUpdates = new HashMap<>();
                 paymentUpdates.put("status", "paid");
@@ -365,9 +369,12 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                 paymentUpdates.put("paidAt", com.google.firebase.database.ServerValue.TIMESTAMP);
                 paymentUpdates.put("appointmentType", "Doctor Registration");
                 paymentUpdates.put("reason", "Doctor registration payment");
+                addBuyerFields(paymentUpdates);
                 if (!TextUtils.isEmpty(userId)) {
                     paymentUpdates.put("doctorId", userId);
                     paymentUpdates.put("patientId", userId);
+                    paymentUpdates.put("userId", userId);
+                    paymentUpdates.put("user_id", userId);
                 }
                 int transactionId = viewModel.getCurrentTransactionId();
                 if (transactionId > 0) {
@@ -1002,6 +1009,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
                     firebaseUser != null ? firebaseUser.getPhoneNumber() : null,
                     preferences.getUserPhone()
                 );
+                currentBuyerEmail = buyerEmail;
+                currentBuyerName = buyerName;
+                currentBuyerPhone = buyerPhone;
                 paymentAccount = PaymentRequest.normalizePaymentAccount(paymentAccount);
                 android.util.Log.d("HASETDoctorFlow",
                         "Payment init user=" + userId + " doctor=" + billingDoctorId
@@ -1116,6 +1126,8 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         record.put("appointmentId", consultationId);
         record.put("consultationId", consultationId);
         record.put("patientId", userId);
+        record.put("userId", userId);
+        record.put("user_id", userId);
         record.put("doctorId", doctorId);
         record.put("patientName", new PreferenceManager(PaymentActivity.this).getUserName());
         record.put("doctorName", doctor != null ? doctor.getFullName() : "");
@@ -1128,6 +1140,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         record.put("appointmentType", registrationPayment
                 ? "Doctor Registration"
                 : "Service");
+        addBuyerFields(record);
         record.put("amount", Math.round(consultationFee));
         record.put("createdAt", com.google.firebase.database.ServerValue.TIMESTAMP);
 
@@ -1180,6 +1193,10 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         } else if (!TextUtils.isEmpty(doctorId) && !doctorId.equals(storedDoctorId)) {
             fixes.put("doctorId", doctorId);
         }
+        if (!TextUtils.isEmpty(userId)) {
+            fixes.put("userId", userId);
+            fixes.put("user_id", userId);
+        }
         String storedType = snapshot.child("appointmentType").getValue(String.class);
         if (!"Doctor Registration".equals(storedType)) {
             fixes.put("appointmentType", "Doctor Registration");
@@ -1188,7 +1205,37 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         if (storedReason == null || !storedReason.toLowerCase(Locale.ROOT).contains("registration")) {
             fixes.put("reason", "Doctor registration payment");
         }
+        addBuyerFields(fixes);
         return fixes;
+    }
+
+    private void addBuyerFields(Map<String, Object> values) {
+        if (!TextUtils.isEmpty(currentBuyerEmail)) {
+            values.put("buyerEmail", currentBuyerEmail);
+            values.put("buyer_email", currentBuyerEmail);
+        }
+        if (!TextUtils.isEmpty(currentBuyerName)) {
+            values.put("buyerName", currentBuyerName);
+            values.put("buyer_name", currentBuyerName);
+            values.put("patientName", currentBuyerName);
+        }
+        if (!TextUtils.isEmpty(currentBuyerPhone)) {
+            String normalizedPhone = PaymentRequest.normalizePaymentAccount(currentBuyerPhone);
+            values.put("buyerPhone", normalizedPhone);
+            values.put("buyer_phone", normalizedPhone);
+        }
+    }
+
+    private void addDoctorContactFields(Map<String, Object> values) {
+        if (!TextUtils.isEmpty(currentBuyerEmail)) {
+            values.put("email", currentBuyerEmail);
+        }
+        if (!TextUtils.isEmpty(currentBuyerName)) {
+            values.put("fullName", currentBuyerName);
+        }
+        if (!TextUtils.isEmpty(currentBuyerPhone)) {
+            values.put("phone", PaymentRequest.normalizePaymentAccount(currentBuyerPhone));
+        }
     }
 
     private String resolveBillingDoctorId(String doctorId, String userId) {

@@ -8,6 +8,7 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
+import com.haset.hasetapp.utils.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,31 @@ public class AppointmentRepository {
                 completed[0] = true;
                 List<Appointment> list = new ArrayList<>();
                 for (AppointmentEntity entity : appointmentEntities) {
-                    list.add(new Appointment(entity));
+                    if (entity == null) continue;
+
+                    Appointment appointment = new Appointment(entity);
+                    String appointmentId = appointment.getAppointmentId();
+                    if (appointment.shouldAutoComplete()
+                            && appointmentId != null
+                            && !appointmentId.trim().isEmpty()) {
+                        appointment.setStatus(Constants.STATUS_COMPLETED);
+                        FirebaseHelper.updateAppointmentStatus(
+                                appointmentId,
+                                Constants.STATUS_COMPLETED,
+                                new FirebaseHelper.OnCompleteListener<Boolean>() {
+                                    @Override
+                                    public void onSuccess(Boolean result) {
+                                        // Local list is already updated; Firebase catches up for future loads.
+                                    }
+
+                                    @Override
+                                    public void onError(String error) {
+                                        CrashMonitor.report("appointment", "AppointmentRepository.autoComplete",
+                                                "auto-complete failed: " + error, null);
+                                    }
+                                });
+                    }
+                    list.add(appointment);
                 }
                 appointmentsLiveData.postValue(list);
             }

@@ -36,15 +36,13 @@ public class HomeRepository {
                 if (snapshot.exists()) {
                     for (DataSnapshot doctorSnapshot : snapshot.getChildren()) {
                         Doctor doctor = parseDoctor(doctorSnapshot);
-                        // We could add approval logic here if needed
-                        Boolean isApproved = doctorSnapshot.child("approved").getValue(Boolean.class);
-                        if (Boolean.TRUE.equals(isApproved)) {
+                        if (isDoctorVisibleForPatients(doctorSnapshot)) {
                             doctors.add(doctor);
                         }
                     }
                 }
                 
-                if (doctors.isEmpty()) {
+                if (!snapshot.exists()) {
                     // Fallback to users path if empty
                     loadDoctorsFromUsersPath(doctorsLiveData);
                 } else {
@@ -81,8 +79,7 @@ public class HomeRepository {
                 if (snapshot.exists()) {
                     for (DataSnapshot userSnapshot : snapshot.getChildren()) {
                         Doctor doctor = parseDoctor(userSnapshot);
-                        Boolean isApproved = userSnapshot.child("approved").getValue(Boolean.class);
-                        if (Boolean.TRUE.equals(isApproved)) {
+                        if (isDoctorVisibleForPatients(userSnapshot)) {
                             doctors.add(doctor);
                         }
                     }
@@ -143,6 +140,17 @@ public class HomeRepository {
         }
 
         return doctor;
+    }
+
+    private boolean isDoctorVisibleForPatients(DataSnapshot snapshot) {
+        Boolean isApproved = snapshot.child("approved").getValue(Boolean.class);
+        String approvalStatus = snapshot.child("approvalStatus").getValue(String.class);
+        String status = snapshot.child("status").getValue(String.class);
+        boolean rejected = "rejected".equalsIgnoreCase(approvalStatus)
+                || "rejected".equalsIgnoreCase(status)
+                || Boolean.TRUE.equals(snapshot.child("rejected").getValue(Boolean.class));
+
+        return Boolean.TRUE.equals(isApproved) && !rejected;
     }
 
     private void sortAndPostDoctors(List<Doctor> doctors, MutableLiveData<List<Doctor>> liveData) {

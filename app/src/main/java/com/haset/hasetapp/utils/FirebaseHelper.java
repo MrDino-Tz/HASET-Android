@@ -957,12 +957,12 @@ public class FirebaseHelper {
                 if (dataSnapshot.exists()) {
                     for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
                         com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
-                        if (doctorEntity != null && doctorEntity.isApproved()) {
+                        if (isDoctorVisibleForPatients(doctorSnapshot, doctorEntity)) {
                             doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
                         }
                     }
                 }
-                if (doctors.isEmpty()) {
+                if (!dataSnapshot.exists()) {
                     loadDoctorsFromUsersForPatients(listener);
                 } else {
                     mergeDoctorNamesFromUsers(doctors, listener);
@@ -986,12 +986,12 @@ public class FirebaseHelper {
                 if (dataSnapshot.exists()) {
                     for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
                         com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
-                        if (doctorEntity != null && doctorEntity.isApproved()) {
+                        if (isDoctorVisibleForPatients(doctorSnapshot, doctorEntity)) {
                             doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
                         }
                     }
                 }
-                if (doctors.isEmpty()) {
+                if (!dataSnapshot.exists()) {
                     loadDoctorsFromUsersForPatients(listener);
                 } else {
                     mergeDoctorNamesFromUsers(doctors, listener);
@@ -1075,6 +1075,19 @@ public class FirebaseHelper {
         return doctor;
     }
 
+    private static boolean isDoctorVisibleForPatients(com.google.firebase.database.DataSnapshot snapshot,
+                                                       com.haset.hasetapp.database.entities.DoctorEntity doctorEntity) {
+        if (doctorEntity == null || !doctorEntity.isApproved()) return false;
+
+        String approvalStatus = snapshot.child("approvalStatus").getValue(String.class);
+        String status = snapshot.child("status").getValue(String.class);
+        boolean rejected = "rejected".equalsIgnoreCase(approvalStatus)
+                || "rejected".equalsIgnoreCase(status)
+                || Boolean.TRUE.equals(snapshot.child("rejected").getValue(Boolean.class));
+
+        return !rejected;
+    }
+
     public static void mergeDoctorNamesFromUsers(List<com.haset.hasetapp.models.Doctor> doctors, OnCompleteListener<List<com.haset.hasetapp.models.Doctor>> listener) {
         if (doctors == null || doctors.isEmpty()) {
             listener.onSuccess(doctors);
@@ -1148,7 +1161,7 @@ public class FirebaseHelper {
                             @Override
                             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot doctorEntitySnapshot) {
                                 com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorEntitySnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
-                                if (doctorEntity != null && doctorEntity.isApproved()) {
+                                if (isDoctorVisibleForPatients(doctorEntitySnapshot, doctorEntity)) {
                                     com.haset.hasetapp.models.Doctor doctor = new com.haset.hasetapp.models.Doctor();
                                     doctor.setDoctorId(user.getUserId());
                                     doctor.setUserId(user.getUserId());

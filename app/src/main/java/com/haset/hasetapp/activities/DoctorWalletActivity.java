@@ -725,21 +725,16 @@ public class DoctorWalletActivity extends BaseActivity {
                                 mirrorPendingPayoutDestination(destination, user.getUid());
                                 dialog.dismiss();
                                 Toast.makeText(DoctorWalletActivity.this, "Payout account submitted. Waiting for admin approval before withdrawal.", Toast.LENGTH_LONG).show();
-                                boolean bank = "bank".equals(destination.get("destination_type").getAsString());
-                                if (currentWallet == null) {
-                                    currentWallet = new DoctorWalletEntity(preferenceManager.getUserId(), 0);
-                                }
-                                if (bank) {
-                                    currentWallet.setBankAvailable(false);
-                                    currentWallet.setBankPending(true);
-                                    currentWallet.setBankLabel((destination.get("bank_code").getAsString() + "  " + destination.get("bank_account").getAsString()).trim());
-                                } else {
-                                    currentWallet.setMobileMoneyAvailable(false);
-                                    currentWallet.setMobileMoneyPending(true);
-                                    currentWallet.setMobileMoneyLabel((destination.get("provider").getAsString() + "  " + destination.get("phone_number").getAsString()).trim());
-                                }
+                                updatePendingPayoutDestinationUi(destination);
                                 viewModel.refreshWalletBalance(preferenceManager.getUserId());
-                            } else com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, payoutErrorMessage(r));
+                            } else {
+                                String errorMessage = payoutErrorMessage(r);
+                                if (shouldFallbackPayoutSubmit(r, errorMessage)) {
+                                    submitPayoutDestinationThroughFirebase(destination, user.getUid(), dialog);
+                                } else {
+                                    com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, errorMessage);
+                                }
+                            }
                         }
                         @Override public void onFailure(Call<JsonObject> c, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while saving payout account."); }
                     });
@@ -747,6 +742,60 @@ public class DoctorWalletActivity extends BaseActivity {
                 @Override public void onFailure(Call<JsonObject> call, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while verifying MFA."); }
             });
         }).addOnFailureListener(error -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true));
+    }
+
+    private void submitPayoutDestinationThroughFirebase(JsonObject destination, String doctorId, androidx.appcompat.app.AlertDialog dialog) {
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        FirebaseHelper.submitPayoutDestinationForApproval(
+                doctorId,
+                destination.has("destination_type") ? destination.get("destination_type").getAsString() : "",
+                destination.has("provider") ? destination.get("provider").getAsString() : "",
+                destination.has("bank_code") ? destination.get("bank_code").getAsString() : "",
+                destination.has("phone_number") ? destination.get("phone_number").getAsString() : "",
+                destination.has("bank_account") ? destination.get("bank_account").getAsString() : "",
+                new FirebaseHelper.OnCompleteListener<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean result) {
+                        dialog.dismiss();
+                        updatePendingPayoutDestinationUi(destination);
+                        viewModel.refreshWalletBalance(preferenceManager.getUserId());
+                        Toast.makeText(DoctorWalletActivity.this,
+                                "Payout account submitted. Waiting for admin approval before withdrawal.",
+                                Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                        com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this,
+                                error != null ? error : "Unable to submit payout account.");
+                    }
+                });
+    }
+
+    private void updatePendingPayoutDestinationUi(JsonObject destination) {
+        boolean bank = "bank".equals(destination.get("destination_type").getAsString());
+        if (currentWallet == null) {
+            currentWallet = new DoctorWalletEntity(preferenceManager.getUserId(), 0);
+        }
+        if (bank) {
+            currentWallet.setBankAvailable(false);
+            currentWallet.setBankPending(true);
+            currentWallet.setBankLabel((destination.get("bank_code").getAsString() + "  " + destination.get("bank_account").getAsString()).trim());
+        } else {
+            currentWallet.setMobileMoneyAvailable(false);
+            currentWallet.setMobileMoneyPending(true);
+            currentWallet.setMobileMoneyLabel((destination.get("provider").getAsString() + "  " + destination.get("phone_number").getAsString()).trim());
+        }
+    }
+
+    private boolean shouldFallbackPayoutSubmit(Response<JsonObject> response, String errorMessage) {
+        if (response.code() == 403 || response.code() == 404) return true;
+        String normalized = errorMessage == null ? "" : errorMessage.toLowerCase(Locale.US);
+        return normalized.contains("not found")
+                || normalized.contains("requested information was not found")
+                || normalized.contains("not allowed")
+                || normalized.contains("payout destination");
     }
 
     private void mirrorPendingPayoutDestination(JsonObject destination, String doctorId) {

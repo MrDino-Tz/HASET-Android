@@ -3,11 +3,14 @@ package com.haset.hasetapp.fragments;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,13 +51,19 @@ import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.NetworkUtils;
 import com.haset.hasetapp.utils.AuditLogger;
+import com.haset.hasetapp.utils.FileUploadHelper;
+import com.haset.hasetapp.utils.ValidationUtils;
 import android.util.Log;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.DoctorHomeViewModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.OnAppointmentActionListener {
     private TextView tvGreeting, tvDoctorName, tvPendingCount, tvApprovedCount, tvCancelledCount, tvWalletBalance, tvQuickRatingCount, tvTodayDate;
@@ -74,6 +83,40 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     private LinearLayout emptyState;
     private android.widget.ProgressBar progressBar;
     private com.google.android.material.card.MaterialCardView cardPendingApproval;
+    private TextView tvPendingApproval;
+    private MaterialButton btnResubmitDocuments;
+    private Uri resubmitNinUri;
+    private Uri resubmitMctUri;
+    private AlertDialog resubmitDocumentsDialog;
+    private TextView tvResubmitNinStatus;
+    private TextView tvResubmitMctStatus;
+    private MaterialButton btnSubmitResubmittedDocuments;
+
+    private final ActivityResultLauncher<String[]> mctResubmitPicker =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null) return;
+                if (!ValidationUtils.isPdfDocument(requireContext().getContentResolver(), uri)) {
+                    Toast.makeText(requireContext(), R.string.error_document_pdf_only, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                persistReadPermission(uri);
+                resubmitMctUri = uri;
+                updateResubmitDocumentsUi();
+                Toast.makeText(requireContext(), R.string.mct_certificate_selected, Toast.LENGTH_SHORT).show();
+            });
+
+    private final ActivityResultLauncher<String[]> ninResubmitPicker =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null) return;
+                if (!ValidationUtils.isPdfDocument(requireContext().getContentResolver(), uri)) {
+                    Toast.makeText(requireContext(), R.string.error_document_pdf_only, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                persistReadPermission(uri);
+                resubmitNinUri = uri;
+                updateResubmitDocumentsUi();
+                Toast.makeText(requireContext(), R.string.nin_document_selected, Toast.LENGTH_SHORT).show();
+            });
 
     // Header Profile Components
     private ImageView ivProfileHeader;
@@ -160,6 +203,8 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         shimmerPageLoading = view.findViewById(R.id.shimmerPageLoading);
         layoutHomeContent = view.findViewById(R.id.layoutHomeContent);
         cardPendingApproval = view.findViewById(R.id.cardPendingApproval);
+        tvPendingApproval = view.findViewById(R.id.tvPendingApproval);
+        btnResubmitDocuments = view.findViewById(R.id.btnResubmitDocuments);
         shimmerProfileHeader = view.findViewById(R.id.shimmerProfileHeader);
         profileImageContainer = view.findViewById(R.id.profileImageContainer);
         
@@ -173,6 +218,9 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         
         refreshHeaderProfile();
         loadApprovalBanner();
+        if (btnResubmitDocuments != null) {
+            btnResubmitDocuments.setOnClickListener(v -> showResubmitDocumentsPrompt());
+        }
 
         ivNotification = view.findViewById(R.id.ivNotification);
         tvNotificationBadge = view.findViewById(R.id.tvNotificationBadge);
@@ -839,20 +887,207 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             cardPendingApproval.setVisibility(View.GONE);
             return;
         }
-        FirebaseHelper.getDoctorApprovalStatus(userId, new FirebaseHelper.OnCompleteListener<Boolean>() {
+        FirebaseHelper.getDoctorsNodeRef().child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onSuccess(Boolean approved) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded() || cardPendingApproval == null) return;
-                cardPendingApproval.setVisibility(Boolean.TRUE.equals(approved) ? View.GONE : View.VISIBLE);
+                String approvalStatus = snapshot.child("approvalStatus").getValue(String.class);
+                String status = snapshot.child("status").getValue(String.class);
+                boolean rejected = "rejected".equalsIgnoreCase(approvalStatus)
+                        || "rejected".equalsIgnoreCase(status)
+                        || Boolean.TRUE.equals(snapshot.child("rejected").getValue(Boolean.class));
+                String rejectionReason = snapshot.child("rejectionReason").getValue(String.class);
+
+                if (!rejected) {
+                    boolean approved = Boolean.TRUE.equals(snapshot.child("approved").getValue(Boolean.class));
+                    if (approved) {
+                        cardPendingApproval.setVisibility(View.GONE);
+                        return;
+                    }
+                }
+
+                cardPendingApproval.setVisibility(View.VISIBLE);
+                if (tvPendingApproval != null) {
+                    if (rejected) {
+                        String message = "Your doctor verification was rejected.";
+                        if (rejectionReason != null && !rejectionReason.trim().isEmpty()) {
+                            message += "\nReason: " + rejectionReason.trim();
+                        }
+                        message += "\nUpload new NIN and MCT certificate PDFs for another review.";
+                        tvPendingApproval.setText(message);
+                    } else {
+                        tvPendingApproval.setText(R.string.doctor_awaiting_admin_approval);
+                    }
+                }
+                if (btnResubmitDocuments != null) {
+                    btnResubmitDocuments.setVisibility(rejected ? View.VISIBLE : View.GONE);
+                }
             }
 
             @Override
-            public void onError(String error) {
+            public void onCancelled(@NonNull DatabaseError error) {
                 if (isAdded() && cardPendingApproval != null) {
                     cardPendingApproval.setVisibility(View.GONE);
                 }
             }
         });
+    }
+
+    private void showResubmitDocumentsPrompt() {
+        resubmitNinUri = null;
+        resubmitMctUri = null;
+
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_resubmit_documents, null, false);
+        MaterialButton btnChooseNin = dialogView.findViewById(R.id.btnChooseNinDocument);
+        MaterialButton btnChooseMct = dialogView.findViewById(R.id.btnChooseMctDocument);
+        MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelResubmitDocuments);
+        btnSubmitResubmittedDocuments = dialogView.findViewById(R.id.btnSubmitResubmitDocuments);
+        tvResubmitNinStatus = dialogView.findViewById(R.id.tvResubmitNinStatus);
+        tvResubmitMctStatus = dialogView.findViewById(R.id.tvResubmitMctStatus);
+
+        resubmitDocumentsDialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .create();
+
+        btnChooseNin.setOnClickListener(v -> ninResubmitPicker.launch(new String[]{"application/pdf"}));
+        btnChooseMct.setOnClickListener(v -> mctResubmitPicker.launch(new String[]{"application/pdf"}));
+        btnCancel.setOnClickListener(v -> resubmitDocumentsDialog.dismiss());
+        btnSubmitResubmittedDocuments.setOnClickListener(v -> uploadResubmittedDocuments());
+
+        resubmitDocumentsDialog.setOnDismissListener(dialog -> {
+            tvResubmitNinStatus = null;
+            tvResubmitMctStatus = null;
+            btnSubmitResubmittedDocuments = null;
+            resubmitDocumentsDialog = null;
+        });
+        resubmitDocumentsDialog.show();
+        updateResubmitDocumentsUi();
+    }
+
+    private void updateResubmitDocumentsUi() {
+        if (tvResubmitNinStatus != null) {
+            tvResubmitNinStatus.setText(resubmitNinUri == null
+                    ? "No NIN PDF selected"
+                    : "Selected: " + getFileName(resubmitNinUri));
+        }
+        if (tvResubmitMctStatus != null) {
+            tvResubmitMctStatus.setText(resubmitMctUri == null
+                    ? "No MCT certificate PDF selected"
+                    : "Selected: " + getFileName(resubmitMctUri));
+        }
+        if (btnSubmitResubmittedDocuments != null) {
+            btnSubmitResubmittedDocuments.setEnabled(resubmitNinUri != null && resubmitMctUri != null);
+        }
+    }
+
+    private void uploadResubmittedDocuments() {
+        if (resubmitNinUri == null || resubmitMctUri == null) return;
+        String userId = preferenceManager.getUserId();
+        if (userId == null || userId.isEmpty()) return;
+
+        if (btnSubmitResubmittedDocuments != null) {
+            btnSubmitResubmittedDocuments.setEnabled(false);
+        }
+        Toast.makeText(requireContext(), R.string.uploading_documents, Toast.LENGTH_SHORT).show();
+        FileUploadHelper.uploadFile(requireContext(), resubmitNinUri, "document", getFileName(resubmitNinUri),
+                "doctor_verification", new FileUploadHelper.OnFileUploadListener() {
+                    @Override
+                    public void onUploadStart() {}
+
+                    @Override
+                    public void onUploadProgress(double progress) {}
+
+                    @Override
+                    public void onUploadSuccess(String ninUrl, String fileName, long fileSize) {
+                        uploadResubmittedMctDocument(userId, ninUrl);
+                    }
+
+                    @Override
+                    public void onUploadError(String error) {
+                        updateResubmitDocumentsUi();
+                        Toast.makeText(requireContext(), error != null ? error : "NIN upload failed", Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void uploadResubmittedMctDocument(String userId, String ninUrl) {
+        FileUploadHelper.uploadFile(requireContext(), resubmitMctUri, "document", getFileName(resubmitMctUri),
+                "doctor_verification", new FileUploadHelper.OnFileUploadListener() {
+                    @Override
+                    public void onUploadStart() {}
+
+                    @Override
+                    public void onUploadProgress(double progress) {}
+
+                    @Override
+                    public void onUploadSuccess(String mctUrl, String fileName, long fileSize) {
+                        submitVerificationDocuments(userId, ninUrl, mctUrl);
+                    }
+
+                    @Override
+                    public void onUploadError(String error) {
+                        updateResubmitDocumentsUi();
+                        Toast.makeText(requireContext(), error != null ? error : "MCT certificate upload failed", Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void submitVerificationDocuments(String userId, String ninUrl, String mctUrl) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("users/" + userId + "/ninDocumentUrl", ninUrl);
+        updates.put("users/" + userId + "/mctCertificateUrl", mctUrl);
+        updates.put("doctors/" + userId + "/ninDocumentUrl", ninUrl);
+        updates.put("doctors/" + userId + "/mctCertificateUrl", mctUrl);
+        updates.put("doctors/" + userId + "/approved", false);
+        updates.put("doctors/" + userId + "/verified", false);
+        updates.put("doctors/" + userId + "/rejected", false);
+        updates.put("doctors/" + userId + "/approvalStatus", "pending");
+        updates.put("doctors/" + userId + "/rejectionReason", null);
+        updates.put("doctors/" + userId + "/resubmittedAt", com.google.firebase.database.ServerValue.TIMESTAMP);
+
+        FirebaseDatabase.getInstance().getReference().updateChildren(updates)
+                .addOnSuccessListener(ignored -> {
+                    if (resubmitDocumentsDialog != null && resubmitDocumentsDialog.isShowing()) {
+                        resubmitDocumentsDialog.dismiss();
+                    }
+                    resubmitNinUri = null;
+                    resubmitMctUri = null;
+                    Toast.makeText(requireContext(), "Documents resubmitted for review", Toast.LENGTH_LONG).show();
+                    loadApprovalBanner();
+                })
+                .addOnFailureListener(error ->
+                        {
+                            updateResubmitDocumentsUi();
+                            Toast.makeText(requireContext(), error.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+    }
+
+    private void persistReadPermission(Uri uri) {
+        try {
+            requireContext().getContentResolver().takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String getFileName(Uri uri) {
+        String result = null;
+        if (uri != null && "content".equals(uri.getScheme())) {
+            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (index != -1) result = cursor.getString(index);
+                }
+            }
+        }
+        if (result == null && uri != null) {
+            result = uri.getLastPathSegment();
+            if (result != null && result.contains("/")) {
+                result = result.substring(result.lastIndexOf('/') + 1);
+            }
+        }
+        return result != null ? result : "document.pdf";
     }
     
     @Override

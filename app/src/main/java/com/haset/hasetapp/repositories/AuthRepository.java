@@ -149,9 +149,16 @@ public class AuthRepository {
                 if (Constants.ROLE_DOCTOR.equals(user.getRole())) {
                     java.util.Map<String, Object> doctorUpdates = new java.util.HashMap<>();
                     doctorUpdates.put("doctorId", user.getUserId());
+                    doctorUpdates.put("userId", user.getUserId());
+                    doctorUpdates.put("fullName", user.getFullName());
+                    doctorUpdates.put("email", user.getEmail());
+                    doctorUpdates.put("phone", user.getPhone());
                     doctorUpdates.put("regNo", user.getRegNo());
+                    doctorUpdates.put("ninDocumentUrl", user.getNinDocumentUrl());
+                    doctorUpdates.put("mctCertificateUrl", user.getMctCertificateUrl());
                     doctorUpdates.put("approved", false);
                     doctorUpdates.put("verified", false);
+                    doctorUpdates.put("approvalStatus", "pending");
                     doctorUpdates.put("registrationPaymentStatus", "pending");
                     FirebaseHelper.getDoctorsNodeRef().child(user.getUserId()).updateChildren(doctorUpdates)
                         .addOnSuccessListener(aVoid1 -> callback.onSuccess(null))
