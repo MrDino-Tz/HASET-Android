@@ -112,7 +112,7 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
         tvChangePhoto = findViewById(R.id.tvChangePhoto);
         
         // Setup gender dropdown
-        String[] genders = {"Male", "Female", "Other"};
+        String[] genders = {getString(R.string.male), getString(R.string.female)};
         ArrayAdapter<String> genderAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, genders);
         actvGender.setAdapter(genderAdapter);
         
@@ -203,9 +203,16 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
                 etAge.setText(String.valueOf(currentUser.getAge()));
             }
             
-            // Load gender
+            // Load gender (map canonical male/female to localized label)
             if (currentUser.getGender() != null && !currentUser.getGender().isEmpty()) {
-                actvGender.setText(currentUser.getGender(), false);
+                String g = currentUser.getGender();
+                if (g.equalsIgnoreCase("male")) {
+                    actvGender.setText(getString(R.string.male), false);
+                } else if (g.equalsIgnoreCase("female")) {
+                    actvGender.setText(getString(R.string.female), false);
+                } else {
+                    actvGender.setText(g, false);
+                }
             }
             
             // Load profile photo with shimmer and initials fallback
@@ -304,9 +311,15 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
                 currentUser.setAge(0);
             }
             
-            // Set gender
+            // Set gender (map localized label back to canonical male/female)
             if (!gender.isEmpty()) {
-                currentUser.setGender(gender.toLowerCase());
+                if (gender.equalsIgnoreCase(getString(R.string.male))) {
+                    currentUser.setGender("male");
+                } else if (gender.equalsIgnoreCase(getString(R.string.female))) {
+                    currentUser.setGender("female");
+                } else {
+                    currentUser.setGender(gender.toLowerCase());
+                }
             } else {
                 currentUser.setGender("");
             }
