@@ -45,6 +45,7 @@
                     android:outlineAmbientShadowColor="@color/chat_shadow_color"
                     android:outlineSpotShadowColor="@color/chat_shadow_color"
                     android:background="@drawable/bg_search_circle"
+                    android:foreground="@drawable/ripple_effect_rounded"
                     android:clipToOutline="true">
 
                     <com.facebook.shimmer.ShimmerFrameLayout
@@ -68,6 +69,7 @@
                         android:src="@drawable/profile_photo"
                         android:visibility="gone"
                         android:background="@drawable/bg_search_circle"
+                        android:foreground="@drawable/ripple_effect_rounded"
                         android:clipToOutline="true" />
 
                     <TextView
@@ -285,7 +287,7 @@
                             android:elevation="16dp"
                             android:outlineAmbientShadowColor="@color/chat_shadow_color"
                             android:outlineSpotShadowColor="@color/chat_shadow_color"
-                            android:src="@drawable/user_md_24"
+                            android:src="@drawable/ic_doctor_24"
                             app:tint="@color/green_primary" />
 
                         <TextView
@@ -493,7 +495,7 @@
                         <ImageView
                             android:layout_width="28dp"
                             android:layout_height="28dp"
-                            android:src="@drawable/user_md_24"
+                            android:src="@drawable/ic_doctor_24"
                             app:tint="@color/green_primary" />
 
                         <TextView

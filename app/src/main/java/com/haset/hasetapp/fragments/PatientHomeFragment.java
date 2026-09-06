@@ -22,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.activities.ArticleDetailActivity;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.activities.DoctorsActivity;
 import com.haset.hasetapp.activities.NotificationActivity;
@@ -31,7 +30,6 @@ import com.haset.hasetapp.activities.EditProfileActivity;
 import com.haset.hasetapp.adapters.CategoryAdapter;
 import com.haset.hasetapp.adapters.PatientBannerAdapter;
 import com.haset.hasetapp.models.Doctor;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -271,7 +269,7 @@ public class PatientHomeFragment extends Fragment {
 
         // Search App Services
         List<com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem> availableServices = java.util.Arrays.asList(
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.chat_doctor), R.drawable.user_md_24, "chat"),
+            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.chat_doctor), R.drawable.ic_doctor_24, "chat"),
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.menstruation_tracker), R.drawable.ic_medical, "menstruation"),
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.buy_medicine), R.drawable.ic_medical, "medicine"),
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.health_articles), R.drawable.ic_news_paper, "articles"),
