@@ -38,7 +38,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class PaymentActivity extends LocalizedAppCompatActivity {
-    private TextView tvDoctorName, tvSpecialty, tvAmount, tvPaymentMethod, tvSelectedPaymentDetails;
+    private TextView tvDoctorName, tvSpecialty, tvAmountLabel, tvAmount, tvPaymentMethod, tvSelectedPaymentDetails;
+    private TextView tvAppointmentWithLabel, tvPaymentInitials;
     private ImageView ivDoctorPhoto, ivVerifiedBadge;
     private MaterialButton btnPayNow, btnCancel;
     private LinearProgressIndicator progressIndicator;
@@ -440,6 +441,9 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
     private void initViews() {
         tvDoctorName = findViewById(R.id.tvDoctorName);
         tvSpecialty = findViewById(R.id.tvSpecialty);
+        tvAppointmentWithLabel = findViewById(R.id.tvAppointmentWithLabel);
+        tvPaymentInitials = findViewById(R.id.tvPaymentInitials);
+        tvAmountLabel = findViewById(R.id.tvAmountLabel);
         tvAmount = findViewById(R.id.tvAmount);
         tvPaymentMethod = findViewById(R.id.tvPaymentMethod);
         tvSelectedPaymentDetails = findViewById(R.id.tvSelectedPaymentDetails);
@@ -460,27 +464,52 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
 
     private void setupViews() {
         if (doctor != null) {
-            tvDoctorName.setText(getString(R.string.dr_prefix, doctor.getFullName()));
-            tvSpecialty.setText(doctor.getSpecialty());
-            
-            // Load doctor profile photo
-            if (doctor.getProfileImage() != null && !doctor.getProfileImage().isEmpty()) {
-                com.bumptech.glide.Glide.with(this)
-                        .load(doctor.getProfileImage())
-                        .placeholder(R.drawable.profile_photo)
-                        .error(R.drawable.profile_photo)
-                        .circleCrop()
-                        .into(ivDoctorPhoto);
-            }
-            
-            if (doctor.isVerified()) {
-                ivVerifiedBadge.setVisibility(View.VISIBLE);
+            if (isDoctorRegistrationPayment()) {
+                // Registration payment: show the registering doctor's name, their
+                // email instead of specialty, and a letter-initials avatar (no photo).
+                if (tvAppointmentWithLabel != null) tvAppointmentWithLabel.setVisibility(View.GONE);
+                if (ivDoctorPhoto != null) ivDoctorPhoto.setVisibility(View.GONE);
+                if (ivVerifiedBadge != null) ivVerifiedBadge.setVisibility(View.GONE);
+                tvDoctorName.setText(doctor.getFullName());
+                String buyerEmail = getIntent().getStringExtra("buyer_email");
+                if (buyerEmail != null && !buyerEmail.isEmpty()) {
+                    tvSpecialty.setText(buyerEmail);
+                } else {
+                    tvSpecialty.setVisibility(View.GONE);
+                }
+                if (tvPaymentInitials != null) {
+                    String initials = com.haset.hasetapp.utils.ProfilePhotoHelper.getInitials(doctor.getFullName());
+                    tvPaymentInitials.setText(TextUtils.isEmpty(initials) ? "?" : initials);
+                    tvPaymentInitials.setVisibility(View.VISIBLE);
+                }
             } else {
-                ivVerifiedBadge.setVisibility(View.GONE);
+                tvDoctorName.setText(getString(R.string.dr_prefix, doctor.getFullName()));
+                tvSpecialty.setText(doctor.getSpecialty());
+
+                // Load doctor profile photo
+                if (doctor.getProfileImage() != null && !doctor.getProfileImage().isEmpty()) {
+                    com.bumptech.glide.Glide.with(this)
+                            .load(doctor.getProfileImage())
+                            .placeholder(R.drawable.profile_photo)
+                            .error(R.drawable.profile_photo)
+                            .circleCrop()
+                            .into(ivDoctorPhoto);
+                }
+
+                if (doctor.isVerified()) {
+                    ivVerifiedBadge.setVisibility(View.VISIBLE);
+                } else {
+                    ivVerifiedBadge.setVisibility(View.GONE);
+                }
             }
         }
         
         // Format amount in Tanzania Shillings
+        if (tvAmountLabel != null) {
+            tvAmountLabel.setText(isDoctorRegistrationPayment()
+                    ? R.string.hint_doctor_registration_fee
+                    : R.string.hint_consultation_fee);
+        }
         String formattedAmount = String.format(Locale.getDefault(), "%,.0f TZS", consultationFee);
         tvAmount.setText(formattedAmount);
         tvPaymentMethod.setText(R.string.select_method);
