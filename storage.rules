@@ -1,0 +1,36 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidDocumentSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Doctor verification PDFs (NIN, MCT certificate resubmit)
+    match /doctor_verification/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidDocumentSize();
+      allow delete: if isAuthenticated();
+    }
+
+    // Chat document attachments (FileUploadHelper fallback)
+    match /chat_attachments/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidDocumentSize();
+      allow delete: if isAuthenticated();
+    }
+
+    // Legacy profile photo path (FirebaseHelper.deleteUserAccount)
+    match /profile_photos/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if isAuthenticated();
+    }
+  }
+}

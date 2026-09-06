@@ -36,6 +36,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.activities.NotificationActivity;
@@ -51,7 +52,7 @@ import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.NetworkUtils;
 import com.haset.hasetapp.utils.AuditLogger;
-import com.haset.hasetapp.utils.FileUploadHelper;
+import com.haset.hasetapp.utils.CloudinaryUploadHelper;
 import com.haset.hasetapp.utils.ValidationUtils;
 import android.util.Log;
 import androidx.activity.result.ActivityResultLauncher;
@@ -90,6 +91,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     private AlertDialog resubmitDocumentsDialog;
     private TextView tvResubmitNinStatus;
     private TextView tvResubmitMctStatus;
+    private TextInputEditText etResubmitNin;
     private MaterialButton btnSubmitResubmittedDocuments;
 
     private final ActivityResultLauncher<String[]> mctResubmitPicker =
@@ -892,11 +894,16 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded() || cardPendingApproval == null) return;
                 String approvalStatus = snapshot.child("approvalStatus").getValue(String.class);
+                String documentsStatus = snapshot.child("documentsStatus").getValue(String.class);
                 String status = snapshot.child("status").getValue(String.class);
                 boolean rejected = "rejected".equalsIgnoreCase(approvalStatus)
+                        || "rejected".equalsIgnoreCase(documentsStatus)
                         || "rejected".equalsIgnoreCase(status)
                         || Boolean.TRUE.equals(snapshot.child("rejected").getValue(Boolean.class));
                 String rejectionReason = snapshot.child("rejectionReason").getValue(String.class);
+                if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+                    rejectionReason = snapshot.child("documentsRejectReason").getValue(String.class);
+                }
 
                 if (!rejected) {
                     boolean approved = Boolean.TRUE.equals(snapshot.child("approved").getValue(Boolean.class));
@@ -945,6 +952,16 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         btnSubmitResubmittedDocuments = dialogView.findViewById(R.id.btnSubmitResubmitDocuments);
         tvResubmitNinStatus = dialogView.findViewById(R.id.tvResubmitNinStatus);
         tvResubmitMctStatus = dialogView.findViewById(R.id.tvResubmitMctStatus);
+        etResubmitNin = dialogView.findViewById(R.id.etResubmitNin);
+        if (etResubmitNin != null) {
+            etResubmitNin.addTextChangedListener(new android.text.TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override public void afterTextChanged(android.text.Editable s) {
+                    updateResubmitDocumentsUi();
+                }
+            });
+        }
 
         resubmitDocumentsDialog = new AlertDialog.Builder(requireContext())
                 .setView(dialogView)
@@ -958,11 +975,38 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         resubmitDocumentsDialog.setOnDismissListener(dialog -> {
             tvResubmitNinStatus = null;
             tvResubmitMctStatus = null;
+            etResubmitNin = null;
             btnSubmitResubmittedDocuments = null;
             resubmitDocumentsDialog = null;
         });
         resubmitDocumentsDialog.show();
+        String userId = preferenceManager.getUserId();
+        if (userId != null && !userId.isEmpty()) {
+            preloadResubmitNin(userId);
+        }
         updateResubmitDocumentsUi();
+    }
+
+    private void preloadResubmitNin(String userId) {
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("nin")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!isAdded() || etResubmitNin == null) return;
+                        if (etResubmitNin.getText() != null
+                                && !etResubmitNin.getText().toString().trim().isEmpty()) {
+                            return;
+                        }
+                        String nin = snapshot.getValue(String.class);
+                        if (nin != null && !nin.trim().isEmpty()) {
+                            etResubmitNin.setText(nin.trim());
+                            updateResubmitDocumentsUi();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
     }
 
     private void updateResubmitDocumentsUi() {
@@ -977,12 +1021,32 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                     : "Selected: " + getFileName(resubmitMctUri));
         }
         if (btnSubmitResubmittedDocuments != null) {
-            btnSubmitResubmittedDocuments.setEnabled(resubmitNinUri != null && resubmitMctUri != null);
+            btnSubmitResubmittedDocuments.setEnabled(hasValidResubmitNin()
+                    && resubmitNinUri != null && resubmitMctUri != null);
         }
+    }
+
+    private boolean hasValidResubmitNin() {
+        if (etResubmitNin == null || etResubmitNin.getText() == null) return false;
+        return ValidationUtils.isValidNin(etResubmitNin.getText().toString().trim());
+    }
+
+    private String getResubmitNin() {
+        return etResubmitNin != null && etResubmitNin.getText() != null
+                ? etResubmitNin.getText().toString().trim() : "";
     }
 
     private void uploadResubmittedDocuments() {
         if (resubmitNinUri == null || resubmitMctUri == null) return;
+        String nin = getResubmitNin();
+        if (nin.isEmpty()) {
+            if (etResubmitNin != null) etResubmitNin.setError(getString(R.string.nin_required));
+            return;
+        }
+        if (!ValidationUtils.isValidNin(nin)) {
+            if (etResubmitNin != null) etResubmitNin.setError(getString(R.string.error_valid_nin));
+            return;
+        }
         String userId = preferenceManager.getUserId();
         if (userId == null || userId.isEmpty()) return;
 
@@ -990,8 +1054,8 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             btnSubmitResubmittedDocuments.setEnabled(false);
         }
         Toast.makeText(requireContext(), R.string.uploading_documents, Toast.LENGTH_SHORT).show();
-        FileUploadHelper.uploadFile(requireContext(), resubmitNinUri, "document", getFileName(resubmitNinUri),
-                "doctor_verification", new FileUploadHelper.OnFileUploadListener() {
+        CloudinaryUploadHelper.uploadFile(requireContext(), resubmitNinUri, "document", "nin_document",
+                "doctor_verification", new CloudinaryUploadHelper.OnFileUploadListener() {
                     @Override
                     public void onUploadStart() {}
 
@@ -999,8 +1063,8 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                     public void onUploadProgress(double progress) {}
 
                     @Override
-                    public void onUploadSuccess(String ninUrl, String fileName, long fileSize) {
-                        uploadResubmittedMctDocument(userId, ninUrl);
+                    public void onUploadSuccess(String ninUrl, String fileName) {
+                        uploadResubmittedMctDocument(userId, nin, ninUrl);
                     }
 
                     @Override
@@ -1011,9 +1075,9 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                 });
     }
 
-    private void uploadResubmittedMctDocument(String userId, String ninUrl) {
-        FileUploadHelper.uploadFile(requireContext(), resubmitMctUri, "document", getFileName(resubmitMctUri),
-                "doctor_verification", new FileUploadHelper.OnFileUploadListener() {
+    private void uploadResubmittedMctDocument(String userId, String nin, String ninUrl) {
+        CloudinaryUploadHelper.uploadFile(requireContext(), resubmitMctUri, "document", "mct_certificate",
+                "doctor_verification", new CloudinaryUploadHelper.OnFileUploadListener() {
                     @Override
                     public void onUploadStart() {}
 
@@ -1021,8 +1085,8 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                     public void onUploadProgress(double progress) {}
 
                     @Override
-                    public void onUploadSuccess(String mctUrl, String fileName, long fileSize) {
-                        submitVerificationDocuments(userId, ninUrl, mctUrl);
+                    public void onUploadSuccess(String mctUrl, String fileName) {
+                        submitVerificationDocuments(userId, nin, ninUrl, mctUrl);
                     }
 
                     @Override
@@ -1033,10 +1097,12 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                 });
     }
 
-    private void submitVerificationDocuments(String userId, String ninUrl, String mctUrl) {
+    private void submitVerificationDocuments(String userId, String nin, String ninUrl, String mctUrl) {
         Map<String, Object> updates = new HashMap<>();
+        updates.put("users/" + userId + "/nin", nin);
         updates.put("users/" + userId + "/ninDocumentUrl", ninUrl);
         updates.put("users/" + userId + "/mctCertificateUrl", mctUrl);
+        updates.put("doctors/" + userId + "/nin", nin);
         updates.put("doctors/" + userId + "/ninDocumentUrl", ninUrl);
         updates.put("doctors/" + userId + "/mctCertificateUrl", mctUrl);
         updates.put("doctors/" + userId + "/approved", false);
@@ -1044,6 +1110,9 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         updates.put("doctors/" + userId + "/rejected", false);
         updates.put("doctors/" + userId + "/approvalStatus", "pending");
         updates.put("doctors/" + userId + "/rejectionReason", null);
+        updates.put("doctors/" + userId + "/documentsStatus", "pending");
+        updates.put("doctors/" + userId + "/documentsVerified", false);
+        updates.put("doctors/" + userId + "/documentsRejectReason", null);
         updates.put("doctors/" + userId + "/resubmittedAt", com.google.firebase.database.ServerValue.TIMESTAMP);
 
         FirebaseDatabase.getInstance().getReference().updateChildren(updates)

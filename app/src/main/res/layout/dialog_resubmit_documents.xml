@@ -20,9 +20,26 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:fontFamily="@font/poppins"
-        android:text="Upload your corrected NIN PDF and MCT certificate PDF. Your MCT number will stay the same."
+        android:text="Enter your NIN and upload corrected NIN and MCT certificate PDFs. Your MCT registration number will stay the same."
         android:textColor="@color/text_secondary"
         android:textSize="14sp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilResubmitNin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:hintEnabled="true">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etResubmitNin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins"
+            android:hint="@string/hint_nin"
+            android:inputType="number"
+            android:maxLength="20" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnChooseNinDocument"

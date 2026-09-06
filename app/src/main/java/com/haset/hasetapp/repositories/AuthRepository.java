@@ -154,11 +154,14 @@ public class AuthRepository {
                     doctorUpdates.put("email", user.getEmail());
                     doctorUpdates.put("phone", user.getPhone());
                     doctorUpdates.put("regNo", user.getRegNo());
+                    doctorUpdates.put("nin", user.getNin());
                     doctorUpdates.put("ninDocumentUrl", user.getNinDocumentUrl());
                     doctorUpdates.put("mctCertificateUrl", user.getMctCertificateUrl());
                     doctorUpdates.put("approved", false);
                     doctorUpdates.put("verified", false);
                     doctorUpdates.put("approvalStatus", "pending");
+                    doctorUpdates.put("documentsStatus", "pending");
+                    doctorUpdates.put("documentsVerified", false);
                     doctorUpdates.put("registrationPaymentStatus", "pending");
                     FirebaseHelper.getDoctorsNodeRef().child(user.getUserId()).updateChildren(doctorUpdates)
                         .addOnSuccessListener(aVoid1 -> callback.onSuccess(null))
