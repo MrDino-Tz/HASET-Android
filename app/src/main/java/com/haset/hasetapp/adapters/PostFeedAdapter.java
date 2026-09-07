@@ -437,8 +437,8 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
             
             RequestOptions requestOptions = new RequestOptions()
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_news)
-                    .error(R.drawable.ic_news)
+                    .placeholder(R.drawable.article_icon)
+                    .error(R.drawable.article_icon)
                     .centerCrop() // Fill the width and height
                     .override(screenWidth); // Load image at screen width for optimal quality
             
@@ -448,7 +448,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                     .into(imageView);
         } catch (Exception e) {
             android.util.Log.e("PostFeedAdapter", "Error loading image from URL", e);
-            imageView.setImageResource(R.drawable.ic_news);
+            imageView.setImageResource(R.drawable.article_icon);
         }
     }
     
@@ -470,14 +470,14 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap);
                 } else {
-                    imageView.setImageResource(R.drawable.ic_news);
+                    imageView.setImageResource(R.drawable.article_icon);
                 }
             } else {
-                imageView.setImageResource(R.drawable.ic_news);
+                imageView.setImageResource(R.drawable.article_icon);
             }
         } catch (Exception e) {
             android.util.Log.e("PostFeedAdapter", "Error loading image", e);
-            imageView.setImageResource(R.drawable.ic_news);
+            imageView.setImageResource(R.drawable.article_icon);
         }
     }
 
