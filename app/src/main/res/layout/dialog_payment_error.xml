@@ -9,6 +9,8 @@
     android:paddingHorizontal="32dp"
     android:paddingVertical="48dp">
 
+
+
     <!-- Header Illustration / Icon Badge -->
     <ImageView
         android:id="@+id/imgErrorState"
