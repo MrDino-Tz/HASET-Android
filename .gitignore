@@ -71,3 +71,5 @@ target/
 /app/release/baselineProfiles/1/app-release.dm
 /app/release/baselineProfiles/0/app-release.dm
 /app/release/output-metadata.json
+/docs/Publishing/release docs/BUILD_WARNINGS_FIX.md
+/docs/Publishing/release docs/RELEASE_NOTES.md
