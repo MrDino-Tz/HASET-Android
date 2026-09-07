@@ -39,12 +39,37 @@ database-debug.log
 .env
 .env.*
 !.env.example
+functions/.env
+
+# Android release signing (never commit)
+keystore.properties
 .upload-keystore-password.local
+haset-release.jks
+keyforAfya.jks
+keyforAfyaNew.jks
+keyforAfya*.jks
+upload_certificate.pem
 *.jks
 *.keystore
 *.p12
 *.pem
 *.pfx
+
+# iOS / Apple signing keys
+*.p8
+*.mobileprovision
+*.provisionprofile
+*.cer
+
+# Local secrets and credential dumps
+secrets/
+credentials/
+*credentials*.local
+*secrets*.local
+*password*.local
+
+# Release outputs outside Gradle build/ (if copied locally)
+app/release/
 
 # Temporary files and local caches
 .tmp/
