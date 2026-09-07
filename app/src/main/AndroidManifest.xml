@@ -43,9 +43,6 @@
         <activity android:name=".activities.ArticleDetailActivity"
             android:exported="false"
             android:enableOnBackInvokedCallback="true"/>
-        <activity android:name=".activities.PharmacyActivity"
-            android:exported="false"
-            android:enableOnBackInvokedCallback="true"/>
 
         <activity
             android:name=".activities.ForgotPasswordActivity"

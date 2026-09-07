@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
 
@@ -115,6 +117,7 @@ public class HospitalsLocationBottomSheet extends BottomSheetDialogFragment {
         MaterialButton btnClose = view.findViewById(R.id.btnCloseHospitalLocation);
         btnClose.setOnClickListener(v -> dismiss());
 
+        AppTourRegistry.showHospitalLocation(view, this, new PreferenceManager(requireContext()));
         return view;
     }
 }

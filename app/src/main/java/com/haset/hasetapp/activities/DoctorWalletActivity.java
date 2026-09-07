@@ -25,6 +25,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.JsonObject;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.api.RetrofitClient;
+import com.haset.hasetapp.utils.AppTourHelper;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 import androidx.lifecycle.ViewModelProvider;
@@ -77,6 +79,7 @@ public class DoctorWalletActivity extends BaseActivity {
         setupObservers();
         loadWalletData();
         loadWithdrawalFee();
+        AppTourRegistry.showDoctorWallet(this, preferenceManager);
     }
 
     /*
@@ -502,6 +505,7 @@ public class DoctorWalletActivity extends BaseActivity {
             withdrawDialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
         withdrawDialog.show();
+        AppTourRegistry.showWithdraw(view, this, preferenceManager);
     }
 
     private void checkMfaThenShowWithdrawal() {
@@ -615,15 +619,21 @@ public class DoctorWalletActivity extends BaseActivity {
     }
 
     private void showMfaRequiredDialog() {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(R.string.mfa_required_for_withdrawal_title)
-                .setMessage(R.string.mfa_required_for_withdrawal_message)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.enable_mfa, (dialog, which) ->
+        CustomDialog dialog = new CustomDialog(this)
+                .setDialogType(CustomDialog.DialogType.INFO)
+                .setTitle(getString(R.string.mfa_required_for_withdrawal_title))
+                .setMessage(getString(R.string.mfa_required_for_withdrawal_message))
+                .setPositiveButton(getString(R.string.enable_mfa), v ->
                         startActivityForResult(
                                 new Intent(this, MfaEnrollmentActivity.class),
                                 MFA_ENROLLMENT_REQUEST))
+                .setNegativeButton(getString(android.R.string.cancel), null)
+                .setPositiveButtonColor(R.color.info_color)
                 .show();
+        if (dialog.getContentView() != null) {
+            AppTourRegistry.showCustomDialog(dialog.getContentView(), this, preferenceManager,
+                    AppTourHelper.TOUR_MFA_REQUIRED_WITHDRAW, true);
+        }
     }
 
     private void checkMfaThenShowPayoutAccounts() {
@@ -698,6 +708,7 @@ public class DoctorWalletActivity extends BaseActivity {
             submitPayoutDestination(body, code, dialog);
         }));
         dialog.show();
+        AppTourRegistry.showPayoutDestination(view, this, preferenceManager);
         mfaCode.focusFirst();
     }
 

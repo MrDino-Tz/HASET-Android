@@ -44,6 +44,8 @@ import com.google.android.material.snackbar.Snackbar;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.adapters.MedicineAdapter;
 import com.haset.hasetapp.models.Prescription;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -226,6 +228,12 @@ public class PrescriptionDetailBottomSheet extends BottomSheetDialogFragment {
             rvMedicines.setLayoutManager(llm);
             rvMedicines.setNestedScrollingEnabled(false);
             rvMedicines.setAdapter(new MedicineAdapter(prescription.getMedicines()));
+        }
+
+        View root = getView();
+        if (root != null) {
+            AppTourRegistry.showPrescriptionBottomSheet(root, this,
+                    new PreferenceManager(requireContext()));
         }
     }
 

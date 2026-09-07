@@ -14,6 +14,8 @@ import androidx.annotation.Nullable;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 /**
  * Full-screen welcome bottom sheet shown after a successful registration /
@@ -105,6 +107,7 @@ public class WelcomeBottomSheet extends BottomSheetDialogFragment {
             tvWelcomeDesc.setText(message);
         }
 
+        AppTourRegistry.showWelcomeSheet(view, this, new PreferenceManager(requireContext()));
         return view;
     }
 

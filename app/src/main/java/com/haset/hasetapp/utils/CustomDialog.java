@@ -247,6 +247,11 @@ public class CustomDialog {
     public AlertDialog getDialog() {
         return dialog;
     }
+
+    /** Root view of the custom dialog layout (for in-app tours). */
+    public View getContentView() {
+        return customView;
+    }
     
     /**
      * Show a single choice dialog

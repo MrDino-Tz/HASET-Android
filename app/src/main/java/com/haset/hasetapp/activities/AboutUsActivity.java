@@ -50,6 +50,9 @@ public class AboutUsActivity extends LocalizedAppCompatActivity {
         if (btnTermsOfService != null) {
             btnTermsOfService.setOnClickListener(v -> openWebPage(Constants.TERMS_CONDITIONS_URL));
         }
+
+        com.haset.hasetapp.utils.AppTourRegistry.showAboutUs(this,
+                new com.haset.hasetapp.utils.PreferenceManager(this));
     }
 
     private void openWebPage(String url) {

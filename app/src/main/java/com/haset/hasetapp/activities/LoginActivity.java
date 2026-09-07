@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -38,6 +39,7 @@ import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.CustomDialog;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.HealthTipsHelper;
@@ -189,6 +191,8 @@ public class LoginActivity extends BaseActivity {
             com.haset.hasetapp.utils.SnackbarHelper.info(findViewById(android.R.id.content),
                 getString(R.string.lets_retrieve_account));
         });
+
+        com.haset.hasetapp.utils.AppTourRegistry.showLogin(this, preferenceManager);
     }
 
     @Override
@@ -381,6 +385,10 @@ public class LoginActivity extends BaseActivity {
         });
 
         mfaDialog.show();
+        View mfaRoot = mfaDialog.findViewById(R.id.mfaCodeInput);
+        if (mfaRoot != null) {
+            AppTourRegistry.showMfaChallenge(mfaRoot.getRootView(), this, preferenceManager);
+        }
         if (mfaDialog.getWindow() != null) {
             mfaDialog.getWindow().setLayout(
                     android.view.WindowManager.LayoutParams.MATCH_PARENT,

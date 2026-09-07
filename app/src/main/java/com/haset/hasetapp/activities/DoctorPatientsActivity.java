@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.PreferenceManager;
@@ -84,6 +85,8 @@ public class DoctorPatientsActivity extends LocalizedAppCompatActivity {
                         patientList.setVisibility(rows.isEmpty() ? View.GONE : View.VISIBLE);
                         patientList.setAdapter(new ArrayAdapter<>(DoctorPatientsActivity.this,
                                 android.R.layout.simple_list_item_1, rows));
+                        AppTourRegistry.showDoctorPatients(DoctorPatientsActivity.this,
+                                new PreferenceManager(DoctorPatientsActivity.this));
                     }
 
                     @Override

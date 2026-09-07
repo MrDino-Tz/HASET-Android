@@ -27,8 +27,10 @@ import com.haset.hasetapp.adapters.DoctorAdapter;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.fragments.DoctorDetailsBottomSheet;
 import com.haset.hasetapp.models.Doctor;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ShimmerHelper;
 import com.facebook.shimmer.ShimmerFrameLayout;
 
@@ -258,6 +260,7 @@ public class DoctorsActivity extends BaseActivity implements DoctorAdapter.OnDoc
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
+            AppTourRegistry.showDoctors(DoctorsActivity.this, new PreferenceManager(DoctorsActivity.this));
         }
     }
 
@@ -363,6 +366,7 @@ public class DoctorsActivity extends BaseActivity implements DoctorAdapter.OnDoc
         
         // Show popup anchored to the button
         popupWindow.showAsDropDown(btnMore, 0, 8);
+        AppTourRegistry.showDoctorsMenu(popupView, this, new PreferenceManager(this));
     }
     
     private void showSpecialtyFilterDialog() {

@@ -21,6 +21,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.FirebaseDatabase;
+import com.haset.hasetapp.utils.AppTourHelper;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
 import de.hdodenhof.circleimageview.CircleImageView;
 import com.facebook.shimmer.ShimmerFrameLayout;
@@ -540,7 +542,73 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             if (layoutHomeContent != null) {
                 layoutHomeContent.setVisibility(View.VISIBLE);
             }
+            showFirstTimeTourIfNeeded();
         }
+    }
+
+    private void showFirstTimeTourIfNeeded() {
+        if (getView() == null || preferenceManager == null) {
+            return;
+        }
+        View root = getView();
+        List<AppTourHelper.Step> steps = new ArrayList<>();
+        if (llOnlineStatus != null) {
+            steps.add(new AppTourHelper.Step(llOnlineStatus,
+                    R.string.tour_doctor_online_title, R.string.tour_doctor_online_desc));
+        }
+        if (ivNotification != null) {
+            steps.add(new AppTourHelper.Step(ivNotification,
+                    R.string.tour_doctor_notifications_title, R.string.tour_doctor_notifications_desc));
+        }
+        View llWallet = root.findViewById(R.id.llWallet);
+        if (llWallet != null) {
+            steps.add(new AppTourHelper.Step(llWallet,
+                    R.string.tour_doctor_wallet_title, R.string.tour_doctor_wallet_desc));
+        }
+        View cardPending = root.findViewById(R.id.cardPending);
+        if (cardPending != null) {
+            steps.add(new AppTourHelper.Step(cardPending,
+                    R.string.tour_doctor_pending_stats_title, R.string.tour_doctor_pending_stats_desc));
+        }
+        View cardApproved = root.findViewById(R.id.cardApproved);
+        if (cardApproved != null) {
+            steps.add(new AppTourHelper.Step(cardApproved,
+                    R.string.tour_doctor_completed_stats_title, R.string.tour_doctor_completed_stats_desc));
+        }
+        View cardCancelled = root.findViewById(R.id.cardCancelled);
+        if (cardCancelled != null) {
+            steps.add(new AppTourHelper.Step(cardCancelled,
+                    R.string.tour_doctor_canceled_stats_title, R.string.tour_doctor_canceled_stats_desc));
+        }
+        if (llSchedule != null) {
+            steps.add(new AppTourHelper.Step(llSchedule,
+                    R.string.tour_doctor_schedule_title, R.string.tour_doctor_schedule_desc));
+        }
+        if (llPatients != null) {
+            steps.add(new AppTourHelper.Step(llPatients,
+                    R.string.tour_doctor_patients_title, R.string.tour_doctor_patients_desc));
+        }
+        if (llArticlesAction != null) {
+            steps.add(new AppTourHelper.Step(llArticlesAction,
+                    R.string.tour_doctor_articles_title, R.string.tour_doctor_articles_desc));
+        }
+        View btnFilter = root.findViewById(R.id.btnFilter);
+        if (btnFilter != null) {
+            steps.add(new AppTourHelper.Step(btnFilter,
+                    R.string.tour_doctor_filter_title, R.string.tour_doctor_filter_desc));
+        }
+        if (rvRecentAppointments != null) {
+            steps.add(new AppTourHelper.Step(rvRecentAppointments,
+                    R.string.tour_doctor_recent_appts_title, R.string.tour_doctor_recent_appts_desc));
+        }
+        View btnViewAll = root.findViewById(R.id.btnViewAll);
+        if (btnViewAll != null) {
+            steps.add(new AppTourHelper.Step(btnViewAll,
+                    R.string.tour_doctor_view_all_title, R.string.tour_doctor_view_all_desc));
+        }
+        AppTourHelper.showIfFirstTime(this, preferenceManager,
+                AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_HOME_DOCTOR, preferenceManager),
+                steps);
     }
 
     private void updateUIWithAppointments(List<Appointment> appointments, int pendingCount, int completedCount, int cancelledCount) {
@@ -665,6 +733,8 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         });
 
         dialog.show();
+        AppTourRegistry.showChatStart(dialog.findViewById(R.id.btnStartChat).getRootView(),
+                requireActivity(), preferenceManager);
     }
 
     private void startChatWithPatient(Appointment appointment, long approvedAt) {
@@ -980,6 +1050,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             resubmitDocumentsDialog = null;
         });
         resubmitDocumentsDialog.show();
+        AppTourRegistry.showResubmitDocuments(dialogView, requireActivity(), preferenceManager);
         String userId = preferenceManager.getUserId();
         if (userId != null && !userId.isEmpty()) {
             preloadResubmitNin(userId);

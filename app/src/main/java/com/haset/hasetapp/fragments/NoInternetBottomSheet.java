@@ -13,7 +13,9 @@ import androidx.annotation.Nullable;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.NetworkUtils;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 public class NoInternetBottomSheet extends BottomSheetDialogFragment {
 
@@ -157,6 +159,7 @@ public class NoInternetBottomSheet extends BottomSheetDialogFragment {
                 }
             });
         }
+        AppTourRegistry.showNoInternet(view, this, new PreferenceManager(requireContext()));
         return view;
     }
 

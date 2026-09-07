@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.facebook.shimmer.ShimmerFrameLayout;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.SimpleShimmerHelper;
 
 /**
@@ -34,6 +36,7 @@ public class ShimmerTestActivity extends LocalizedAppCompatActivity {
 
         initializeViews();
         setupClickListeners();
+        AppTourRegistry.showShimmerTest(this, new PreferenceManager(this));
     }
 
     private void initializeViews() {

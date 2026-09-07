@@ -109,6 +109,9 @@
     <color name="banner_teal_center">#20B2AA</color>
     <color name="banner_teal_end">#004D4D</color>
     
+    <!-- First-time tour: light dim so highlighted UI stays visible -->
+    <color name="tour_dim_overlay">#40000000</color>
+
     <!-- Voice and Chat UI Colors -->
     <color name="surface">#F8F9FA</color>
     <color name="chat_bubble_sent">#E8F5E8</color>

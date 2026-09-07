@@ -184,6 +184,10 @@ public class VoiceRecordingManager {
         
         recordingDialog = builder.create();
         recordingDialog.show();
+        if (context instanceof android.app.Activity) {
+            AppTourRegistry.showVoiceRecordingDialog(dialogView, (android.app.Activity) context,
+                    new PreferenceManager(context));
+        }
         
         // Setup click listeners
         btnCancel.setOnClickListener(v -> cancelRecording());

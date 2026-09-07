@@ -24,6 +24,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.models.PaymentRequest;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.CustomDialog;
@@ -113,6 +114,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         setupViews();
         observeDoctorRegistrationFee();
         setupClickListeners();
+        AppTourRegistry.showPayment(this, new PreferenceManager(this));
     }
 
     /*
@@ -327,6 +329,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
         }
+        AppTourRegistry.showPaymentError(dialogView, this, new PreferenceManager(this));
     }
 
     private void showSuccessDialog() {
@@ -398,6 +401,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
         }
+        AppTourRegistry.showPaymentSuccess(dialogView, this, new PreferenceManager(this));
     }
 
     private void showAbortDialog() {
@@ -435,6 +439,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         });
 
         dialog.show();
+        AppTourRegistry.showPaymentAbort(dialogView, this, new PreferenceManager(this));
     }
 
     private void initViews() {
@@ -599,6 +604,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+        AppTourRegistry.showPaymentMethod(view, this, new PreferenceManager(this));
     }
 
     private void showMobileMoneyProvidersBottomSheet() {
@@ -654,6 +660,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+        AppTourRegistry.showPaymentMobileProviders(view, this, new PreferenceManager(this));
     }
 
     /*
@@ -789,6 +796,7 @@ public class PaymentActivity extends LocalizedAppCompatActivity {
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+        AppTourRegistry.showPaymentMobileNumber(view, this, new PreferenceManager(this));
     }
 
     /*

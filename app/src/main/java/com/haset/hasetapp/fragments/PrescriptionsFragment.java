@@ -20,6 +20,7 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.adapters.PrescriptionAdapter;
 import com.haset.hasetapp.models.Prescription;
 import com.haset.hasetapp.utils.AddPrescriptionBottomSheet;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.PrescriptionHelper;
 import com.haset.hasetapp.viewmodels.PrescriptionViewModel;
@@ -54,7 +55,9 @@ public class PrescriptionsFragment extends Fragment {
         
         viewModel = new androidx.lifecycle.ViewModelProvider(this).get(PrescriptionViewModel.class);
         setupObservers();
-        
+
+        view.post(() -> AppTourRegistry.showPrescriptions(this, preferenceManager, view));
+
         return view;
     }
     

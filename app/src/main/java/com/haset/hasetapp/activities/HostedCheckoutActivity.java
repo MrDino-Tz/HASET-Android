@@ -20,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.SensitiveActivityHelper;
 
 /** Full-screen HASET container for Snippe's PCI-hosted checkout. */
@@ -83,6 +85,7 @@ public class HostedCheckoutActivity extends LocalizedAppCompatActivity {
         });
 
         checkoutView.loadUrl(checkoutUrl);
+        AppTourRegistry.showHostedCheckout(this, new PreferenceManager(this), checkoutView);
     }
 
     private void configureCheckoutView(WebView webView) {

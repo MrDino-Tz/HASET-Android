@@ -55,6 +55,10 @@ public class    BottomSheetHelper {
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+        if (context instanceof android.app.Activity) {
+            AppTourRegistry.showContactUs(view, (android.app.Activity) context,
+                    new PreferenceManager(context));
+        }
     }
     
     /**
@@ -275,6 +279,10 @@ public class    BottomSheetHelper {
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+        if (context instanceof android.app.Activity) {
+            AppTourRegistry.showLanguage(view, (android.app.Activity) context,
+                    new PreferenceManager(context));
+        }
     }
     
     /**

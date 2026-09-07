@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.haset.hasetapp.utils.AppTourHelper;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.MemoryMonitor;
 import com.haset.hasetapp.utils.NetworkUtils;
@@ -93,9 +95,9 @@ public class PatientHomeFragment extends Fragment {
     private TextView tvUserInitials;
     private TextView tvUserNameNew;
     private ImageView ivSearchIconNew, ivNotificationNew;
-    private LinearLayout llChatDoctor, llMenstruation, llBuyMedicine, llArticlesAction, llHospitals;
-    private RecyclerView rvMedicineNew, rvPopularArticles;
-    private TextView tvViewAllMedicine, tvViewAllArticles;
+    private LinearLayout llChatDoctor, llMenstruation, llArticlesAction, llHospitals;
+    private RecyclerView rvPopularArticles;
+    private TextView tvViewAllArticles;
     private android.widget.LinearLayout shimmerPopularArticles;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerPageLoading;
     private android.widget.LinearLayout layoutHomeContent;
@@ -226,9 +228,6 @@ public class PatientHomeFragment extends Fragment {
                         case "menstruation":
                             showComingSoonDialog(getString(R.string.menstruation_tracker));
                             break;
-                        case "medicine":
-                            Toast.makeText(requireContext(), "Pharmacy module coming soon", Toast.LENGTH_SHORT).show();
-                            break;
                         case "articles":
                             startActivity(new Intent(requireContext(), com.haset.hasetapp.activities.ArticleActivity.class));
                             break;
@@ -273,7 +272,6 @@ public class PatientHomeFragment extends Fragment {
         List<com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem> availableServices = java.util.Arrays.asList(
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.chat_doctor), R.drawable.user_md_24, "chat"),
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.menstruation_tracker), R.drawable.ic_medical, "menstruation"),
-            new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.buy_medicine), R.drawable.ic_medical, "medicine"),
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.health_articles), R.drawable.ic_news_paper, "articles"),
             new com.haset.hasetapp.adapters.SearchResultAdapter.ServiceItem(getString(R.string.find_hospital), R.drawable.ic_hospital_24, "hospitals")
         );
@@ -495,13 +493,6 @@ public class PatientHomeFragment extends Fragment {
 
 
 
-        if (llBuyMedicine != null) {
-            llBuyMedicine.setOnClickListener(v -> {
-                // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
-                showComingSoonDialog(getString(R.string.pharmacy));
-            });
-        }
-
         if (llArticlesAction != null) {
             llArticlesAction.setOnClickListener(v -> {
                 Intent intent = new Intent(requireContext(), com.haset.hasetapp.activities.ArticleActivity.class);
@@ -515,12 +506,6 @@ public class PatientHomeFragment extends Fragment {
             });
         }
 
-        if (tvViewAllMedicine != null) {
-            tvViewAllMedicine.setOnClickListener(v -> {
-                // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
-                showComingSoonDialog(getString(R.string.pharmacy));
-            });
-        }
         if (tvViewAllArticles != null) {
             tvViewAllArticles.setOnClickListener(v -> {
                 Intent intent = new Intent(requireContext(), com.haset.hasetapp.activities.ArticleActivity.class);
@@ -575,7 +560,60 @@ public class PatientHomeFragment extends Fragment {
             if (layoutHomeContent != null) {
                 layoutHomeContent.setVisibility(View.VISIBLE);
             }
+            showFirstTimeTourIfNeeded();
         }
+    }
+
+    private void showFirstTimeTourIfNeeded() {
+        if (getView() == null || preferenceManager == null) {
+            return;
+        }
+        View root = getView();
+        List<AppTourHelper.Step> steps = new ArrayList<>();
+        if (profileImageContainer != null) {
+            steps.add(new AppTourHelper.Step(profileImageContainer,
+                    R.string.tour_patient_profile_title, R.string.tour_patient_profile_desc));
+        }
+        if (ivSearchIconNew != null) {
+            steps.add(new AppTourHelper.Step(ivSearchIconNew,
+                    R.string.tour_patient_search_title, R.string.tour_patient_search_desc));
+        }
+        if (ivNotificationNew != null) {
+            steps.add(new AppTourHelper.Step(ivNotificationNew,
+                    R.string.tour_patient_notifications_title, R.string.tour_patient_notifications_desc));
+        }
+        View bannerContainer = root.findViewById(R.id.bannerContainer);
+        if (bannerContainer != null) {
+            steps.add(new AppTourHelper.Step(bannerContainer,
+                    R.string.tour_patient_banner_title, R.string.tour_patient_banner_desc));
+        }
+        if (llChatDoctor != null) {
+            steps.add(new AppTourHelper.Step(llChatDoctor,
+                    R.string.tour_patient_chat_title, R.string.tour_patient_chat_desc));
+        }
+        if (llArticlesAction != null) {
+            steps.add(new AppTourHelper.Step(llArticlesAction,
+                    R.string.tour_patient_articles_title, R.string.tour_patient_articles_desc));
+        }
+        if (llHospitals != null) {
+            steps.add(new AppTourHelper.Step(llHospitals,
+                    R.string.tour_patient_hospitals_title, R.string.tour_patient_hospitals_desc));
+        }
+        if (llMenstruation != null) {
+            steps.add(new AppTourHelper.Step(llMenstruation,
+                    R.string.tour_patient_children_title, R.string.tour_patient_children_desc));
+        }
+        if (tvViewAllArticles != null) {
+            steps.add(new AppTourHelper.Step(tvViewAllArticles,
+                    R.string.tour_patient_articles_list_title, R.string.tour_patient_articles_list_desc));
+        }
+        if (layoutHealthQuote != null) {
+            steps.add(new AppTourHelper.Step(layoutHealthQuote,
+                    R.string.tour_patient_health_quote_title, R.string.tour_patient_health_quote_desc));
+        }
+        AppTourHelper.showIfFirstTime(this, preferenceManager,
+                AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_HOME_PATIENT, preferenceManager),
+                steps);
     }
     
     private void loadHealthQuotes() {
@@ -907,13 +945,6 @@ public class PatientHomeFragment extends Fragment {
             hidePopularArticlesShimmer();
         }, 5000);
 
-        // Observe Featured Medicines
-        viewModel.getFeaturedMedicines().observe(getViewLifecycleOwner(), medicines -> {
-            if (medicines != null && rvMedicineNew != null) {
-                updateMedicineUI(medicines);
-            }
-        });
-
         // Initial update for message badge
         updateMessageBadge();
     }
@@ -938,9 +969,6 @@ public class PatientHomeFragment extends Fragment {
             String name = cat.name;
             if (getString(R.string.all_articles).equals(name) || "Articles".equals(name)) {
                 startActivity(new Intent(requireContext(), com.haset.hasetapp.activities.ArticleActivity.class));
-            } else if (getString(R.string.pharmacy).equals(name) || "Pharmacy".equals(name)) {
-                // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
-                showComingSoonDialog(getString(R.string.pharmacy));
             } else if (getString(R.string.afya_class).equals(name) || "Afya Class".equals(name)) {
                 showComingSoonDialog(getString(R.string.afya_class));
             } else if (getString(R.string.childrens).equals(name) || getString(R.string.childrens_corner).equals(name)
@@ -974,6 +1002,10 @@ public class PatientHomeFragment extends Fragment {
         btnOk.setOnClickListener(v -> dialog.dismiss());
         
         dialog.show();
+        if (getActivity() != null) {
+            AppTourRegistry.showComingSoon(dialog.findViewById(R.id.btnOk).getRootView(),
+                    getActivity(), preferenceManager);
+        }
     }
 
     private void setupBanner() {
@@ -990,9 +1022,6 @@ public class PatientHomeFragment extends Fragment {
         bannerAdapter = new PatientBannerAdapter(bannersList, banner -> {
             Intent intent = null;
             switch (banner.bannerType) {
-                case PHARMACY:
-                    showComingSoonDialog(getString(R.string.pharmacy));
-                    break;
                 case MESSAGING:
                     DashboardActivity da = (getActivity() instanceof DashboardActivity)
                             ? (DashboardActivity) getActivity() : null;
@@ -1087,14 +1116,13 @@ public class PatientHomeFragment extends Fragment {
 
     private void setupDefaultBanners(List<PatientBannerAdapter.BannerItem> banners) {
         banners.clear();
-        // Pharmacy banner
         banners.add(new PatientBannerAdapter.BannerItem(
-                "Up to",
-                "50% OFF",
-                "Flash Sale",
-                "Shop Now",
-                R.drawable.placeholder_image,
-                PatientBannerAdapter.BannerItem.BannerType.PHARMACY
+                "Expert",
+                "Health Tips",
+                "Read Now",
+                "Explore",
+                R.drawable.ic_news_paper,
+                PatientBannerAdapter.BannerItem.BannerType.ARTICLE
         ));
 
         // Messaging banner
@@ -1115,16 +1143,6 @@ public class PatientHomeFragment extends Fragment {
                 "Book Now",
                 R.drawable.three_doctors,
                 PatientBannerAdapter.BannerItem.BannerType.APPOINTMENT
-        ));
-
-        // Pharmacy banner 2 (Home Care)
-        banners.add(new PatientBannerAdapter.BannerItem(
-                "Premium",
-                "Home Care",
-                "30% OFF",
-                "Explore",
-                R.drawable.placeholder_image,
-                PatientBannerAdapter.BannerItem.BannerType.PHARMACY
         ));
     }
 
@@ -1178,10 +1196,6 @@ public class PatientHomeFragment extends Fragment {
             });
             rvPopularArticles.setAdapter(popularArticleAdapter);
         }
-
-        if (rvMedicineNew != null) {
-            rvMedicineNew.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
-        }
     }
 
     private void showPopularArticlesShimmer() {
@@ -1198,44 +1212,6 @@ public class PatientHomeFragment extends Fragment {
         if (shimmerPopularArticles == null) return;
         com.haset.hasetapp.utils.ShimmerHelper.hideListShimmer(shimmerPopularArticles);
         shimmerPopularArticles.setVisibility(View.GONE);
-    }
-
-    private void updateMedicineUI(List<com.haset.hasetapp.models.PharmacyProduct> products) {
-        if (!isAdded() || products == null) return;
-        
-        // Limit to top 5
-        List<com.haset.hasetapp.models.PharmacyProduct> displayProducts = new ArrayList<>();
-        for (int i = 0; i < Math.min(5, products.size()); i++) {
-            displayProducts.add(products.get(i));
-        }
-
-        rvMedicineNew.setAdapter(new RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-            @NonNull
-            @Override
-            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_patient_home_medicine, parent, false);
-                return new RecyclerView.ViewHolder(v) {};
-            }
-
-            @Override
-            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-                com.haset.hasetapp.models.PharmacyProduct product = displayProducts.get(position);
-                TextView tvName = holder.itemView.findViewById(R.id.tvMedicineName);
-                ImageView ivImage = holder.itemView.findViewById(R.id.ivMedicineImage);
-
-                tvName.setText(product.getName());
-                // Image loading logic can be added here
-                
-                holder.itemView.setOnClickListener(v -> {
-                    // Navigate to pharmacy product details
-                });
-            }
-
-            @Override
-            public int getItemCount() {
-                return displayProducts.size();
-            }
-        });
     }
 
     private void refreshHeaderProfile() {
@@ -1258,7 +1234,6 @@ public class PatientHomeFragment extends Fragment {
         
         // Clear adapters
         if (rvCategories != null) rvCategories.setAdapter(null);
-        if (rvMedicineNew != null) rvMedicineNew.setAdapter(null);
         if (rvPopularArticles != null) rvPopularArticles.setAdapter(null);
         if (viewPagerBanner != null) viewPagerBanner.setAdapter(null);
         
@@ -1286,17 +1261,14 @@ public class PatientHomeFragment extends Fragment {
         
         llChatDoctor = null;
         llMenstruation = null;
-        llBuyMedicine = null;
         llArticlesAction = null;
         
         rvCategories = null;
-        rvMedicineNew = null;
         rvPopularArticles = null;
         shimmerPopularArticles = null;
         viewPagerBanner = null;
         layoutPaginationIndicators = null;
         
-        tvViewAllMedicine = null;
         tvViewAllArticles = null;
         moreSettingsLayout = null;
         

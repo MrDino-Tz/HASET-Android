@@ -19,10 +19,10 @@ import com.haset.hasetapp.adapters.SearchResultAdapter;
 import com.haset.hasetapp.database.LocalStorageHelper;
 import com.haset.hasetapp.fragments.DoctorDetailsBottomSheet;
 import com.haset.hasetapp.models.Doctor;
-import com.haset.hasetapp.models.PharmacyProduct;
 import com.haset.hasetapp.repositories.ArticleRepository;
 import com.haset.hasetapp.repositories.DoctorRepository;
-import com.haset.hasetapp.repositories.PharmacyRepository;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,10 +40,8 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
     private LocalStorageHelper storageHelper;
     private List<Doctor> allDoctors;
     private List<com.haset.hasetapp.database.entities.ArticlePostEntity> allArticles;
-    private List<PharmacyProduct> allDrugs;
     private List<SearchResultAdapter.SearchResult> searchResults;
     
-    private PharmacyRepository pharmacyRepository;
     private DoctorRepository doctorRepository;
     private ArticleRepository articleRepository;
 
@@ -57,6 +55,7 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         setupRecyclerView();
         setupSearchListener();
         loadInitialData();
+        AppTourRegistry.showSearch(this, new PreferenceManager(this));
     }
 
     private void initViews() {
@@ -68,7 +67,6 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         tvNoResultsSubtitle = noResultsLayout.findViewById(R.id.tvNoResultsSubtitle);
 
         storageHelper = LocalStorageHelper.getInstance(this);
-        pharmacyRepository = new PharmacyRepository();
         doctorRepository = new DoctorRepository();
         articleRepository = new ArticleRepository(getApplication());
         searchResults = new ArrayList<>();
@@ -111,19 +109,12 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
             allArticles = articles;
             checkDataLoaded();
         });
-
-        // Load Drugs from Firebase via Repository
-        pharmacyRepository.getAllProducts().observe(this, products -> {
-            allDrugs = products;
-            checkDataLoaded();
-        });
     }
 
     private int loadCount = 0;
     private void checkDataLoaded() {
         loadCount++;
-        // We have 3 data sources
-        if (loadCount >= 3) {
+        if (loadCount >= 2) {
             progressBar.setVisibility(View.GONE);
             showRecentSearches();
         }
@@ -194,24 +185,6 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
                 }
             }
         }
-
-        // 4. Search drugs
-        if (allDrugs != null) {
-            for (PharmacyProduct drug : allDrugs) {
-                String name = drug.getName();
-                String man = drug.getManufacturer();
-                
-                if ((name != null && name.toLowerCase().contains(query)) || 
-                    (man != null && man.toLowerCase().contains(query))) {
-                    searchResults.add(new SearchResultAdapter.SearchResult(
-                        SearchResultAdapter.TYPE_DRUG,
-                        name != null ? name : "Medicine",
-                        man != null ? man : "Haset pharmacy",
-                        drug
-                    ));
-                }
-            }
-        }
         
         updateSearchResults();
     }
@@ -267,10 +240,6 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
                     bottomSheet.show(getSupportFragmentManager(), "doctor_details_bottom_sheet");
                 }
                 break;
-            case SearchResultAdapter.TYPE_DRUG:
-                // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
-                Toast.makeText(this, getString(R.string.feature_coming_soon, getString(R.string.pharmacy)), Toast.LENGTH_SHORT).show();
-                break;
             case SearchResultAdapter.TYPE_ARTICLE:
                 if (result.getData() instanceof com.haset.hasetapp.database.entities.ArticlePostEntity) {
                     Intent articleIntent = new Intent(this, ArticleActivity.class);
@@ -302,10 +271,6 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
             case "Articles":
                 intent = new Intent(this, ArticleActivity.class);
                 break;
-            case "Pharmacy":
-                // DISABLED FOR V1 - PHARMACY COMING IN VERSION 2.0
-                Toast.makeText(this, getString(R.string.feature_coming_soon, getString(R.string.pharmacy)), Toast.LENGTH_SHORT).show();
-                break;
         }
         
         if (intent != null) {
@@ -323,10 +288,6 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         if (allArticles != null) {
             allArticles.clear();
             allArticles = null;
-        }
-        if (allDrugs != null) {
-            allDrugs.clear();
-            allDrugs = null;
         }
         if (searchResults != null) {
             searchResults.clear();

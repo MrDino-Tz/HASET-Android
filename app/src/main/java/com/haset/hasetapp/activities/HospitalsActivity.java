@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.adapters.HospitalAdapter;
 import com.haset.hasetapp.models.Hospital;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import java.util.ArrayList;
@@ -120,6 +121,8 @@ public class HospitalsActivity extends LocalizedAppCompatActivity {
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
                     isLoading = false;
+                    AppTourRegistry.showHospitals(HospitalsActivity.this,
+                            new com.haset.hasetapp.utils.PreferenceManager(HospitalsActivity.this));
                 }
 
                 @Override

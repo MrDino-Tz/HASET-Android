@@ -22,6 +22,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Service;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 
 import java.text.NumberFormat;
@@ -82,6 +83,7 @@ public class AddServiceBottomSheet extends BottomSheetDialogFragment {
         initViews(view);
         setupListeners();
         loadDoctorConsultationFee();
+        AppTourRegistry.showAddService(view, this, new PreferenceManager(requireContext()));
     }
     
     private void initViews(View view) {

@@ -202,6 +202,17 @@ public class PreferenceManager {
         editor.putBoolean(KEY_ONBOARDING_SEEN, seen);
         editor.commit();
     }
+
+    private static final String KEY_TOUR_PREFIX = "tour_seen_";
+
+    public boolean isTourSeen(String tourKey) {
+        return sharedPreferences.getBoolean(KEY_TOUR_PREFIX + tourKey, false);
+    }
+
+    public void setTourSeen(String tourKey, boolean seen) {
+        editor.putBoolean(KEY_TOUR_PREFIX + tourKey, seen);
+        editor.apply();
+    }
     
     // FCM Token preference
     private static final String KEY_FCM_TOKEN = "fcm_token";

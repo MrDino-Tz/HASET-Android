@@ -22,6 +22,7 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.models.Doctor;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AppointmentReminderHelper;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.Constants;
@@ -120,6 +121,8 @@ public class BookAppointmentActivity extends BaseActivity {
         headerScheduleAppointment.setOnClickListener(v -> toggleCardExpansion("schedule"));
         
         optionOnlineChat.setOnClickListener(v -> selectInstantAppointment(Constants.APPOINTMENT_TYPE_ONLINE_CHAT));
+
+        AppTourRegistry.showBookAppointment(this, preferenceManager);
     }
 
     private void setupObservers() {
@@ -577,6 +580,8 @@ public class BookAppointmentActivity extends BaseActivity {
         if (btnOk != null) btnOk.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+        AppTourRegistry.showComingSoon(dialog.findViewById(R.id.btnOk).getRootView(),
+                this, new PreferenceManager(this));
     }
 
     @Override

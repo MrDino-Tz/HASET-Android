@@ -26,7 +26,9 @@ import com.haset.hasetapp.adapters.PostFeedAdapter;
 import com.haset.hasetapp.firebase.ArticlePostHelper;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
 import com.haset.hasetapp.models.HealthTip;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.viewmodels.ArticleViewModel;
 
 import java.util.ArrayList;
@@ -104,6 +106,7 @@ public class ArticleFragment extends Fragment {
         viewModel = new androidx.lifecycle.ViewModelProvider(requireActivity()).get(ArticleViewModel.class);
         setupSwipeRefresh(view);
         setupObservers();
+        AppTourRegistry.showArticleFeed(view, this, new PreferenceManager(requireContext()));
     }
 
     private void setupSwipeRefresh(View view) {

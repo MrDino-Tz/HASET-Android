@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.models.Comment;
 
 import java.util.ArrayList;
@@ -65,6 +67,7 @@ public class PostCommentsBottomSheet extends BottomSheetDialogFragment {
         rvComments.setAdapter(commentsAdapter);
 
         ivSendComment.setOnClickListener(v -> sendComment());
+        AppTourRegistry.showPostComments(view, this, new PreferenceManager(requireContext()));
     }
 
     private void sendComment() {

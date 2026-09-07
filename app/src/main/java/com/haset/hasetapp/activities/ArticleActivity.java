@@ -13,6 +13,7 @@ import com.haset.hasetapp.fragments.ArticleTabFragment;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.viewmodels.AuthViewModel;
 import com.haset.hasetapp.viewmodels.ArticleViewModel;
@@ -73,6 +74,7 @@ public class ArticleActivity extends LocalizedAppCompatActivity {
         setupSearchAlgorithm(searchView);
 
         setupObservers(fabAddArticle);
+        AppTourRegistry.showArticles(this, new com.haset.hasetapp.utils.PreferenceManager(this));
     }
     
     private void setupSearchAlgorithm(com.google.android.material.search.SearchView searchView) {
@@ -204,6 +206,7 @@ public class ArticleActivity extends LocalizedAppCompatActivity {
         
         dialogView.findViewById(R.id.btnClose).setOnClickListener(v -> dialog.dismiss());
         dialog.show();
+        AppTourRegistry.showAboutHArticle(dialogView, this, new com.haset.hasetapp.utils.PreferenceManager(this));
     }
 
     private void showSettingsBottomSheet() {
@@ -233,8 +236,8 @@ public class ArticleActivity extends LocalizedAppCompatActivity {
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+        AppTourRegistry.showArticleNotificationSettings(view, this, new com.haset.hasetapp.utils.PreferenceManager(this));
     }
-    
     private TabLayout tabLayout;
     private ViewPager2 viewPager;
     

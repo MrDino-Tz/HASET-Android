@@ -5,6 +5,8 @@ import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 public class FullScreenImageActivity extends LocalizedAppCompatActivity {
     @Override
@@ -25,6 +27,8 @@ public class FullScreenImageActivity extends LocalizedAppCompatActivity {
             finish();
             overridePendingTransition(R.anim.scale_up_enter, R.anim.scale_down_exit);
         });
+
+        AppTourRegistry.showFullScreenImage(this, new PreferenceManager(this));
     }
 
     @Override

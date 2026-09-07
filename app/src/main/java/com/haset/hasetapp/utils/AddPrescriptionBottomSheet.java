@@ -29,6 +29,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.textfield.TextInputEditText;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
 import com.haset.hasetapp.models.Prescription;
 
@@ -77,6 +79,7 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
         checkArguments();
         loadAppointments();
         addMedicineRow(); // Add first row by default
+        AppTourRegistry.showAddPrescription(view, this, new PreferenceManager(requireContext()));
     }
 
     private void checkArguments() {

@@ -26,6 +26,7 @@ import com.google.gson.JsonObject;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.ui.MfaCodeInputView;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.BottomSheetHelper;
 import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.FirebaseHelper;
@@ -78,6 +79,7 @@ public class SettingsActivity extends BaseActivity {
         updateLanguageText();
         updateThemeText();
         setupClickListeners();
+        AppTourRegistry.showSettings(this, preferenceManager);
     }
 
     private void initializeViews() {
@@ -425,6 +427,7 @@ public class SettingsActivity extends BaseActivity {
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+        AppTourRegistry.showSupportOptions(dialogView, this, preferenceManager);
     }
 
     private void openWhatsApp() {
@@ -477,6 +480,7 @@ public class SettingsActivity extends BaseActivity {
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+        AppTourRegistry.showBugReport(dialogView, this, preferenceManager);
     }
 
     private void submitBugReport(String report) {
@@ -607,6 +611,7 @@ public class SettingsActivity extends BaseActivity {
         });
 
         sheet.show();
+        AppTourRegistry.showThemeSelector(dialogView, this, preferenceManager);
     }
 
     private void updateThemeCheckmarks(ImageView ivLight, ImageView ivDark, ImageView ivSystem, int currentTheme) {
@@ -686,6 +691,7 @@ public class SettingsActivity extends BaseActivity {
         });
 
         bottomSheetDialog.show();
+        AppTourRegistry.showChangePassword(view, this, preferenceManager);
     }
 
     @Override

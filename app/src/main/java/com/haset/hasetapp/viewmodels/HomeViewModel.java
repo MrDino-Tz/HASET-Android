@@ -11,7 +11,6 @@ import com.haset.hasetapp.repositories.HomeRepository;
 import com.haset.hasetapp.adapters.PatientBannerAdapter;
 import com.haset.hasetapp.utils.NotificationBadgeHelper;
 
-import com.haset.hasetapp.models.PharmacyProduct;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
 import com.haset.hasetapp.models.Doctor;
@@ -24,7 +23,6 @@ public class HomeViewModel extends AndroidViewModel {
     private LiveData<List<Doctor>> doctors;
     private LiveData<List<PatientBannerAdapter.BannerItem>> banners;
     private LiveData<List<ArticlePostEntity>> popularArticles;
-    private LiveData<List<PharmacyProduct>> featuredMedicines;
     private LiveData<AppointmentEntity> upcomingAppointment;
     private MutableLiveData<Integer> notificationCount;
 
@@ -91,13 +89,6 @@ public class HomeViewModel extends AndroidViewModel {
             popularArticles = repository.getPopularArticles();
         }
         return popularArticles;
-    }
-
-    public LiveData<List<PharmacyProduct>> getFeaturedMedicines() {
-        if (featuredMedicines == null) {
-            featuredMedicines = repository.getFeaturedMedicines();
-        }
-        return featuredMedicines;
     }
     
     public LiveData<AppointmentEntity> getUpcomingAppointment(String userId, String role) {

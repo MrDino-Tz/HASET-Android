@@ -18,6 +18,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.adapters.AppointmentNotificationAdapter;
 import com.haset.hasetapp.models.Appointment;
+import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.NotificationBadgeHelper;
@@ -77,6 +78,7 @@ public class NotificationActivity extends LocalizedAppCompatActivity implements
         badgeHelper.markGeneralNotificationsAsRead();
         badgeHelper.markAllTabsAsRead();
         clearAllTabBadges();
+        AppTourRegistry.showNotifications(this, new PreferenceManager(this));
     }
 
     private void initializeViews() {

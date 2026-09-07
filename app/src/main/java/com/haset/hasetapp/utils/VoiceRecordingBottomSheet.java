@@ -11,6 +11,8 @@ import android.widget.TextView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.views.VoiceWaveView;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,6 +66,10 @@ public class VoiceRecordingBottomSheet {
         bottomSheetDialog.setOnDismissListener(dialog -> stopTimerUpdates());
         
         bottomSheetDialog.show();
+        if (context instanceof android.app.Activity) {
+            AppTourRegistry.showVoiceRecordingSheet(sheetView, (android.app.Activity) context,
+                    new PreferenceManager(context));
+        }
         
         updateUIForIdleState();
     }

@@ -69,6 +69,9 @@ public class RoleSelectionActivity extends BaseActivity {
 //                navigateToRegister("admin", v);
 //            });
 //        }
+
+        com.haset.hasetapp.utils.AppTourRegistry.showRoleSelection(this,
+                new com.haset.hasetapp.utils.PreferenceManager(this));
     }
 
     private void navigateToRegister(String role, android.view.View sourceView) {

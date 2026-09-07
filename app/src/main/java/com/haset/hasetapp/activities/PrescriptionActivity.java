@@ -4,6 +4,8 @@ import android.os.Bundle;
 import androidx.appcompat.widget.Toolbar;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.fragments.PrescriptionsFragment;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 public class PrescriptionActivity extends BaseActivity {
 
@@ -27,6 +29,8 @@ public class PrescriptionActivity extends BaseActivity {
                     .replace(R.id.fragmentContainer, new PrescriptionsFragment())
                     .commit();
         }
+
+        AppTourRegistry.showPrescriptionShell(this, new PreferenceManager(this));
     }
 
     public void setToolbarTitle(String title) {

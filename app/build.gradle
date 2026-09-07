@@ -160,4 +160,7 @@ dependencies {
     
     // WorkManager for background tasks
     implementation 'androidx.work:work-runtime:2.9.0'
+
+    // First-time in-app spotlight tips
+    implementation 'com.getkeepsafe.taptargetview:taptargetview:1.14.0'
 }

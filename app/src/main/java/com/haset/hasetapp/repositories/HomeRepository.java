@@ -12,7 +12,6 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
-import com.haset.hasetapp.models.PharmacyProduct;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.adapters.PatientBannerAdapter;
@@ -24,7 +23,6 @@ import java.util.List;
 
 public class HomeRepository {
     private final FirebaseHelper firebaseHelper = FirebaseHelper.getInstance();
-    private final PharmacyRepository pharmacyRepository = new PharmacyRepository();
 
     public LiveData<List<Doctor>> getDoctors() {
         MutableLiveData<List<Doctor>> doctorsLiveData = new MutableLiveData<>();
@@ -211,10 +209,6 @@ public class HomeRepository {
                     }
                 });
         return articlesLiveData;
-    }
-
-    public LiveData<List<PharmacyProduct>> getFeaturedMedicines() {
-        return pharmacyRepository.getAllProducts(); // For now return all, fragment can slice
     }
 
     public LiveData<List<PatientBannerAdapter.BannerItem>> getBanners() {

@@ -24,6 +24,8 @@ import com.haset.hasetapp.ui.MfaCodeInputView;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.SensitiveActivityHelper;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -60,6 +62,7 @@ public class MfaEnrollmentActivity extends BaseActivity {
         confirm.setOnClickListener(v -> confirmCode()); continueButton.setOnClickListener(v -> { if(saved.isChecked()){clearSecrets();setResult(RESULT_OK);finish();} });
         codeInput.postDelayed(() -> codeInput.focusFirst(), 250);
         requestSetup();
+        AppTourRegistry.showMfaEnrollment(this, new PreferenceManager(this));
     }
     private void requestSetup(){ FirebaseUser u=FirebaseHelper.getFirebaseAuth().getCurrentUser(); if(u==null){fail("Authentication expired.");return;} u.getIdToken(true).addOnSuccessListener(t -> RetrofitClient.getInstance().getMobileMfaApiService().setup("Bearer "+t.getToken()).enqueue(new Callback<JsonObject>(){ public void onResponse(Call<JsonObject> c,Response<JsonObject> r){ if(!r.isSuccessful()||r.body()==null){fail(r.code()==429?"Too many requests. Try later.":"Unable to start MFA setup.");return;} secret=r.body().has("secret")?r.body().get("secret").getAsString():""; String uri=r.body().has("otpauth_uri")?r.body().get("otpauth_uri").getAsString():""; recoveryCodesRaw=r.body().has("recovery_codes")?r.body().get("recovery_codes").toString():""; manualKey.setText(formatSecret(secret)); manualToggle.setEnabled(!secret.isEmpty()); renderQrCode(uri); } public void onFailure(Call<JsonObject> c,Throwable x){CrashMonitor.report("auth","MfaEnrollment.requestSetup","MFA setup network failure",x);fail("Network error. Retry setup.");} })).addOnFailureListener(e->{CrashMonitor.report("auth","MfaEnrollment.requestSetup","MFA setup token refresh failed",e);fail("Authentication expired.");}); }
 

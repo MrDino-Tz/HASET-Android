@@ -9,6 +9,8 @@ import android.widget.ProgressBar;
 import android.widget.VideoView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.haset.hasetapp.R;
+import com.haset.hasetapp.utils.AppTourRegistry;
+import com.haset.hasetapp.utils.PreferenceManager;
 
 public class VideoPlayerActivity extends LocalizedAppCompatActivity {
     private VideoView videoView;
@@ -54,6 +56,8 @@ public class VideoPlayerActivity extends LocalizedAppCompatActivity {
             finish();
             overridePendingTransition(R.anim.scale_up_enter, R.anim.scale_down_exit);
         });
+
+        AppTourRegistry.showVideoPlayer(this, new PreferenceManager(this));
     }
 
     @Override
