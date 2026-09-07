@@ -31,14 +31,21 @@ android {
         }
     }
 
+    def keystoreProperties = new Properties()
+    def keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
+
     signingConfigs {
         release {
-            def keystoreFile = rootProject.file("haset-release.jks")
+            def keystorePath = keystoreProperties.getProperty("storeFile", "keyforAfyaNew.jks")
+            def keystoreFile = rootProject.file(keystorePath)
             if (keystoreFile.exists()) {
                 storeFile keystoreFile
-                storePassword System.getenv("STORE_PASSWORD")
-                keyAlias System.getenv("KEY_ALIAS")
-                keyPassword System.getenv("KEY_PASSWORD")
+                storePassword keystoreProperties.getProperty("storePassword", System.getenv("STORE_PASSWORD"))
+                keyAlias keystoreProperties.getProperty("keyAlias", System.getenv("KEY_ALIAS"))
+                keyPassword keystoreProperties.getProperty("keyPassword", System.getenv("KEY_PASSWORD"))
             }
         }
     }
