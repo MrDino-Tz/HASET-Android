@@ -270,11 +270,10 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
     }
 
     private void showErrorDialog(String errorMessage) {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.FullScreenDialogTheme);
+        android.app.Dialog dialog = new android.app.Dialog(this, R.style.FullScreenDialogTheme);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_payment_error, null);
-        builder.setView(dialogView);
-        
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setContentView(dialogView);
+        dialog.setCancelable(true);
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             android.view.Window window = dialog.getWindow();
@@ -334,12 +333,11 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
     }
 
     private void showSuccessDialog() {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.FullScreenDialogTheme);
+        android.app.Dialog dialog = new android.app.Dialog(this, R.style.FullScreenDialogTheme);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_payment_success, null);
-        builder.setView(dialogView);
-        builder.setCancelable(false);
-        
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setContentView(dialogView);
+        dialog.setCancelable(false);
+
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             android.view.Window window = dialog.getWindow();
@@ -406,11 +404,19 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
     }
 
     private void showAbortDialog() {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this, R.style.CustomDialogTheme);
+        android.app.Dialog dialog = new android.app.Dialog(this, R.style.FullScreenDialogTheme);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_payment_error, null);
-        builder.setView(dialogView);
-        
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        dialog.setContentView(dialogView);
+        dialog.setCancelable(true);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            android.view.Window window = dialog.getWindow();
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                    | android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        }
 
         TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);
         TextView tvMessage = dialogView.findViewById(R.id.tvDialogMessage);
@@ -440,6 +446,9 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         });
 
         dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+        }
         AppTourRegistry.showPaymentAbort(dialogView, this, new PreferenceManager(this));
     }
 
