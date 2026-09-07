@@ -146,10 +146,12 @@ public class DoctorEntity implements Serializable {
         this.patientsTreated = patientsTreated;
     }
 
+    @com.google.firebase.database.PropertyName("online")
     public boolean isOnline() {
         return isOnline;
     }
 
+    @com.google.firebase.database.PropertyName("online")
     public void setOnline(boolean online) {
         isOnline = online;
     }

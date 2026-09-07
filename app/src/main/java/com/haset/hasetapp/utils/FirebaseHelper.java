@@ -453,6 +453,11 @@ public class FirebaseHelper {
                                     doctor.setVerified(false);
                                     doctor.setDemo(false);
                                 }
+
+                                Boolean online = doctorEntitySnapshot.child("online").getValue(Boolean.class);
+                                String onlineStatus = doctorEntitySnapshot.child("onlineStatus").getValue(String.class);
+                                doctor.setOnline(online != null && online);
+                                doctor.setOnlineStatus(onlineStatus != null ? onlineStatus : "offline");
                                 
                                 // Always return the doctor object if the user exists and is a doctor
                                 listener.onSuccess(doctor);
