@@ -69,7 +69,6 @@
     <string name="gender">Gender</string>
     <string name="male">Male</string>
     <string name="female">Female</string>
-    <string name="other">Other</string>
     <string name="confirm_password">Confirm Password</string>
     <string name="forgot_password">Forgot Password?</string>
     <string name="lets_retrieve_account">Let\'s Retrieve Your Account</string>
@@ -711,6 +710,7 @@
     <string name="hint_specialty">Specialty</string>
     <string name="hint_specialty_example">e.g., Cardiologist, Pediatrician</string>
     <string name="hint_consultation_fee">Consultation Fee</string>
+    <string name="hint_doctor_registration_fee">Doctor Registration Fee</string>
     <string name="hint_fee_example">e.g., 0</string>
     <string name="hint_location">Location</string>
     <string name="hint_location_example">e.g., 123 Main Street, City</string>
@@ -830,7 +830,7 @@
 
     <!-- ChatActivity -->
     <string name="service_payment_sent">Service payment request sent</string>
-    <string name="secure_payment">Secure payment</string>
+    <string name="secure_payment">All of your payment are secure</string>
     <string name="failed_to_send_message">Failed to send message</string>
     <string name="error_service_payment_minimum">Patient payment must be at least TZS %1$s</string>
     <string name="payment_successful_chat">Payment successful!</string>
@@ -1753,9 +1753,9 @@
     <string name="you_pay_50">You Pay (50%):</string>
     <string name="str_25000_tzs">25,000 TZS</string>
     <string name="per_service_fee_policy">Per Service Fee Policy</string>
-    <string name="the_per_service_fee_is_a_fixed_amount_ch">The per service fee is a fixed amount charged for each consultation or procedure performed. This fee covers the professional expertise of the doctor, use of facility equipment, and administrative costs. \n\nKey Points:\n1. The fee is non-refundable once the service is rendered.\n2. Emergency services may incur additional charges.\n3. Cancellation less than 2 hours before the appointment may result in a partial fee charge.\n4. Payments are processed securely via the H-Care App platform.</string>
+    <string name="the_per_service_fee_is_a_fixed_amount_ch">The per service fee is a fixed amount charged for each consultation or procedure performed. This fee covers the professional expertise of the doctor, use of facility equipment, and administrative costs. \n\nKey Points:\n1. The fee is non-refundable once the service is rendered.\n2. Emergency services may incur additional charges.\n3. Cancellation less than 2 hours before the appointment may result in a partial fee charge.\n4. Payments are processed securely via the AfyaHASET App platform.</string>
     <string name="location_tracking_amp_access_policy">Location Tracking &amp;amp; Access Policy</string>
-    <string name="to_connect_you_with_nearby_patients_and_">To connect you with nearby patients and verify your clinic address, H-Care requires access to your location.\n\nKey Points:\n1. Your precise location is only accessed when you actively add or update your clinic address.\n2. We do NOT track your location continuously in the background.\n3. Your clinic location is displayed to patients solely to help them navigate and book appointments with you.\n4. You can revoke location permissions at any time via your device settings, though this may limit your ability to update your clinic address.</string>
+    <string name="to_connect_you_with_nearby_patients_and_">To connect you with nearby patients and verify your clinic address, AfyaHASET requires access to your location.\n\nKey Points:\n1. Your precise location is only accessed when you actively add or update your clinic address.\n2. We do NOT track your location continuously in the background.\n3. Your clinic location is displayed to patients solely to help them navigate and book appointments with you.\n4. You can revoke location permissions at any time via your device settings, though this may limit your ability to update your clinic address.</string>
     <string name="choose_the_account_that_should_receive_y">Choose the account that should receive your payouts. Finance approval is required before use.</string>
     <string name="mobile_money_provider">Mobile Money Provider</string>
     <string name="mobile_number">Mobile number</string>
@@ -1767,7 +1767,7 @@
     <string name="add">Add</string>
     <string name="category">Category</string>
     <string name="about_harticle">About H-Article</string>
-    <string name="harticle_is_a_curated_health_knowledge_p">H-Article is a curated health knowledge platform designed to provide H-Care users with reliable, expert-backed information.\n\nOur service connects you with the latest medical insights, wellness trends, and daily health tips to help you make informed decisions about your well-being.</string>
+    <string name="harticle_is_a_curated_health_knowledge_p">H-Article is a curated health knowledge platform designed to provide AfyaHASET users with reliable, expert-backed information.\n\nOur service connects you with the latest medical insights, wellness trends, and daily health tips to help you make informed decisions about your well-being.</string>
     <string name="got_it">Got it</string>
     <string name="placeholder_for_tab_content">Placeholder for tab content.</string>
     <string name="were_working_hard_to_bring_this_feature_">We\'re working hard to bring this feature to you soon. Stay tuned for exciting updates!</string>

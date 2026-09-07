@@ -108,7 +108,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
             
             switch (result.getType()) {
                 case TYPE_DOCTOR:
-                    holder.ivIcon.setImageResource(R.drawable.user_md_24);
+                    holder.ivIcon.setImageResource(R.drawable.ic_doctor_24);
                     break;
                 case TYPE_ARTICLE:
                     holder.ivIcon.setImageResource(R.drawable.ic_news_paper);

@@ -321,7 +321,14 @@ public class ProfileFragment extends Fragment {
         
         // Display gender if available (for all users - patient, doctor, admin)
         if (user.getGender() != null && !user.getGender().isEmpty() && tvUserGender != null) {
-            String gender = user.getGender().substring(0, 1).toUpperCase() + user.getGender().substring(1).toLowerCase();
+            String gender = user.getGender();
+            if (gender.equalsIgnoreCase("male")) {
+                gender = getString(R.string.male);
+            } else if (gender.equalsIgnoreCase("female")) {
+                gender = getString(R.string.female);
+            } else {
+                gender = gender.substring(0, 1).toUpperCase() + gender.substring(1).toLowerCase();
+            }
             tvUserGender.setText(getString(R.string.gender_label, gender));
             tvUserGender.setVisibility(View.VISIBLE);
         } else if (tvUserGender != null) {

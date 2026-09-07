@@ -184,8 +184,8 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
                 containerImage.setVisibility(View.VISIBLE);
                 Glide.with(this)
                         .load(article.getImageUrl())
-                        .placeholder(R.drawable.ic_news)
-                        .error(R.drawable.ic_news)
+                        .placeholder(R.drawable.article_icon)
+                        .error(R.drawable.article_icon)
                         .centerCrop()
                         .into(ivArticleImage);
             } else {

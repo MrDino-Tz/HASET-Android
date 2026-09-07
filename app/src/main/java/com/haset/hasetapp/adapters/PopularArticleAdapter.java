@@ -116,19 +116,19 @@ public class PopularArticleAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                         .load(imageUrl)
                         .apply(new RequestOptions()
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                .placeholder(R.drawable.ic_news)
-                                .error(R.drawable.ic_news))
+                                .placeholder(R.drawable.article_icon)
+                                .error(R.drawable.article_icon))
                         .into(ivArticleImage);
             } else if (imagePath != null && !imagePath.isEmpty()) {
                 Glide.with(context)
                         .load(imagePath)
                         .apply(new RequestOptions()
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                .placeholder(R.drawable.ic_news)
-                                .error(R.drawable.ic_news))
+                                .placeholder(R.drawable.article_icon)
+                                .error(R.drawable.article_icon))
                         .into(ivArticleImage);
             } else {
-                ivArticleImage.setImageResource(R.drawable.ic_news);
+                ivArticleImage.setImageResource(R.drawable.article_icon);
             }
 
             itemView.setOnClickListener(v -> {

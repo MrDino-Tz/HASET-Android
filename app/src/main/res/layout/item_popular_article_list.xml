@@ -38,7 +38,7 @@
                 android:id="@+id/ivArticleImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_news"
+                android:src="@drawable/article_icon"
                 android:scaleType="centerCrop"
                 app:shapeAppearanceOverlay="@style/RoundedSquareImage" />
         </FrameLayout>

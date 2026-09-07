@@ -65,7 +65,6 @@
     <string name="gender">Jinsia</string>
     <string name="male">Mwanaume</string>
     <string name="female">Mwanamke</string>
-    <string name="other">Nyingine</string>
     <string name="confirm_password">Thibitisha Nenosiri</string>
     <string name="forgot_password">Umesahau Nenosiri?</string>
     <string name="lets_retrieve_account">Wacha TuRefishe Akaunti Yako</string>
@@ -257,11 +256,11 @@
     <string name="my_posts">Posti Zangu</string>
     <string name="all_users">Watumiaji Wote</string>
     <string name="doctors">Madaktari</string>
-    <string name="haset_admin">Msimamizi wa H-Care</string>
+    <string name="haset_admin">Msimamizi wa AfyaHASET</string>
     <string name="article_liked">Umependa makala</string>
     <string name="article_unliked">Umeondoa pendo</string>
     <string name="comment_posted">Maoni yametumwa</string>
-    <string name="welcome_text_about_us">Karibu kwenye H-Care, mshirika wako unayeaminika kwa huduma ya afya inayopatikana na ya kibinafsi. Madaktari wetu wataalam wanatoa ushauri wa mtandaoni na huduma maalum, wakipa kipaumbele ustawi wako. Jiunge nasi katika safari hii kuelekea afya bora.</string>
+    <string name="welcome_text_about_us">Karibu kwenye AfyaHASET, mshirika wako unayeaminika kwa huduma ya afya inayopatikana na ya kibinafsi. Madaktari wetu wataalam wanatoa ushauri wa mtandaoni na huduma maalum, wakipa kipaumbele ustawi wako. Jiunge nasi katika safari hii kuelekea afya bora.</string>
     <string name="title_activity_notification2">Shughuli ya Arifa</string>
     <string name="tab_text_1">Kichupo cha 1</string>
     <string name="tab_text_2">Kichupo cha 2</string>
@@ -364,7 +363,7 @@
     <string name="qr_code_saved">Msimbo wa QR umehifadhiwa kwenye kifaa</string>
     <string name="qr_code_save_failed">Imeshindwa kuhifadhi msimbo wa QR</string>
     <string name="qr_code_share_failed">Imeshindwa kushiriki msimbo wa QR</string>
-    <string name="share_qr_text">Angalia wasifu wangu kwenye Programu ya H-Care! Mimi ni %1$s naitwa %2$s</string>
+    <string name="share_qr_text">Angalia wasifu wangu kwenye Programu ya AfyaHASET! Mimi ni %1$s naitwa %2$s</string>
     <string name="user_label">Mtumiaji</string>
     <string name="not_provided">Haijatolewa</string>
     <string name="unknown">Haijulikani</string>
@@ -510,7 +509,7 @@
     <string name="duration">Muda (siku)</string>
     <string name="share_app">Sambaza Programu ya AfyaHASET</string>
     <string name="recommend_app">Pendekeza programu hii kwa marafiki</string>
-    <string name="share_app_text">Pakua Programu ya H-Care - Mshirika wako unayeaminika kwa huduma ya afya inayopatikana: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
+    <string name="share_app_text">Pakua Programu ya AfyaHASET - Mshirika wako unayeaminika kwa huduma ya afya inayopatikana: https://play.google.com/store/apps/details?id=com.haset.hasetapp</string>
     <string name="delete">Futa</string>
     <string name="delete_conversation_confirm">Una uhakika unataka kufuta mazungumzo haya na %1$s? Kitendo hiki hakiwezi kutenduliwa.</string>
     <string name="select">Chagua</string>
@@ -566,8 +565,8 @@
     <string name="hours_ago">Saa %d zilizopita</string>
     <string name="day_ago">Siku 1 iliyopita</string>
     <string name="days_ago">Siku %d zilizopita</string>
-    <string name="shared_from">Imeshirikiwa kutoka Programu ya H-Care</string>
-    <string name="haset_post">Chapisho la H-Care</string>
+    <string name="shared_from">Imeshirikiwa kutoka Programu ya AfyaHASET</string>
+    <string name="haset_post">Chapisho la AfyaHASET</string>
 <!--    <string name="share_post_via">Shiriki chapisho kupitia</string>-->
 <!--    <string name="sharing_post">Inashiriki chapisho...</string>-->
 <!--    <string name="feature_coming_soon">Kipengele cha %s kinakuja hivi karibuni!</string>-->
@@ -644,6 +643,7 @@
     <string name="hint_specialty">Utaalamu</string>
     <string name="hint_specialty_example">mf., Kadiolojia, Pediatrician</string>
     <string name="hint_consultation_fee">Ada ya Ushauri</string>
+    <string name="hint_doctor_registration_fee">Ada ya Usajili wa Daktari</string>
     <string name="hint_fee_example">mf., 0</string>
     <string name="hint_location">Mahali</string>
     <string name="hint_location_example">mf., Barabara Kuu 123, Jiji</string>
@@ -781,7 +781,7 @@
 
     <!-- ChatActivity -->
     <string name="service_payment_sent">Ombi la malipo ya huduma limetumwa</string>
-    <string name="secure_payment">Malipo salama</string>
+    <string name="secure_payment">Malipo yako yote yako salama</string>
     <string name="failed_to_send_message">Imeshindikana kutuma ujumbe</string>
     <string name="error_service_payment_minimum">Malipo ya mgonjwa lazima yawe angalau TZS %1$s</string>
     <string name="payment_successful_chat">Malipo yamefaulu!</string>
@@ -1768,9 +1768,9 @@ Pakia bango kamili la picha</string>
     <string name="you_pay_50">Unalipa (50%):</string>
     <string name="str_25000_tzs">25,000 TZS</string>
     <string name="per_service_fee_policy">Sera ya Ada kwa Kila Huduma</string>
-    <string name="the_per_service_fee_is_a_fixed_amount_ch">Ada kwa kila huduma ni kiasi kisichobadilika kinachotozwa kwa kila ushauri au huduma inayofanyika. Ada hii inalipia utaalamu wa daktari, matumizi ya vifaa vya kituo, na gharama za usimamizi. \n\nMambo Muhimu:\n1. Ada hairudishwi baada ya huduma kutolewa.\n2. Huduma za dharura zinaweza kuwa na gharama za ziada.\n3. Kughairi chini ya saa 2 kabla ya miadi kunaweza kusababisha kutozwa sehemu ya ada.\n4. Malipo huchakatwa kwa usalama kupitia app ya H-Care.</string>
+    <string name="the_per_service_fee_is_a_fixed_amount_ch">Ada kwa kila huduma ni kiasi kisichobadilika kinachotozwa kwa kila ushauri au huduma inayofanyika. Ada hii inalipia utaalamu wa daktari, matumizi ya vifaa vya kituo, na gharama za usimamizi. \n\nMambo Muhimu:\n1. Ada hairudishwi baada ya huduma kutolewa.\n2. Huduma za dharura zinaweza kuwa na gharama za ziada.\n3. Kughairi chini ya saa 2 kabla ya miadi kunaweza kusababisha kutozwa sehemu ya ada.\n4. Malipo huchakatwa kwa usalama kupitia app ya AfyaHASET.</string>
     <string name="location_tracking_amp_access_policy">Sera ya Ufuatiliaji na Ruhusa ya Eneo</string>
-    <string name="to_connect_you_with_nearby_patients_and_">Ili kukuunganisha na wagonjwa walio karibu na kuthibitisha anwani ya kliniki yako, H-Care inahitaji ruhusa ya eneo lako.\n\nMambo Muhimu:\n1. Eneo lako sahihi hutumika tu unapoongeza au kusasisha anwani ya kliniki yako.\n2. Hatufuatilii eneo lako muda wote kwa nyuma.\n3. Eneo la kliniki yako huonyeshwa kwa wagonjwa ili kuwasaidia kufika na kuweka miadi.\n4. Unaweza kuondoa ruhusa ya eneo wakati wowote kupitia mipangilio ya kifaa chako, ingawa hii inaweza kupunguza uwezo wako wa kusasisha anwani ya kliniki.</string>
+    <string name="to_connect_you_with_nearby_patients_and_">Ili kukuunganisha na wagonjwa walio karibu na kuthibitisha anwani ya kliniki yako, AfyaHASET inahitaji ruhusa ya eneo lako.\n\nMambo Muhimu:\n1. Eneo lako sahihi hutumika tu unapoongeza au kusasisha anwani ya kliniki yako.\n2. Hatufuatilii eneo lako muda wote kwa nyuma.\n3. Eneo la kliniki yako huonyeshwa kwa wagonjwa ili kuwasaidia kufika na kuweka miadi.\n4. Unaweza kuondoa ruhusa ya eneo wakati wowote kupitia mipangilio ya kifaa chako, ingawa hii inaweza kupunguza uwezo wako wa kusasisha anwani ya kliniki.</string>
     <string name="choose_the_account_that_should_receive_y">Chagua akaunti itakayopokea malipo yako. Idhini ya fedha inahitajika kabla ya kuitumia.</string>
     <string name="mobile_money_provider">Mtoa Huduma wa Mobile Money</string>
     <string name="mobile_number">Namba ya simu</string>
@@ -1782,7 +1782,7 @@ Pakia bango kamili la picha</string>
     <string name="add">Add</string>
     <string name="category">Kipengele</string>
     <string name="about_harticle">About H-Article</string>
-    <string name="harticle_is_a_curated_health_knowledge_p">H-Article is a curated health knowledge platform designed to provide H-Care users with reliable, expert-backed information.\n\nOur service connects you with the latest medical insights, wellness trends, and daily health tips to help you make informed decisions about your well-being.</string>
+    <string name="harticle_is_a_curated_health_knowledge_p">H-Article is a curated health knowledge platform designed to provide AfyaHASET users with reliable, expert-backed information.\n\nOur service connects you with the latest medical insights, wellness trends, and daily health tips to help you make informed decisions about your well-being.</string>
     <string name="got_it">Got it</string>
     <string name="placeholder_for_tab_content">Placeholder for tab content.</string>
     <string name="were_working_hard_to_bring_this_feature_">We\'re working hard to bring this feature to you soon. Stay tuned for exciting updates!</string>
