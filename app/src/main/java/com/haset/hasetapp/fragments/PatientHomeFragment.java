@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.haset.hasetapp.utils.AppTourHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.MemoryMonitor;
 import com.haset.hasetapp.utils.NetworkUtils;
@@ -570,6 +569,10 @@ public class PatientHomeFragment extends Fragment {
         List<AppTourHelper.Step> steps = new ArrayList<>();
         if (profileImageContainer != null) {
             steps.add(new AppTourHelper.Step(profileImageContainer,
+                    R.string.tour_home_welcome_title, R.string.tour_home_welcome_desc));
+        }
+        if (profileImageContainer != null) {
+            steps.add(new AppTourHelper.Step(profileImageContainer,
                     R.string.tour_patient_profile_title, R.string.tour_patient_profile_desc));
         }
         if (ivSearchIconNew != null) {
@@ -608,6 +611,19 @@ public class PatientHomeFragment extends Fragment {
         if (layoutHealthQuote != null) {
             steps.add(new AppTourHelper.Step(layoutHealthQuote,
                     R.string.tour_patient_health_quote_title, R.string.tour_patient_health_quote_desc));
+        }
+        android.app.Activity hostActivity = getActivity();
+        if (hostActivity != null) {
+            View bottomNav = hostActivity.findViewById(R.id.bottomNavigation);
+            if (bottomNav != null) {
+                steps.add(new AppTourHelper.Step(bottomNav,
+                        R.string.tour_dashboard_nav_title, R.string.tour_dashboard_nav_desc));
+            }
+            View fragmentContainer = hostActivity.findViewById(R.id.fragmentContainer);
+            if (fragmentContainer != null) {
+                steps.add(new AppTourHelper.Step(fragmentContainer,
+                        R.string.tour_dashboard_content_title, R.string.tour_dashboard_content_desc));
+            }
         }
         AppTourHelper.showIfFirstTime(this, preferenceManager,
                 AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_HOME_PATIENT, preferenceManager),
@@ -1000,10 +1016,6 @@ public class PatientHomeFragment extends Fragment {
         btnOk.setOnClickListener(v -> dialog.dismiss());
         
         dialog.show();
-        if (getActivity() != null) {
-            AppTourRegistry.showComingSoon(dialog.findViewById(R.id.btnOk).getRootView(),
-                    getActivity(), preferenceManager);
-        }
     }
 
     private void setupBanner() {

@@ -29,7 +29,6 @@ import com.haset.hasetapp.activities.ChatActivity;
 import com.haset.hasetapp.adapters.AppointmentAdapter;
 import com.haset.hasetapp.models.Appointment;
 import com.haset.hasetapp.utils.Constants;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ShimmerHelper;
 import com.haset.hasetapp.utils.FirebaseHelper;
@@ -76,7 +75,6 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         
         viewModel = new ViewModelProvider(requireActivity()).get(AppointmentsViewModel.class);
         setupObservers();
-        AppTourRegistry.showAppointmentsUpcomingTab(view, this, preferenceManager);
     }
     
     @Override
@@ -231,8 +229,6 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         });
 
         dialog.show();
-        AppTourRegistry.showChatStart(dialog.findViewById(R.id.btnStartChat).getRootView(),
-                requireActivity(), preferenceManager);
     }
 
     private void startChatWithPatient(Appointment appointment, long approvedAt) {
@@ -381,7 +377,6 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
         });
         
         bottomSheet.show();
-        AppTourRegistry.showReschedule(dialogView, requireActivity(), preferenceManager);
     }
     
     private void checkRescheduleReady(MaterialButton btnConfirm, String date, String time) {

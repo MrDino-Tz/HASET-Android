@@ -217,7 +217,7 @@ public class DoctorNotificationManager {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_TRENDING_ARTICLES)
-                .setSmallIcon(R.drawable.haset_logo)
+                .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle(title)
                 .setContentText(summary)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(description + "\n\nViews: " + article.getViews()))

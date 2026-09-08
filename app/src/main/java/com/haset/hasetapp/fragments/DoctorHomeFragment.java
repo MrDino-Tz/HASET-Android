@@ -22,7 +22,6 @@ import android.widget.Toast;
 
 import com.google.firebase.database.FirebaseDatabase;
 import com.haset.hasetapp.utils.AppTourHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
 import de.hdodenhof.circleimageview.CircleImageView;
 import com.facebook.shimmer.ShimmerFrameLayout;
@@ -552,6 +551,10 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         }
         View root = getView();
         List<AppTourHelper.Step> steps = new ArrayList<>();
+        if (profileImageContainer != null) {
+            steps.add(new AppTourHelper.Step(profileImageContainer,
+                    R.string.tour_home_welcome_title, R.string.tour_home_welcome_desc));
+        }
         if (llOnlineStatus != null) {
             steps.add(new AppTourHelper.Step(llOnlineStatus,
                     R.string.tour_doctor_online_title, R.string.tour_doctor_online_desc));
@@ -605,6 +608,19 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         if (btnViewAll != null) {
             steps.add(new AppTourHelper.Step(btnViewAll,
                     R.string.tour_doctor_view_all_title, R.string.tour_doctor_view_all_desc));
+        }
+        android.app.Activity hostActivity = getActivity();
+        if (hostActivity != null) {
+            View bottomNav = hostActivity.findViewById(R.id.bottomNavigation);
+            if (bottomNav != null) {
+                steps.add(new AppTourHelper.Step(bottomNav,
+                        R.string.tour_dashboard_nav_title, R.string.tour_dashboard_nav_desc));
+            }
+            View fragmentContainer = hostActivity.findViewById(R.id.fragmentContainer);
+            if (fragmentContainer != null) {
+                steps.add(new AppTourHelper.Step(fragmentContainer,
+                        R.string.tour_dashboard_content_title, R.string.tour_dashboard_content_desc));
+            }
         }
         AppTourHelper.showIfFirstTime(this, preferenceManager,
                 AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_HOME_DOCTOR, preferenceManager),
@@ -733,8 +749,6 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
         });
 
         dialog.show();
-        AppTourRegistry.showChatStart(dialog.findViewById(R.id.btnStartChat).getRootView(),
-                requireActivity(), preferenceManager);
     }
 
     private void startChatWithPatient(Appointment appointment, long approvedAt) {
@@ -1050,7 +1064,6 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             resubmitDocumentsDialog = null;
         });
         resubmitDocumentsDialog.show();
-        AppTourRegistry.showResubmitDocuments(dialogView, requireActivity(), preferenceManager);
         String userId = preferenceManager.getUserId();
         if (userId != null && !userId.isEmpty()) {
             preloadResubmitNin(userId);

@@ -19,7 +19,6 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.button.MaterialButton;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.utils.PreferenceManager;
-import com.haset.hasetapp.utils.AppTourRegistry;
 
 import java.util.Arrays;
 import java.util.List;
@@ -96,7 +95,6 @@ public class OnboardingActivity extends BaseActivity {
             }
         });
         updateDots(0);
-        viewPager.post(() -> AppTourRegistry.showOnboarding(this, new PreferenceManager(this)));
     }
 
     private void animatePageTransition(int nextPosition) {

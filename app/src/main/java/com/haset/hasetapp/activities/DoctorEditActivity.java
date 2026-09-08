@@ -31,7 +31,6 @@ import androidx.core.app.ActivityCompat;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.DoctorEntity;
 import com.haset.hasetapp.models.Doctor;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
@@ -94,7 +93,6 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
         
         loadDoctorData();
         setupClickListeners();
-        AppTourRegistry.showDoctorEdit(this, preferenceManager);
     }
 
     private void setupObservers() {

@@ -175,11 +175,6 @@ public class PrescriptionDetailFragment extends Fragment {
                     new com.haset.hasetapp.adapters.MedicineAdapter(prescription.getMedicines());
             recyclerViewMedicines.setAdapter(adapter);
         }
-
-        if (getView() != null && preferenceManager != null) {
-            com.haset.hasetapp.utils.AppTourRegistry.showPrescriptionDetail(
-                    this, preferenceManager, getView());
-        }
     }
 
     private void viewImage(boolean visible) {

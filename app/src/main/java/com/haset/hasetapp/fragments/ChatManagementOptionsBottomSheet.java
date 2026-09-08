@@ -12,8 +12,6 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.utils.AppTourRegistry;
-import com.haset.hasetapp.utils.PreferenceManager;
 
 public class ChatManagementOptionsBottomSheet extends BottomSheetDialogFragment {
 
@@ -37,7 +35,6 @@ public class ChatManagementOptionsBottomSheet extends BottomSheetDialogFragment 
             dismiss();
         });
 
-        AppTourRegistry.showChatManagement(view, this, new PreferenceManager(requireContext()));
         return view;
     }
 }

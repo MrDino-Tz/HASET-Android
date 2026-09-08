@@ -26,7 +26,6 @@ import com.haset.hasetapp.utils.NotificationBadgeHelper;
 import com.haset.hasetapp.utils.PatientNotificationManager;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.AppTourHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.HealthTipsHelper;
 import com.haset.hasetapp.utils.StatusBarHelper;
 import com.haset.hasetapp.utils.ThemeHelper;
@@ -67,7 +66,6 @@ public class DashboardActivity extends BaseActivity {
 
         setupBottomNavigation();
         loadInitialFragment();
-        bottomNavigation.post(() -> AppTourRegistry.showDashboard(DashboardActivity.this, preferenceManager));
 
         // Token refresh can happen before authentication. Always bind the
         // current installation token to the signed-in user on dashboard entry.
@@ -305,10 +303,6 @@ public class DashboardActivity extends BaseActivity {
                         .hideNegativeButton();
                 tipDialog.setPositiveButton(getString(android.R.string.ok), v -> tipDialog.dismiss());
                 tipDialog.show();
-                if (tipDialog.getContentView() != null) {
-                    AppTourRegistry.showCustomDialog(tipDialog.getContentView(), DashboardActivity.this,
-                            preferenceManager, AppTourHelper.TOUR_HEALTH_TIP, false);
-                }
             }
 
             // Avoid showing the same tip again after an activity recreation.
@@ -333,10 +327,6 @@ public class DashboardActivity extends BaseActivity {
         exitDialog.setNegativeButton("Stay", v -> exitDialog.dismiss());
         
         exitDialog.show();
-        if (exitDialog.getContentView() != null) {
-            AppTourRegistry.showCustomDialogDevice(exitDialog.getContentView(), this, preferenceManager,
-                    AppTourHelper.TOUR_EXIT_APP, true);
-        }
     }
 
     @Override

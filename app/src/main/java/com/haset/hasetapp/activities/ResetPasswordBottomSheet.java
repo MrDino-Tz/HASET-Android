@@ -20,7 +20,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ValidationUtils;
 
@@ -94,7 +93,6 @@ public class ResetPasswordBottomSheet extends BottomSheetDialogFragment {
         }
 
         btnResetPassword.setOnClickListener(v -> attemptReset());
-        AppTourRegistry.showResetPassword(view, this, new PreferenceManager(requireContext()));
     }
 
     private void attemptReset() {

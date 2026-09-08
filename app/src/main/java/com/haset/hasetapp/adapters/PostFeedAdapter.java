@@ -23,7 +23,6 @@ import com.haset.hasetapp.utils.ProfilePhotoHelper;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import com.haset.hasetapp.utils.AuditLogger;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -727,9 +726,6 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         loadCommentsFromFirebase(post.getPostId(), commentList, commentsAdapter);
         
         bottomSheetDialog.show();
-        if (context instanceof android.app.Activity) {
-            AppTourRegistry.showPostComments(bottomSheetView, (android.app.Activity) context, preferenceManager);
-        }
     }
     
     /**
@@ -1096,9 +1092,6 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
         });
         
         bottomSheetDialog.show();
-        if (context instanceof android.app.Activity) {
-            AppTourRegistry.showArticleOptions(bottomSheetView, (android.app.Activity) context, preferenceManager);
-        }
     }
 
     static class PostViewHolder extends RecyclerView.ViewHolder {

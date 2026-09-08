@@ -24,7 +24,6 @@ import com.haset.hasetapp.utils.AppRatingHelper;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.HealthTipsHelper;
 import com.haset.hasetapp.utils.NotificationHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.StatusBarHelper;
 
@@ -62,7 +61,6 @@ public class MainActivity extends LocalizedAppCompatActivity {
         
         // Configure status bar for better visibility
         StatusBarHelper.configureStatusBar(this);
-        AppTourRegistry.showMain(this, preferenceManager);
     }
 
     private void setupNotificationPermissionLauncher() {

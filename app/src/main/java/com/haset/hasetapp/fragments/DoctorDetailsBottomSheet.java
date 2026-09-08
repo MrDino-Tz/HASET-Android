@@ -20,7 +20,6 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.BookAppointmentActivity;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.Constants;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
 
 import java.util.List;
@@ -97,9 +96,6 @@ public class DoctorDetailsBottomSheet extends BottomSheetDialogFragment {
         }
 
         toolbar.setNavigationOnClickListener(v -> dismiss());
-
-        view.post(() -> AppTourRegistry.showDoctorDetails(this,
-                new com.haset.hasetapp.utils.PreferenceManager(requireContext()), view));
     }
 
     private void updateUI(Doctor doctor) {

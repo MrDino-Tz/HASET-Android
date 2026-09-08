@@ -13,8 +13,6 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.utils.AppTourRegistry;
-import com.haset.hasetapp.utils.PreferenceManager;
 
 public class FileAttachmentBottomSheet extends BottomSheetDialogFragment {
 
@@ -92,7 +90,6 @@ public class FileAttachmentBottomSheet extends BottomSheetDialogFragment {
             dismiss();
         });
 
-        AppTourRegistry.showFileAttachment(view, this, new PreferenceManager(requireContext()));
         return view;
     }
 

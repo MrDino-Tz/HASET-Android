@@ -10,9 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.browser.customtabs.CustomTabsIntent;
 
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.Constants;
-import com.haset.hasetapp.utils.PreferenceManager;
 
 public class ServiceAgreementActivity extends LocalizedAppCompatActivity {
     
@@ -27,7 +25,6 @@ public class ServiceAgreementActivity extends LocalizedAppCompatActivity {
         
         initViews();
         setupClickListeners();
-        AppTourRegistry.showServiceAgreement(this, new PreferenceManager(this));
     }
     
     private void initViews() {
