@@ -39,6 +39,7 @@ import com.haset.hasetapp.fragments.ChatMoreOptionsBottomSheet; // Import the ne
 import com.haset.hasetapp.fragments.ChatManagementOptionsBottomSheet; // Import ChatManagementOptionsBottomSheet
 import com.haset.hasetapp.fragments.FileAttachmentBottomSheet; // Import FileAttachmentBottomSheet
 import com.haset.hasetapp.utils.FileUploadHelper; // Import FileUploadHelper
+import com.haset.hasetapp.utils.CloudinaryUploadHelper;
 import com.haset.hasetapp.utils.VoiceRecordingBottomSheet; // Import VoiceRecordingBottomSheet
 import com.haset.hasetapp.utils.VoicePlayerManager; // Import VoicePlayerManager
 import com.haset.hasetapp.utils.OptimizedVoiceRecorderHelper; // Import OptimizedVoiceRecorderHelper
@@ -1939,19 +1940,32 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         }
     }
     
-    private String getMimeType(String type, String url) {
+    private String getMimeType(String type, String url, String fileName) {
         if ("image".equalsIgnoreCase(type)) return "image/*";
         if ("video".equalsIgnoreCase(type)) return "video/*";
         if ("audio".equalsIgnoreCase(type)) return "audio/*";
-        
-        // For documents, try to be more specific based on extension
-        String path = Uri.parse(url).getPath();
-        if (path == null) return "*/*";
 
+        String fromName = mimeFromPath(fileName);
+        if (fromName != null) return fromName;
+
+        String fromUrl = mimeFromPath(url != null ? Uri.parse(url).getPath() : null);
+        if (fromUrl != null) return fromUrl;
+
+        // Chat documents are almost always PDFs when extension is missing (Cloudinary raw URLs).
+        if ("document".equalsIgnoreCase(type)) return "application/pdf";
+        return "*/*";
+    }
+
+    private String mimeFromPath(String path) {
+        if (path == null || path.trim().isEmpty()) return null;
         int extensionStart = path.lastIndexOf('.');
-        if (extensionStart < 0 || extensionStart == path.length() - 1) return "*/*";
-
+        if (extensionStart < 0 || extensionStart == path.length() - 1) return null;
         String extension = path.substring(extensionStart + 1).toLowerCase(java.util.Locale.US);
+        // Strip query/fragment leftovers if present
+        int cut = extension.indexOf('?');
+        if (cut >= 0) extension = extension.substring(0, cut);
+        cut = extension.indexOf('#');
+        if (cut >= 0) extension = extension.substring(0, cut);
         switch (extension) {
             case "pdf": return "application/pdf";
             case "doc":
@@ -1961,7 +1975,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
             case "ppt":
             case "pptx": return "application/vnd.ms-powerpoint";
             case "txt": return "text/plain";
-            default: return "*/*";
+            default: return null;
         }
     }
 
@@ -1969,8 +1983,9 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         String url = message.getAttachmentUrl();
         if (url == null || url.isEmpty()) return;
 
-        String mimeType = getMimeType(message.getMessageType(), url);
+        url = CloudinaryUploadHelper.toPublicDeliveryUrl(url);
         String fileName = message.getAttachmentFileName();
+        String mimeType = getMimeType(message.getMessageType(), url, fileName);
         Uri uri = Uri.parse(url);
 
         if ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) {
@@ -2011,7 +2026,10 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                 }
             } catch (Exception e) {
                 Log.e("ChatActivity", "Failed to download document before opening", e);
-                runOnUiThread(() -> Toast.makeText(this, "File is not accessible. Please upload it again.", Toast.LENGTH_LONG).show());
+                String msg = e.getMessage() != null && e.getMessage().contains("401")
+                        ? "This PDF is not publicly accessible. Ask the sender to re-upload it."
+                        : "File is not accessible. Please upload it again.";
+                runOnUiThread(() -> Toast.makeText(this, msg, Toast.LENGTH_LONG).show());
             }
         }).start();
     }

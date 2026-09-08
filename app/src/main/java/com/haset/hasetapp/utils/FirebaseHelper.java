@@ -3,8 +3,6 @@ package com.haset.hasetapp.utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.haset.hasetapp.database.entities.AppointmentEntity;
 import com.haset.hasetapp.database.entities.DoctorRatingEntity;
 import com.haset.hasetapp.database.entities.UserEntity;
@@ -33,7 +31,6 @@ public class FirebaseHelper {
 
     private static FirebaseAuth mAuth;
     private static FirebaseDatabase mDatabase;
-    private static FirebaseStorage mStorage;
 
     // Singleton instance not needed if methods are static, but for compatibility:
     private static FirebaseHelper instance;
@@ -157,13 +154,6 @@ public class FirebaseHelper {
         return mDatabase;
     }
 
-    public static FirebaseStorage getFirebaseStorage() {
-        if (mStorage == null) {
-            mStorage = FirebaseStorage.getInstance();
-        }
-        return mStorage;
-    }
-
     /** True when the signed-in user has an email/password provider and can change password in-app. */
     public static boolean canChangePassword() {
         FirebaseUser user = getFirebaseAuth().getCurrentUser();
@@ -224,11 +214,6 @@ public class FirebaseHelper {
     // Optional: Methods to get specific database references if common
     public static DatabaseReference getUsersRef() {
         return getFirebaseDatabase().getReference("users");
-    }
-
-    // Optional: Methods to get specific storage references if common
-    public static StorageReference getProfilePhotosStorageRef() {
-        return getFirebaseStorage().getReference("profile_photos");
     }
 
     // Appointments methods
@@ -1388,25 +1373,19 @@ public class FirebaseHelper {
         CrashMonitor.step("profile", "FirebaseHelper.deleteUserAccount", "deleting account data for " + userId);
 
         DatabaseReference db = getFirebaseDatabase().getReference();
-        
-        // 1. Delete profile image from Storage
-        StorageReference photoRef = getProfilePhotosStorageRef().child(userId + ".jpg");
-        photoRef.delete().addOnCompleteListener(task -> {
-            
-            // 2. Perform batch deletion using Map for atomicity where possible
-            java.util.Map<String, Object> updates = new java.util.HashMap<>();
-            
-            // Nodes to delete directly
-            updates.put("users/" + userId, null);
-            updates.put("doctors/" + userId, null);
-            updates.put("doctor_wallets/" + userId, null);
-            updates.put("patient_appointments/" + userId, null);
-            updates.put("doctor_appointments/" + userId, null);
-            updates.put("user_conversations/" + userId, null);
-            
-            db.updateChildren(updates).addOnCompleteListener(dbTask -> {
-                
-                // 3. Delete appointments and posts (requires query-then-delete)
+
+        // Profile photos are on Cloudinary (not Firebase Storage). Wipe RTDB nodes next.
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("users/" + userId, null);
+        updates.put("doctors/" + userId, null);
+        updates.put("doctor_wallets/" + userId, null);
+        updates.put("patient_appointments/" + userId, null);
+        updates.put("doctor_appointments/" + userId, null);
+        updates.put("user_conversations/" + userId, null);
+
+        db.updateChildren(updates).addOnCompleteListener(dbTask -> {
+
+                // 3. Delete appointments, posts, and orphaned doctor reviews
                 getAppointmentsRef().orderByChild("patientId").equalTo(userId).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -1416,36 +1395,28 @@ public class FirebaseHelper {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot2) {
                                 for (DataSnapshot s : snapshot2.getChildren()) s.getRef().removeValue();
-                                
-                                getFirebaseDatabase().getReference("article_posts").orderByChild("authorId").equalTo(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+
+                                // Delete reviews written by or about this user
+                                getDoctorRatingsRef().orderByChild("patientId").equalTo(userId)
+                                        .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot3) {
-                                        for (DataSnapshot s : snapshot3.getChildren()) s.getRef().removeValue();
-                                        
-                                        // 4. Final step: Auth Deletion
-                                        FirebaseUser user = getFirebaseAuth().getCurrentUser();
-                                        if (user != null && user.getUid().equals(userId)) {
-                                            user.delete().addOnCompleteListener(authTask -> {
-                                                if (authTask.isSuccessful()) {
-                                                    CrashMonitor.breadcrumb("account auth deleted " + userId);
-                                                    listener.onSuccess(null);
-                                                } else {
-                                                    Exception exception = authTask.getException();
-                                                    CrashMonitor.report("profile", "FirebaseHelper.deleteUserAccount",
-                                                            "account auth deletion failed: " + (exception != null ? exception.getMessage() : "unknown"), exception);
-                                                    if (exception instanceof com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
-                                                        listener.onError("Session expired. Please log out and log in again to delete your account.");
-                                                    } else {
-                                                        // Data is wiped, auth might still exist but we report success
-                                                        listener.onSuccess(null);
-                                                    }
-                                                }
-                                            });
-                                        } else {
-                                            listener.onSuccess(null);
-                                        }
+                                    public void onDataChange(@NonNull DataSnapshot ratingSnap) {
+                                        for (DataSnapshot s : ratingSnap.getChildren()) s.getRef().removeValue();
+                                        getDoctorRatingsRef().orderByChild("doctorId").equalTo(userId)
+                                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot ratingSnap2) {
+                                                for (DataSnapshot s : ratingSnap2.getChildren()) s.getRef().removeValue();
+                                                deleteArticlePostsThenAuth(userId, listener);
+                                            }
+                                            @Override public void onCancelled(@NonNull DatabaseError e) {
+                                                deleteArticlePostsThenAuth(userId, listener);
+                                            }
+                                        });
                                     }
-                                    @Override public void onCancelled(@NonNull DatabaseError e) { listener.onSuccess(null); }
+                                    @Override public void onCancelled(@NonNull DatabaseError e) {
+                                        deleteArticlePostsThenAuth(userId, listener);
+                                    }
                                 });
                             }
                             @Override public void onCancelled(@NonNull DatabaseError e) { listener.onSuccess(null); }
@@ -1454,12 +1425,95 @@ public class FirebaseHelper {
                     @Override public void onCancelled(@NonNull DatabaseError e) { listener.onSuccess(null); }
                 });
             });
+    }
+
+    private static void deleteArticlePostsThenAuth(String userId, OnCompleteListener<Void> listener) {
+        getFirebaseDatabase().getReference("article_posts").orderByChild("authorId").equalTo(userId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot3) {
+                for (DataSnapshot s : snapshot3.getChildren()) {
+                    String postId = s.getKey();
+                    s.getRef().removeValue();
+                    if (postId != null) {
+                        getFirebaseDatabase().getReference("post_likes").child(postId).removeValue();
+                        getFirebaseDatabase().getReference("post_comments").child(postId).removeValue();
+                    }
+                }
+
+                FirebaseUser user = getFirebaseAuth().getCurrentUser();
+                if (user != null && user.getUid().equals(userId)) {
+                    user.delete().addOnCompleteListener(authTask -> {
+                        if (authTask.isSuccessful()) {
+                            CrashMonitor.breadcrumb("account auth deleted " + userId);
+                            listener.onSuccess(null);
+                        } else {
+                            Exception exception = authTask.getException();
+                            CrashMonitor.report("profile", "FirebaseHelper.deleteUserAccount",
+                                    "account auth deletion failed: " + (exception != null ? exception.getMessage() : "unknown"), exception);
+                            if (exception instanceof com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
+                                listener.onError("Session expired. Please log out and log in again to delete your account.");
+                            } else {
+                                listener.onSuccess(null);
+                            }
+                        }
+                    });
+                } else {
+                    listener.onSuccess(null);
+                }
+            }
+            @Override public void onCancelled(@NonNull DatabaseError e) { listener.onSuccess(null); }
         });
     }
 
     // Rating methods
     public static DatabaseReference getDoctorRatingsRef() {
         return getFirebaseDatabase().getReference(Constants.DOCTOR_RATINGS_PATH);
+    }
+
+    /** Deletes a review and recomputes the doctor's averageRating / patientsTreated. */
+    public static void deleteDoctorRating(String ratingId, String doctorId, OnCompleteListener<Void> listener) {
+        if (ratingId == null || ratingId.isEmpty()) {
+            if (listener != null) listener.onError("Rating ID is required");
+            return;
+        }
+        getDoctorRatingsRef().child(ratingId).removeValue()
+                .addOnSuccessListener(aVoid -> {
+                    if (doctorId == null || doctorId.isEmpty()) {
+                        if (listener != null) listener.onSuccess(null);
+                        return;
+                    }
+                    getDoctorRatingsRef().orderByChild("doctorId").equalTo(doctorId)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    double sum = 0;
+                                    int count = 0;
+                                    for (DataSnapshot child : snapshot.getChildren()) {
+                                        DoctorRatingEntity r = child.getValue(DoctorRatingEntity.class);
+                                        if (r != null) {
+                                            sum += r.getRating();
+                                            count++;
+                                        }
+                                    }
+                                    java.util.Map<String, Object> updates = new java.util.HashMap<>();
+                                    updates.put("averageRating", count > 0 ? (sum / count) : 0.0);
+                                    updates.put("patientsTreated", count);
+                                    getDoctorsNodeRef().child(doctorId).updateChildren(updates)
+                                            .addOnCompleteListener(t -> {
+                                                if (listener != null) listener.onSuccess(null);
+                                            });
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    if (listener != null) listener.onSuccess(null);
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    if (listener != null) listener.onError(e.getMessage());
+                });
     }
 
     public static void submitDoctorRating(DoctorRatingEntity rating, OnCompleteListener<Void> listener) {

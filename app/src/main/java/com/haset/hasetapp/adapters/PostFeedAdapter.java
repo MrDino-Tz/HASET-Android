@@ -315,16 +315,26 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                     new ArticlePostHelper.OnCompleteListener<Boolean>() {
                         @Override
                         public void onSuccess(Boolean isLikedResult) {
-                            // Keep cache in sync with server truth
                             likedPostsCache.put(post.getPostId(), isLikedResult);
-                            if (isLikedResult != newLikedState) {
-                                post.setLikes(isLikedResult ? currentLikes + 1 : Math.max(0, currentLikes - 1));
-                                isLiked.set(isLikedResult);
-                                updateLikeUI(holder, isLikedResult, post.getLikes());
-                            }
+                            isLiked.set(isLikedResult);
+                            articlePostHelper.getLikeCount(post.getPostId(),
+                                    new ArticlePostHelper.OnCompleteListener<Integer>() {
+                                        @Override
+                                        public void onSuccess(Integer count) {
+                                            int safe = count != null ? count : (isLikedResult ? currentLikes + 1 : Math.max(0, currentLikes - 1));
+                                            post.setLikes(safe);
+                                            updateLikeUI(holder, isLikedResult, safe);
+                                            if (holder.btnLike != null) holder.btnLike.setEnabled(true);
+                                        }
+
+                                        @Override
+                                        public void onError(String error) {
+                                            post.setLikes(isLikedResult ? currentLikes + 1 : Math.max(0, currentLikes - 1));
+                                            updateLikeUI(holder, isLikedResult, post.getLikes());
+                                            if (holder.btnLike != null) holder.btnLike.setEnabled(true);
+                                        }
+                                    });
                             AuditLogger.getInstance(context).logPostLiked(post.getPostId(), isLikedResult, post.getType());
-                            if (holder.btnLike != null) holder.btnLike.setEnabled(true);
-                            
                             String message = isLikedResult ? context.getString(R.string.article_liked) : context.getString(R.string.article_unliked);
                             Snackbar.make(holder.itemView, message, Snackbar.LENGTH_SHORT).show();
                         }

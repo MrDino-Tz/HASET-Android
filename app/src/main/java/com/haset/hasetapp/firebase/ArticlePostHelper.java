@@ -61,6 +61,9 @@ public class ArticlePostHelper {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
                         if (post != null) {
+                            if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                                post.setPostId(snapshot.getKey());
+                            }
                             posts.add(post);
                         }
                     }
@@ -80,10 +83,13 @@ public class ArticlePostHelper {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
                         if (post != null) {
+                            if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                                post.setPostId(snapshot.getKey());
+                            }
                             posts.add(post);
                         }
                     }
-                    listener.onSuccess(posts);
+                    loadInteractionCounts(posts, listener);
                 })
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
@@ -99,6 +105,9 @@ public class ArticlePostHelper {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
                         if (post != null && "published".equals(post.getStatus())) {
+                            if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                                post.setPostId(snapshot.getKey());
+                            }
                             posts.add(post);
                         }
                     }
@@ -137,6 +146,9 @@ public class ArticlePostHelper {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
                         if (post != null && "published".equals(post.getStatus())) {
+                            if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                                post.setPostId(snapshot.getKey());
+                            }
                             posts.add(post);
                         }
                     }
@@ -249,6 +261,20 @@ public class ArticlePostHelper {
     /**
      * Check if a user has liked a post
      */
+    public void getLikeCount(String postId, OnCompleteListener<Integer> listener) {
+        if (postId == null || postId.isEmpty()) {
+            listener.onSuccess(0);
+            return;
+        }
+        FirebaseHelper.getInstance().getDatabaseReference()
+                .child("post_likes").child(postId).get()
+                .addOnSuccessListener(snap -> listener.onSuccess((int) snap.getChildrenCount()))
+                .addOnFailureListener(e -> listener.onSuccess(0));
+    }
+
+    /**
+     * Check if a user has liked a post
+     */
     public void isPostLikedByUser(String postId, String userId, OnCompleteListener<Boolean> listener) {
         if (postId == null || postId.isEmpty() || userId == null || userId.isEmpty()) {
             listener.onSuccess(false);
@@ -333,8 +359,16 @@ public class ArticlePostHelper {
      * Delete an article
      */
     public void deleteArticle(String postId, OnCompleteListener<Void> listener) {
-        articlePostsRef.child(postId)
-                .removeValue()
+        if (postId == null || postId.isEmpty()) {
+            listener.onError("Post ID is required");
+            return;
+        }
+        DatabaseReference root = FirebaseHelper.getInstance().getDatabaseReference();
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("article_posts/" + postId, null);
+        updates.put("post_likes/" + postId, null);
+        updates.put("post_comments/" + postId, null);
+        root.updateChildren(updates)
                 .addOnSuccessListener(aVoid -> listener.onSuccess(null))
                 .addOnFailureListener(e -> listener.onError(e.getMessage()));
     }
@@ -350,6 +384,9 @@ public class ArticlePostHelper {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
                         if (post != null && "published".equals(post.getStatus()) && post.getViews() >= 50) {
+                            if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                                post.setPostId(snapshot.getKey());
+                            }
                             posts.add(post);
                         }
                     }

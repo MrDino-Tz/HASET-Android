@@ -6,10 +6,10 @@
         </trust-anchors>
     </base-config>
 
-    <!-- Firebase Storage -->
+    <!-- Cloudinary CDN -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">firebasestorage.googleapis.com</domain>
-        <domain includeSubdomains="true">storage.googleapis.com</domain>
+        <domain includeSubdomains="true">res.cloudinary.com</domain>
+        <domain includeSubdomains="true">api.cloudinary.com</domain>
     </domain-config>
 
     <!-- Production API Domain -->

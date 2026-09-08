@@ -290,14 +290,30 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
                     @Override
                     public void onSuccess(Boolean result) {
                         likeInteractionPending = false;
-                        if (result != null && result != newLikedState) {
+                        if (result != null) {
                             isLiked = result;
-                            article.setLikes(Math.max(0, article.getLikes() + (result ? 2 : -2)));
-                            runOnUiThread(() -> {
-                                updateLikeIcon();
-                                updateStats();
-                            });
                         }
+                        articlePostHelper.getLikeCount(article.getPostId(),
+                                new ArticlePostHelper.OnCompleteListener<Integer>() {
+                                    @Override
+                                    public void onSuccess(Integer count) {
+                                        if (count != null) {
+                                            article.setLikes(count);
+                                        }
+                                        runOnUiThread(() -> {
+                                            updateLikeIcon();
+                                            updateStats();
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onError(String error) {
+                                        runOnUiThread(() -> {
+                                            updateLikeIcon();
+                                            updateStats();
+                                        });
+                                    }
+                                });
                         AuditLogger.getInstance(ArticleDetailActivity.this)
                                 .logPostLiked(article.getPostId(), result, article.getType());
                     }
