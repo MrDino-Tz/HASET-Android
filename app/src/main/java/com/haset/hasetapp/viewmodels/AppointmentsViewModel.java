@@ -48,7 +48,8 @@ public class AppointmentsViewModel extends AndroidViewModel {
             List<Appointment> filtered = new ArrayList<>();
             if (appointments != null) {
                 for (Appointment a : appointments) {
-                    if (Constants.STATUS_PENDING.equalsIgnoreCase(a.getStatus())) {
+                    if (Constants.STATUS_PENDING.equalsIgnoreCase(a.getStatus())
+                            && !a.isHiddenFromDoctorUntilPaid()) {
                         filtered.add(a);
                     }
                 }

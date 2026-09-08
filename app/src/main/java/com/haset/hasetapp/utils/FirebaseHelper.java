@@ -483,7 +483,14 @@ public class FirebaseHelper {
                     getAppointmentsRef().child(id).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
                         @Override public void onDataChange(@NonNull DataSnapshot item) {
                             AppointmentEntity value = item.getValue(AppointmentEntity.class);
-                            if (value != null) result.add(value);
+                            if (value != null) {
+                                if (Constants.ROLE_DOCTOR.equalsIgnoreCase(role)
+                                        && isHiddenFromDoctorUntilPaid(value)) {
+                                    // Skip unpaid / awaiting_payment drafts for doctors
+                                } else {
+                                    result.add(value);
+                                }
+                            }
                             if (--remaining[0] == 0) listener.onSuccess(result);
                         }
                         @Override public void onCancelled(@NonNull DatabaseError error) { listener.onError(error.getMessage()); }
@@ -500,7 +507,20 @@ public class FirebaseHelper {
         void onError(String error);
     }
 
-    // Appointments methods using OnCompleteListener
+    /** Unpaid / pre-payment drafts must not appear in doctor approval queues. */
+    private static boolean isHiddenFromDoctorUntilPaid(AppointmentEntity appointment) {
+        if (appointment == null) return true;
+        String status = appointment.getStatus();
+        if (Constants.STATUS_AWAITING_PAYMENT.equalsIgnoreCase(status)) {
+            return true;
+        }
+        // Only paid pending requests need doctor approval; legacy unpaid/missing stay hidden.
+        if (Constants.STATUS_PENDING.equalsIgnoreCase(status)) {
+            return !Constants.PAYMENT_STATUS_PAID.equalsIgnoreCase(appointment.getPaymentStatus());
+        }
+        return false;
+    }
+
     public static void createAppointment(AppointmentEntity appointment, OnCompleteListener<AppointmentEntity> listener) {
         DatabaseReference appointmentsRef = getAppointmentsRef();
         String appointmentId = appointment.getAppointmentId();
@@ -546,7 +566,11 @@ public class FirebaseHelper {
                 List<AppointmentEntity> appointments = new ArrayList<>();
                 for (com.google.firebase.database.DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     AppointmentEntity appointment = snapshot.getValue(AppointmentEntity.class);
-                    if (appointment != null) appointments.add(appointment);
+                    if (appointment == null) continue;
+                    if (Constants.ROLE_DOCTOR.equalsIgnoreCase(role) && isHiddenFromDoctorUntilPaid(appointment)) {
+                        continue;
+                    }
+                    appointments.add(appointment);
                 }
                 if (appointments.isEmpty()) {
                     getAppointmentsByIndex(userId, role, listener);
@@ -576,7 +600,9 @@ public class FirebaseHelper {
                                 @Override
                                 public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot appointmentSnapshot) {
                                     AppointmentEntity appointment = appointmentSnapshot.getValue(AppointmentEntity.class);
-                                    if (appointment != null && appointment.getStatus().equalsIgnoreCase(status)) {
+                                    if (appointment != null
+                                            && appointment.getStatus().equalsIgnoreCase(status)
+                                            && !isHiddenFromDoctorUntilPaid(appointment)) {
                                         filteredAppointments.add(appointment);
                                     }
                                     if (++snapshotCount == dataSnapshot.getChildrenCount()) {

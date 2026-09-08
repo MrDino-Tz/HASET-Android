@@ -19,6 +19,7 @@ public class Appointment {
     private long createdAt;
     private long updatedAt;
     private double amount;
+    private String paymentStatus; // "paid" | "unpaid" — doctors only see pending when paid
 
     public Appointment() {
         this.status = "pending";
@@ -54,6 +55,7 @@ public class Appointment {
         this.createdAt = entity.getCreatedAt();
         this.updatedAt = System.currentTimeMillis(); // Assuming update time should be current
         this.amount = entity.getAmount();
+        this.paymentStatus = entity.getPaymentStatus();
     }
 
     // Getters and Setters
@@ -101,6 +103,20 @@ public class Appointment {
 
     public double getAmount() { return amount; }
     public void setAmount(double amount) { this.amount = amount; }
+
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    /** True when payment never completed — must not appear in doctor approval queues. */
+    public boolean isHiddenFromDoctorUntilPaid() {
+        if ("awaiting_payment".equalsIgnoreCase(status)) {
+            return true;
+        }
+        if (!"pending".equalsIgnoreCase(status)) {
+            return false;
+        }
+        return !"paid".equalsIgnoreCase(paymentStatus);
+    }
 
     // Utility methods for tab filtering
     public boolean isUpcoming() {

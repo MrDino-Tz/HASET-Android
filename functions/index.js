@@ -17,17 +17,25 @@ exports.onNewAppointment = functions.database
     const before = change.before.val();
     const after = change.after.val();
 
-    // Only fire on creation (before was null)
-    if (before !== null) {
-      return null;
-    }
-
     if (!after) {
       return null;
     }
 
-    // Only notify for pending appointments (new bookings)
-    if (after.status !== 'pending') {
+    // Only fire for paid bookings that need doctor approval.
+    // Pre-payment drafts use status=awaiting_payment and must not notify.
+    // Notify on create of paid pending, or promote awaiting_payment → pending+paid.
+    const isFreshPaidPending =
+      before === null &&
+      after.status === 'pending' &&
+      after.paymentStatus === 'paid';
+
+    const becamePaidPending =
+      before != null &&
+      before.status === 'awaiting_payment' &&
+      after.status === 'pending' &&
+      after.paymentStatus === 'paid';
+
+    if (!isFreshPaidPending && !becamePaidPending) {
       return null;
     }
 

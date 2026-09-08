@@ -74,6 +74,14 @@ public class AppointmentRepository {
     }
 
     public void updateAppointmentStatus(Appointment appointment, String status, FirebaseHelper.OnCompleteListener<Void> callback) {
+        if (appointment != null
+                && Constants.STATUS_APPROVED.equalsIgnoreCase(status)
+                && appointment.isHiddenFromDoctorUntilPaid()) {
+            if (callback != null) {
+                callback.onError("Payment not completed for this appointment.");
+            }
+            return;
+        }
         AppointmentEntity entity = new AppointmentEntity(appointment, status);
         FirebaseHelper.updateAppointment(entity, callback);
     }

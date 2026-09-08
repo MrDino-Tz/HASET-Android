@@ -350,6 +350,9 @@ public class BookAppointmentActivity extends BaseActivity {
         }
 
         AppointmentEntity appointmentEntity = buildAppointmentEntity(appointmentId);
+        // Hold before payment so doctors don't see unpaid bookings as approval requests.
+        appointmentEntity.setStatus(Constants.STATUS_AWAITING_PAYMENT);
+        appointmentEntity.setPaymentStatus(Constants.PAYMENT_STATUS_UNPAID);
         FirebaseHelper.createAppointment(appointmentEntity, new FirebaseHelper.OnCompleteListener<AppointmentEntity>() {
             @Override
             public void onSuccess(AppointmentEntity result) {
@@ -407,26 +410,42 @@ public class BookAppointmentActivity extends BaseActivity {
         pendingPaymentAppointmentId = null;
         String patientId = preferenceManager.getUserId();
         String resolvedDoctorId = doctorId;
-        FirebaseHelper.getAppointmentsRef().child(appointmentId).removeValue();
-        if (patientId != null) {
-            FirebaseHelper.getPatientAppointmentsRef(patientId).child(appointmentId).removeValue();
+
+        // Atomic multi-path cleanup (rules allow patient delete of awaiting_payment).
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("appointments/" + appointmentId, null);
+        if (patientId != null && !patientId.trim().isEmpty()) {
+            updates.put("patient_appointments/" + patientId + "/" + appointmentId, null);
         }
-        if (resolvedDoctorId != null) {
-            FirebaseHelper.getDoctorAppointmentsRef(resolvedDoctorId).child(appointmentId).removeValue();
+        if (resolvedDoctorId != null && !resolvedDoctorId.trim().isEmpty()) {
+            updates.put("doctor_appointments/" + resolvedDoctorId + "/" + appointmentId, null);
         }
+        FirebaseHelper.getFirebaseDatabase().getReference().updateChildren(updates)
+                .addOnFailureListener(e -> {
+                    // Fallback: mark cancelled so it never shows as pending approval.
+                    java.util.Map<String, Object> cancel = new java.util.HashMap<>();
+                    cancel.put("status", Constants.STATUS_CANCELLED);
+                    cancel.put("paymentStatus", Constants.PAYMENT_STATUS_UNPAID);
+                    cancel.put("updatedAt", System.currentTimeMillis());
+                    FirebaseHelper.getAppointmentsRef().child(appointmentId).updateChildren(cancel);
+                });
     }
 
     private void proceedWithBooking() {
         CrashMonitor.step("appointment", "BookAppointmentActivity", "proceeding with booked appointment");
         AppointmentEntity appointmentEntity = buildAppointmentEntity(pendingPaymentAppointmentId);
+        // Only after successful payment does this become a real pending approval request.
+        appointmentEntity.setStatus(Constants.STATUS_PENDING);
         if (paidAt > 0 || paymentTransactionId >= 0) {
             long paymentTime = paidAt > 0 ? paidAt : System.currentTimeMillis();
-            appointmentEntity.setPaymentStatus("paid");
+            appointmentEntity.setPaymentStatus(Constants.PAYMENT_STATUS_PAID);
             appointmentEntity.setPaidAt(paymentTime);
             appointmentEntity.setPaymentTransactionId(String.valueOf(paymentTransactionId));
             appointmentEntity.setChatStartsAt(0L);
             appointmentEntity.setChatExpiresAt(0L);
             appointmentEntity.setChatActive(false);
+        } else if (doctor != null && doctor.isDemo()) {
+            appointmentEntity.setPaymentStatus(Constants.PAYMENT_STATUS_PAID);
         }
 
         viewModel.createAppointment(appointmentEntity);
@@ -451,7 +470,7 @@ public class BookAppointmentActivity extends BaseActivity {
         // Persist the consultation fee so admin revenue reports can read it
         appointmentEntity.setAmount(doctor != null && doctor.getConsultationFee() > 0 ? doctor.getConsultationFee() : 0.0);
 
-        // All appointments start as pending and require doctor approval
+        // Default for completed booking path; pre-payment path overrides to awaiting_payment.
         appointmentEntity.setStatus(Constants.STATUS_PENDING);
         return appointmentEntity;
     }

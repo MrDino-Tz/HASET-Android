@@ -240,9 +240,13 @@ public class DoctorNotificationManager {
             public void onSuccess(List<AppointmentEntity> appointmentEntities) {
                 int pendingCount = 0;
                 for (AppointmentEntity entity : appointmentEntities) {
-                    if (Constants.STATUS_PENDING.equals(entity.getStatus())) {
-                        pendingCount++;
+                    if (!Constants.STATUS_PENDING.equals(entity.getStatus())) {
+                        continue;
                     }
+                    if (!Constants.PAYMENT_STATUS_PAID.equalsIgnoreCase(entity.getPaymentStatus())) {
+                        continue;
+                    }
+                    pendingCount++;
                 }
                 
                 if (pendingCount > 0) {
@@ -304,6 +308,9 @@ public class DoctorNotificationManager {
      * Notify about new patient appointment
      */
     public void onNewAppointment(Appointment appointment) {
+        if (appointment == null || appointment.isHiddenFromDoctorUntilPaid()) {
+            return;
+        }
         if (!hasNotificationPermission() || !preferenceManager.isNotificationEnabled()) {
             return;
         }

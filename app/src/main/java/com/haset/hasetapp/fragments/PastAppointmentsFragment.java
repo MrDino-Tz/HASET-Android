@@ -150,6 +150,10 @@ public class PastAppointmentsFragment extends Fragment implements AppointmentAda
             showSnackbar(getString(R.string.invalid_appointment));
             return;
         }
+        if (appointment.isHiddenFromDoctorUntilPaid()) {
+            showSnackbar("Payment not completed for this appointment.");
+            return;
+        }
 
         viewModel.updateStatus(appointment, Constants.STATUS_APPROVED, new FirebaseHelper.OnCompleteListener<Void>() {
             @Override

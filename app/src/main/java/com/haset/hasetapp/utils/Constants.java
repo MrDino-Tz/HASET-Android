@@ -8,10 +8,13 @@ public class Constants {
     
     // Appointment Status
     public static final String STATUS_PENDING = "pending";
+    public static final String STATUS_AWAITING_PAYMENT = "awaiting_payment";
     public static final String STATUS_APPROVED = "approved";
     public static final String STATUS_DECLINED = "declined";
     public static final String STATUS_COMPLETED = "completed";
     public static final String STATUS_CANCELLED = "cancelled";
+    public static final String PAYMENT_STATUS_PAID = "paid";
+    public static final String PAYMENT_STATUS_UNPAID = "unpaid";
     public static final String APPOINTMENT_TYPE_ONLINE_CHAT = "Online Chat";
     
     // Firebase Database Paths

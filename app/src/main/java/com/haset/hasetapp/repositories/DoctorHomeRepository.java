@@ -53,7 +53,7 @@ public class DoctorHomeRepository {
                         List<Appointment> appointments = new ArrayList<>();
                         for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                             Appointment appointment = snapshot.getValue(Appointment.class);
-                            if (appointment != null) {
+                            if (appointment != null && !appointment.isHiddenFromDoctorUntilPaid()) {
                                 appointments.add(appointment);
                             }
                         }
@@ -91,7 +91,7 @@ public class DoctorHomeRepository {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 Appointment appointment = snapshot.getValue(Appointment.class);
-                                if (appointment != null) {
+                                if (appointment != null && !appointment.isHiddenFromDoctorUntilPaid()) {
                                     appointments.add(appointment);
                                 }
                                 processed[0]++;
@@ -392,6 +392,14 @@ public class DoctorHomeRepository {
     }
 
     public void updateAppointmentStatus(Appointment appointment, String status, FirebaseHelper.OnCompleteListener<Void> callback) {
+        if (appointment != null
+                && Constants.STATUS_APPROVED.equalsIgnoreCase(status)
+                && appointment.isHiddenFromDoctorUntilPaid()) {
+            if (callback != null) {
+                callback.onError("Payment not completed for this appointment.");
+            }
+            return;
+        }
         AppointmentEntity entity = new AppointmentEntity(
                 appointment.getAppointmentId(),
                 appointment.getPatientId(),

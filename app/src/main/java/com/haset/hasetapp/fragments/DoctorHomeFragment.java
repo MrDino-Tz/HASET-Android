@@ -494,13 +494,20 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
             if (appointments != null) {
                 int pending = 0, completed = 0, cancelled = 0;
                 for (Appointment a : appointments) {
+                    if (a.isHiddenFromDoctorUntilPaid()) continue;
                     switch (a.getStatus()) {
                         case Constants.STATUS_PENDING: pending++; break;
                         case Constants.STATUS_COMPLETED: completed++; break;
                         case Constants.STATUS_CANCELLED: cancelled++; break;
                     }
                 }
-                updateUIWithAppointments(appointments, pending, completed, cancelled);
+                List<Appointment> visible = new ArrayList<>();
+                for (Appointment a : appointments) {
+                    if (!a.isHiddenFromDoctorUntilPaid()) {
+                        visible.add(a);
+                    }
+                }
+                updateUIWithAppointments(visible, pending, completed, cancelled);
                 hidePageShimmer();
             }
         });
@@ -667,6 +674,13 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
 
     @Override
     public void onApprove(Appointment appointment) {
+        if (appointment == null || appointment.isHiddenFromDoctorUntilPaid()) {
+            if (getView() != null) {
+                com.haset.hasetapp.utils.ErrorDisplay.report(getView(),
+                        "Payment not completed for this appointment.");
+            }
+            return;
+        }
         // Convert Appointment model to AppointmentEntity for FirebaseHelper
         AppointmentEntity appointmentEntity = new AppointmentEntity(
                 appointment.getAppointmentId(),
