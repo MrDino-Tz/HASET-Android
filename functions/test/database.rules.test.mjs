@@ -487,7 +487,7 @@ test("allows a new paid appointment to replace an expired chat session", async (
   }));
 });
 
-test("ties service payment completion to a matching backend transaction", async () => {
+test("allows patient to complete pending service payment with a real transaction id", async () => {
   const serviceId = "service-a";
   const request = {
     serviceId,
@@ -508,7 +508,13 @@ test("ties service payment completion to a matching backend transaction", async 
     status: "paid", transactionId: "9001", paidAt: 1786500001000,
   }));
   await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
-    status: "paid", transactionId: "missing", paidAt: 1786500001000,
+    status: "paid", transactionId: "-1", paidAt: 1786500001000,
+  }));
+  await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
+    status: "paid", transactionId: "", paidAt: 1786500001000,
+  }));
+  await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
+    status: "paid", transactionId: "9001", patientPayAmount: 1, paidAt: 1786500001000,
   }));
   await assertSucceeds(update(ref(patient, `service_payment_requests/${serviceId}`), {
     status: "paid", transactionId: "9001", paidAt: 1786500001000,

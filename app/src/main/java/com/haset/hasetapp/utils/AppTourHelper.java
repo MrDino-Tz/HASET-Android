@@ -124,6 +124,9 @@ public final class AppTourHelper {
 
     private AppTourHelper() {}
 
+    /** Temporary kill switch — set true to re-enable TapTarget tours. */
+    private static final boolean TOURS_ENABLED = false;
+
     public static final class Step {
         private final View target;
         @StringRes private final int titleRes;
@@ -185,6 +188,10 @@ public final class AppTourHelper {
                                       @NonNull PreferenceManager preferenceManager,
                                       @NonNull String tourKey,
                                       @NonNull List<Step> steps) {
+        // Tours temporarily disabled (splash + all screen/dialog tours).
+        if (!TOURS_ENABLED) {
+            return;
+        }
         if (preferenceManager.isTourSeen(tourKey)) {
             return;
         }

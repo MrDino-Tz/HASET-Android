@@ -924,6 +924,11 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
     }
 
     private void updateServicePaymentStatus(String messageId, boolean paid, int transactionId) {
+        if (paid && transactionId <= 0) {
+            Log.e("ChatActivity", "Skipping service payment status update: invalid transactionId=" + transactionId);
+            Toast.makeText(this, R.string.payment_successful_chat, Toast.LENGTH_SHORT).show();
+            return;
+        }
         com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase().getReference("messages")
             .child(chatRoomId)
             .child(messageId)
@@ -948,8 +953,15 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                                                 ChatActivity.this,
                                                 R.string.payment_successful_chat,
                                                 Toast.LENGTH_SHORT).show())
-                                        .addOnFailureListener(error -> Log.e(
-                                                "ChatActivity", "Unable to persist service payment status", error));
+                                        .addOnFailureListener(error -> {
+                                            Log.e("ChatActivity", "Unable to persist service payment status", error);
+                                            Toast.makeText(
+                                                    ChatActivity.this,
+                                                    error.getMessage() != null
+                                                            ? error.getMessage()
+                                                            : getString(R.string.failed_to_send_message),
+                                                    Toast.LENGTH_LONG).show();
+                                        });
                             }
                         } catch (Exception e) {
                             Log.e("ChatActivity", "Error updating payment status", e);

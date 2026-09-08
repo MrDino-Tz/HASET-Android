@@ -8,7 +8,6 @@ import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.PreferenceManager;
@@ -64,7 +63,8 @@ public class SplashActivity extends BaseActivity {
             String appName = getString(R.string.app_name);
             typewriterAnimation = new TypewriterAnimation(tvAppName, appName, 150);
             typewriterAnimation.start();
-            AppTourRegistry.showSplash(findViewById(android.R.id.content), this, preferenceManager);
+            // Tours disabled — see AppTourHelper.TOURS_ENABLED
+            // AppTourRegistry.showSplash(findViewById(android.R.id.content), this, preferenceManager);
         }
 
         if (NetworkUtils.isNetworkAvailable(this)) {
