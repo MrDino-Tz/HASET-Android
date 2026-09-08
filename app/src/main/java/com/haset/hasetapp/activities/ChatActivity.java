@@ -74,7 +74,6 @@ import androidx.core.view.WindowCompat;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.ChatViewModel;
 import com.haset.hasetapp.utils.AddServiceBottomSheet;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AuditLogger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -322,7 +321,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(ChatViewModel.class);
         setupObservers();
-        AppTourRegistry.showChatRoom(this, preferenceManager);
 
         // Mark all messages as read when chat is opened
         markAllMessagesAsRead();
@@ -2138,8 +2136,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         btnOk.setOnClickListener(v -> dialog.dismiss());
         
         dialog.show();
-        AppTourRegistry.showComingSoon(dialog.findViewById(R.id.btnOk).getRootView(),
-                this, new PreferenceManager(this));
     }
 
     @Override

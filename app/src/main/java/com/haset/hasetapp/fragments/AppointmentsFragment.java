@@ -44,8 +44,6 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.AppointmentsViewModel;
-import com.haset.hasetapp.utils.AppTourHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.Constants;
 
@@ -104,57 +102,6 @@ public class AppointmentsFragment extends Fragment {
         preferenceManager.saveString("appointment_filter_status", "all");
 
         btnMoreOptions.setOnClickListener(v -> showMoreOptionsMenu());
-        showFirstTimeTourIfNeeded();
-    }
-
-    private void showFirstTimeTourIfNeeded() {
-        if (tabLayout == null) {
-            return;
-        }
-        tabLayout.post(() -> {
-            if (!isAdded() || tabLayout == null) {
-                return;
-            }
-            String normalizedRole = preferenceManager.getUserRole() == null
-                    ? "" : preferenceManager.getUserRole().trim().toLowerCase();
-            boolean doctorDashboard = normalizedRole.equals(Constants.ROLE_DOCTOR)
-                    || normalizedRole.contains("doctor");
-
-            List<AppTourHelper.Step> steps = new ArrayList<>();
-            addTabStep(steps, 0,
-                    doctorDashboard ? R.string.tour_appointments_pending_title
-                            : R.string.tour_appointments_upcoming_title,
-                    doctorDashboard ? R.string.tour_appointments_pending_desc
-                            : R.string.tour_appointments_upcoming_desc);
-            addTabStep(steps, 1,
-                    R.string.tour_appointments_completed_title,
-                    R.string.tour_appointments_completed_desc);
-            addTabStep(steps, 2,
-                    R.string.tour_appointments_canceled_title,
-                    R.string.tour_appointments_canceled_desc);
-            if (viewPager != null) {
-                steps.add(new AppTourHelper.Step(viewPager,
-                        R.string.tour_appointments_list_title, R.string.tour_appointments_list_desc));
-            }
-            if (btnMoreOptions != null) {
-                steps.add(new AppTourHelper.Step(btnMoreOptions,
-                        R.string.tour_appointments_options_title, R.string.tour_appointments_options_desc));
-            }
-            AppTourHelper.showIfFirstTime(AppointmentsFragment.this, preferenceManager,
-                    AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_APPOINTMENTS, preferenceManager),
-                    steps);
-        });
-    }
-
-    private void addTabStep(@NonNull List<AppTourHelper.Step> steps, int index,
-                            int titleRes, int descRes) {
-        if (tabLayout == null) {
-            return;
-        }
-        TabLayout.Tab tab = tabLayout.getTabAt(index);
-        if (tab != null && tab.view != null) {
-            steps.add(new AppTourHelper.Step(tab.view, titleRes, descRes));
-        }
     }
 
     private void exportAppointmentsAsCSV(List<com.haset.hasetapp.models.Appointment> appointments) {
@@ -400,9 +347,8 @@ public class AppointmentsFragment extends Fragment {
         });
 
         view.setOnClickListener(v -> bottomSheetDialog.dismiss());
-        
+
         bottomSheetDialog.show();
-        AppTourRegistry.showExportResult(view, requireActivity(), preferenceManager);
     }
 
     private List<com.haset.hasetapp.models.Appointment> getCurrentTabAppointments() {
@@ -542,11 +488,6 @@ public class AppointmentsFragment extends Fragment {
             btnCancel.setOnClickListener(v -> dialog.dismiss());
             
             dialog.setContentView(sheetView);
-            android.app.Activity host = getActivity();
-            if (host != null) {
-                AppTourRegistry.showExportAppointments(sheetView, host,
-                        new PreferenceManager(requireContext()));
-            }
             return dialog;
         }
 

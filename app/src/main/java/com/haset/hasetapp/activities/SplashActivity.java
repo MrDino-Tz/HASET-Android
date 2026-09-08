@@ -63,8 +63,6 @@ public class SplashActivity extends BaseActivity {
             String appName = getString(R.string.app_name);
             typewriterAnimation = new TypewriterAnimation(tvAppName, appName, 150);
             typewriterAnimation.start();
-            // Tours disabled — see AppTourHelper.TOURS_ENABLED
-            // AppTourRegistry.showSplash(findViewById(android.R.id.content), this, preferenceManager);
         }
 
         if (NetworkUtils.isNetworkAvailable(this)) {

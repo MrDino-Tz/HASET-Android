@@ -24,7 +24,6 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.ChatActivity;
 import com.haset.hasetapp.adapters.ConversationAdapter;
 import com.haset.hasetapp.models.Conversation;
-import com.haset.hasetapp.utils.AppTourHelper;
 import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ShimmerHelper;
@@ -187,25 +186,6 @@ public class ChatListFragment extends Fragment implements ConversationAdapter.On
         if (shimmerContainer == null) return;
         ShimmerHelper.hideListShimmer(shimmerContainer);
         shimmerContainer.setVisibility(View.GONE);
-        showFirstTimeTourIfNeeded();
-    }
-
-    private void showFirstTimeTourIfNeeded() {
-        if (preferenceManager == null) {
-            return;
-        }
-        List<AppTourHelper.Step> steps = new ArrayList<>();
-        if (tabs != null) {
-            steps.add(new AppTourHelper.Step(tabs,
-                    R.string.tour_chat_tabs_title, R.string.tour_chat_tabs_desc));
-        }
-        if (rvConversations != null) {
-            steps.add(new AppTourHelper.Step(rvConversations,
-                    R.string.tour_chat_list_title, R.string.tour_chat_list_desc));
-        }
-        AppTourHelper.showIfFirstTime(this, preferenceManager,
-                AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_CHAT, preferenceManager),
-                steps);
     }
 
 

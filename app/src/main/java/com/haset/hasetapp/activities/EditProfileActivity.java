@@ -17,7 +17,6 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.UserEntity;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
 import com.haset.hasetapp.utils.AuditLogger;
@@ -58,7 +57,6 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
         setupObservers();
         loadUserData();
         setupClickListeners();
-        AppTourRegistry.showEditProfile(this, preferenceManager);
     }
 
     private void setupObservers() {

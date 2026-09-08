@@ -21,8 +21,6 @@ import com.haset.hasetapp.fragments.DoctorDetailsBottomSheet;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.repositories.ArticleRepository;
 import com.haset.hasetapp.repositories.DoctorRepository;
-import com.haset.hasetapp.utils.AppTourRegistry;
-import com.haset.hasetapp.utils.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +53,6 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         setupRecyclerView();
         setupSearchListener();
         loadInitialData();
-        AppTourRegistry.showSearch(this, new PreferenceManager(this));
     }
 
     private void initViews() {

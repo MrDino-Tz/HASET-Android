@@ -24,7 +24,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.models.PaymentRequest;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.CustomDialog;
@@ -115,7 +114,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         setupViews();
         observeDoctorRegistrationFee();
         setupClickListeners();
-        AppTourRegistry.showPayment(this, new PreferenceManager(this));
     }
 
     /*
@@ -329,7 +327,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
         }
-        AppTourRegistry.showPaymentError(dialogView, this, new PreferenceManager(this));
     }
 
     private void showSuccessDialog() {
@@ -400,7 +397,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
         }
-        AppTourRegistry.showPaymentSuccess(dialogView, this, new PreferenceManager(this));
     }
 
     private void showAbortDialog() {
@@ -449,7 +445,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
         }
-        AppTourRegistry.showPaymentAbort(dialogView, this, new PreferenceManager(this));
     }
 
     private void initViews() {
@@ -642,7 +637,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
-        AppTourRegistry.showPaymentMethod(view, this, new PreferenceManager(this));
     }
 
     private void showMobileMoneyProvidersBottomSheet() {
@@ -698,7 +692,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
-        AppTourRegistry.showPaymentMobileProviders(view, this, new PreferenceManager(this));
     }
 
     /*
@@ -834,7 +827,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
-        AppTourRegistry.showPaymentMobileNumber(view, this, new PreferenceManager(this));
     }
 
     /*

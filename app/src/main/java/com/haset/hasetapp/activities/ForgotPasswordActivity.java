@@ -46,9 +46,6 @@ public class ForgotPasswordActivity extends BaseActivity {
         etEmail = findViewById(R.id.etEmail);
         btnSend = findViewById(R.id.btnSend);
         tvBackToLogin = findViewById(R.id.tvBackToLogin);
-
-        com.haset.hasetapp.utils.AppTourRegistry.showForgotPassword(this,
-                new com.haset.hasetapp.utils.PreferenceManager(this));
     }
 
     private void setupObservers() {

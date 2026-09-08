@@ -986,388 +986,388 @@
     <string name="tour_doctor_recent_appts_desc">Your latest bookings appear in this list.</string>
     <string name="tour_doctor_view_all_title">View all</string>
     <string name="tour_doctor_view_all_desc">Open the full appointments tab for every visit.</string>
-    <string name="tour_appointments_tabs_title">Appointment tabs</string>
-    <string name="tour_appointments_tabs_desc">Switch between upcoming, completed, and canceled appointments.</string>
-    <string name="tour_appointments_upcoming_title">Upcoming</string>
-    <string name="tour_appointments_upcoming_desc">See appointments that are scheduled and still active.</string>
-    <string name="tour_appointments_pending_title">Pending</string>
-    <string name="tour_appointments_pending_desc">Review new appointment requests waiting for your approval.</string>
-    <string name="tour_appointments_completed_title">Completed</string>
-    <string name="tour_appointments_completed_desc">Browse past visits and finished consultations here.</string>
-    <string name="tour_appointments_canceled_title">Canceled</string>
-    <string name="tour_appointments_canceled_desc">Find appointments that were canceled or declined.</string>
-    <string name="tour_appointments_list_title">Appointment list</string>
-    <string name="tour_appointments_list_desc">Tap a card to view details, chat, or take action.</string>
-    <string name="tour_appointments_options_title">More options</string>
-    <string name="tour_appointments_options_desc">Export, refresh, or manage your appointments here.</string>
-    <string name="tour_chat_tabs_title">Inbox &amp; archive</string>
-    <string name="tour_chat_tabs_desc">View active chats or archived conversations.</string>
-    <string name="tour_chat_list_title">Your conversations</string>
-    <string name="tour_chat_list_desc">Tap a chat to continue messaging securely.</string>
-    <string name="tour_profile_settings_title">Settings</string>
-    <string name="tour_profile_settings_desc">Change language, theme, password, and more.</string>
-    <string name="tour_profile_photo_title">Profile photo</string>
-    <string name="tour_profile_photo_desc">Your photo helps doctors recognize you during visits.</string>
-    <string name="tour_profile_edit_title">Edit profile</string>
-    <string name="tour_profile_edit_desc">Update your personal and medical information.</string>
-    <string name="tour_profile_prescriptions_title">My prescriptions</string>
-    <string name="tour_profile_prescriptions_desc">Open your saved prescriptions anytime from here.</string>
-    <string name="tour_profile_professional_title">Professional info</string>
-    <string name="tour_profile_professional_desc">Your specialty, fee, and availability shown to patients.</string>
-    <string name="tour_profile_about_title">About app</string>
-    <string name="tour_profile_about_desc">Learn more about AfyaHASET and our team.</string>
-    <string name="tour_profile_service_title">Service agreement</string>
-    <string name="tour_profile_service_desc">Read privacy policy and terms of service.</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     <!-- First-time app tour (Phase 2 screens) -->
-    <string name="tour_book_instant_title">Instant appointment</string>
-    <string name="tour_book_instant_desc">Book a quick online consultation right away.</string>
-    <string name="tour_book_schedule_title">Schedule visit</string>
-    <string name="tour_book_schedule_desc">Pick a date and time for an in-person or planned visit.</string>
-    <string name="tour_book_confirm_title">Confirm booking</string>
-    <string name="tour_book_confirm_desc">Review details and confirm your appointment.</string>
-    <string name="tour_doctors_search_title">Search doctors</string>
-    <string name="tour_doctors_search_desc">Filter doctors by name or specialty.</string>
-    <string name="tour_doctors_list_title">Doctor list</string>
-    <string name="tour_doctors_list_desc">Tap a doctor to view details and book.</string>
-    <string name="tour_search_bar_title">Search everything</string>
-    <string name="tour_search_bar_desc">Find doctors, articles, and health content.</string>
-    <string name="tour_search_results_title">Results</string>
-    <string name="tour_search_results_desc">Tap any result to open it.</string>
-    <string name="tour_settings_notifications_title">Notifications</string>
-    <string name="tour_settings_notifications_desc">Turn appointment and message alerts on or off.</string>
-    <string name="tour_settings_language_title">Language</string>
-    <string name="tour_settings_language_desc">Switch between English and Swahili.</string>
-    <string name="tour_settings_theme_title">Theme</string>
-    <string name="tour_settings_theme_desc">Choose light or dark mode for the app.</string>
-    <string name="tour_settings_mfa_title">Two-factor security</string>
-    <string name="tour_settings_mfa_desc">Enable MFA for extra account protection.</string>
-    <string name="tour_settings_password_title">Change password</string>
-    <string name="tour_settings_password_desc">Update your login password securely.</string>
-    <string name="tour_settings_support_title">Support</string>
-    <string name="tour_settings_support_desc">Contact us if you need help with the app.</string>
-    <string name="tour_edit_photo_title">Profile photo</string>
-    <string name="tour_edit_photo_desc">Tap to change your profile picture.</string>
-    <string name="tour_edit_name_title">Your details</string>
-    <string name="tour_edit_name_desc">Update your name and contact information.</string>
-    <string name="tour_edit_save_title">Save changes</string>
-    <string name="tour_edit_save_desc">Tap here when you are done editing.</string>
-    <string name="tour_notifications_tabs_title">Notification types</string>
-    <string name="tour_notifications_tabs_desc">Switch between appointment and payment alerts.</string>
-    <string name="tour_notifications_list_title">Your alerts</string>
-    <string name="tour_notifications_list_desc">Tap an item to view details.</string>
-    <string name="tour_notifications_clear_title">Clear all</string>
-    <string name="tour_notifications_clear_desc">Remove all notifications from this list.</string>
-    <string name="tour_payment_amount_title">Payment amount</string>
-    <string name="tour_payment_amount_desc">This is the fee for your consultation or service.</string>
-    <string name="tour_payment_method_title">Payment method</string>
-    <string name="tour_payment_method_desc">Choose how you want to pay.</string>
-    <string name="tour_payment_pay_title">Pay now</string>
-    <string name="tour_payment_pay_desc">Complete your payment securely.</string>
-    <string name="tour_wallet_balance_title">Your balance</string>
-    <string name="tour_wallet_balance_desc">See how much you have earned from consultations.</string>
-    <string name="tour_wallet_withdraw_title">Withdraw</string>
-    <string name="tour_wallet_withdraw_desc">Transfer earnings to your mobile-money account.</string>
-    <string name="tour_wallet_history_title">Transaction history</string>
-    <string name="tour_wallet_history_desc">Review past earnings and withdrawals.</string>
-    <string name="tour_patients_list_title">Patient list</string>
-    <string name="tour_patients_list_desc">Patients you have consulted appear here.</string>
-    <string name="tour_doctor_edit_specialty_title">Specialty</string>
-    <string name="tour_doctor_edit_specialty_desc">Set the medical field patients will see.</string>
-    <string name="tour_doctor_edit_fee_title">Consultation fee</string>
-    <string name="tour_doctor_edit_fee_desc">Set how much you charge per consultation.</string>
-    <string name="tour_doctor_edit_online_title">Online status</string>
-    <string name="tour_doctor_edit_online_desc">Control whether patients can find you online.</string>
-    <string name="tour_prescriptions_list_title">Prescriptions</string>
-    <string name="tour_prescriptions_list_desc">View prescriptions shared with you.</string>
-    <string name="tour_prescriptions_add_title">Add prescription</string>
-    <string name="tour_prescriptions_add_desc">Upload a new prescription for a patient.</string>
-    <string name="tour_articles_search_title">Search articles</string>
-    <string name="tour_articles_search_desc">Find health articles and tips quickly.</string>
-    <string name="tour_articles_tabs_title">Article categories</string>
-    <string name="tour_articles_tabs_desc">Browse articles, health tips, or saved posts.</string>
-    <string name="tour_article_detail_title">Article</string>
-    <string name="tour_article_detail_desc">Read trusted health information here.</string>
-    <string name="tour_article_likes_title">Like</string>
-    <string name="tour_article_likes_desc">Show appreciation for helpful content.</string>
-    <string name="tour_article_comments_title">Comments</string>
-    <string name="tour_article_comments_desc">Join the discussion on this article.</string>
-    <string name="tour_hospitals_list_title">Nearby hospitals</string>
-    <string name="tour_hospitals_list_desc">Tap a hospital to open it in Maps.</string>
-    <string name="tour_chat_messages_title">Messages</string>
-    <string name="tour_chat_messages_desc">Your secure conversation appears here.</string>
-    <string name="tour_chat_attach_title">Attachments</string>
-    <string name="tour_chat_attach_desc">Send files, prescriptions, or services.</string>
-    <string name="tour_chat_send_title">Send message</string>
-    <string name="tour_chat_send_desc">Type and tap send to reply.</string>
-    <string name="tour_prescription_meds_title">Medicines</string>
-    <string name="tour_prescription_meds_desc">See prescribed medicines and dosages.</string>
-    <string name="tour_prescription_instructions_title">Instructions</string>
-    <string name="tour_prescription_instructions_desc">Follow the doctor\'s guidance here.</string>
-    <string name="tour_doctor_book_title">Book appointment</string>
-    <string name="tour_doctor_book_desc">Schedule a consultation with this doctor.</string>
-    <string name="tour_doctor_fee_title">Consultation fee</string>
-    <string name="tour_doctor_fee_desc">See how much this doctor charges per visit.</string>
-    <string name="tour_doctor_bio_title">About the doctor</string>
-    <string name="tour_doctor_bio_desc">Read the doctor\'s background and experience.</string>
-    <string name="tour_about_privacy_title">Privacy policy</string>
-    <string name="tour_about_privacy_desc">Read how we protect your data.</string>
-    <string name="tour_about_terms_title">Terms of service</string>
-    <string name="tour_about_terms_desc">Review the terms for using AfyaHASET.</string>
-    <string name="tour_login_email_title">Email</string>
-    <string name="tour_login_email_desc">Enter the email you registered with.</string>
-    <string name="tour_login_password_title">Password</string>
-    <string name="tour_login_password_desc">Enter your account password.</string>
-    <string name="tour_login_sign_in_title">Sign in</string>
-    <string name="tour_login_sign_in_desc">Tap here to log in to your account.</string>
-    <string name="tour_register_name_title">Your name</string>
-    <string name="tour_register_name_desc">Enter your full name as it should appear.</string>
-    <string name="tour_register_email_title">Email address</string>
-    <string name="tour_register_email_desc">Use a valid email — we send verification here.</string>
-    <string name="tour_register_submit_title">Create account</string>
-    <string name="tour_register_submit_desc">Tap when all fields are filled in.</string>
-    <string name="tour_forgot_email_title">Reset email</string>
-    <string name="tour_forgot_email_desc">Enter the email linked to your account.</string>
-    <string name="tour_forgot_send_title">Send reset link</string>
-    <string name="tour_forgot_send_desc">We will email you a password reset link.</string>
-    <string name="tour_role_patient_title">I am a patient</string>
-    <string name="tour_role_patient_desc">Book doctors, chat, and manage your health.</string>
-    <string name="tour_role_doctor_title">I am a doctor</string>
-    <string name="tour_role_doctor_desc">Manage appointments, patients, and your profile.</string>
-    <string name="tour_service_privacy_title">Privacy policy</string>
-    <string name="tour_service_privacy_desc">Read how your health data is protected.</string>
-    <string name="tour_service_terms_title">Terms &amp; conditions</string>
-    <string name="tour_service_terms_desc">Review the rules for using our services.</string>
-    <string name="tour_mfa_qr_title">Scan QR code</string>
-    <string name="tour_mfa_qr_desc">Scan with your authenticator app to set up MFA.</string>
-    <string name="tour_mfa_code_title">Enter code</string>
-    <string name="tour_mfa_code_desc">Type the 6-digit code from your authenticator.</string>
-    <string name="tour_mfa_confirm_title">Confirm setup</string>
-    <string name="tour_mfa_confirm_desc">Verify and finish enabling two-factor auth.</string>
-    <string name="tour_checkout_web_title">Secure checkout</string>
-    <string name="tour_checkout_web_desc">Complete your payment safely in this screen.</string>
-    <string name="tour_image_view_title">Image preview</string>
-    <string name="tour_image_view_desc">Pinch or scroll to view the full image.</string>
-    <string name="tour_video_play_title">Video player</string>
-    <string name="tour_video_play_desc">Use the controls to play, pause, or seek.</string>
-    <string name="tour_prescription_shell_title">Prescriptions</string>
-    <string name="tour_prescription_shell_desc">Your prescription list opens below this header.</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <string name="tour_dashboard_nav_title">Navigation</string>
     <string name="tour_dashboard_nav_desc">Switch between Home, Appointments, Chat, and Profile.</string>
     <string name="tour_dashboard_content_title">Main area</string>
     <string name="tour_dashboard_content_desc">The active tab content appears here.</string>
-    <string name="tour_onboarding_slides_title">Welcome slides</string>
-    <string name="tour_onboarding_slides_desc">Swipe to learn how AfyaHASET works.</string>
-    <string name="tour_onboarding_next_title">Next</string>
-    <string name="tour_onboarding_next_desc">Tap to move to the next slide.</string>
-    <string name="tour_onboarding_skip_title">Skip</string>
-    <string name="tour_onboarding_skip_desc">Jump straight into the app anytime.</string>
-    <string name="tour_main_welcome_title">AfyaHASET</string>
-    <string name="tour_main_welcome_desc">Your health companion starts here.</string>
-    <string name="tour_shimmer_show_title">Show shimmer</string>
-    <string name="tour_shimmer_show_desc">Preview the loading animation effect.</string>
-    <string name="tour_shimmer_list_title">List shimmer</string>
-    <string name="tour_shimmer_list_desc">See how list placeholders look while loading.</string>
-    <string name="tour_welcome_title">Welcome!</string>
-    <string name="tour_welcome_desc">Your account was created successfully.</string>
-    <string name="tour_no_internet_retry_title">Retry</string>
-    <string name="tour_no_internet_retry_desc">Tap to check your connection again.</string>
-    <string name="tour_reset_link_title">Reset link</string>
-    <string name="tour_reset_link_desc">Paste the link from your email here.</string>
-    <string name="tour_reset_password_title">New password</string>
-    <string name="tour_reset_password_desc">Enter a strong new password.</string>
-    <string name="tour_reset_submit_title">Reset password</string>
-    <string name="tour_reset_submit_desc">Confirm to save your new password.</string>
-    <string name="tour_add_rx_patient_title">Select patient</string>
-    <string name="tour_add_rx_patient_desc">Choose who this prescription is for.</string>
-    <string name="tour_add_rx_medicine_title">Add medicine</string>
-    <string name="tour_add_rx_medicine_desc">Add each drug with dosage details.</string>
-    <string name="tour_add_rx_submit_title">Submit</string>
-    <string name="tour_add_rx_submit_desc">Save and send the prescription.</string>
-    <string name="tour_rx_sheet_meds_title">Medicines</string>
-    <string name="tour_rx_sheet_meds_desc">All prescribed medicines are listed here.</string>
-    <string name="tour_rx_sheet_export_title">Export PDF</string>
-    <string name="tour_rx_sheet_export_desc">Download or share this prescription.</string>
-    <string name="tour_add_service_name_title">Service name</string>
-    <string name="tour_add_service_name_desc">Name the consultation or service.</string>
-    <string name="tour_add_service_fee_title">Fee</string>
-    <string name="tour_add_service_fee_desc">Set the amount the patient will pay.</string>
-    <string name="tour_add_service_send_title">Send request</string>
-    <string name="tour_add_service_send_desc">Bill the patient for this service.</string>
-    <string name="tour_attach_image_title">Photo</string>
-    <string name="tour_attach_image_desc">Send an image from your gallery.</string>
-    <string name="tour_attach_doc_title">Document</string>
-    <string name="tour_attach_doc_desc">Attach a PDF or file.</string>
-    <string name="tour_attach_rx_title">Prescription</string>
-    <string name="tour_attach_rx_desc">Share an existing prescription.</string>
-    <string name="tour_chat_opt_search_title">Search messages</string>
-    <string name="tour_chat_opt_search_desc">Find text inside this conversation.</string>
-    <string name="tour_chat_opt_contact_title">View contact</string>
-    <string name="tour_chat_opt_contact_desc">See the other person\'s profile details.</string>
-    <string name="tour_chat_opt_delete_title">Delete messages</string>
-    <string name="tour_chat_opt_delete_desc">Remove messages from this chat.</string>
-    <string name="tour_comments_list_title">Comments</string>
-    <string name="tour_comments_list_desc">Read what others said about this post.</string>
-    <string name="tour_comments_input_title">Write a comment</string>
-    <string name="tour_comments_input_desc">Type your reply here.</string>
-    <string name="tour_comments_send_title">Send</string>
-    <string name="tour_comments_send_desc">Post your comment.</string>
-    <string name="tour_learn_more_btn_title">Learn more</string>
-    <string name="tour_learn_more_btn_desc">Open full details in your browser.</string>
-    <string name="tour_hospital_map_title">Map</string>
-    <string name="tour_hospital_map_desc">See the hospital location on the map.</string>
-    <string name="tour_hospital_open_maps_title">Open in Maps</string>
-    <string name="tour_hospital_open_maps_desc">Get directions in Google Maps.</string>
-    <string name="tour_add_hospital_photo_title">Hospital photo</string>
-    <string name="tour_add_hospital_photo_desc">Upload a photo of the facility.</string>
-    <string name="tour_add_hospital_name_title">Hospital name</string>
-    <string name="tour_add_hospital_name_desc">Enter the official name.</string>
-    <string name="tour_add_hospital_save_title">Save</string>
-    <string name="tour_add_hospital_save_desc">Submit the hospital details.</string>
-    <string name="tour_export_select_title">Select appointments</string>
-    <string name="tour_export_select_desc">Tick the visits you want to export.</string>
-    <string name="tour_export_btn_title">Export</string>
-    <string name="tour_export_btn_desc">Save selected appointments as a file.</string>
-    <string name="tour_appt_tab_upcoming_title">Upcoming list</string>
-    <string name="tour_appt_tab_upcoming_desc">Active and scheduled appointments show here.</string>
-    <string name="tour_appt_tab_completed_title">Completed list</string>
-    <string name="tour_appt_tab_completed_desc">Past visits and finished sessions appear here.</string>
-    <string name="tour_appt_tab_cancelled_title">Canceled list</string>
-    <string name="tour_appt_tab_cancelled_desc">Canceled or declined appointments are here.</string>
-    <string name="tour_article_feed_title">Article feed</string>
-    <string name="tour_article_feed_desc">Tap any article to read the full story.</string>
-    <string name="tour_article_refresh_title">Pull to refresh</string>
-    <string name="tour_article_refresh_desc">Swipe down to load the latest posts.</string>
-    <string name="tour_contact_email_title">Email support</string>
-    <string name="tour_contact_email_desc">Send us an email for help.</string>
-    <string name="tour_contact_whatsapp_title">WhatsApp</string>
-    <string name="tour_contact_whatsapp_desc">Chat with support on WhatsApp.</string>
-    <string name="tour_language_english_title">English</string>
-    <string name="tour_language_english_desc">Switch the app to English.</string>
-    <string name="tour_language_swahili_title">Swahili</string>
-    <string name="tour_language_swahili_desc">Switch the app to Swahili.</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     <!-- Popup & dialog tours -->
-    <string name="tour_splash_title">Welcome to HASET</string>
-    <string name="tour_splash_desc">Your health companion is loading. Please wait a moment.</string>
-    <string name="tour_payment_method_mobile_title">Mobile money</string>
-    <string name="tour_payment_method_mobile_desc">Pay with your mobile wallet for a quick checkout.</string>
-    <string name="tour_payment_providers_title">Choose provider</string>
-    <string name="tour_payment_providers_desc">Select your mobile money provider to continue.</string>
-    <string name="tour_payment_mobile_number_title">Phone number</string>
-    <string name="tour_payment_mobile_number_desc">Enter the number linked to your mobile money account.</string>
-    <string name="tour_payment_confirm_title">Confirm</string>
-    <string name="tour_payment_confirm_desc">Tap to save this number and proceed with payment.</string>
-    <string name="tour_payment_success_title">Payment complete</string>
-    <string name="tour_payment_success_desc">Tap Done to return to the app.</string>
-    <string name="tour_payment_error_retry_title">Try again</string>
-    <string name="tour_payment_error_retry_desc">Retry the payment if the transaction failed.</string>
-    <string name="tour_payment_error_status_title">Check status</string>
-    <string name="tour_payment_error_status_desc">Verify whether your payment went through.</string>
-    <string name="tour_payment_abort_wait_title">Keep waiting</string>
-    <string name="tour_payment_abort_wait_desc">Stay on this screen while payment is processing.</string>
-    <string name="tour_payment_abort_confirm_title">Cancel payment</string>
-    <string name="tour_payment_abort_confirm_desc">Leave only if you are sure you want to abort.</string>
-    <string name="tour_withdraw_amount_title">Withdrawal amount</string>
-    <string name="tour_withdraw_amount_desc">Enter how much you want to withdraw from your wallet.</string>
-    <string name="tour_withdraw_destination_title">Payout method</string>
-    <string name="tour_withdraw_destination_desc">Choose where your earnings should be sent.</string>
-    <string name="tour_withdraw_mfa_title">Security code</string>
-    <string name="tour_withdraw_mfa_desc">Enter your MFA code to authorize the withdrawal.</string>
-    <string name="tour_withdraw_confirm_title">Confirm withdrawal</string>
-    <string name="tour_withdraw_confirm_desc">Submit your withdrawal request when ready.</string>
-    <string name="tour_payout_provider_title">Provider</string>
-    <string name="tour_payout_provider_desc">Select your mobile money provider for payouts.</string>
-    <string name="tour_payout_phone_title">Payout phone</string>
-    <string name="tour_payout_phone_desc">Enter the number that will receive your earnings.</string>
-    <string name="tour_payout_mfa_title">Verify identity</string>
-    <string name="tour_payout_mfa_desc">Enter your MFA code to save this payout account.</string>
-    <string name="tour_change_password_current_title">Current password</string>
-    <string name="tour_change_password_current_desc">Enter your existing password first.</string>
-    <string name="tour_change_password_new_title">New password</string>
-    <string name="tour_change_password_new_desc">Choose a strong new password and confirm it.</string>
-    <string name="tour_change_password_save_title">Update password</string>
-    <string name="tour_change_password_save_desc">Save your new password when all fields are filled.</string>
-    <string name="tour_theme_light_title">Light theme</string>
-    <string name="tour_theme_light_desc">Use a bright appearance for daytime.</string>
-    <string name="tour_theme_dark_title">Dark theme</string>
-    <string name="tour_theme_dark_desc">Use a dark appearance that is easier on the eyes at night.</string>
-    <string name="tour_theme_system_title">System default</string>
-    <string name="tour_theme_system_desc">Follow your device\'s light or dark setting.</string>
-    <string name="tour_support_whatsapp_title">WhatsApp support</string>
-    <string name="tour_support_whatsapp_desc">Chat with our support team on WhatsApp.</string>
-    <string name="tour_support_call_title">Call support</string>
-    <string name="tour_support_call_desc">Dial our support number for immediate help.</string>
-    <string name="tour_support_bug_title">Report a bug</string>
-    <string name="tour_support_bug_desc">Tell us about a problem you encountered in the app.</string>
-    <string name="tour_bug_report_input_title">Describe the issue</string>
-    <string name="tour_bug_report_input_desc">Explain what happened so we can investigate.</string>
-    <string name="tour_bug_report_submit_title">Submit report</string>
-    <string name="tour_bug_report_submit_desc">Send your bug report to our team.</string>
-    <string name="tour_profile_qr_code_title">Your QR code</string>
-    <string name="tour_profile_qr_code_desc">Others can scan this to view your profile.</string>
-    <string name="tour_profile_qr_copy_title">Copy link</string>
-    <string name="tour_profile_qr_copy_desc">Copy your profile link to share anywhere.</string>
-    <string name="tour_profile_qr_share_title">Share QR</string>
-    <string name="tour_profile_qr_share_desc">Share your QR code with patients or colleagues.</string>
-    <string name="tour_doctor_policy_title">Doctor policies</string>
-    <string name="tour_doctor_policy_desc">Scroll to read fee and location policies for doctors.</string>
-    <string name="tour_mfa_challenge_code_title">Authentication code</string>
-    <string name="tour_mfa_challenge_code_desc">Enter the 6-digit code from your authenticator app.</string>
-    <string name="tour_mfa_challenge_verify_title">Verify</string>
-    <string name="tour_mfa_challenge_verify_desc">Submit the code to complete sign-in.</string>
-    <string name="tour_mfa_challenge_recovery_title">Recovery code</string>
-    <string name="tour_mfa_challenge_recovery_desc">Use a backup code if you cannot access your authenticator.</string>
-    <string name="tour_export_result_open_title">Open file</string>
-    <string name="tour_export_result_open_desc">View the exported file on your device.</string>
-    <string name="tour_export_result_share_title">Share export</string>
-    <string name="tour_export_result_share_desc">Send the exported file to another app.</string>
-    <string name="tour_reschedule_date_title">Pick a date</string>
-    <string name="tour_reschedule_date_desc">Choose a new date for this appointment.</string>
-    <string name="tour_reschedule_time_title">Pick a time</string>
-    <string name="tour_reschedule_time_desc">Choose a new time slot.</string>
-    <string name="tour_reschedule_confirm_title">Confirm reschedule</string>
-    <string name="tour_reschedule_confirm_desc">Save the new date and time for this appointment.</string>
-    <string name="tour_chat_start_countdown_title">Time limit</string>
-    <string name="tour_chat_start_countdown_desc">Start the chat before the countdown ends.</string>
-    <string name="tour_chat_start_btn_title">Start chat</string>
-    <string name="tour_chat_start_btn_desc">Open a secure chat session with the patient.</string>
-    <string name="tour_doctors_sort_title">Sort doctors</string>
-    <string name="tour_doctors_sort_desc">Sort the list by name, rating, or experience.</string>
-    <string name="tour_doctors_filter_title">Filter specialty</string>
-    <string name="tour_doctors_filter_desc">Show only doctors in a specific specialty.</string>
-    <string name="tour_article_options_save_title">Save post</string>
-    <string name="tour_article_options_save_desc">Save this article for later reading.</string>
-    <string name="tour_article_options_favorite_title">Add to favorites</string>
-    <string name="tour_article_options_favorite_desc">Mark this post as a favorite.</string>
-    <string name="tour_about_h_article_title">About H-Article</string>
-    <string name="tour_about_h_article_desc">Learn about our curated health knowledge feed.</string>
-    <string name="tour_article_notif_articles_title">Article alerts</string>
-    <string name="tour_article_notif_articles_desc">Turn article notifications on or off.</string>
-    <string name="tour_article_notif_save_title">Save preferences</string>
-    <string name="tour_article_notif_save_desc">Apply your notification settings.</string>
-    <string name="tour_voice_sheet_record_title">Record</string>
-    <string name="tour_voice_sheet_record_desc">Tap to start or stop voice recording.</string>
-    <string name="tour_voice_sheet_close_title">Close</string>
-    <string name="tour_voice_sheet_close_desc">Dismiss the recorder or cancel recording.</string>
-    <string name="tour_voice_dialog_stop_title">Stop recording</string>
-    <string name="tour_voice_dialog_stop_desc">Finish and save your voice message.</string>
-    <string name="tour_voice_dialog_cancel_title">Cancel</string>
-    <string name="tour_voice_dialog_cancel_desc">Discard this recording.</string>
-    <string name="tour_resubmit_nin_title">NIN number</string>
-    <string name="tour_resubmit_nin_desc">Enter your National ID number.</string>
-    <string name="tour_resubmit_docs_title">Upload documents</string>
-    <string name="tour_resubmit_docs_desc">Attach your NIN and MCT certificate PDFs.</string>
-    <string name="tour_resubmit_submit_title">Submit documents</string>
-    <string name="tour_resubmit_submit_desc">Send updated documents for admin review.</string>
-    <string name="tour_coming_soon_title">Coming soon</string>
-    <string name="tour_coming_soon_desc">This feature is not available yet. Tap OK to dismiss.</string>
-    <string name="tour_custom_dialog_message_title">Read carefully</string>
-    <string name="tour_custom_dialog_message_desc">Review the message before taking action.</string>
-    <string name="tour_custom_dialog_confirm_title">Confirm</string>
-    <string name="tour_custom_dialog_confirm_desc">Proceed with the highlighted action.</string>
-    <string name="tour_custom_dialog_cancel_title">Cancel</string>
-    <string name="tour_custom_dialog_cancel_desc">Go back without making changes.</string>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     <!-- AdminReportActivity -->
     <string name="please_select_report_type">Please select a report type</string>
@@ -1918,4 +1918,8 @@
     <string name="export_csvpdf">Export (CSV/PDF)</string>
     <string name="appointment_settings">Appointment Settings</string>
     <string name="cart">Cart</string>
+<!-- Home tour welcome -->
+    <string name="tour_home_welcome_title">Welcome to AfyaHASET</string>
+    <string name="tour_home_welcome_desc">Here is your home screen — get started in a few taps.</string>
+
 </resources>

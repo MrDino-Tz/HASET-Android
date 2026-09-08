@@ -177,8 +177,6 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
             startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
             finish();
         });
-
-        com.haset.hasetapp.utils.AppTourRegistry.showRegister(this, preferenceManager);
     }
 
     private void initViews() {

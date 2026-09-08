@@ -45,8 +45,6 @@ import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.AppRatingHelper;
-import com.haset.hasetapp.utils.AppTourHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.StylishQRCodeGenerator;
 import com.haset.hasetapp.utils.BottomSheetHelper;
 import com.haset.hasetapp.utils.Constants;
@@ -57,7 +55,6 @@ import com.haset.hasetapp.utils.ProfilePhotoHelper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ProfileFragment extends Fragment {
@@ -139,48 +136,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
             if (layoutProfileContent != null) {
                 layoutProfileContent.setVisibility(View.VISIBLE);
             }
-            showFirstTimeTourIfNeeded();
         }
-    }
-
-    private void showFirstTimeTourIfNeeded() {
-        if (preferenceManager == null) {
-            return;
-        }
-        List<AppTourHelper.Step> steps = new ArrayList<>();
-        if (ivProfileImage != null) {
-            steps.add(new AppTourHelper.Step(ivProfileImage,
-                    R.string.tour_profile_photo_title, R.string.tour_profile_photo_desc));
-        }
-        if (btnSettings != null) {
-            steps.add(new AppTourHelper.Step(btnSettings,
-                    R.string.tour_profile_settings_title, R.string.tour_profile_settings_desc));
-        }
-        if (btnEditProfileMain != null) {
-            steps.add(new AppTourHelper.Step(btnEditProfileMain,
-                    R.string.tour_profile_edit_title, R.string.tour_profile_edit_desc));
-        }
-        String role = preferenceManager.getUserRole();
-        if (Constants.ROLE_PATIENT.equals(role) && btnMyPrescriptions != null) {
-            steps.add(new AppTourHelper.Step(btnMyPrescriptions,
-                    R.string.tour_profile_prescriptions_title, R.string.tour_profile_prescriptions_desc));
-        }
-        if (Constants.ROLE_DOCTOR.equals(role) && cardMedicalInfo != null
-                && cardMedicalInfo.getVisibility() == View.VISIBLE) {
-            steps.add(new AppTourHelper.Step(cardMedicalInfo,
-                    R.string.tour_profile_professional_title, R.string.tour_profile_professional_desc));
-        }
-        if (about_app != null) {
-            steps.add(new AppTourHelper.Step(about_app,
-                    R.string.tour_profile_about_title, R.string.tour_profile_about_desc));
-        }
-        if (serviceAgree != null) {
-            steps.add(new AppTourHelper.Step(serviceAgree,
-                    R.string.tour_profile_service_title, R.string.tour_profile_service_desc));
-        }
-        AppTourHelper.showIfFirstTime(this, preferenceManager,
-                AppTourHelper.tourKeyForUser(AppTourHelper.TOUR_PROFILE, preferenceManager),
-                steps);
     }
 
     private void initializeViews(View view) {
@@ -641,10 +597,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
             getString(R.string.cancel_btn),
             null
         );
-        if (dialog.getContentView() != null) {
-            AppTourRegistry.showCustomDialog(dialog.getContentView(), requireActivity(), preferenceManager,
-                    AppTourHelper.TOUR_DELETE_ACCOUNT, true);
-        }
     }
     
     private void showFinalDeleteConfirmation() {
@@ -655,10 +607,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
             getString(R.string.yes_delete_all),
             v -> deleteAccount()
         );
-        if (dialog.getContentView() != null) {
-            AppTourRegistry.showCustomDialog(dialog.getContentView(), requireActivity(), preferenceManager,
-                    AppTourHelper.TOUR_DELETE_ACCOUNT_FINAL, false);
-        }
     }
     
     private void deleteAccount() {
@@ -744,7 +692,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
-        AppTourRegistry.showProfileQr(view, requireActivity(), preferenceManager);
     }
     
     private Bitmap generateQRCode(String text) {
@@ -878,7 +825,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
         
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
-        AppTourRegistry.showDoctorPolicy(view, requireActivity(), preferenceManager);
     }
 
     @Override

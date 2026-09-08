@@ -26,7 +26,6 @@ import com.haset.hasetapp.R;
 import com.haset.hasetapp.database.entities.ArticlePostEntity;
 import com.haset.hasetapp.firebase.ArticlePostHelper;
 import com.haset.hasetapp.firebase.FirebaseHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.utils.ProfilePhotoHelper;
@@ -73,7 +72,6 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
         setupStatusBar();
         loadArticle();
         setupClickListeners();
-        AppTourRegistry.showArticleDetail(this, preferenceManager);
     }
 
     private void setupStatusBar() {
@@ -368,7 +366,6 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
         });
 
         bottomSheetDialog.show();
-        AppTourRegistry.showPostComments(bottomSheetView, this, preferenceManager);
     }
 
     private void loadComments(List<Map<String, Object>> commentsList, CommentsAdapter adapter) {

@@ -442,7 +442,7 @@ public class HealthTipsHelper {
         
         // Build group summary notification
         NotificationCompat.Builder summaryBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.haset_logo)
+                .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle("Vidokezo vya Afya vya Kila Siku")
                 .setContentText("Vidokezo vyako vya afya kwa leo")
                 .setStyle(new NotificationCompat.BigTextStyle().bigText("Vidokezo na vikumbusho vyako vya afya vya kila siku"))

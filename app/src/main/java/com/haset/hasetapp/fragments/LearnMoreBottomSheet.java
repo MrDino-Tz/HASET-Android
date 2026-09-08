@@ -13,8 +13,6 @@ import androidx.annotation.Nullable;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.haset.hasetapp.R;
-import com.haset.hasetapp.utils.AppTourRegistry;
-import com.haset.hasetapp.utils.PreferenceManager;
 
 public class LearnMoreBottomSheet extends BottomSheetDialogFragment {
 
@@ -32,7 +30,6 @@ public class LearnMoreBottomSheet extends BottomSheetDialogFragment {
             startActivity(intent);
         });
 
-        AppTourRegistry.showLearnMore(view, this, new PreferenceManager(requireContext()));
         return view;
     }
 }

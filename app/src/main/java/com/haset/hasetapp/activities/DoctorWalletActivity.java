@@ -26,7 +26,6 @@ import com.google.gson.JsonObject;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.haset.hasetapp.utils.AppTourHelper;
-import com.haset.hasetapp.utils.AppTourRegistry;
 import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.database.entities.DoctorWalletEntity;
 import androidx.lifecycle.ViewModelProvider;
@@ -79,7 +78,6 @@ public class DoctorWalletActivity extends BaseActivity {
         setupObservers();
         loadWalletData();
         loadWithdrawalFee();
-        AppTourRegistry.showDoctorWallet(this, preferenceManager);
     }
 
     /*
@@ -505,7 +503,6 @@ public class DoctorWalletActivity extends BaseActivity {
             withdrawDialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
         withdrawDialog.show();
-        AppTourRegistry.showWithdraw(view, this, preferenceManager);
     }
 
     private void checkMfaThenShowWithdrawal() {
@@ -630,10 +627,6 @@ public class DoctorWalletActivity extends BaseActivity {
                 .setNegativeButton(getString(android.R.string.cancel), null)
                 .setPositiveButtonColor(R.color.info_color)
                 .show();
-        if (dialog.getContentView() != null) {
-            AppTourRegistry.showCustomDialog(dialog.getContentView(), this, preferenceManager,
-                    AppTourHelper.TOUR_MFA_REQUIRED_WITHDRAW, true);
-        }
     }
 
     private void checkMfaThenShowPayoutAccounts() {
@@ -708,7 +701,6 @@ public class DoctorWalletActivity extends BaseActivity {
             submitPayoutDestination(body, code, dialog);
         }));
         dialog.show();
-        AppTourRegistry.showPayoutDestination(view, this, preferenceManager);
         mfaCode.focusFirst();
     }
 
