@@ -7,6 +7,12 @@ already entered will be replaced.
 
 ## Internal testing
 
+### Version 9 (1.0.0.DTC) — Default (English – United States) – en-US
+
+- New full-screen star rating screen: pick your rating and go straight to the
+  Play Store to review AfyaHASET.
+- Improved doctor photo display on the appointment booking screen.
+
 ### Version 8 (1.0.0.DTC) — Default (English – United States) – en-US
 
 - Doctors can now set/clear their online status and upload required documents.
