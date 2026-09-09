@@ -7,7 +7,14 @@ already entered will be replaced.
 
 ## Internal testing
 
-### Version 3 (1.0.0.DTC) — Default (English – United States) – en-US
+### Version 6 (1.0.0.DTC) — Default (English – United States) – en-US
+
+- App tour guide now shows only on the Patient and Doctor home screens.
+- Clearer payment error dialogs.
+- Fixed adding an additional service and joining online consultations.
+- Screenshots blocked inside private screens.
+
+### Version 4 (1.0.0.DTC) — Default (English – United States) – en-US
 
 - Crashlytics integrated across auth, payments, appointments, wallet, and more for
   better crash reporting.
