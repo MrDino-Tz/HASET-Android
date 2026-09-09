@@ -433,7 +433,8 @@ public class ProfilePhotoHelper {
                     if (tvInitials != null) tvInitials.setVisibility(View.GONE);
                     imageView.setVisibility(View.VISIBLE);
                     
-                    String imageUrl = profileImage;
+                    String imageUrl = CloudinaryUploadHelper.forThumbnail(
+                            CloudinaryUploadHelper.toPublicDeliveryUrl(profileImage), 360);
                     Log.d(TAG, "  - Image found: " + imageUrl);
                     
                     // Load image with shimmer listener
@@ -574,8 +575,11 @@ public class ProfilePhotoHelper {
         }
         
         if (imageUrl != null && !imageUrl.isEmpty()) {
+            String loadUrl = CloudinaryUploadHelper.forThumbnail(
+                    CloudinaryUploadHelper.toPublicDeliveryUrl(imageUrl), 360);
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(loadUrl)
+                    .timeout(20000)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.profile_photo)
                     .error(R.drawable.profile_photo)

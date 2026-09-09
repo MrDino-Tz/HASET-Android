@@ -95,6 +95,15 @@ public class ArticlePostEntity {
                 ? titleSw : title;
     }
 
+    /** True when this post should appear in patient article lists. */
+    public boolean isVisibleToPatients() {
+        if (postId == null || postId.trim().isEmpty()) return false;
+        if (!"published".equalsIgnoreCase(status)) return false;
+        String en = title != null ? title.trim() : "";
+        String sw = titleSw != null ? titleSw.trim() : "";
+        return !en.isEmpty() || !sw.isEmpty();
+    }
+
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 

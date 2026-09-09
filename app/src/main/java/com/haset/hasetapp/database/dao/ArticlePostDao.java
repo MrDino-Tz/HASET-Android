@@ -45,6 +45,9 @@ public interface ArticlePostDao {
     
     @Query("DELETE FROM article_posts WHERE postId = :postId")
     void deletePostById(String postId);
+
+    @Query("DELETE FROM article_posts WHERE postId NOT IN (:keepIds)")
+    void deletePostsNotIn(List<String> keepIds);
     
     @Query("DELETE FROM article_posts")
     void deleteAll();

@@ -28,40 +28,69 @@ public class ArticleRepository {
 
     public LiveData<List<ArticlePostEntity>> getPublishedArticles() {
         MutableLiveData<List<ArticlePostEntity>> data = new MutableLiveData<>();
+        final boolean[] remoteLoaded = {false};
         
-        // Try local database first
+        // Local cache is only a temporary fallback until Firebase responds.
         executorService.execute(() -> {
             List<ArticlePostEntity> localPosts = articlePostDao.getPublishedPosts();
-            if (!localPosts.isEmpty()) {
-                data.postValue(localPosts);
+            List<ArticlePostEntity> visible = new java.util.ArrayList<>();
+            for (ArticlePostEntity post : localPosts) {
+                if (post != null && post.isVisibleToPatients()) {
+                    visible.add(post);
+                }
+            }
+            if (!visible.isEmpty() && !remoteLoaded[0]) {
+                data.postValue(visible);
             }
         });
 
-        // Always fetch from Firebase to keep it up to date
+        // Firebase is the source of truth — replace Room so deleted web posts disappear.
         articlePostHelper.getPublishedArticles(new ArticlePostHelper.OnCompleteListener<List<ArticlePostEntity>>() {
             @Override
             public void onSuccess(List<ArticlePostEntity> result) {
-                data.postValue(result);
-                // Cache to local database
-                executorService.execute(() -> {
+                remoteLoaded[0] = true;
+                List<ArticlePostEntity> visible = new java.util.ArrayList<>();
+                if (result != null) {
                     for (ArticlePostEntity post : result) {
-                        ArticlePostEntity existing = articlePostDao.getPostById(post.getPostId());
-                        if (existing == null) {
-                            articlePostDao.insert(post);
-                        } else {
-                            articlePostDao.update(post);
+                        if (post != null && post.isVisibleToPatients()) {
+                            visible.add(post);
                         }
                     }
-                });
+                }
+                data.postValue(visible);
+                executorService.execute(() -> replaceLocalPublishedCache(visible));
             }
 
             @Override
             public void onError(String error) {
-                // Handle error if needed
+                // Keep whatever local cache we already showed; do not invent rows.
             }
         });
 
         return data;
+    }
+
+    private void replaceLocalPublishedCache(List<ArticlePostEntity> remotePosts) {
+        if (remotePosts == null || remotePosts.isEmpty()) {
+            articlePostDao.deleteAll();
+            return;
+        }
+        java.util.List<String> keepIds = new java.util.ArrayList<>();
+        for (ArticlePostEntity post : remotePosts) {
+            if (post.getPostId() == null) continue;
+            keepIds.add(post.getPostId());
+            ArticlePostEntity existing = articlePostDao.getPostById(post.getPostId());
+            if (existing == null) {
+                articlePostDao.insert(post);
+            } else {
+                articlePostDao.update(post);
+            }
+        }
+        if (keepIds.isEmpty()) {
+            articlePostDao.deleteAll();
+        } else {
+            articlePostDao.deletePostsNotIn(keepIds);
+        }
     }
 
     public LiveData<List<ArticlePostEntity>> getArticlesByAuthor(String authorId) {
@@ -80,6 +109,15 @@ public class ArticleRepository {
                 // Sort by creation date (newest first)
                 myPosts.sort((p1, p2) -> Long.compare(p2.getCreatedAt(), p1.getCreatedAt()));
                 data.postValue(myPosts);
+                // Keep Room aligned so deleted posts don't linger for other screens.
+                executorService.execute(() -> {
+                    for (ArticlePostEntity post : myPosts) {
+                        if (post.getPostId() == null) continue;
+                        ArticlePostEntity existing = articlePostDao.getPostById(post.getPostId());
+                        if (existing == null) articlePostDao.insert(post);
+                        else articlePostDao.update(post);
+                    }
+                });
             }
 
             @Override

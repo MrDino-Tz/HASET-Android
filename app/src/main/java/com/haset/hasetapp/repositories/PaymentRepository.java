@@ -440,22 +440,34 @@ public class PaymentRepository {
     private void withFirebaseAuthHeader(AuthHeaderCallback callback) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
-            callback.onError("No signed-in user found");
+            callback.onError("Your session expired. Please sign out and sign in again.");
             return;
         }
 
-        // Force refresh so an old anonymous session cannot send an expired token
-        // to the payment API.
+        // Prefer a fresh token, but fall back to the cached one if force-refresh
+        // fails (common on flaky networks). Payment API requires Authorization.
         currentUser.getIdToken(true)
-                .addOnSuccessListener(result -> {
-                    String token = result != null ? result.getToken() : null;
-                    if (token == null || token.trim().isEmpty()) {
-                        callback.onError("Unauthorized: A valid Firebase token is required");
-                        return;
-                    }
-                    callback.onSuccess("Bearer " + token);
-                })
-                .addOnFailureListener(error ->
-                        callback.onError("Unauthorized: A valid Firebase token is required"));
+                .addOnSuccessListener(result -> deliverAuthHeader(result != null ? result.getToken() : null, callback))
+                .addOnFailureListener(refreshError -> {
+                    CrashMonitor.report("payment", "PaymentRepository.withFirebaseAuthHeader",
+                            "force token refresh failed: " + refreshError.getMessage(), refreshError);
+                    currentUser.getIdToken(false)
+                            .addOnSuccessListener(cached ->
+                                    deliverAuthHeader(cached != null ? cached.getToken() : null, callback))
+                            .addOnFailureListener(cachedError -> {
+                                CrashMonitor.report("payment", "PaymentRepository.withFirebaseAuthHeader",
+                                        "cached token fetch failed: " + cachedError.getMessage(), cachedError);
+                                callback.onError(
+                                        "Your session expired. Please sign out and sign in again.");
+                            });
+                });
+    }
+
+    private void deliverAuthHeader(String token, AuthHeaderCallback callback) {
+        if (token == null || token.trim().isEmpty()) {
+            callback.onError("Your session expired. Please sign out and sign in again.");
+            return;
+        }
+        callback.onSuccess("Bearer " + token);
     }
 }

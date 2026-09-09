@@ -136,7 +136,11 @@ public class BookAppointmentActivity extends BaseActivity {
         viewModel.getBookingProcessing().observe(this, processing -> {
             if (processing != null) {
                 btnConfirmBooking.setEnabled(!processing);
-                btnConfirmBooking.setText(processing ? R.string.loading : (isReschedule ? R.string.reschedule_appointment : R.string.book_appointment));
+                if (processing) {
+                    btnConfirmBooking.setText(R.string.loading);
+                } else {
+                    refreshConfirmButtonLabel();
+                }
             }
         });
 
@@ -217,6 +221,13 @@ public class BookAppointmentActivity extends BaseActivity {
 
     private void populateDoctorViews(Doctor doctorDetail) {
         if (doctorDetail == null) return;
+
+        // Keep booking doctorId in sync with the loaded doctor record.
+        if (doctorDetail.getDoctorId() != null && !doctorDetail.getDoctorId().trim().isEmpty()) {
+            doctorId = doctorDetail.getDoctorId();
+        } else if (doctorDetail.getUserId() != null && !doctorDetail.getUserId().trim().isEmpty()) {
+            doctorId = doctorDetail.getUserId();
+        }
         
         tvDoctorName.setText(getString(R.string.dr_prefix, doctorDetail.getFullName()));
         tvSpecialty.setText(doctorDetail.getSpecialty() != null ? doctorDetail.getSpecialty() : "General Physician");
@@ -230,7 +241,8 @@ public class BookAppointmentActivity extends BaseActivity {
         }
         tvConsultationFee.setText(feeText);
         
-        ProfilePhotoHelper.loadProfilePhoto(this, doctorDetail.getUserId(), ivDoctorImage, shimmerDoctorImage);
+        String photoUserId = doctorDetail.getUserId() != null ? doctorDetail.getUserId() : doctorDetail.getDoctorId();
+        ProfilePhotoHelper.loadProfilePhoto(this, photoUserId, ivDoctorImage, shimmerDoctorImage);
         
         // Show verified badge if doctor is verified
         if (ivVerifiedBadge != null && doctorDetail.isVerified()) {
@@ -280,22 +292,33 @@ public class BookAppointmentActivity extends BaseActivity {
     }
 
     private void bookAppointment() {
+        if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Snackbar.make(rootView, "Please sign in again to book an appointment", Snackbar.LENGTH_LONG)
+                    .setBackgroundTint(getResources().getColor(R.color.colorError))
+                    .show();
+            return;
+        }
+
+        if ((doctorId == null || doctorId.trim().isEmpty()) && doctor != null) {
+            doctorId = doctor.getDoctorId() != null ? doctor.getDoctorId() : doctor.getUserId();
+        }
+
         if (selectedDate == null || selectedDate.isEmpty()) {
-            com.google.android.material.snackbar.Snackbar.make(rootView, "Please select a date", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+            Snackbar.make(rootView, "Please select a date", Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
                     .show();
             return;
         }
 
         if (selectedTime == null || selectedTime.isEmpty()) {
-            com.google.android.material.snackbar.Snackbar.make(rootView, "Please select a time", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+            Snackbar.make(rootView, "Please select a time", Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
                     .show();
             return;
         }
 
-        if (doctor == null) {
-            com.google.android.material.snackbar.Snackbar.make(rootView, "Doctor not loaded", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+        if (doctor == null || doctorId == null || doctorId.trim().isEmpty()) {
+            Snackbar.make(rootView, "Doctor not loaded. Please go back and try again.", Snackbar.LENGTH_SHORT)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
                     .show();
             return;
@@ -310,7 +333,10 @@ public class BookAppointmentActivity extends BaseActivity {
     }
 
     private void prepareAppointmentForPayment() {
-        if (isLaunchingPayment) return;
+        if (isLaunchingPayment) {
+            Snackbar.make(rootView, "Please wait, preparing your booking…", Snackbar.LENGTH_SHORT).show();
+            return;
+        }
 
         // Check if this is a demo doctor - skip payment
         if (doctor != null && doctor.isDemo()) {
@@ -334,6 +360,20 @@ public class BookAppointmentActivity extends BaseActivity {
         }
 
         isLaunchingPayment = true;
+        btnConfirmBooking.setEnabled(false);
+        btnConfirmBooking.setText(R.string.loading);
+        // Unstick the button if Firebase never responds.
+        safetyHandler.removeCallbacksAndMessages(null);
+        safetyHandler.postDelayed(() -> {
+            if (!isFinishing() && isLaunchingPayment && pendingPaymentAppointmentId == null) {
+                isLaunchingPayment = false;
+                btnConfirmBooking.setEnabled(true);
+                refreshConfirmButtonLabel();
+                Snackbar.make(rootView, "Booking timed out. Please try again.", Snackbar.LENGTH_LONG)
+                        .setBackgroundTint(getResources().getColor(R.color.colorError))
+                        .show();
+            }
+        }, 20000);
 
         if (pendingPaymentAppointmentId != null && !pendingPaymentAppointmentId.trim().isEmpty()) {
             launchPaymentActivity(pendingPaymentAppointmentId);
@@ -342,7 +382,7 @@ public class BookAppointmentActivity extends BaseActivity {
 
         String appointmentId = FirebaseHelper.getAppointmentsRef().push().getKey();
         if (appointmentId == null) {
-            isLaunchingPayment = false;
+            resetBookingButtonState();
             Snackbar.make(rootView, "Unable to prepare payment session", Snackbar.LENGTH_LONG)
                     .setBackgroundTint(getResources().getColor(R.color.colorError))
                     .show();
@@ -353,6 +393,8 @@ public class BookAppointmentActivity extends BaseActivity {
         // Hold before payment so doctors don't see unpaid bookings as approval requests.
         appointmentEntity.setStatus(Constants.STATUS_AWAITING_PAYMENT);
         appointmentEntity.setPaymentStatus(Constants.PAYMENT_STATUS_UNPAID);
+        CrashMonitor.step("appointment", "BookAppointmentActivity",
+                "creating awaiting_payment draft type=" + appointmentType + " doctor=" + doctorId);
         FirebaseHelper.createAppointment(appointmentEntity, new FirebaseHelper.OnCompleteListener<AppointmentEntity>() {
             @Override
             public void onSuccess(AppointmentEntity result) {
@@ -362,14 +404,36 @@ public class BookAppointmentActivity extends BaseActivity {
 
             @Override
             public void onError(String error) {
-                isLaunchingPayment = false;
-                Snackbar.make(rootView,
-                                error != null ? error : "Unable to prepare payment session",
-                                Snackbar.LENGTH_LONG)
+                resetBookingButtonState();
+                String message = error != null ? error : "Unable to prepare payment session";
+                if (message.toLowerCase(Locale.US).contains("permission")) {
+                    message = "Booking blocked (permission denied). Sign out/in and try again, or pick another doctor.";
+                }
+                Snackbar.make(rootView, message, Snackbar.LENGTH_LONG)
                         .setBackgroundTint(getResources().getColor(R.color.colorError))
                         .show();
             }
         });
+    }
+
+    private void resetBookingButtonState() {
+        isLaunchingPayment = false;
+        safetyHandler.removeCallbacksAndMessages(null);
+        if (btnConfirmBooking != null) {
+            btnConfirmBooking.setEnabled(true);
+            refreshConfirmButtonLabel();
+        }
+    }
+
+    private void refreshConfirmButtonLabel() {
+        if (btnConfirmBooking == null) return;
+        if (isReschedule) {
+            btnConfirmBooking.setText(R.string.reschedule_appointment);
+        } else if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType)) {
+            btnConfirmBooking.setText(getString(R.string.book_appointment_type, appointmentType));
+        } else {
+            btnConfirmBooking.setText(R.string.book_appointment);
+        }
     }
 
     private void launchPaymentActivity(String appointmentId) {
@@ -380,18 +444,24 @@ public class BookAppointmentActivity extends BaseActivity {
         paymentIntent.putExtra("consultation_id", appointmentId);
         startActivityForResult(paymentIntent, 100);
         
-        // Safety timeout to reset the flag if the activity somehow fails to start or we don't get a result
-        // Safety timeout to reset the flag — uses named handler so it can be cancelled in onDestroy
+        // Keep guard briefly so double-taps don't spawn multiple payment screens.
+        safetyHandler.removeCallbacksAndMessages(null);
         safetyHandler.postDelayed(() -> {
-            if (!isFinishing()) isLaunchingPayment = false;
-        }, 2000);
+            if (!isFinishing()) {
+                isLaunchingPayment = false;
+                if (btnConfirmBooking != null) {
+                    btnConfirmBooking.setEnabled(true);
+                    refreshConfirmButtonLabel();
+                }
+            }
+        }, 1500);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 100) {
-            isLaunchingPayment = false; // Reset guard
+            resetBookingButtonState();
             if (resultCode == RESULT_OK) {
                 paidAt = System.currentTimeMillis();
                 paymentTransactionId = data != null ? data.getIntExtra("transaction_id", -1) : -1;
@@ -452,7 +522,14 @@ public class BookAppointmentActivity extends BaseActivity {
     }
 
     private AppointmentEntity buildAppointmentEntity(String appointmentId) {
-        String patientId = preferenceManager.getUserId();
+        // Rules require patientId === Firebase Auth UID.
+        String patientId = null;
+        if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null) {
+            patientId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+        }
+        if (patientId == null || patientId.trim().isEmpty()) {
+            patientId = preferenceManager.getUserId();
+        }
         String patientName = preferenceManager.getUserName();
 
         AppointmentEntity appointmentEntity = new AppointmentEntity();

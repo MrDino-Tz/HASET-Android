@@ -132,8 +132,9 @@ dependencies {
     // SwipeRefreshLayout
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     
-    // Glide for images
+    // Glide for images (+ OkHttp so CDN loads get real timeouts/retries)
     implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     
     // CircleImageView

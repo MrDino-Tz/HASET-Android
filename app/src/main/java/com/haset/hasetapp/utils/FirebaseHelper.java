@@ -525,34 +525,72 @@ public class FirebaseHelper {
         DatabaseReference appointmentsRef = getAppointmentsRef();
         String appointmentId = appointment.getAppointmentId();
         if (appointmentId == null || appointmentId.trim().isEmpty()) {
-            appointmentId = appointmentsRef.push().getKey(); // Generate unique ID
+            appointmentId = appointmentsRef.push().getKey();
         }
-        if (appointmentId != null) {
-            final String resolvedAppointmentId = appointmentId;
-            appointment.setAppointmentId(resolvedAppointmentId);
-            // Set creation timestamp if not already set
-            if (appointment.getCreatedAt() == 0) {
-                appointment.setCreatedAt(System.currentTimeMillis());
-            }
-
-            appointmentsRef.child(resolvedAppointmentId).setValue(appointment)
-                    .addOnSuccessListener(aVoid -> {
-                        // Update patient_appointments node
-                        getPatientAppointmentsRef(appointment.getPatientId()).child(resolvedAppointmentId).setValue(true);
-                        // Update doctor_appointments node
-                        getDoctorAppointmentsRef(appointment.getDoctorId()).child(resolvedAppointmentId).setValue(true);
-                        listener.onSuccess(appointment);
-                    })
-                    .addOnFailureListener(e -> {
-                        CrashMonitor.report("appointment", "FirebaseHelper.createAppointment",
-                                "appointment write failed id=" + resolvedAppointmentId + " patient=" + appointment.getPatientId(), e);
-                        listener.onError(e.getMessage());
-                    });
-        } else {
+        if (appointmentId == null) {
             CrashMonitor.report("appointment", "FirebaseHelper.createAppointment",
                     "failed to generate appointment id", null);
             listener.onError("Failed to generate appointment ID.");
+            return;
         }
+
+        final String resolvedAppointmentId = appointmentId;
+        appointment.setAppointmentId(resolvedAppointmentId);
+        if (appointment.getCreatedAt() == 0) {
+            appointment.setCreatedAt(System.currentTimeMillis());
+        }
+
+        // Always align patientId with signed-in Auth UID (rules require patientId === auth.uid).
+        com.google.firebase.auth.FirebaseUser authUser = getFirebaseAuth().getCurrentUser();
+        if (authUser != null) {
+            appointment.setPatientId(authUser.getUid());
+        }
+
+        String patientId = appointment.getPatientId();
+        String doctorId = appointment.getDoctorId();
+        if (patientId == null || patientId.trim().isEmpty() || doctorId == null || doctorId.trim().isEmpty()) {
+            listener.onError("Missing patient or doctor for appointment.");
+            return;
+        }
+
+        Map<String, Object> appointmentMap = new HashMap<>();
+        appointmentMap.put("appointmentId", resolvedAppointmentId);
+        appointmentMap.put("patientId", patientId);
+        appointmentMap.put("doctorId", doctorId);
+        putIfNotNull(appointmentMap, "patientName", appointment.getPatientName());
+        putIfNotNull(appointmentMap, "doctorName", appointment.getDoctorName());
+        putIfNotNull(appointmentMap, "date", appointment.getDate());
+        putIfNotNull(appointmentMap, "time", appointment.getTime());
+        putIfNotNull(appointmentMap, "reason", appointment.getReason());
+        putIfNotNull(appointmentMap, "status", appointment.getStatus());
+        putIfNotNull(appointmentMap, "appointmentType", appointment.getAppointmentType());
+        appointmentMap.put("createdAt", appointment.getCreatedAt());
+        appointmentMap.put("amount", appointment.getAmount());
+        appointmentMap.put("updatedAt", System.currentTimeMillis());
+        appointmentMap.put("isChatActive", appointment.isChatActive());
+        if (appointment.getPaymentStatus() != null) {
+            appointmentMap.put("paymentStatus", appointment.getPaymentStatus());
+        }
+        if (appointment.getPaidAt() > 0) {
+            appointmentMap.put("paidAt", appointment.getPaidAt());
+        }
+        if (appointment.getPaymentTransactionId() != null) {
+            appointmentMap.put("paymentTransactionId", appointment.getPaymentTransactionId());
+        }
+
+        // Write appointment first. Index rules read root.appointments (pre-write),
+        // so patient/doctor index updates must run after this succeeds.
+        appointmentsRef.child(resolvedAppointmentId).setValue(appointmentMap)
+                .addOnSuccessListener(aVoid -> {
+                    getPatientAppointmentsRef(patientId).child(resolvedAppointmentId).setValue(true);
+                    getDoctorAppointmentsRef(doctorId).child(resolvedAppointmentId).setValue(true);
+                    listener.onSuccess(appointment);
+                })
+                .addOnFailureListener(e -> {
+                    CrashMonitor.report("appointment", "FirebaseHelper.createAppointment",
+                            "appointment write failed id=" + resolvedAppointmentId + " patient=" + patientId, e);
+                    listener.onError(e.getMessage());
+                });
     }
 
     public static void getAppointmentsByUser(String userId, String role, OnCompleteListener<List<AppointmentEntity>> listener) {

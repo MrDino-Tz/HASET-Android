@@ -926,29 +926,14 @@ public class PatientHomeFragment extends Fragment {
                     android.util.Log.d("PatientHomeFragment", "RecyclerView now visible");
                 }
             } else {
-                android.util.Log.d("PatientHomeFragment", "No articles from Firebase, showing sample");
-                
-                // Add sample articles for testing
+                // No published articles — show empty list (never invent fake view counts).
+                android.util.Log.d("PatientHomeFragment", "No articles from Firebase");
+                fullArticleList = new java.util.ArrayList<>();
                 if (popularArticleAdapter != null) {
-                    java.util.List<com.haset.hasetapp.database.entities.ArticlePostEntity> sampleArticles = new java.util.ArrayList<>();
-                    com.haset.hasetapp.database.entities.ArticlePostEntity sample1 = new com.haset.hasetapp.database.entities.ArticlePostEntity();
-                    sample1.setPostId("sample1");
-                    sample1.setTitle("Afya ya Kila Siku - Maji ya Kutosha");
-                    sample1.setDescription("Kunywa maji ya kutosha kila siku ni muhimu kwa afya yako.");
-                    sample1.setViews(1250);
-                    sampleArticles.add(sample1);
-                    
-                    com.haset.hasetapp.database.entities.ArticlePostEntity sample2 = new com.haset.hasetapp.database.entities.ArticlePostEntity();
-                    sample2.setPostId("sample2");
-                    sample2.setTitle("Mazoezi ya Asubuhi - Faida Zake");
-                    sample2.setDescription("Mazoezi ya asubuhi husaidia kupata nishati na kujisikia vizuri.");
-                    sample2.setViews(980);
-                    sampleArticles.add(sample2);
-                    
-                    popularArticleAdapter.setArticles(sampleArticles);
-                    if (rvPopularArticles != null) {
-                        rvPopularArticles.setVisibility(View.VISIBLE);
-                    }
+                    popularArticleAdapter.setArticles(new java.util.ArrayList<>());
+                }
+                if (rvPopularArticles != null) {
+                    rvPopularArticles.setVisibility(View.GONE);
                 }
             }
         });

@@ -164,7 +164,12 @@ public class ImageLoader {
                                            @NonNull ImageView target,
                                            @Nullable RequestListener listener) {
         if (isValidUrl(url)) {
-            RequestBuilder<?> builder = Glide.with(context).load(url).apply(DEFAULT_OPTIONS);
+            String loadUrl = CloudinaryUploadHelper.forThumbnail(
+                    CloudinaryUploadHelper.toPublicDeliveryUrl(url), 360);
+            RequestBuilder<?> builder = Glide.with(context)
+                    .load(loadUrl)
+                    .timeout(20000)
+                    .apply(DEFAULT_OPTIONS);
             if (listener != null) {
                 builder = builder.listener(listener);
             }

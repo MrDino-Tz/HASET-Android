@@ -198,11 +198,23 @@ test("allows approved doctors to edit profile fields without changing approval f
 
 test("allows only the patient to create a pending appointment with an approved doctor", async () => {
   await assertFails(set(ref(otherPatient, "appointments/appointment-a"), appointment));
-  await assertSucceeds(set(ref(patient, "appointments/appointment-a"), appointment));
+  await assertSucceeds(set(ref(patient, "appointments/appointment-a"), {
+    ...appointment,
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
   await assertFails(set(ref(patient, "appointments/unapproved-doctor"), {
     ...appointment,
     appointmentId: "unapproved-doctor",
     doctorId: "doctor-c",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+  await assertSucceeds(set(ref(patient, "appointments/appointment-paid"), {
+    ...appointment,
+    appointmentId: "appointment-paid",
+    status: "pending",
+    paymentStatus: "paid",
   }));
 });
 
@@ -231,13 +243,18 @@ test("limits appointment reads and lifecycle updates to participants", async () 
   await assertFails(get(ref(otherPatient, "appointments/appointment-a")));
   await assertSucceeds(get(ref(patient, "appointments/appointment-a")));
   await assertSucceeds(get(ref(doctor, "appointments/appointment-a")));
+  // Unpaid drafts cannot be approved
+  await assertFails(update(ref(doctor, "appointments/appointment-a"), { status: "approved", updatedAt: 1786500001000 }));
+  await assertSucceeds(update(ref(patient, "appointments/appointment-a"), {
+    status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+  await assertSucceeds(update(ref(patient, "appointments/appointment-a"), {
+    date: "13/08/2026", time: "11:00", status: "pending", lastUpdated: 1786500002000, rescheduledBy: "patient-a",
+  }));
   await assertFails(update(ref(otherDoctor, "appointments/appointment-a"), { status: "approved" }));
   await assertFails(update(ref(patient, "appointments/appointment-a"), { status: "completed" }));
   await assertSucceeds(update(ref(doctor, "appointments/appointment-a"), { status: "approved", updatedAt: 1786500001000 }));
   await assertFails(update(ref(patient, "appointments/appointment-a"), { doctorId: "doctor-b" }));
-  await assertSucceeds(update(ref(patient, "appointments/appointment-a"), {
-    date: "13/08/2026", time: "11:00", status: "pending", lastUpdated: 1786500002000, rescheduledBy: "patient-a",
-  }));
 });
 
 test("allows only scoped directory and appointment queries", async () => {

@@ -104,10 +104,11 @@ public class ArticlePostHelper {
                     List<ArticlePostEntity> posts = new ArrayList<>();
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
-                        if (post != null && "published".equals(post.getStatus())) {
-                            if (post.getPostId() == null || post.getPostId().isEmpty()) {
-                                post.setPostId(snapshot.getKey());
-                            }
+                        if (post == null) continue;
+                        if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                            post.setPostId(snapshot.getKey());
+                        }
+                        if (post.isVisibleToPatients()) {
                             posts.add(post);
                         }
                     }
@@ -123,7 +124,11 @@ public class ArticlePostHelper {
                                 List<ArticlePostEntity> posts = new ArrayList<>();
                                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                                     ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
-                                    if (post != null && "published".equals(post.getStatus())) {
+                                    if (post == null) continue;
+                                    if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                                        post.setPostId(snapshot.getKey());
+                                    }
+                                    if (post.isVisibleToPatients()) {
                                         posts.add(post);
                                     }
                                 }
@@ -409,7 +414,11 @@ public class ArticlePostHelper {
                 List<ArticlePostEntity> posts = new ArrayList<>();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     ArticlePostEntity post = snapshot.getValue(ArticlePostEntity.class);
-                    if (post != null) {
+                    if (post == null) continue;
+                    if (post.getPostId() == null || post.getPostId().isEmpty()) {
+                        post.setPostId(snapshot.getKey());
+                    }
+                    if (post.isVisibleToPatients()) {
                         posts.add(post);
                     }
                 }

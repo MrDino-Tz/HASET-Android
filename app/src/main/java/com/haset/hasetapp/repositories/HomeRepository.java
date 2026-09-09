@@ -186,17 +186,16 @@ public class HomeRepository {
                         List<ArticlePostEntity> articles = new ArrayList<>();
                         for (DataSnapshot ds : snapshot.getChildren()) {
                             ArticlePostEntity article = ds.getValue(ArticlePostEntity.class);
-                            if (article != null) {
-                                // Check if article should be shown (status = published or no status field)
-                                String status = ds.child("status").getValue(String.class);
-                                if (status == null || "published".equalsIgnoreCase(status)) {
-                                    articles.add(article);
-                                }
+                            if (article == null) continue;
+                            if (article.getPostId() == null || article.getPostId().isEmpty()) {
+                                article.setPostId(ds.getKey());
+                            }
+                            // Only real published posts with a title. Deleted/empty stubs stay hidden.
+                            if (article.isVisibleToPatients()) {
+                                articles.add(article);
                             }
                         }
-                        // Sort by views descending
                         Collections.sort(articles, (a1, a2) -> Integer.compare(a2.getViews(), a1.getViews()));
-                        // Limit to top 5
                         if (articles.size() > 5) {
                             articles = articles.subList(0, 5);
                         }

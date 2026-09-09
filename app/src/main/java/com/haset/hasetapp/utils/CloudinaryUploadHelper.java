@@ -191,6 +191,24 @@ public class CloudinaryUploadHelper {
         return url.replace("/authenticated/", "/upload/").replace("/private/", "/upload/");
     }
 
+    /**
+     * Build a smaller CDN URL for avatars/list thumbnails so Glide is less likely to
+     * fail with status -1 on slow or flaky mobile networks.
+     */
+    public static String forThumbnail(String url, int sizePx) {
+        String normalized = toPublicDeliveryUrl(url);
+        if (normalized == null || normalized.isEmpty()) return normalized;
+        if (!normalized.contains("res.cloudinary.com") || !normalized.contains("/image/upload/")) {
+            return normalized;
+        }
+        if (normalized.contains("/image/upload/c_") || normalized.contains("/image/upload/w_")) {
+            return normalized;
+        }
+        int size = Math.max(64, sizePx);
+        String transform = "c_fill,g_auto,w_" + size + ",h_" + size + ",q_auto:eco,f_auto/";
+        return normalized.replace("/image/upload/", "/image/upload/" + transform);
+    }
+
     private static File uriToFile(Context context, Uri uri, long maxBytes, String fileName) {
         try {
             String scheme = uri.getScheme();
