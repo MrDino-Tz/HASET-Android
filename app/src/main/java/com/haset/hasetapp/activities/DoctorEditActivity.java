@@ -445,10 +445,18 @@ public class DoctorEditActivity extends LocalizedAppCompatActivity {
         doctorEntity.setProfileImage(currentProfileImagePath); // Save profile image path
         doctorEntity.setLastUpdated(System.currentTimeMillis());
         
-        // Set online status
+        // Online status must go through presence helper so lastSeenAt is set for patients.
         if (switchOnlineStatus != null) {
-            doctorEntity.setOnline(switchOnlineStatus.isChecked());
-            doctorEntity.setOnlineStatus(switchOnlineStatus.isChecked() ? "online" : "offline");
+            String id = doctorId;
+            if (switchOnlineStatus.isChecked()) {
+                doctorEntity.setOnline(true);
+                doctorEntity.setOnlineStatus("online");
+                com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOnline(id);
+            } else {
+                doctorEntity.setOnline(false);
+                doctorEntity.setOnlineStatus("offline");
+                com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOffline(id);
+            }
         }
         
         viewModel.saveDoctorProfile(doctorEntity);

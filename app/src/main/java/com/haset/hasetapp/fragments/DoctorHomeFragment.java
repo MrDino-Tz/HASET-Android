@@ -347,10 +347,14 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                             isOnline = false;
                         }
                         updateOnlineStatusUI();
-                        // If doctor left availability ON, refresh real presence while home is open.
+                        // If doctor left availability ON, keep real presence alive app-wide.
                         String doctorId = preferenceManager.getUserId();
-                        if (isOnline && doctorId != null) {
-                            com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOnline(doctorId);
+                        if (doctorId != null) {
+                            if (isOnline) {
+                                com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOnline(doctorId);
+                            } else {
+                                preferenceManager.setDoctorWantsOnline(false);
+                            }
                         }
                     }
 
@@ -1267,7 +1271,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     @Override
     public void onPause() {
         super.onPause();
-        com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().onBackground();
+        // Presence heartbeats are app-scoped (HASETApplication) — do not stop on Home pause.
 
         // Stop network monitoring when fragment is not visible
         if (networkCallback != null) {

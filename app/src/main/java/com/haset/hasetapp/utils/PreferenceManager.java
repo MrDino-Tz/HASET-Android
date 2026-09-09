@@ -91,6 +91,18 @@ public class PreferenceManager {
     public boolean isDemoDoctor() {
         return sharedPreferences.getBoolean(KEY_IS_DEMO_DOCTOR, false);
     }
+
+    private static final String KEY_DOCTOR_WANTS_ONLINE = "doctor_wants_online";
+
+    /** Sticky Instant Chat availability intent for the logged-in doctor. */
+    public void setDoctorWantsOnline(boolean wantsOnline) {
+        editor.putBoolean(KEY_DOCTOR_WANTS_ONLINE, wantsOnline);
+        editor.apply();
+    }
+
+    public boolean getDoctorWantsOnline() {
+        return sharedPreferences.getBoolean(KEY_DOCTOR_WANTS_ONLINE, false);
+    }
     
     public void clearPreferences() {
         // Preserve app-level preferences that should persist across logouts

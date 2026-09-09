@@ -81,6 +81,14 @@ public class BookAppointmentActivity extends BaseActivity {
     private long paidAt = 0L;
     private int paymentTransactionId = -1;
     private String pendingPaymentAppointmentId;
+    private com.google.firebase.database.ValueEventListener presenceListener;
+    private final Runnable presenceUiRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateInstantAppointmentAvailability();
+            safetyHandler.postDelayed(this, 20_000L);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +119,7 @@ public class BookAppointmentActivity extends BaseActivity {
         
         viewModel = new ViewModelProvider(this).get(AppointmentBookingViewModel.class);
         setupObservers();
+        startDoctorPresenceListener();
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         etDate.setOnClickListener(v -> showDatePicker());
@@ -698,6 +707,43 @@ public class BookAppointmentActivity extends BaseActivity {
         return doctor.isEffectivelyOnline();
     }
 
+    private void startDoctorPresenceListener() {
+        if (doctorId == null || doctorId.trim().isEmpty()) return;
+        stopDoctorPresenceListener();
+        presenceListener = new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                Boolean online = snapshot.child("online").getValue(Boolean.class);
+                String onlineStatus = snapshot.child("onlineStatus").getValue(String.class);
+                Long lastSeenAt = snapshot.child("lastSeenAt").getValue(Long.class);
+                if (doctor == null) {
+                    doctor = new Doctor();
+                    doctor.setDoctorId(doctorId);
+                }
+                doctor.setOnline(online != null && online);
+                doctor.setOnlineStatus(onlineStatus != null ? onlineStatus : "offline");
+                doctor.setLastSeenAt(lastSeenAt != null ? lastSeenAt : 0L);
+                updateInstantAppointmentAvailability();
+            }
+
+            @Override
+            public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                // Keep last known presence; booking still re-checks on confirm.
+            }
+        };
+        FirebaseHelper.getDoctorsNodeRef().child(doctorId).addValueEventListener(presenceListener);
+        safetyHandler.removeCallbacks(presenceUiRefreshRunnable);
+        safetyHandler.post(presenceUiRefreshRunnable);
+    }
+
+    private void stopDoctorPresenceListener() {
+        if (presenceListener != null && doctorId != null) {
+            FirebaseHelper.getDoctorsNodeRef().child(doctorId).removeEventListener(presenceListener);
+            presenceListener = null;
+        }
+        safetyHandler.removeCallbacks(presenceUiRefreshRunnable);
+    }
+
     private void showDoctorOfflineMessage() {
         Snackbar.make(rootView, R.string.booking_blocked_doctor_not_active, Snackbar.LENGTH_LONG)
                 .setBackgroundTint(getResources().getColor(R.color.colorError))
@@ -733,6 +779,7 @@ public class BookAppointmentActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
+        stopDoctorPresenceListener();
         super.onDestroy();
         safetyHandler.removeCallbacksAndMessages(null);
     }

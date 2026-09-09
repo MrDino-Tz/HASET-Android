@@ -474,6 +474,12 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
                 
                 // Cancel trending articles background worker
                 TrendingArticlesWorker.cancel(requireContext());
+
+                String userId = preferenceManager.getUserId();
+                if (Constants.ROLE_DOCTOR.equals(preferenceManager.getUserRole())
+                        && userId != null && !userId.trim().isEmpty()) {
+                    com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOffline(userId);
+                }
                 
                 // Sign out from Firebase Auth
                 FirebaseHelper.getFirebaseAuth().signOut();

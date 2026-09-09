@@ -59,6 +59,17 @@ public class DoctorsActivity extends BaseActivity implements DoctorAdapter.OnDoc
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout;
     private List<Doctor> allDisplayDoctors = new ArrayList<>();
     private android.os.Handler loadMoreHandler;
+    private final Runnable presenceFreshnessRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (doctorAdapter != null) {
+                doctorAdapter.notifyDataSetChanged();
+            }
+            if (loadMoreHandler != null) {
+                loadMoreHandler.postDelayed(this, 20_000L);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -401,6 +412,23 @@ public class DoctorsActivity extends BaseActivity implements DoctorAdapter.OnDoc
         builder.show();
     }
     
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (loadMoreHandler != null) {
+            loadMoreHandler.removeCallbacks(presenceFreshnessRunnable);
+            loadMoreHandler.postDelayed(presenceFreshnessRunnable, 20_000L);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (loadMoreHandler != null) {
+            loadMoreHandler.removeCallbacks(presenceFreshnessRunnable);
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();

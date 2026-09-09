@@ -11,6 +11,7 @@ import android.view.WindowManager;
 
 import com.haset.hasetapp.database.LocalStorageHelper;
 import com.haset.hasetapp.utils.CloudinaryUploadHelper;
+import com.haset.hasetapp.utils.Constants;
 import com.haset.hasetapp.utils.DoctorNotificationManager;
 import com.haset.hasetapp.utils.MessageNotificationManager;
 import com.haset.hasetapp.utils.PatientNotificationManager;
@@ -127,6 +128,7 @@ public class HASETApplication extends Application implements Application.Activit
             if (doctorNotificationManager != null) {
                 doctorNotificationManager.onAppForegrounded();
             }
+            resumeDoctorPresenceIfNeeded();
         }
         Log.d(TAG, "Activity resumed: " + activity.getClass().getSimpleName());
     }
@@ -140,6 +142,18 @@ public class HASETApplication extends Application implements Application.Activit
     public void onActivityStopped(Activity activity) {
         activityCount--;
         Log.d(TAG, "Activity stopped: " + activity.getClass().getSimpleName() + ", count: " + activityCount);
+        if (activityCount <= 0 && isAppInForeground) {
+            activityCount = 0;
+            isAppInForeground = false;
+            Log.d(TAG, "App moved to background");
+            if (patientNotificationManager != null) {
+                patientNotificationManager.onAppBackgrounded();
+            }
+            if (doctorNotificationManager != null) {
+                doctorNotificationManager.onAppBackgrounded();
+            }
+            com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().onAppBackground();
+        }
     }
     
     @Override
@@ -150,19 +164,15 @@ public class HASETApplication extends Application implements Application.Activit
     @Override
     public void onActivityDestroyed(Activity activity) {
         Log.d(TAG, "Activity destroyed: " + activity.getClass().getSimpleName());
-        
-        if (activityCount == 0 && isAppInForeground) {
-            isAppInForeground = false;
-            Log.d(TAG, "App moved to background");
-            
-            // Notify all notification managers
-            if (patientNotificationManager != null) {
-                patientNotificationManager.onAppBackgrounded();
-            }
-            if (doctorNotificationManager != null) {
-                doctorNotificationManager.onAppBackgrounded();
-            }
-        }
+    }
+
+    private void resumeDoctorPresenceIfNeeded() {
+        PreferenceManager prefs = new PreferenceManager(this);
+        if (!Constants.ROLE_DOCTOR.equals(prefs.getUserRole())) return;
+        if (!prefs.isLoggedIn()) return;
+        String doctorId = prefs.getUserId();
+        if (doctorId == null || doctorId.trim().isEmpty()) return;
+        com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().onAppForeground(doctorId);
     }
     
     @Override

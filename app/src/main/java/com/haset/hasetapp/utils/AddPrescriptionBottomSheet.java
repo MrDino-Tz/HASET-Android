@@ -368,36 +368,41 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
 
         if (currentImageUri != null) {
             tvProgressStatus.setText(R.string.uploading_attachment);
-            prescriptionHelper.uploadPrescriptionImage(currentImageUri, new com.cloudinary.android.callback.UploadCallback() {
-                @Override
-                public void onStart(String requestId) {}
+            prescriptionHelper.uploadPrescriptionImage(requireContext(), currentImageUri,
+                    new CloudinaryUploadHelper.OnFileUploadListener() {
+                        @Override
+                        public void onUploadStart() {}
 
-                @Override
-                public void onProgress(String requestId, long bytes, long totalBytes) {
-                    requireActivity().runOnUiThread(() -> {
-                        int progress = (int) ((bytes * 100) / totalBytes);
-                        tvProgressStatus.setText("Uploading: " + progress + "%");
+                        @Override
+                        public void onUploadProgress(double progress) {
+                            if (!isAdded()) return;
+                            requireActivity().runOnUiThread(() ->
+                                    tvProgressStatus.setText("Uploading: " + (int) progress + "%"));
+                        }
+
+                        @Override
+                        public void onUploadSuccess(String downloadUrl, String fileName) {
+                            if (!isAdded()) return;
+                            String publicUrl = CloudinaryUploadHelper.toPublicDeliveryUrl(downloadUrl);
+                            prescription.setImageUrl(publicUrl);
+                            savePrescriptionToFirebase(prescription, prescriptionHelper);
+                        }
+
+                        @Override
+                        public void onUploadError(String error) {
+                            if (!isAdded()) return;
+                            requireActivity().runOnUiThread(() -> {
+                                progressOverlay.setVisibility(View.GONE);
+                                String msg = error != null ? error : getString(R.string.prescription_image_upload_failed);
+                                if (msg.toLowerCase(java.util.Locale.US).contains("block")
+                                        || msg.toLowerCase(java.util.Locale.US).contains("unauthorized")
+                                        || msg.toLowerCase(java.util.Locale.US).contains("401")) {
+                                    msg = getString(R.string.prescription_image_upload_blocked);
+                                }
+                                showSnackbar(msg);
+                            });
+                        }
                     });
-                }
-
-                @Override
-                public void onSuccess(String requestId, Map resultData) {
-                    String imageUrl = (String) resultData.get("secure_url");
-                    prescription.setImageUrl(imageUrl);
-                    savePrescriptionToFirebase(prescription, prescriptionHelper);
-                }
-
-                @Override
-                public void onError(String requestId, com.cloudinary.android.callback.ErrorInfo error) {
-                    requireActivity().runOnUiThread(() -> {
-                        progressOverlay.setVisibility(View.GONE);
-                        showSnackbar("Upload failed: " + error.getDescription());
-                    });
-                }
-
-                @Override
-                public void onReschedule(String requestId, com.cloudinary.android.callback.ErrorInfo error) {}
-            });
         } else {
             savePrescriptionToFirebase(prescription, prescriptionHelper);
         }

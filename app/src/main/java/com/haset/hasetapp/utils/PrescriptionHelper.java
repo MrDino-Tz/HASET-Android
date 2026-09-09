@@ -44,17 +44,37 @@ public class PrescriptionHelper {
     }
     
     /**
-     * Upload prescription image to Cloudinary
+     * Upload prescription image via the same allowed Cloudinary unsigned path
+     * used for chat attachments (folder chat_attachments).
      */
+    public void uploadPrescriptionImage(Context context, Uri imageUri,
+                                        CloudinaryUploadHelper.OnFileUploadListener listener) {
+        String fileName = "prescription_" + System.currentTimeMillis() + ".jpg";
+        CloudinaryUploadHelper.uploadFile(
+                context,
+                imageUri,
+                "image",
+                fileName,
+                "chat_attachments",
+                listener
+        );
+    }
+
+    /** @deprecated Use {@link #uploadPrescriptionImage(Context, Uri, CloudinaryUploadHelper.OnFileUploadListener)} */
+    @Deprecated
     public void uploadPrescriptionImage(Uri imageUri, UploadCallback callback) {
         String uploadPreset = CloudinaryUploadHelper.getUploadPreset();
         if (uploadPreset == null || uploadPreset.trim().isEmpty()) {
             Log.e(TAG, "Cloudinary upload preset is not initialized");
+            if (callback != null) {
+                callback.onError(null, new ErrorInfo(401, "Cloudinary not initialized"));
+            }
             return;
         }
 
+        // Same allowed folder as chat attachments — unsigned preset blocks "prescriptions/".
         MediaManager.get().upload(imageUri)
-            .option("folder", "prescriptions")
+            .option("folder", "chat_attachments")
             .option("resource_type", "image")
             .unsigned(uploadPreset)
             .callback(callback)

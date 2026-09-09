@@ -196,6 +196,85 @@ test("allows approved doctors to edit profile fields without changing approval f
   await assertFails(update(ref(doctor, "doctors/doctor-a"), { verified: false }));
 });
 
+test("allows doctor presence heartbeat updates with lastSeenAt", async () => {
+  const now = Date.now();
+  await assertSucceeds(update(ref(doctor, "doctors/doctor-a"), {
+    online: true,
+    onlineStatus: "online",
+    lastSeenAt: now,
+    lastUpdated: now,
+  }));
+  await assertSucceeds(update(ref(doctor, "doctors/doctor-a"), {
+    lastSeenAt: now + 45_000,
+    online: true,
+    onlineStatus: "online",
+  }));
+  await assertSucceeds(update(ref(doctor, "doctors/doctor-a"), {
+    online: false,
+    onlineStatus: "offline",
+    lastSeenAt: now + 90_000,
+    lastUpdated: now + 90_000,
+  }));
+  await assertFails(update(ref(patient, "doctors/doctor-a"), {
+    online: true,
+    lastSeenAt: now,
+  }));
+});
+
+test("requires fresh doctor presence for Instant Chat booking create", async () => {
+  const now = Date.now();
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.database();
+    await update(ref(db, "doctors/doctor-a"), {
+      online: false,
+      onlineStatus: "offline",
+      lastSeenAt: now - 10_000,
+    });
+  });
+
+  await assertFails(set(ref(patient, "appointments/chat-offline"), {
+    ...appointment,
+    appointmentId: "chat-offline",
+    appointmentType: "Online Chat",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.database();
+    await update(ref(db, "doctors/doctor-a"), {
+      online: true,
+      onlineStatus: "online",
+      lastSeenAt: now - 180_000, // stale (> 2 min)
+    });
+  });
+
+  await assertFails(set(ref(patient, "appointments/chat-stale"), {
+    ...appointment,
+    appointmentId: "chat-stale",
+    appointmentType: "Online Chat",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.database();
+    await update(ref(db, "doctors/doctor-a"), {
+      online: true,
+      onlineStatus: "online",
+      lastSeenAt: now - 30_000, // fresh
+    });
+  });
+
+  await assertSucceeds(set(ref(patient, "appointments/chat-fresh"), {
+    ...appointment,
+    appointmentId: "chat-fresh",
+    appointmentType: "Online Chat",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+});
+
 test("allows only the patient to create a pending appointment with an approved doctor", async () => {
   await assertFails(set(ref(otherPatient, "appointments/appointment-a"), appointment));
   await assertSucceeds(set(ref(patient, "appointments/appointment-a"), {
