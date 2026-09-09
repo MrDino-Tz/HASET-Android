@@ -441,8 +441,10 @@ public class FirebaseHelper {
 
                                 Boolean online = doctorEntitySnapshot.child("online").getValue(Boolean.class);
                                 String onlineStatus = doctorEntitySnapshot.child("onlineStatus").getValue(String.class);
+                                Long lastSeenAt = doctorEntitySnapshot.child("lastSeenAt").getValue(Long.class);
                                 doctor.setOnline(online != null && online);
                                 doctor.setOnlineStatus(onlineStatus != null ? onlineStatus : "offline");
+                                doctor.setLastSeenAt(lastSeenAt != null ? lastSeenAt : 0L);
                                 
                                 // Always return the doctor object if the user exists and is a doctor
                                 listener.onSuccess(doctor);
@@ -1012,7 +1014,7 @@ public class FirebaseHelper {
                     for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
                         com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
                         if (isDoctorVisibleForPatients(doctorSnapshot, doctorEntity)) {
-                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
+                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity, doctorSnapshot));
                         }
                     }
                 }
@@ -1041,7 +1043,7 @@ public class FirebaseHelper {
                     for (com.google.firebase.database.DataSnapshot doctorSnapshot : dataSnapshot.getChildren()) {
                         com.haset.hasetapp.database.entities.DoctorEntity doctorEntity = doctorSnapshot.getValue(com.haset.hasetapp.database.entities.DoctorEntity.class);
                         if (isDoctorVisibleForPatients(doctorSnapshot, doctorEntity)) {
-                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity));
+                            doctors.add(buildDoctorFromEntity(doctorSnapshot.getKey(), doctorEntity, doctorSnapshot));
                         }
                     }
                 }
@@ -1059,7 +1061,8 @@ public class FirebaseHelper {
         });
     }
 
-    private static com.haset.hasetapp.models.Doctor buildDoctorFromEntity(String doctorId, com.haset.hasetapp.database.entities.DoctorEntity doctorEntity) {
+    private static com.haset.hasetapp.models.Doctor buildDoctorFromEntity(String doctorId, com.haset.hasetapp.database.entities.DoctorEntity doctorEntity,
+                                                                          @Nullable com.google.firebase.database.DataSnapshot snapshot) {
         com.haset.hasetapp.models.Doctor doctor = new com.haset.hasetapp.models.Doctor();
         doctor.setDoctorId(doctorId);
         doctor.setUserId(doctorId);
@@ -1123,6 +1126,14 @@ public class FirebaseHelper {
         doctor.setVerified(doctorEntity.isApproved());
         doctor.setOnline(doctorEntity.isOnline());
         doctor.setOnlineStatus(doctorEntity.getOnlineStatus() != null ? doctorEntity.getOnlineStatus() : "offline");
+        if (snapshot != null) {
+            Long lastSeenAt = snapshot.child("lastSeenAt").getValue(Long.class);
+            doctor.setLastSeenAt(lastSeenAt != null ? lastSeenAt : 0L);
+            Boolean online = snapshot.child("online").getValue(Boolean.class);
+            String onlineStatus = snapshot.child("onlineStatus").getValue(String.class);
+            if (online != null) doctor.setOnline(online);
+            if (onlineStatus != null) doctor.setOnlineStatus(onlineStatus);
+        }
         doctor.setPatientsTreated(doctorEntity.getPatientsTreated());
         doctor.setCreatedAt(doctorEntity.getCreatedAt());
         doctor.setDemo(doctorEntity.isDemo());
@@ -1297,9 +1308,14 @@ public class FirebaseHelper {
                                     
                                     doctor.setVerified(doctorEntity.isApproved());
                                     
-                                    // Set online status
-                                    doctor.setOnline(doctorEntity.isOnline());
-                                    doctor.setOnlineStatus(doctorEntity.getOnlineStatus() != null ? doctorEntity.getOnlineStatus() : "offline");
+                                    // Set online status + presence heartbeat
+                                    Boolean onlineFlag = doctorEntitySnapshot.child("online").getValue(Boolean.class);
+                                    String onlineStatus = doctorEntitySnapshot.child("onlineStatus").getValue(String.class);
+                                    Long lastSeenAt = doctorEntitySnapshot.child("lastSeenAt").getValue(Long.class);
+                                    doctor.setOnline(onlineFlag != null ? onlineFlag : doctorEntity.isOnline());
+                                    doctor.setOnlineStatus(onlineStatus != null ? onlineStatus
+                                            : (doctorEntity.getOnlineStatus() != null ? doctorEntity.getOnlineStatus() : "offline"));
+                                    doctor.setLastSeenAt(lastSeenAt != null ? lastSeenAt : 0L);
                                     
                                     // Handle patients treated from snapshot
                                     Object treated = doctorEntitySnapshot.child("patientsTreated").getValue();

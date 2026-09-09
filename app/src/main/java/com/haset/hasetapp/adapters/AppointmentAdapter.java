@@ -131,6 +131,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             } else if (!showActions && (appointment.getStatus().equals(Constants.STATUS_APPROVED) || appointment.getStatus().equals(Constants.STATUS_PENDING))) {
                 layoutActions.setVisibility(View.GONE);
                 layoutPatientActions.setVisibility(View.VISIBLE);
+                btnCancel.setVisibility(appointment.canPatientCancel() ? View.VISIBLE : View.GONE);
                 
                 if (Constants.STATUS_APPROVED.equals(appointment.getStatus()) && 
                    (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equals(appointment.getAppointmentType()) || 

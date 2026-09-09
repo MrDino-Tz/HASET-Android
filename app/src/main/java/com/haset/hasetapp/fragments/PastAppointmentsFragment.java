@@ -202,6 +202,10 @@ public class PastAppointmentsFragment extends Fragment implements AppointmentAda
             showSnackbar("Invalid appointment");
             return;
         }
+        if (!appointment.canPatientCancel()) {
+            showSnackbar(getString(R.string.cannot_cancel_active_chat_appointment));
+            return;
+        }
 
             viewModel.updateStatus(appointment, Constants.STATUS_CANCELLED, new FirebaseHelper.OnCompleteListener<Void>() {
                 @Override

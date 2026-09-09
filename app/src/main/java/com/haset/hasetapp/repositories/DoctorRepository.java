@@ -165,11 +165,14 @@ public class DoctorRepository {
                                                     if (doctorSnapshot.exists()) {
                                                         Boolean isOnline = doctorSnapshot.child("online").getValue(Boolean.class);
                                                         String onlineStatus = doctorSnapshot.child("onlineStatus").getValue(String.class);
+                                                        Long lastSeenAt = doctorSnapshot.child("lastSeenAt").getValue(Long.class);
                                                         finalDoctor.setOnline(isOnline != null && isOnline);
                                                         finalDoctor.setOnlineStatus(onlineStatus != null ? onlineStatus : "offline");
+                                                        finalDoctor.setLastSeenAt(lastSeenAt != null ? lastSeenAt : 0L);
                                                     } else {
                                                         finalDoctor.setOnline(false);
                                                         finalDoctor.setOnlineStatus("offline");
+                                                        finalDoctor.setLastSeenAt(0L);
                                                     }
                                                     synchronized (doctors) {
                                                         doctors.add(finalDoctor);

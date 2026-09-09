@@ -61,7 +61,7 @@ public class AppointmentsViewModel extends AndroidViewModel {
             List<Appointment> filtered = new ArrayList<>();
             if (appointments != null) {
                 for (Appointment a : appointments) {
-                    if (a.isPast()) {
+                    if (a.isPast() && a.isWithinHistoryRetention()) {
                         filtered.add(a);
                     }
                 }
@@ -73,7 +73,8 @@ public class AppointmentsViewModel extends AndroidViewModel {
             List<Appointment> filtered = new ArrayList<>();
             if (appointments != null) {
                 for (Appointment a : appointments) {
-                    if (Constants.STATUS_COMPLETED.equalsIgnoreCase(a.getStatus())) {
+                    if (Constants.STATUS_COMPLETED.equalsIgnoreCase(a.getStatus())
+                            && a.isWithinHistoryRetention()) {
                         filtered.add(a);
                     }
                 }
@@ -85,7 +86,7 @@ public class AppointmentsViewModel extends AndroidViewModel {
             List<Appointment> filtered = new ArrayList<>();
             if (appointments != null) {
                 for (Appointment a : appointments) {
-                    if (a.isCancelled()) {
+                    if (a.isCancelled() && a.isWithinHistoryRetention()) {
                         filtered.add(a);
                     }
                 }

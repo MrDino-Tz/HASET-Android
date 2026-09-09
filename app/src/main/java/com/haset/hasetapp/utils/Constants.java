@@ -16,6 +16,13 @@ public class Constants {
     public static final String PAYMENT_STATUS_PAID = "paid";
     public static final String PAYMENT_STATUS_UNPAID = "unpaid";
     public static final String APPOINTMENT_TYPE_ONLINE_CHAT = "Online Chat";
+    /** Hide older past/cancelled/completed items in app lists (records stay in Firebase). */
+    public static final long APPOINTMENT_HISTORY_RETENTION_DAYS = 60L;
+
+    /** Doctor presence: heartbeat while app is foregrounded. */
+    public static final long DOCTOR_PRESENCE_HEARTBEAT_MS = 45_000L;
+    /** Patients treat doctor as online only if lastSeenAt is within this window. */
+    public static final long DOCTOR_PRESENCE_TIMEOUT_MS = 120_000L;
     
     // Firebase Database Paths
     public static final String USERS_PATH = "users";

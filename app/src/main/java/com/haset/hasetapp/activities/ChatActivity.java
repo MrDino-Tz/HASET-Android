@@ -480,25 +480,34 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
 
         long startsAt = getLongChild(snapshot, "chatStartsAt", 0L);
         long expiresAt = getLongChild(snapshot, "chatExpiresAt", 0L);
-        Boolean active = snapshot.child("isChatActive").getValue(Boolean.class);
-        if (Boolean.TRUE.equals(active) && expiresAt > System.currentTimeMillis()) {
-            chatStartTime = startsAt > 0 ? startsAt : Math.max(0L, expiresAt - CHAT_SESSION_DURATION);
-            chatExpiresAt = expiresAt;
-            String appointmentId = snapshot.child("appointmentId").getValue(String.class);
-            currentAppointment = new com.haset.hasetapp.database.entities.AppointmentEntity();
-            currentAppointment.setAppointmentId(appointmentId != null ? appointmentId : "");
-            currentAppointment.setPatientId(patientId);
-            currentAppointment.setDoctorId(doctorId);
-            currentAppointment.setChatStartTime(chatStartTime);
-            currentAppointment.setChatActive(true);
-            isChatSessionActive = true;
-            canSendInChat = true;
-            chatDisabledMessage = null;
-            setChatInputEnabled(true);
-            startChatDurationTracker();
-            return true;
+        if (expiresAt <= System.currentTimeMillis()) {
+            return false;
         }
-        return false;
+
+        // Reactivate any still-valid 24h window even if a previous screen marked
+        // isChatActive=false (e.g. after auto-complete / accidental cancel reopen).
+        chatStartTime = startsAt > 0 ? startsAt : Math.max(0L, expiresAt - CHAT_SESSION_DURATION);
+        chatExpiresAt = expiresAt;
+        String appointmentId = snapshot.child("appointmentId").getValue(String.class);
+        currentAppointment = new com.haset.hasetapp.database.entities.AppointmentEntity();
+        currentAppointment.setAppointmentId(appointmentId != null ? appointmentId : "");
+        currentAppointment.setPatientId(patientId);
+        currentAppointment.setDoctorId(doctorId);
+        currentAppointment.setChatStartTime(chatStartTime);
+        currentAppointment.setChatActive(true);
+        isChatSessionActive = true;
+        canSendInChat = true;
+        chatDisabledMessage = null;
+        setChatInputEnabled(true);
+        startChatDurationTracker();
+
+        java.util.Map<String, Object> sessionUpdates = new java.util.HashMap<>();
+        sessionUpdates.put("isChatActive", true);
+        com.haset.hasetapp.utils.FirebaseHelper.getFirebaseDatabase()
+                .getReference("chat_sessions")
+                .child(chatRoomId)
+                .updateChildren(sessionUpdates);
+        return true;
     }
 
     private void queryAppointmentsForChatAccess() {
@@ -511,9 +520,14 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                 @Override
                 public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
                     boolean hasChatAppointment = false;
-                    boolean hasApproved = false;
-                    boolean hasApprovedPaid = false;
+                    boolean hasEligibleStatus = false;
+                    boolean hasEligiblePaid = false;
                     boolean onlyExpiredPaidSession = false;
+                    boolean onlyCancelled = false;
+                    long now = System.currentTimeMillis();
+                    com.haset.hasetapp.database.entities.AppointmentEntity best = null;
+                    long bestExpires = -1L;
+
                     for (com.google.firebase.database.DataSnapshot child : snapshot.getChildren()) {
                         String patientId = child.child("patientId").getValue(String.class);
                         String doctorId = child.child("doctorId").getValue(String.class);
@@ -524,49 +538,72 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                                 ? chatUserId.equals(patientId)
                                 : chatUserId.equals(doctorId);
                         boolean isOnlineChat = appointmentType == null
-                                || "online chat".equalsIgnoreCase(appointmentType);
+                                || Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType);
                         if (!otherUserMatches || !isOnlineChat) {
                             continue;
                         }
 
                         hasChatAppointment = true;
-                        if (!Constants.STATUS_APPROVED.equalsIgnoreCase(status)) {
+                        if (Constants.STATUS_CANCELLED.equalsIgnoreCase(status)
+                                || Constants.STATUS_DECLINED.equalsIgnoreCase(status)) {
+                            onlyCancelled = true;
                             continue;
                         }
 
-                        hasApproved = true;
-                        if (!"paid".equalsIgnoreCase(paymentStatus)) {
+                        boolean eligibleStatus = Constants.STATUS_APPROVED.equalsIgnoreCase(status)
+                                || Constants.STATUS_COMPLETED.equalsIgnoreCase(status);
+                        if (!eligibleStatus) {
                             continue;
                         }
 
-                        hasApprovedPaid = true;
+                        hasEligibleStatus = true;
+                        boolean paid = Constants.PAYMENT_STATUS_PAID.equalsIgnoreCase(paymentStatus)
+                                // Legacy approved chat rows often omit paymentStatus.
+                                || (paymentStatus == null || paymentStatus.trim().isEmpty());
+                        if (!paid) {
+                            continue;
+                        }
+
+                        hasEligiblePaid = true;
                         long existingStart = getLongChild(child, "chatStartsAt", getLongChild(child, "chatStartTime", 0L));
                         long existingExpires = getLongChild(child, "chatExpiresAt", 0L);
-                        if (existingExpires > 0 && System.currentTimeMillis() > existingExpires) {
+                        if (existingExpires <= 0 && existingStart > 0) {
+                            existingExpires = existingStart + CHAT_SESSION_DURATION;
+                        }
+                        if (existingExpires > 0 && now > existingExpires) {
                             onlyExpiredPaidSession = true;
                             continue;
                         }
 
                         com.haset.hasetapp.database.entities.AppointmentEntity appointment =
                                 child.getValue(com.haset.hasetapp.database.entities.AppointmentEntity.class);
-                        if (appointment != null) {
-                            appointment.setAppointmentId(child.getKey());
-                            appointment.setChatStartTime(existingStart);
-                            currentAppointment = appointment;
-                            startChatSession(appointment);
-                            break;
+                        if (appointment == null) continue;
+                        appointment.setAppointmentId(child.getKey());
+                        appointment.setChatStartTime(existingStart);
+                        long score = existingExpires > 0 ? existingExpires : Long.MAX_VALUE;
+                        if (best == null || score >= bestExpires) {
+                            best = appointment;
+                            bestExpires = score;
                         }
                     }
 
-                    if (!hasApprovedPaid) {
+                    if (best != null) {
+                        currentAppointment = best;
+                        startChatSession(best);
+                        return;
+                    }
+
+                    if (!hasEligiblePaid) {
                         if (!hasChatAppointment) {
                             disableChatSending(getString(R.string.chat_no_appointment_found));
-                        } else if (!hasApproved) {
+                        } else if (onlyCancelled && !hasEligibleStatus) {
+                            disableChatSending(getString(R.string.chat_appointment_cancelled));
+                        } else if (!hasEligibleStatus) {
                             disableChatSending(getString(R.string.access_denied_appointment));
                         } else {
                             disableChatSending(getString(R.string.chat_payment_required));
                         }
-                    } else if (!canSendInChat && onlyExpiredPaidSession) {
+                    } else if (onlyExpiredPaidSession) {
                         disableChatSending(getString(R.string.chat_session_expired_pay_again));
                     }
                 }

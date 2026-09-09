@@ -204,12 +204,19 @@
     <string name="chat_session_ended_hint">24-hour session ended</string>
     <string name="chat_payment_required">Payment is required before you can send messages in this chat.</string>
     <string name="chat_no_appointment_found">No chat appointment was found for this conversation.</string>
+    <string name="chat_appointment_cancelled">This chat appointment was cancelled.</string>
     <string name="chat_checking_access">Checking chat access...</string>
     <string name="appointment_declined_success">Appointment declined successfully</string>
     <string name="appointment_cancelled_success">Appointment cancelled successfully</string>
     <string name="failed_to_approve_appointment">Failed to approve appointment: %s</string>
     <string name="failed_to_decline_appointment">Failed to decline appointment: %s</string>
     <string name="failed_to_cancel_appointment">Failed to cancel appointment: %s</string>
+    <string name="cannot_cancel_active_chat_appointment">You can\'t cancel an approved Online Chat. The 24-hour chat session stays available until it expires.</string>
+    <string name="booking_blocked_permission">Booking blocked (permission denied). Sign out/in and try again, or pick another doctor.</string>
+    <string name="booking_blocked_doctor_not_active">Doctor is not actively online right now. Ask them to open the app and turn Online on, or schedule a Visit instead.</string>
+    <string name="booking_presence_check_failed">Couldn\'t verify if the doctor is online. Check your connection and try again.</string>
+    <string name="booking_network_error">Network problem while booking. Check your connection and retry.</string>
+    <string name="unable_to_prepare_payment">Unable to prepare payment session</string>
     <string name="invalid_appointment">Invalid appointment</string>
     <string name="reschedule_soon">Reschedule functionality coming soon</string>
     <string name="no_upcoming_appointments_title">No Upcoming Appointments</string>
@@ -867,6 +874,7 @@
     <string name="dr_unknown">Dr. Unknown</string>
     <string name="new_doctor">New</string>
     <string name="status_online">Online</string>
+    <string name="status_online_presence_hint">You\'re online for Instant Chat. Keep the app open to stay available.</string>
     <string name="status_offline">Offline</string>
     <string name="not_available">Not available</string>
 

@@ -257,6 +257,58 @@ test("limits appointment reads and lifecycle updates to participants", async () 
   await assertFails(update(ref(patient, "appointments/appointment-a"), { doctorId: "doctor-b" }));
 });
 
+test("allows patients to cancel pending or visit appointments, but not approved online chat", async () => {
+  await assertSucceeds(set(ref(patient, "appointments/cancel-pending"), {
+    ...appointment,
+    appointmentId: "cancel-pending",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+  await assertSucceeds(update(ref(patient, "appointments/cancel-pending"), {
+    status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+  await assertSucceeds(update(ref(patient, "appointments/cancel-pending"), {
+    status: "cancelled", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+
+  await assertSucceeds(set(ref(patient, "appointments/cancel-approved-visit"), {
+    ...appointment,
+    appointmentId: "cancel-approved-visit",
+    appointmentType: "Visit",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+  await assertSucceeds(update(ref(patient, "appointments/cancel-approved-visit"), {
+    status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+  await assertSucceeds(update(ref(doctor, "appointments/cancel-approved-visit"), {
+    status: "approved", doctorId: "doctor-a", patientId: "patient-a", updatedAt: 1786500001000,
+  }));
+  await assertSucceeds(update(ref(patient, "appointments/cancel-approved-visit"), {
+    status: "cancelled", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+
+  await assertSucceeds(set(ref(patient, "appointments/cancel-approved-chat"), {
+    ...appointment,
+    appointmentId: "cancel-approved-chat",
+    appointmentType: "Online Chat",
+    status: "awaiting_payment",
+    paymentStatus: "unpaid",
+  }));
+  await assertSucceeds(update(ref(patient, "appointments/cancel-approved-chat"), {
+    status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+  await assertSucceeds(update(ref(doctor, "appointments/cancel-approved-chat"), {
+    status: "approved", doctorId: "doctor-a", patientId: "patient-a", updatedAt: 1786500001000,
+  }));
+  await assertFails(update(ref(patient, "appointments/cancel-approved-chat"), {
+    status: "cancelled", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+  await assertFails(update(ref(otherPatient, "appointments/cancel-approved-chat"), {
+    status: "cancelled", doctorId: "doctor-a", patientId: "patient-a",
+  }));
+});
+
 test("allows only scoped directory and appointment queries", async () => {
   await assertSucceeds(get(query(ref(patient, "users"), orderByChild("role"), equalTo("doctor"))));
   await assertFails(get(ref(patient, "users")));

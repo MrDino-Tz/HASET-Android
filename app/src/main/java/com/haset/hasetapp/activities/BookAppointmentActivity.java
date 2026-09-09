@@ -42,6 +42,7 @@ import java.util.UUID;
 import de.hdodenhof.circleimageview.CircleImageView;
 import android.widget.RadioGroup;
 import android.widget.RadioButton;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProvider;
 import com.haset.hasetapp.viewmodels.AppointmentBookingViewModel;
 import androidx.transition.TransitionManager;
@@ -324,12 +325,51 @@ public class BookAppointmentActivity extends BaseActivity {
             return;
         }
 
-        if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType) && !isDoctorOnline()) {
-            showDoctorOfflineMessage();
+        if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType)) {
+            refreshDoctorPresenceThenBook();
             return;
         }
 
         prepareAppointmentForPayment();
+    }
+
+    /** Live-check doctor presence before Instant Chat so we don't hit a cryptic rules denial. */
+    private void refreshDoctorPresenceThenBook() {
+        if (doctorId == null || doctorId.trim().isEmpty()) {
+            showDoctorOfflineMessage();
+            return;
+        }
+        btnConfirmBooking.setEnabled(false);
+        btnConfirmBooking.setText(R.string.loading);
+        FirebaseHelper.getDoctorsNodeRef().child(doctorId)
+                .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                        Boolean online = snapshot.child("online").getValue(Boolean.class);
+                        String onlineStatus = snapshot.child("onlineStatus").getValue(String.class);
+                        Long lastSeenAt = snapshot.child("lastSeenAt").getValue(Long.class);
+                        if (doctor != null) {
+                            doctor.setOnline(online != null && online);
+                            doctor.setOnlineStatus(onlineStatus != null ? onlineStatus : "offline");
+                            doctor.setLastSeenAt(lastSeenAt != null ? lastSeenAt : 0L);
+                        }
+                        updateInstantAppointmentAvailability();
+                        if (!isDoctorOnline()) {
+                            resetBookingButtonState();
+                            showDoctorOfflineMessage();
+                            return;
+                        }
+                        prepareAppointmentForPayment();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
+                        resetBookingButtonState();
+                        Snackbar.make(rootView, R.string.booking_presence_check_failed, Snackbar.LENGTH_LONG)
+                                .setBackgroundTint(getResources().getColor(R.color.colorError))
+                                .show();
+                    }
+                });
     }
 
     private void prepareAppointmentForPayment() {
@@ -405,12 +445,20 @@ public class BookAppointmentActivity extends BaseActivity {
             @Override
             public void onError(String error) {
                 resetBookingButtonState();
-                String message = error != null ? error : "Unable to prepare payment session";
-                if (message.toLowerCase(Locale.US).contains("permission")) {
-                    message = "Booking blocked (permission denied). Sign out/in and try again, or pick another doctor.";
+                String message = error != null ? error : getString(R.string.unable_to_prepare_payment);
+                String lower = message.toLowerCase(Locale.US);
+                if (lower.contains("permission") || lower.contains("denied") || lower.contains("not allowed")) {
+                    if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType)) {
+                        message = getString(R.string.booking_blocked_doctor_not_active);
+                    } else {
+                        message = getString(R.string.booking_blocked_permission);
+                    }
+                } else if (lower.contains("network") || lower.contains("unavailable") || lower.contains("timeout")) {
+                    message = getString(R.string.booking_network_error);
                 }
                 Snackbar.make(rootView, message, Snackbar.LENGTH_LONG)
                         .setBackgroundTint(getResources().getColor(R.color.colorError))
+                        .setAction(R.string.retry, v -> bookAppointment())
                         .show();
             }
         });
@@ -647,13 +695,20 @@ public class BookAppointmentActivity extends BaseActivity {
 
     private boolean isDoctorOnline() {
         if (doctor == null) return false;
-        String onlineStatus = doctor.getOnlineStatus();
-        return doctor.isOnline() && (onlineStatus == null || "online".equalsIgnoreCase(onlineStatus));
+        return doctor.isEffectivelyOnline();
     }
 
     private void showDoctorOfflineMessage() {
-        Snackbar.make(rootView, "Doctor is offline. Please schedule a visit instead.", Snackbar.LENGTH_SHORT)
+        Snackbar.make(rootView, R.string.booking_blocked_doctor_not_active, Snackbar.LENGTH_LONG)
                 .setBackgroundTint(getResources().getColor(R.color.colorError))
+                .setAction(R.string.schedule_appointment, v -> {
+                    appointmentType = "Visit";
+                    refreshConfirmButtonLabel();
+                    if (contentScheduleAppointment != null
+                            && contentScheduleAppointment.getVisibility() != View.VISIBLE) {
+                        toggleCardExpansion("schedule");
+                    }
+                })
                 .show();
     }
 

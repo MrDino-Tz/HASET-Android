@@ -347,6 +347,11 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                             isOnline = false;
                         }
                         updateOnlineStatusUI();
+                        // If doctor left availability ON, refresh real presence while home is open.
+                        String doctorId = preferenceManager.getUserId();
+                        if (isOnline && doctorId != null) {
+                            com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOnline(doctorId);
+                        }
                     }
 
                     @Override
@@ -388,27 +393,22 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     private void saveOnlineStatus() {
         String doctorId = preferenceManager.getUserId();
         if (doctorId == null) return;
-        
-        java.util.HashMap<String, Object> updates = new java.util.HashMap<>();
-        updates.put("online", isOnline);
-        updates.put("onlineStatus", isOnline ? "online" : "offline");
-        
-        com.haset.hasetapp.utils.FirebaseHelper.getDoctorsNodeRef().child(doctorId).updateChildren(updates)
-                .addOnCompleteListener(task -> {
-                    if (getView() != null && isAdded()) {
-                        if (task.isSuccessful()) {
-                            com.google.android.material.snackbar.Snackbar.make(getView(),
-                                    isOnline ? R.string.status_online : R.string.status_offline,
-                                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                        } else {
-                            com.google.android.material.snackbar.Snackbar.make(getView(),
-                                    R.string.error_generic,
-                                    com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
-                            isOnline = !isOnline;
-                            updateOnlineStatusUI();
-                        }
-                    }
-                });
+
+        if (isOnline) {
+            com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOnline(doctorId);
+            if (getView() != null && isAdded()) {
+                com.google.android.material.snackbar.Snackbar.make(getView(),
+                        R.string.status_online_presence_hint,
+                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+            }
+        } else {
+            com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().goOffline(doctorId);
+            if (getView() != null && isAdded()) {
+                com.google.android.material.snackbar.Snackbar.make(getView(),
+                        R.string.status_offline,
+                        com.google.android.material.snackbar.Snackbar.LENGTH_SHORT).show();
+            }
+        }
     }
     
     private void setupStatsCardListeners(View view) {
@@ -497,15 +497,22 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
                     if (a.isHiddenFromDoctorUntilPaid()) continue;
                     switch (a.getStatus()) {
                         case Constants.STATUS_PENDING: pending++; break;
-                        case Constants.STATUS_COMPLETED: completed++; break;
-                        case Constants.STATUS_CANCELLED: cancelled++; break;
+                        case Constants.STATUS_COMPLETED:
+                            if (a.isWithinHistoryRetention()) completed++;
+                            break;
+                        case Constants.STATUS_CANCELLED:
+                            if (a.isWithinHistoryRetention()) cancelled++;
+                            break;
                     }
                 }
                 List<Appointment> visible = new ArrayList<>();
                 for (Appointment a : appointments) {
-                    if (!a.isHiddenFromDoctorUntilPaid()) {
-                        visible.add(a);
+                    if (a.isHiddenFromDoctorUntilPaid()) continue;
+                    // Keep active work visible; hide old finished history from the home list.
+                    if (a.isPast() || a.isCancelled() || Constants.STATUS_COMPLETED.equalsIgnoreCase(a.getStatus())) {
+                        if (!a.isWithinHistoryRetention()) continue;
                     }
+                    visible.add(a);
                 }
                 updateUIWithAppointments(visible, pending, completed, cancelled);
                 hidePageShimmer();
@@ -1260,6 +1267,7 @@ public class DoctorHomeFragment extends Fragment implements AppointmentAdapter.O
     @Override
     public void onPause() {
         super.onPause();
+        com.haset.hasetapp.utils.DoctorPresenceHelper.getInstance().onBackground();
 
         // Stop network monitoring when fragment is not visible
         if (networkCallback != null) {

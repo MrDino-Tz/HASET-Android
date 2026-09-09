@@ -281,6 +281,10 @@ public class UpcomingAppointmentsFragment extends Fragment implements Appointmen
                 showSnackbar(getString(R.string.invalid_appointment));
                 return;
             }
+            if (!appointment.canPatientCancel()) {
+                showSnackbar(getString(R.string.cannot_cancel_active_chat_appointment));
+                return;
+            }
 
             viewModel.updateStatus(appointment, Constants.STATUS_CANCELLED, new FirebaseHelper.OnCompleteListener<Void>() {
                 @Override

@@ -196,9 +196,9 @@ public class DoctorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 ivVerified.setVisibility(doctor.isVerified() ? View.VISIBLE : View.GONE);
             }
 
-            // Set online status
+            // Set online status (requires fresh presence heartbeat)
             if (tvStatus != null) {
-                boolean isOnline = doctor.isOnline();
+                boolean isOnline = doctor.isEffectivelyOnline();
                 if (isOnline) {
                     tvStatus.setText(R.string.status_online);
                     tvStatus.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.green_primary));

@@ -1,5 +1,7 @@
 package com.haset.hasetapp.models;
 
+import com.haset.hasetapp.utils.Constants;
+
 import java.util.Locale;
 
 public class Appointment {
@@ -146,8 +148,36 @@ public class Appointment {
         return status != null && "cancelled".equalsIgnoreCase(this.status);
     }
 
+    /**
+     * Patients may cancel unpaid drafts and pending bookings.
+     * Approved Online Chat cannot be cancelled — the paid 24h session stays available.
+     */
+    public boolean canPatientCancel() {
+        if (status == null) return false;
+        if ("awaiting_payment".equalsIgnoreCase(status) || "pending".equalsIgnoreCase(status)) {
+            return true;
+        }
+        if ("approved".equalsIgnoreCase(status)) {
+            return !Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(appointmentType);
+        }
+        return false;
+    }
+
+    /** Used to keep Past/Cancelled/Completed lists from growing forever in the UI. */
+    public boolean isWithinHistoryRetention() {
+        long cutoff = System.currentTimeMillis()
+                - (Constants.APPOINTMENT_HISTORY_RETENTION_DAYS * 24L * 60L * 60L * 1000L);
+        long reference = createdAt > 0 ? createdAt : parseToMillis(date, time);
+        return reference >= cutoff;
+    }
+
     public boolean shouldAutoComplete() {
         if (!"approved".equalsIgnoreCase(this.status)) return false;
+        // Online chat uses a dedicated 24h chat window; do not mark completed early
+        // or chat reopen shows "not approved yet".
+        if (Constants.APPOINTMENT_TYPE_ONLINE_CHAT.equalsIgnoreCase(this.appointmentType)) {
+            return false;
+        }
 
         long apptTime = parseToMillis(this.date, this.time);
         return System.currentTimeMillis() >= apptTime + AUTO_COMPLETE_AFTER_MILLIS;

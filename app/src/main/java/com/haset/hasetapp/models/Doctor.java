@@ -34,6 +34,7 @@ public class Doctor implements Serializable {
     private boolean verified; // verification status
     private boolean isOnline; // doctor online/offline status
     private String onlineStatus; // "online", "offline", "busy"
+    private long lastSeenAt; // presence heartbeat timestamp (ms)
     private String regNo; // Medical Council Registration Number
     private long createdAt; // Creation timestamp for "New" label logic
     private boolean isDemo; // Demo doctor flag (free consultation)
@@ -138,6 +139,15 @@ public class Doctor implements Serializable {
     
     public String getOnlineStatus() { return onlineStatus; }
     public void setOnlineStatus(String onlineStatus) { this.onlineStatus = onlineStatus; }
+
+    public long getLastSeenAt() { return lastSeenAt; }
+    public void setLastSeenAt(long lastSeenAt) { this.lastSeenAt = lastSeenAt; }
+
+    /** True only when toggle is on AND presence heartbeat is fresh. */
+    public boolean isEffectivelyOnline() {
+        return com.haset.hasetapp.utils.DoctorPresenceHelper.isEffectivelyOnline(
+                isOnline, onlineStatus, lastSeenAt);
+    }
     
     public String getRegNo() { return regNo; }
     public void setRegNo(String regNo) { this.regNo = regNo; }
