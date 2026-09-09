@@ -278,7 +278,7 @@ public class DoctorNotificationManager {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_APPOINTMENTS)
-                .setSmallIcon(R.drawable.haset_logo)
+                .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle("Miadi Inayosubiri")
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -341,7 +341,7 @@ public class DoctorNotificationManager {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(R.drawable.haset_logo)
+                .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -408,14 +408,14 @@ public class DoctorNotificationManager {
         if (Constants.STATUS_APPROVED.equals(status) || "completed".equals(status)) {
             title = "Umefanikiwa Kutoa Pesa! 💰";
             message = String.format("Ombi lako la kutoa TZS %,.0f limeidhinishwa.", amount);
-            icon = R.drawable.haset_logo;
+            icon = R.drawable.notification_icon;
         } else if (com.haset.hasetapp.database.entities.WithdrawalRequest.STATUS_REJECTED.equals(status)) {
             title = "Ombi la Kutoa Pesa Limekataliwa ❌";
             message = String.format("Ombi lako la kutoa TZS %,.0f limekataliwa.", amount);
             if (reason != null && !reason.isEmpty()) {
                 message += " Sababu: " + reason;
             }
-            icon = R.drawable.haset_logo;
+            icon = R.drawable.notification_icon;
         } else {
             return;
         }
