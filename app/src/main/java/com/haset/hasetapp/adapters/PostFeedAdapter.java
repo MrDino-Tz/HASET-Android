@@ -161,7 +161,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
             ProfilePhotoHelper.loadProfilePhoto(context, post.getAuthorId(), holder.ivProfile, holder.shimmerProfile);
         } else {
             // Default/Fallback
-            holder.ivProfile.setImageResource(R.drawable.profile_photo);
+            holder.ivProfile.setImageResource(R.drawable.profile_photo1);
             if (holder.shimmerProfile != null) {
                 holder.shimmerProfile.stopShimmer();
                 holder.shimmerProfile.setVisibility(View.GONE);
@@ -962,7 +962,7 @@ public class PostFeedAdapter extends RecyclerView.Adapter<PostFeedAdapter.PostVi
                 com.haset.hasetapp.utils.ProfilePhotoHelper.loadProfilePhoto(
                         holder.itemView.getContext(), userId, holder.ivCommentProfile);
             } else {
-                holder.ivCommentProfile.setImageResource(R.drawable.profile_photo);
+                holder.ivCommentProfile.setImageResource(R.drawable.profile_photo1);
             }
         }
         

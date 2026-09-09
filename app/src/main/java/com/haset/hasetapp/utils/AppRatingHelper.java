@@ -6,8 +6,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.haset.hasetapp.R;
+import com.haset.hasetapp.activities.AppRatingActivity;
 
 public class AppRatingHelper {
     private static final String TAG = "AppRatingHelper";
@@ -43,32 +42,17 @@ public class AppRatingHelper {
             return;
         }
 
-        showRatingDialog(callback);
+        Intent intent = new Intent(activity, AppRatingActivity.class);
+        activity.startActivity(intent);
+        if (callback != null) callback.onRatingShown();
     }
 
-    public void showRatingDialog(RatingCallback callback) {
-        new MaterialAlertDialogBuilder(activity)
-            .setTitle(activity.getString(R.string.rate_haset_title))
-            .setMessage(activity.getString(R.string.rate_haset_message))
-            .setPositiveButton("Rate Now", (dialog, which) -> {
-                openPlayStore();
-                markRatingRequested();
-                if (callback != null) callback.onRatingComplete(true);
-            })
-            .setNegativeButton("Later", (dialog, which) -> {
-                if (callback != null) callback.onRatingComplete(false);
-                dialog.dismiss();
-            })
-            .setNeutralButton("No Thanks", (dialog, which) -> {
-                markRatingRequested();
-                if (callback != null) callback.onRatingComplete(false);
-                dialog.dismiss();
-            })
-            .setCancelable(false)
-            .show();
+    public void completeRatingAndLaunch() {
+        openPlayStore();
+        markRatingRequested();
     }
 
-    private void openPlayStore() {
+    public void openPlayStore() {
         try {
             String packageName = activity.getPackageName();
             Intent intent = new Intent(Intent.ACTION_VIEW, 

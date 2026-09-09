@@ -37,7 +37,7 @@
             android:layout_height="28dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="16dp"
-            android:src="@drawable/profile_photo"
+            android:src="@drawable/profile_photo1"
             tools:visibility="visible" />
 
         <LinearLayout

@@ -68,6 +68,10 @@
             android:name=".activities.AboutUsActivity"
             android:exported="false"
             android:enableOnBackInvokedCallback="true"/>
+        <activity
+            android:name=".activities.AppRatingActivity"
+            android:exported="false"
+            android:enableOnBackInvokedCallback="true"/>
 
         <activity
             android:name=".activities.ServiceAgreementActivity"

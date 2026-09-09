@@ -9,8 +9,6 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import android.widget.ArrayAdapter;
@@ -124,7 +122,7 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
                 if (localUri != null) {
                     com.bumptech.glide.Glide.with(EditProfileActivity.this)
                             .load(localUri)
-                            .placeholder(R.drawable.profile_photo)
+                            .placeholder(R.drawable.profile_photo1)
                             .into(ivProfileImage);
                 }
             }
@@ -153,7 +151,7 @@ public class EditProfileActivity extends LocalizedAppCompatActivity {
                         ivProfileImage.setImageURI(imageUri);
                     }
                 } else {
-                    ivProfileImage.setImageResource(R.drawable.profile_photo);
+                    ivProfileImage.setImageResource(R.drawable.profile_photo1);
                 }
             }
 

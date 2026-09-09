@@ -72,7 +72,7 @@
                     android:id="@+id/ivChatProfile"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/profile_photo"
+                    android:src="@drawable/profile_photo1"
                     android:tint="@color/chat_shadow_color"/>
             </FrameLayout>
 

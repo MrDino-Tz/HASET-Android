@@ -127,7 +127,7 @@ public class ArticleAdapter extends RecyclerView.Adapter<ArticleAdapter.ArticleV
         }
 
         public void bind(ArticlePostEntity article, OnPostActionListener listener) {
-            ivProfileImage.setImageResource(R.drawable.profile_photo);
+            ivProfileImage.setImageResource(R.drawable.profile_photo1);
             tvProfileName.setText(article.getProfileName() != null ? article.getProfileName() : "HASET User");
             tvTimestamp.setText("Just now"); 
             

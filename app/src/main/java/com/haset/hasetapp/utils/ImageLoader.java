@@ -55,8 +55,8 @@ public class ImageLoader {
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .skipMemoryCache(false)
             .format(DecodeFormat.PREFER_RGB_565)
-            .placeholder(R.drawable.profile_photo)
-            .error(R.drawable.profile_photo)
+            .placeholder(R.drawable.profile_photo1)
+            .error(R.drawable.profile_photo1)
             .transform(new CircleCrop());
     
     private static final RequestOptions ARTICLE_OPTIONS = new RequestOptions()
@@ -93,7 +93,7 @@ public class ImageLoader {
                     .apply(PROFILE_OPTIONS)
                     .into(target);
         } else {
-            target.setImageResource(R.drawable.profile_photo);
+            target.setImageResource(R.drawable.profile_photo1);
         }
     }
     

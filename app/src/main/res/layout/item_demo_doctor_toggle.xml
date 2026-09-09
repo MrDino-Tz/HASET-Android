@@ -11,7 +11,7 @@
         android:id="@+id/ivProfile"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:src="@drawable/profile_photo" />
+        android:src="@drawable/profile_photo1" />
 
     <LinearLayout
         android:layout_width="0dp"

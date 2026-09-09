@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-import de.hdodenhof.circleimageview.CircleImageView;
 import android.widget.RadioGroup;
 import android.widget.RadioButton;
 import androidx.annotation.NonNull;
@@ -51,10 +50,11 @@ import android.content.res.ColorStateList;
 
 public class BookAppointmentActivity extends BaseActivity {
     private MaterialToolbar toolbar;
-    private CircleImageView ivDoctorImage;
+    private ImageView ivDoctorImage;
     private ImageView ivVerifiedBadge;
     private com.facebook.shimmer.ShimmerFrameLayout shimmerDoctorImage;
     private TextView tvDoctorName, tvSpecialty, tvConsultationFee;
+    private TextView tvUserInitials;
     private TextInputEditText etDate, etReason, etTime;
     private MaterialButton btnConfirmBooking;
     private View cardInstantAppointment, cardScheduleAppointment;
@@ -211,6 +211,7 @@ public class BookAppointmentActivity extends BaseActivity {
         ivDoctorImage = findViewById(R.id.ivDoctorImage);
         ivVerifiedBadge = findViewById(R.id.ivVerifiedBadge);
         shimmerDoctorImage = findViewById(R.id.shimmerDoctorImage);
+        tvUserInitials = findViewById(R.id.tvUserInitials);
         tvDoctorName = findViewById(R.id.tvDoctorName);
         tvSpecialty = findViewById(R.id.tvSpecialty);
         tvConsultationFee = findViewById(R.id.tvConsultationFee);
@@ -252,7 +253,7 @@ public class BookAppointmentActivity extends BaseActivity {
         tvConsultationFee.setText(feeText);
         
         String photoUserId = doctorDetail.getUserId() != null ? doctorDetail.getUserId() : doctorDetail.getDoctorId();
-        ProfilePhotoHelper.loadProfilePhoto(this, photoUserId, ivDoctorImage, shimmerDoctorImage);
+        ProfilePhotoHelper.loadProfilePhoto(this, photoUserId, ivDoctorImage, shimmerDoctorImage, tvUserInitials);
         
         // Show verified badge if doctor is verified
         if (ivVerifiedBadge != null && doctorDetail.isVerified()) {

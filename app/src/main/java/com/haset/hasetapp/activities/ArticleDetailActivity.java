@@ -13,7 +13,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -503,7 +502,7 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
             if (userId != null && !userId.isEmpty()) {
                 ProfilePhotoHelper.loadProfilePhoto(ArticleDetailActivity.this, userId, holder.ivCommentProfile);
             } else {
-                holder.ivCommentProfile.setImageResource(R.drawable.profile_photo);
+                holder.ivCommentProfile.setImageResource(R.drawable.profile_photo1);
             }
         }
 

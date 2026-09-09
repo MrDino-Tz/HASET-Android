@@ -38,13 +38,13 @@ import com.haset.hasetapp.viewmodels.ProfileViewModel;
 import com.google.android.material.card.MaterialCardView;
 
 import com.haset.hasetapp.activities.AboutUsActivity;
+import com.haset.hasetapp.activities.AppRatingActivity;
 import com.haset.hasetapp.activities.EditProfileActivity;
 import com.haset.hasetapp.activities.LoginActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
-import com.haset.hasetapp.utils.AppRatingHelper;
 import com.haset.hasetapp.utils.StylishQRCodeGenerator;
 import com.haset.hasetapp.utils.BottomSheetHelper;
 import com.haset.hasetapp.utils.Constants;
@@ -521,8 +521,8 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
 
         if (rateApp != null) {
             rateApp.setOnClickListener(v -> {
-                AppRatingHelper ratingHelper = new AppRatingHelper(requireActivity());
-                ratingHelper.showRatingDialog(null);
+                Intent intent = new Intent(requireContext(), AppRatingActivity.class);
+                startActivity(intent);
             });
         }
 

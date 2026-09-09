@@ -178,7 +178,7 @@
         <ImageView
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@drawable/profile_photo"
+            android:src="@drawable/profile_photo1"
             android:alpha="0.3"
             android:layout_marginBottom="16dp" />
 

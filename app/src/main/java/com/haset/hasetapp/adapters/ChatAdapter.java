@@ -395,8 +395,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         ivSenderAvatar.setVisibility(View.VISIBLE);
                         Glide.with(itemView.getContext())
                                 .load(otherUserProfileImageUrl)
-                                .placeholder(R.drawable.profile_photo)
-                                .error(R.drawable.profile_photo)
+                                .placeholder(R.drawable.profile_photo1)
+                                .error(R.drawable.profile_photo1)
                                 .into(ivSenderAvatar);
                     }
                 }

@@ -134,7 +134,7 @@ public class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapte
                 if (profileUrl != null && !profileUrl.isEmpty()) {
                     ProfilePhotoHelper.loadProfilePhotoFromUrl(holder.itemView.getContext(), profileUrl, holder.ivDoctorProfile);
                 } else {
-                    holder.ivDoctorProfile.setImageResource(R.drawable.profile_photo);
+                    holder.ivDoctorProfile.setImageResource(R.drawable.profile_photo1);
                 }
                 holder.itemView.setOnClickListener(v -> listener.onDoctorClick(doctor));
             } else if (item instanceof Article) {

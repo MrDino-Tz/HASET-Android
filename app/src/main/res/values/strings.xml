@@ -1466,8 +1466,8 @@
     <string name="exit_app_confirm">Are you sure you want to exit?</string>
     <string name="notification_permission_title">Notification Permission Required</string>
     <string name="notification_permission_message">AfyaHASET needs notification permission to send you important appointment reminders and welcome messages. Please enable notifications in settings.</string>
-    <string name="rate_haset_title">Rate AfyaHASET Health</string>
-    <string name="rate_haset_message">Are you enjoying AfyaHASET Health? We\'d love to hear your feedback!</string>
+    <string name="rate_haset_title">Rate AfyaHASET</string>
+    <string name="rate_haset_message">Are you enjoying AfyaHASET? We\'d love to hear your feedback!</string>
     <string name="verify_payment_title">Verify Payment</string>
     <string name="leave_blank_password">Leave blank to keep current password</string>
     <string name="status_pending">Pending</string>
@@ -1565,6 +1565,10 @@
     <string name="learn_more_about_the_app">Learn more about the app</string>
     <string name="rate_app">Rate App</string>
     <string name="share_your_feedback_on_play_store">Share your feedback on Play Store</string>
+    <string name="rate_on_play_store">Rate on Play Store</string>
+    <string name="not_now">Not now</string>
+    <string name="maybe_later">Maybe later</string>
+    <string name="star_content_desc">Star %1$d</string>
     <string name="contact_us">Contact Us</string>
     <string name="get_in_touch_with_support">Get in touch with support</string>
     <string name="medical_records">Medical Records</string>

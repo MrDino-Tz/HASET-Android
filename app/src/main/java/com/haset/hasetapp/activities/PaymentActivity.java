@@ -11,8 +11,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -26,7 +24,6 @@ import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.models.PaymentRequest;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.CrashMonitor;
-import com.haset.hasetapp.utils.CustomDialog;
 import com.haset.hasetapp.utils.PreferenceManager;
 // import com.haset.hasetapp.utils.RootIntegrityHelper;
 import androidx.lifecycle.ViewModelProvider;
@@ -499,8 +496,8 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                 if (doctor.getProfileImage() != null && !doctor.getProfileImage().isEmpty()) {
                     com.bumptech.glide.Glide.with(this)
                             .load(doctor.getProfileImage())
-                            .placeholder(R.drawable.profile_photo)
-                            .error(R.drawable.profile_photo)
+                            .placeholder(R.drawable.profile_photo1)
+                            .error(R.drawable.profile_photo1)
                             .circleCrop()
                             .into(ivDoctorPhoto);
                 }

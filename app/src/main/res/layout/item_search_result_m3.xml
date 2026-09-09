@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"
-            android:src="@drawable/profile_photo" />
+            android:src="@drawable/profile_photo1" />
     </FrameLayout>
 
     <LinearLayout

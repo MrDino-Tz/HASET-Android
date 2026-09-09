@@ -78,39 +78,74 @@
                     android:padding="16dp">
                     <FrameLayout
                         android:id="@+id/layoutDoctorImage"
-                        android:layout_width="60dp"
-                        android:layout_height="60dp">
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:background="@android:color/transparent">
 
-                        <com.facebook.shimmer.ShimmerFrameLayout
-                            android:id="@+id/shimmerDoctorImage"
+                        <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            app:shimmer_auto_start="true"
-                            app:shimmer_base_alpha="0.8"
-                            app:shimmer_highlight_alpha="1.0">
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="0dp"
+                            app:cardPreventCornerOverlap="false">
 
-                            <View
+                            <com.facebook.shimmer.ShimmerFrameLayout
+                                android:id="@+id/shimmerDoctorImage"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:background="@drawable/shimmer_circle" />
+                                app:shimmer_auto_start="true"
+                                app:shimmer_base_alpha="0.8"
+                                app:shimmer_highlight_alpha="1.0">
 
-                        </com.facebook.shimmer.ShimmerFrameLayout>
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent" />
+                            </com.facebook.shimmer.ShimmerFrameLayout>
 
-                        <de.hdodenhof.circleimageview.CircleImageView
-                            android:id="@+id/ivDoctorImage"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:src="@drawable/profile_photo" />
+                            <ImageView
+                                android:id="@+id/ivDoctorImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/profile_photo1" />
+
+                            <TextView
+                                android:id="@+id/tvUserInitials"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:textColor="@color/green_primary"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:visibility="gone"
+                                android:text="@string/dr" />
+
+                        </com.google.android.material.card.MaterialCardView>
 
                         <!-- Verified Badge -->
                         <ImageView
                             android:id="@+id/ivVerifiedBadge"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
                             android:layout_gravity="bottom|end"
-                            android:background="@android:color/transparent"
-                            android:padding="2dp"
+                            android:layout_margin="2dp"
                             android:src="@drawable/verified"
+                            android:visibility="gone" />
+
+                        <!-- Demo Badge -->
+                        <TextView
+                            android:id="@+id/tvDemoBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="top|start"
+                            android:layout_margin="-4dp"
+                            android:background="@drawable/bg_demo_badge"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="@string/free"
+                            android:textColor="@android:color/white"
+                            android:textSize="8sp"
+                            android:textStyle="bold"
                             android:visibility="gone" />
                     </FrameLayout>
                     <LinearLayout

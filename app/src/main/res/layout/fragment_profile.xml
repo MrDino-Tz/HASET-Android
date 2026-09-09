@@ -112,7 +112,7 @@
                         android:layout_width="100dp"
                         android:layout_height="100dp"
                         android:layout_gravity="top|start"
-                        android:src="@drawable/profile_photo"
+                        android:src="@drawable/profile_photo1"
                         android:visibility="visible" />
 
 

@@ -1403,8 +1403,8 @@
     <string name="exit_app_confirm">Je, una uhakika unataka kutoka?</string>
     <string name="notification_permission_title">Ruhusa ya Arifa Inahitajika</string>
     <string name="notification_permission_message">AfyaHASET inahitaji ruhusa ya arifa kukutumia vikumbusho muhimu vya miadi na ujumbe wa karibu. Tafadhali wezesha arifa katika mipangilio.</string>
-    <string name="rate_haset_title">Kadiria AfyaHASET Health</string>
-    <string name="rate_haset_message">Je, unafurahia AfyaHASET Health? Tungependa kusikia maoni yako!</string>
+    <string name="rate_haset_title">Kadiria AfyaHASET</string>
+    <string name="rate_haset_message">Je, unafurahia AfyaHASET? Tungependa kusikia maoni yako!</string>
     <string name="verify_payment_title">Thibitisha Malipo</string>
     <string name="leave_blank_password">Acha wazi kutunza nenosiri la sasa</string>
     <string name="status_pending">Inasubiri</string>
@@ -1567,6 +1567,10 @@ Pakia bango kamili la picha</string>
     <string name="learn_more_about_the_app">Jifunze zaidi kuhusu programu</string>
     <string name="rate_app">Kadiria Programu</string>
     <string name="share_your_feedback_on_play_store">Shiriki maoni yako kwenye Play Store</string>
+    <string name="rate_on_play_store">Kadiria kwenye Play Store</string>
+    <string name="not_now">Sio sasa</string>
+    <string name="maybe_later">Labda baadaye</string>
+    <string name="star_content_desc">Nyota %1$d</string>
     <string name="contact_us">Wasiliana Nasi</string>
     <string name="get_in_touch_with_support">Wasiliana na msaada</string>
     <string name="medical_records">Kumbukumbu za Matibabu</string>

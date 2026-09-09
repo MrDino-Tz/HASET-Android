@@ -108,7 +108,7 @@ public class PostCommentsBottomSheet extends BottomSheetDialogFragment {
             if (comment.getAuthor() != null) { // Assuming author name is used for demo, should be userId
                 com.haset.hasetapp.utils.ProfilePhotoHelper.loadProfilePhoto(holder.itemView.getContext(), comment.getAuthor(), holder.ivCommentProfile, holder.shimmerCommentProfile);
             } else {
-                holder.ivCommentProfile.setImageResource(R.drawable.profile_photo);
+                holder.ivCommentProfile.setImageResource(R.drawable.profile_photo1);
                 if (holder.shimmerCommentProfile != null) {
                     holder.shimmerCommentProfile.stopShimmer();
                     holder.shimmerCommentProfile.setVisibility(View.GONE);

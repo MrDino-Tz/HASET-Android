@@ -403,7 +403,7 @@ public class ProfilePhotoHelper {
                 imageView.setVisibility(View.GONE);
             } else {
                 imageView.setVisibility(View.VISIBLE);
-                imageView.setImageResource(R.drawable.profile_photo);
+                imageView.setImageResource(R.drawable.profile_photo1);
             }
             
             if (shimmerLayout != null) {
@@ -466,7 +466,7 @@ public class ProfilePhotoHelper {
                         imageView.setVisibility(View.GONE);
                     } else {
                         imageView.setVisibility(View.VISIBLE);
-                        imageView.setImageResource(R.drawable.profile_photo);
+                        imageView.setImageResource(R.drawable.profile_photo1);
                     }
                     
                     if (shimmerLayout != null) {
@@ -479,7 +479,7 @@ public class ProfilePhotoHelper {
             @Override
             public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
                 Log.e(TAG, "Firebase fetch cancelled: " + error.getMessage());
-                imageView.setImageResource(R.drawable.profile_photo);
+                imageView.setImageResource(R.drawable.profile_photo1);
                 if (shimmerLayout != null) {
                     shimmerLayout.stopShimmer();
                     shimmerLayout.setVisibility(View.GONE);
@@ -581,8 +581,8 @@ public class ProfilePhotoHelper {
                     .load(loadUrl)
                     .timeout(20000)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.profile_photo)
-                    .error(R.drawable.profile_photo)
+                    .placeholder(R.drawable.profile_photo1)
+                    .error(R.drawable.profile_photo1)
                     .listener(new RequestListener<android.graphics.drawable.Drawable>() {
                         @Override
                         public boolean onLoadFailed(@androidx.annotation.Nullable com.bumptech.glide.load.engine.GlideException e, Object model, Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
@@ -608,7 +608,7 @@ public class ProfilePhotoHelper {
             Log.d(TAG, "SUCCESS: Loaded profile photo from URL: " + imageUrl);
         } else {
             Log.d(TAG, "Image URL is null or empty, setting default image");
-            imageView.setImageResource(R.drawable.profile_photo);
+            imageView.setImageResource(R.drawable.profile_photo1);
             // Hide shimmer if no image
             if (shimmerLayout != null) {
                 shimmerLayout.stopShimmer();
