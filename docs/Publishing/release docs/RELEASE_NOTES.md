@@ -7,6 +7,14 @@ already entered will be replaced.
 
 ## Internal testing
 
+### Version 8 (1.0.0.DTC) — Default (English – United States) – en-US
+
+- Doctors can now set/clear their online status and upload required documents.
+- Fixed prescription image and PDF export/printing issues.
+- Fixed appointment status showing before payment was completed.
+- Fixed article removal and content rules issues.
+- Camera capture fixes and a new notification icon.
+
 ### Version 6 (1.0.0.DTC) — Default (English – United States) – en-US
 
 - App tour guide now shows only on the Patient and Doctor home screens.
