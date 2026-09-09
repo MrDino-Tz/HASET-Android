@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import com.google.android.material.card.MaterialCardView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -17,6 +16,7 @@ import com.haset.hasetapp.R;
 public class FileAttachmentBottomSheet extends BottomSheetDialogFragment {
 
     public interface OnFileAttachmentSelectedListener {
+        void onCameraSelected();
         void onDocumentSelected();
         void onImageSelected();
         void onVideoSelected();
@@ -34,12 +34,20 @@ public class FileAttachmentBottomSheet extends BottomSheetDialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_file_attachment, container, false);
 
-        // Initialize views
+        MaterialCardView llCameraOption = view.findViewById(R.id.llCameraOption);
         MaterialCardView llDocumentOption = view.findViewById(R.id.llDocumentOption);
         MaterialCardView llImageOption = view.findViewById(R.id.llImageOption);
         MaterialCardView llVideoOption = view.findViewById(R.id.llVideoOption);
 
-        // Set click listeners
+        if (llCameraOption != null) {
+            llCameraOption.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onCameraSelected();
+                }
+                dismiss();
+            });
+        }
+
         llDocumentOption.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onDocumentSelected();
@@ -75,7 +83,6 @@ public class FileAttachmentBottomSheet extends BottomSheetDialogFragment {
             dismiss();
         });
 
-        // Service Payment button
         com.google.android.material.button.MaterialButton btnServiceOption = view.findViewById(R.id.btnServiceOption);
         if (getArguments() != null && getArguments().getBoolean("showService", false)) {
             btnServiceOption.setVisibility(View.VISIBLE);
@@ -93,7 +100,6 @@ public class FileAttachmentBottomSheet extends BottomSheetDialogFragment {
         return view;
     }
 
-    // Helper methods to handle file selection
     public void openDocumentPicker(Activity activity, int requestCode) {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("*/*");

@@ -46,9 +46,11 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp" />
 
-            <com.google.android.material.card.MaterialCardView
+                <com.google.android.material.card.MaterialCardView
                 android:layout_width="260dp"
                 android:layout_height="180dp"
+                android:clickable="false"
+                android:focusable="false"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="0dp">
 

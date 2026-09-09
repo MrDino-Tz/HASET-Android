@@ -369,6 +369,11 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
 
             attachmentBottomSheet.setOnFileAttachmentSelectedListener(new FileAttachmentBottomSheet.OnFileAttachmentSelectedListener() {
                 @Override
+                public void onCameraSelected() {
+                    checkCameraPermissionAndOpenCamera();
+                }
+
+                @Override
                 public void onDocumentSelected() {
                     attachmentBottomSheet.openDocumentPicker(ChatActivity.this, Constants.REQUEST_CODE_DOCUMENT);
                 }
@@ -1125,6 +1130,8 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
             }
 
             if (url == null || url.isEmpty()) return;
+
+            url = CloudinaryUploadHelper.toPublicDeliveryUrl(url);
 
             if ("image".equalsIgnoreCase(type)) {
                 Intent intent = new Intent(this, FullScreenImageActivity.class);

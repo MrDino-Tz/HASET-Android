@@ -66,11 +66,11 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:paddingBottom="24dp">
+        android:paddingBottom="8dp">
 
-        <!-- Document Card -->
+        <!-- Camera Card -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/llDocumentOption"
+            android:id="@+id/llCameraOption"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -93,14 +93,14 @@
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@drawable/ic_document"
+                    android:src="@drawable/ic_camera"
                     app:tint="@color/green_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/document"
+                    android:text="@string/take_photo"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_medium" />
@@ -108,7 +108,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Image Card -->
+        <!-- Gallery Card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/llImageOption"
             android:layout_width="0dp"
@@ -189,7 +189,67 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+    </LinearLayout>
 
+    <!-- Document row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingBottom="24dp">
+
+        <!-- Document Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/llDocumentOption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:strokeWidth="1dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="16dp"
+                android:stateListAnimator="@animator/press_scale">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_document"
+                    app:tint="@color/green_primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/document"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Spacer cards to keep document width similar on wide screens -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="8dp" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="8dp" />
 
     </LinearLayout>
 

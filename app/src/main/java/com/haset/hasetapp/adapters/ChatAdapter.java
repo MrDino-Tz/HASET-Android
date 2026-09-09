@@ -571,9 +571,37 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 }
             }
 
+            // MaterialCardView / overlay icons can swallow clicks meant for messageContainer.
+            View.OnClickListener openVideo = v -> {
+                if (clickListener != null) {
+                    clickListener.onMessageClick(message);
+                }
+            };
+            if (ivPlayVideo != null) {
+                ivPlayVideo.setClickable(true);
+                ivPlayVideo.setOnClickListener(openVideo);
+            }
+            if (ivVideoThumbnail != null) {
+                ivVideoThumbnail.setClickable(true);
+                ivVideoThumbnail.setOnClickListener(openVideo);
+            }
+            itemView.setOnClickListener(openVideo);
+            if (messageContainer != null) {
+                messageContainer.setOnClickListener(openVideo);
+            }
+
+            String thumbUrl = message.getAttachmentUrl();
+            if (thumbUrl != null && thumbUrl.contains("res.cloudinary.com")
+                    && thumbUrl.contains("/video/upload/")) {
+                // Frame at 0s as jpg so Glide can show a real thumbnail.
+                thumbUrl = thumbUrl
+                        .replace("/video/upload/", "/video/upload/so_0,f_jpg/")
+                        .replaceAll("\\.(mp4|mov|webm|mkv)(\\?.*)?$", ".jpg");
+            }
             Glide.with(itemView.getContext())
-                    .load(message.getAttachmentUrl())
+                    .load(thumbUrl)
                     .placeholder(R.drawable.ic_video_icon)
+                    .error(R.drawable.ic_video_icon)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(ivVideoThumbnail);
 

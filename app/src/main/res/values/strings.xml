@@ -216,6 +216,8 @@
     <string name="booking_blocked_doctor_not_active">Doctor is not actively online right now. Ask them to open the app and turn Online on, or schedule a Visit instead.</string>
     <string name="booking_presence_check_failed">Couldn\'t verify if the doctor is online. Check your connection and try again.</string>
     <string name="booking_network_error">Network problem while booking. Check your connection and retry.</string>
+    <string name="unable_to_play_video">Unable to play this video</string>
+    <string name="open_video">Open video</string>
     <string name="unable_to_prepare_payment">Unable to prepare payment session</string>
     <string name="prescription_image_upload_failed">Couldn\'t upload the prescription image. Please try again.</string>
     <string name="prescription_image_upload_blocked">Image upload was blocked. Please try again or issue the prescription without an image.</string>
