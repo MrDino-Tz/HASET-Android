@@ -320,6 +320,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         
         // Initialize ViewModel
         viewModel = new ViewModelProvider(this).get(ChatViewModel.class);
+        viewModel.setChatRoomId(chatRoomId);
         setupObservers();
 
         // Mark all messages as read when chat is opened
@@ -1279,14 +1280,13 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         viewModel.getUploadSuccess().observe(this, result -> {
             if (result != null) {
                 // Update the existing placeholder message instead of creating a new one
-                viewModel.updateMessageAttachment(chatRoomId, result.messageId, result.downloadUrl, "sent");
+                viewModel.updateMessageAttachment(
+                        chatRoomId, result.messageId, result.downloadUrl, "sent", chatUserId);
             }
         });
 
         viewModel.getUploadStatus().observe(this, status -> {
             if (status != null && status.startsWith("Upload failed")) {
-                // In a real app, you might want to mark the message as "Failed" in the UI
-                // For now, we'll keep the toast but the progress bar will naturally stop
                 Toast.makeText(this, status, Toast.LENGTH_LONG).show();
             }
         });
@@ -1446,7 +1446,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                     ChatMessage placeholder = createPlaceholder("image", fileName, fileSize);
                     String messageId = viewModel.sendMessage(chatRoomId, placeholder, currentUserId, chatUserId, preferenceManager.getUserName(), chatUserName);
                     
-                    viewModel.uploadAttachment(this, currentImageUri, "image", fileName, fileSize, messageId);
+                    viewModel.uploadAttachment(this, currentImageUri, "image", fileName, fileSize, messageId, chatUserId);
                 } else {
                     Toast.makeText(this, R.string.failed_capture_image, Toast.LENGTH_SHORT).show();
                 }
@@ -1593,7 +1593,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         ChatMessage placeholder = createPlaceholder(messageType, fileName, fileSize);
         String messageId = viewModel.sendMessage(chatRoomId, placeholder, currentUserId, chatUserId, preferenceManager.getUserName(), chatUserName);
         
-        viewModel.uploadAttachment(this, fileUri, messageType, fileName, fileSize, messageId);
+        viewModel.uploadAttachment(this, fileUri, messageType, fileName, fileSize, messageId, chatUserId);
     }
 
     private ChatMessage createPlaceholder(String messageType, String fileName, long fileSize) {
@@ -1920,7 +1920,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
             android.util.Log.d("ChatActivity", "Message created with ID: " + messageId);
             
             // Upload the file
-            viewModel.uploadAttachment(this, Uri.fromFile(audioFile), "audio", fileName, fileSize, messageId);
+            viewModel.uploadAttachment(this, Uri.fromFile(audioFile), "audio", fileName, fileSize, messageId, chatUserId);
             
             // Log voice message sent
             AuditLogger.getInstance(this).logAction(
@@ -2117,19 +2117,37 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
     private void openCamera() {
         try {
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            if (cameraIntent.resolveActivity(getPackageManager()) != null) {
-                File imageFile = createImageFile();
-                if (imageFile != null) {
-                    currentImageUri = FileProvider.getUriForFile(this,
-                            getPackageName() + ".fileprovider",
-                            imageFile);
-                    cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentImageUri);
-                    cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                    startActivityForResult(cameraIntent, Constants.REQUEST_CODE_CAMERA);
-                } else {
-                    Toast.makeText(this, R.string.failed_create_image_file, Toast.LENGTH_SHORT).show();
+            File imageFile = createImageFile();
+            if (imageFile == null) {
+                Toast.makeText(this, R.string.failed_create_image_file, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            currentImageUri = FileProvider.getUriForFile(this,
+                    getPackageName() + ".fileprovider",
+                    imageFile);
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentImageUri);
+            cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            // Grant URI access to every camera app that can handle the intent (Android 11+).
+            java.util.List<android.content.pm.ResolveInfo> handlers =
+                    getPackageManager().queryIntentActivities(
+                            cameraIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
+            for (android.content.pm.ResolveInfo info : handlers) {
+                if (info.activityInfo != null) {
+                    grantUriPermission(
+                            info.activityInfo.packageName,
+                            currentImageUri,
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 }
-            } else {
+            }
+
+            // Do not block on resolveActivity alone — on some OEMs it still returns null
+            // even when a camera app exists. Try launching; catch if nothing handles it.
+            try {
+                startActivityForResult(cameraIntent, Constants.REQUEST_CODE_CAMERA);
+            } catch (android.content.ActivityNotFoundException e) {
                 Toast.makeText(this, R.string.no_camera_app, Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e) {

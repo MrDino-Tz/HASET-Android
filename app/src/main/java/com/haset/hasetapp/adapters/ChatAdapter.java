@@ -462,12 +462,17 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         abstract void bindSpecialized(ChatMessage message, boolean isSent);
 
         protected void updateStatusIcon(ImageView statusIcon, String status) {
+            if (statusIcon == null) return;
             if (status == null) status = "sent";
+            statusIcon.clearColorFilter();
             switch (status.toLowerCase()) {
                 case "sending":
                 case "uploading":
                 case "starting":
                     statusIcon.setImageResource(R.drawable.ic_clock_regular);
+                    break;
+                case "failed":
+                    statusIcon.setImageResource(R.drawable.ic_error_outline);
                     break;
                 case "sent":
                     statusIcon.setImageResource(R.drawable.ic_check_single);
@@ -478,6 +483,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 case "read":
                     statusIcon.setImageResource(R.drawable.ic_check_double);
                     statusIcon.setColorFilter(itemView.getContext().getColor(R.color.green_primary));
+                    break;
+                default:
+                    statusIcon.setImageResource(R.drawable.ic_check_single);
                     break;
             }
         }

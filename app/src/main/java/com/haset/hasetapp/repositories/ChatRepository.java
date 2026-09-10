@@ -299,10 +299,46 @@ public class ChatRepository {
     }
 
     public void updateMessageAttachment(String chatRoomId, String messageId, String attachmentUrl, String status) {
+        updateMessageAttachment(chatRoomId, messageId, attachmentUrl, status, null);
+    }
+
+    public void updateMessageAttachment(String chatRoomId, String messageId, String attachmentUrl,
+                                        String status, String receiverId) {
+        if (messageId == null || messageId.trim().isEmpty()) {
+            Log.e("ChatRepository", "updateMessageAttachment blocked: missing messageId");
+            return;
+        }
+
         Map<String, Object> updates = new HashMap<>();
-        updates.put("attachmentUrl", attachmentUrl);
+        if (attachmentUrl != null) {
+            updates.put("attachmentUrl", attachmentUrl);
+        }
         updates.put("messageStatus", status);
-        firebaseHelper.getMessagesRef().child(chatRoomId).child(messageId).updateChildren(updates);
+
+        // Always prefer the same canonical room used by sendMessage().
+        String senderId = FirebaseAuth.getInstance().getUid();
+        String roomId = chatRoomId;
+        if (senderId != null && receiverId != null && !receiverId.trim().isEmpty()) {
+            roomId = generateChatRoomId(senderId, receiverId);
+        }
+
+        final String targetRoom = roomId;
+        firebaseHelper.getMessagesRef().child(targetRoom).child(messageId).updateChildren(updates)
+                .addOnSuccessListener(unused ->
+                        Log.d("ChatRepository", "Attachment updated room=" + targetRoom
+                                + " message=" + messageId + " status=" + status))
+                .addOnFailureListener(error -> {
+                    Log.e("ChatRepository", "Attachment update failed room=" + targetRoom
+                            + " message=" + messageId + ": " + error.getMessage(), error);
+                    // Fallback to the activity-provided room id if canonical differs.
+                    if (chatRoomId != null && !chatRoomId.equals(targetRoom)) {
+                        firebaseHelper.getMessagesRef().child(chatRoomId).child(messageId)
+                                .updateChildren(updates)
+                                .addOnFailureListener(fallbackError -> Log.e("ChatRepository",
+                                        "Attachment fallback update failed: " + fallbackError.getMessage(),
+                                        fallbackError));
+                    }
+                });
     }
 
     public void deleteMessage(String chatRoomId, ChatMessage message, String currentUserId, String otherUserId) {

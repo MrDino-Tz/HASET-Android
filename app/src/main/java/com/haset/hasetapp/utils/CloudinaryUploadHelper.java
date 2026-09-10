@@ -77,7 +77,8 @@ public class CloudinaryUploadHelper {
                 options.put("fetch_format", "auto");
             }
             if ("video".equalsIgnoreCase(fileType)) {
-                options.put("format", "mp4");
+                // Do not force format=mp4 on unsigned upload — many presets reject/eager-process
+                // it and the request can stall. Deliver as mp4 via URL transform when playing.
             }
 
             long maxUploadBytes = getMaxUploadBytes(fileType);

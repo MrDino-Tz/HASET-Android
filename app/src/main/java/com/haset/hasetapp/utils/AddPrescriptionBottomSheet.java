@@ -241,20 +241,38 @@ public class AddPrescriptionBottomSheet extends BottomSheetDialogFragment {
 
     private void openCamera() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
-            File photoFile = null;
-            try {
-                photoFile = createImageFile();
-            } catch (IOException ex) {
-                showSnackbar("Error creating file");
+        File photoFile = null;
+        try {
+            photoFile = createImageFile();
+        } catch (IOException ex) {
+            showSnackbar("Error creating file");
+            return;
+        }
+        if (photoFile == null) return;
+
+        currentImageUri = FileProvider.getUriForFile(requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                photoFile);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentImageUri);
+        takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        java.util.List<android.content.pm.ResolveInfo> handlers =
+                requireActivity().getPackageManager().queryIntentActivities(
+                        takePictureIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (android.content.pm.ResolveInfo info : handlers) {
+            if (info.activityInfo != null) {
+                requireActivity().grantUriPermission(
+                        info.activityInfo.packageName,
+                        currentImageUri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
             }
-            if (photoFile != null) {
-                currentImageUri = FileProvider.getUriForFile(requireContext(),
-                        requireContext().getPackageName() + ".fileprovider",
-                        photoFile);
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentImageUri);
-                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-            }
+        }
+
+        try {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        } catch (android.content.ActivityNotFoundException e) {
+            showSnackbar(getString(R.string.no_camera_app));
         }
     }
 

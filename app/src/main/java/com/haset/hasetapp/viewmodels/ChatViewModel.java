@@ -50,6 +50,15 @@ public class ChatViewModel extends AndroidViewModel {
         repository.updateMessageAttachment(id, messageId, attachmentUrl, status);
     }
 
+    public void updateMessageAttachment(String id, String messageId, String attachmentUrl,
+                                        String status, String receiverId) {
+        repository.updateMessageAttachment(id, messageId, attachmentUrl, status, receiverId);
+    }
+
+    public void markAttachmentFailed(String id, String messageId, String receiverId) {
+        repository.updateMessageAttachment(id, messageId, null, "failed", receiverId);
+    }
+
     public void deleteMessage(String id, ChatMessage message, String currentUserId, String otherUserId) {
         repository.deleteMessage(id, message, currentUserId, otherUserId);
     }
@@ -84,9 +93,19 @@ public class ChatViewModel extends AndroidViewModel {
     public LiveData<AttachmentResult> getUploadSuccess() { return uploadSuccess; }
 
     public void uploadAttachment(android.content.Context context, android.net.Uri uri, String type, String fileName, long fileSize, String messageId) {
+        uploadAttachment(context, uri, type, fileName, fileSize, messageId, null);
+    }
+
+    public void uploadAttachment(android.content.Context context, android.net.Uri uri, String type,
+                                 String fileName, long fileSize, String messageId, String receiverId) {
+        if (messageId == null || messageId.trim().isEmpty()) {
+            uploadStatus.setValue("Upload failed: missing message id");
+            return;
+        }
         uploadStatus.setValue("Uploading...");
         // Documents use Cloudinary (raw) like other chat media. Firebase Storage is not
         // reliably available on this project, which left PDF URLs broken/unopenable.
+        final String roomHint = chatRoomId.getValue();
         com.haset.hasetapp.utils.CloudinaryUploadHelper.uploadFile(context, uri, type, fileName, "chat_attachments",
             new com.haset.hasetapp.utils.CloudinaryUploadHelper.OnFileUploadListener() {
                 @Override
@@ -102,12 +121,17 @@ public class ChatViewModel extends AndroidViewModel {
                 @Override
                 public void onUploadSuccess(String downloadUrl, String uploadedFileName) {
                     uploadStatus.postValue("Upload successful");
+                    // Persist URL immediately (don't rely only on Activity observer).
+                    repository.updateMessageAttachment(
+                            roomHint, messageId, downloadUrl, "sent", receiverId);
                     uploadSuccess.postValue(new AttachmentResult(downloadUrl, fileName, fileSize, type, messageId));
                 }
 
                 @Override
                 public void onUploadError(String error) {
                     uploadStatus.postValue("Upload failed: " + error);
+                    repository.updateMessageAttachment(
+                            roomHint, messageId, null, "failed", receiverId);
                 }
             });
     }
