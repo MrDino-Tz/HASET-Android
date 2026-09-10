@@ -22,15 +22,19 @@ public final class MfaCodeInputView extends LinearLayout {
     private static final int BORDER_ERROR = Color.rgb(211, 47, 47);
     private static final int BORDER_SUCCESS = Color.rgb(0, 136, 0);
     private static final int TEXT_COLOR = Color.rgb(31, 41, 55);
-    private static final InputFilter DIGIT_ONLY = (source, start, end, dest, dstart, dend) -> {
+    /** Keep digits only; strip spaces/dashes so paste of "123 456" still works. */
+    private static final InputFilter DIGITS_ONLY_KEEP = (source, start, end, dest, dstart, dend) -> {
+        boolean changed = false;
+        StringBuilder kept = new StringBuilder(end - start);
         for (int i = start; i < end; i++) {
-            if (!Character.isDigit(source.charAt(i))) {
-                return "";
-            }
+            char c = source.charAt(i);
+            if (Character.isDigit(c)) kept.append(c);
+            else changed = true;
         }
-        return null;
+        return changed ? kept : null;
     };
     private int borderColor = BORDER_DEFAULT;
+    private boolean distributing;
 
     public MfaCodeInputView(Context context) {
         super(context);
@@ -64,7 +68,8 @@ public final class MfaCodeInputView extends LinearLayout {
             box.setSelectAllOnFocus(true);
             box.setPadding(0, 0, 0, 0);
             box.setBackground(boxBackground(BORDER_DEFAULT, false));
-            box.setFilters(new InputFilter[]{new InputFilter.LengthFilter(1), DIGIT_ONLY});
+            // Length 6 so a full OTP paste reaches the watcher; distribute() then fills each box.
+            box.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6), DIGITS_ONLY_KEEP});
             LayoutParams params = new LayoutParams(dp(40), dp(50));
             if (i > 0) params.setMarginStart(dp(8));
             addView(box, params);
@@ -72,16 +77,14 @@ public final class MfaCodeInputView extends LinearLayout {
             box.addTextChangedListener(new TextWatcher() {
                 public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
                 public void onTextChanged(CharSequence s, int st, int before, int count) {
+                    if (distributing) return;
                     clearError();
-                    if (s.length() > 1) {
-                        String pasted = s.toString().replaceAll("[^0-9]", "");
-                        for (int j = 0; j < pasted.length() && index + j < boxes.length; j++) {
-                            boxes[index + j].setText(String.valueOf(pasted.charAt(j)));
-                        }
-                        boxes[Math.min(index + pasted.length(), boxes.length - 1)].requestFocus();
+                    String digits = s.toString().replaceAll("\\D", "");
+                    if (digits.length() > 1) {
+                        distribute(digits);
                         return;
                     }
-                    if (s.length() == 1 && index < boxes.length - 1) boxes[index + 1].requestFocus();
+                    if (digits.length() == 1 && index < boxes.length - 1) boxes[index + 1].requestFocus();
                 }
                 public void afterTextChanged(Editable e) {}
             });
@@ -90,6 +93,22 @@ public final class MfaCodeInputView extends LinearLayout {
                         && box.getText().length() == 0 && index > 0) { boxes[index - 1].requestFocus(); return true; }
                 return false;
             });
+        }
+    }
+
+    /** Spread a pasted multi-digit OTP across the six boxes (always from the start). */
+    private void distribute(String digits) {
+        distributing = true;
+        try {
+            for (int j = 0; j < boxes.length; j++) {
+                boxes[j].setText(j < digits.length() ? String.valueOf(digits.charAt(j)) : "");
+            }
+            int focus = Math.min(digits.length(), boxes.length) - 1;
+            if (focus < 0) focus = 0;
+            boxes[focus].requestFocus();
+            boxes[focus].setSelection(boxes[focus].getText().length());
+        } finally {
+            distributing = false;
         }
     }
 

@@ -1674,7 +1674,12 @@ Pakia bango kamili la picha</string>
     <string name="cant_scan_use_a_setup_key">Huwezi kuchanganua? Tumia ufunguo wa kuweka mwenyewe</string>
     <string name="manual_setup_key">Ufunguo wa kuweka mwenyewe</string>
     <string name="copy_setup_key">Nakili ufunguo</string>
+    <string name="setup_key_copied">Ufunguo umenakiliwa</string>
     <string name="confirm_code">Thibitisha msimbo</string>
+    <string name="recovery_codes_title">Hifadhi misimbo yako ya kurejesha</string>
+    <string name="recovery_codes_hint">Ziweke mahali salama. Kila msimbo hutumika mara moja tu ukipoteza ufikiaji wa programu yako ya uthibitishaji.</string>
+    <string name="copy_recovery_codes">Nakili misimbo yote</string>
+    <string name="recovery_codes_copied">Misimbo ya kurejesha imenakiliwa</string>
     <string name="i_saved_my_recovery_codes">Nimehifadhi misimbo yangu ya kurejesha</string>
     <string name="payment_error">Hitilafu ya Malipo</string>
     <string name="the_payment_request_was_rejected_or_did_">Ombi la malipo limekataliwa au halijakamilika. Kagua mtoa huduma, akaunti, na kiasi.</string>

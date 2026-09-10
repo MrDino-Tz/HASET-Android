@@ -18,6 +18,7 @@
         android:paddingBottom="32dp">
 
         <TextView
+            android:id="@+id/mfaSetupTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -27,6 +28,7 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/mfaSetupSubtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -100,7 +102,7 @@
                 android:layout_marginTop="6dp"
                 android:fontFamily="monospace"
                 android:textColor="@color/text_primary"
-                android:textIsSelectable="true"
+                android:textIsSelectable="false"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -127,17 +129,59 @@
             android:text="@string/confirm_code"
             android:textAllCaps="false" />
 
-        <TextView
-            android:id="@+id/mfaRecoveryCodes"
+        <LinearLayout
+            android:id="@+id/mfaRecoveryContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:textIsSelectable="true" />
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:background="@drawable/rounded_card_background">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/recovery_codes_title"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/recovery_codes_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/mfaRecoveryCodes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.05"
+                android:lineSpacingExtra="6dp"
+                android:textColor="@color/text_primary"
+                android:textIsSelectable="false"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/mfaCopyRecovery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/copy_recovery_codes"
+                android:textAllCaps="false" />
+        </LinearLayout>
 
         <CheckBox
             android:id="@+id/mfaSaved"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:text="@string/i_saved_my_recovery_codes" />
 
         <Button

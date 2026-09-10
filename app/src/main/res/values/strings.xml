@@ -1672,7 +1672,12 @@
     <string name="cant_scan_use_a_setup_key">Can’t scan? Use a setup key</string>
     <string name="manual_setup_key">Manual setup key</string>
     <string name="copy_setup_key">Copy setup key</string>
+    <string name="setup_key_copied">Setup key copied</string>
     <string name="confirm_code">Confirm code</string>
+    <string name="recovery_codes_title">Save your recovery codes</string>
+    <string name="recovery_codes_hint">Store these somewhere safe. Each code can be used once if you lose access to your authenticator app.</string>
+    <string name="copy_recovery_codes">Copy all codes</string>
+    <string name="recovery_codes_copied">Recovery codes copied</string>
     <string name="i_saved_my_recovery_codes">I saved my recovery codes</string>
     <string name="payment_error">Payment Error</string>
     <string name="the_payment_request_was_rejected_or_did_">The payment request was rejected or did not complete. Check the provider, account, and amount.</string>
