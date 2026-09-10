@@ -9,6 +9,24 @@ captures/
 *.apk
 *.apks
 *.aab
+*.aar
+*.dex
+*.so
+
+# Play Console / local release outputs (outside **/build/)
+app/release/
+**/release/*.aab
+**/release/*.apk
+**/release/*.apks
+**/release/output-metadata.json
+**/release/baselineProfiles/
+*.dm
+mapping.txt
+seeds.txt
+unused.txt
+resources.txt
+native-debug-symbols.zip
+*.symbols.zip
 
 # Xcode / Swift generated output and per-user state
 .xcode-derived/
@@ -68,9 +86,6 @@ credentials/
 *secrets*.local
 *password*.local
 
-# Release outputs outside Gradle build/ (if copied locally)
-app/release/
-
 # Temporary files and local caches
 .tmp/
 *.tmp
@@ -93,8 +108,3 @@ __pycache__/
 *.pyc
 *.class
 target/
-/app/release/baselineProfiles/1/app-release.dm
-/app/release/baselineProfiles/0/app-release.dm
-/app/release/output-metadata.json
-/docs/Publishing/release docs/BUILD_WARNINGS_FIX.md
-/docs/Publishing/release docs/RELEASE_NOTES.md

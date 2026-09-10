@@ -12,7 +12,7 @@ android {
         applicationId "com.haset.hasetapp"
         minSdk 24
         targetSdk 36
-        versionCode 9
+        versionCode 10
         versionName "1.0.0.DTC"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -76,6 +76,27 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+}
+
+// Name release AAB like: app-release-v10.aab (Play Console accepts any filename)
+tasks.configureEach { task ->
+    if (task.name == "bundleRelease" || task.name == "signReleaseBundle") {
+        task.doLast {
+            def versionedName = "app-release-v${android.defaultConfig.versionCode}.aab"
+            def candidates = [
+                    file("${layout.buildDirectory.get().asFile}/outputs/bundle/release/app-release.aab"),
+                    file("${projectDir}/release/app-release.aab")
+            ]
+            candidates.each { defaultAab ->
+                if (!defaultAab.exists()) return
+                def versionedAab = new File(defaultAab.parentFile, versionedName)
+                if (versionedAab.exists()) versionedAab.delete()
+                if (defaultAab.renameTo(versionedAab)) {
+                    println "Created: ${versionedAab.absolutePath}"
+                }
+            }
         }
     }
 }
