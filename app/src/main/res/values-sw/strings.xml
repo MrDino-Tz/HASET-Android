@@ -297,8 +297,14 @@
     <string name="change_password">Badilisha Nenosiri</string>
     <string name="change_password_desc">Sasisha na uimarishe usalama wa akaunti</string>
     <string name="mfa_settings_title">Uthibitishaji wa hatua mbili</string>
-    <string name="mfa_enabled_desc">Ulinzi wa ziada wa kuingia umewashwa</string>
-    <string name="mfa_disabled_desc">Linda kuingia kwa programu ya uthibitishaji</string>
+    <string name="mfa_enabled_desc">Inahitajika kwa kutoa pesa na kubadilisha akaunti ya malipo</string>
+    <string name="mfa_disabled_desc">Washa ili kutoa pesa kwa usalama</string>
+    <string name="mfa_require_login_title">Hitaji MFA unapoingia</string>
+    <string name="mfa_require_login_desc">Uliza msimbo wa uthibitishaji unapoingia kwenye akaunti</string>
+    <string name="mfa_disable_login_title">Zima MFA unapoingia?</string>
+    <string name="mfa_disable_login_message">Weka msimbo wa sasa wa tarakimu sita kutoka programu yako ya uthibitishaji ili kuthibitisha.</string>
+    <string name="mfa_disable_login_action">Zima</string>
+    <string name="mfa_login_disabled_success">MFA unapoingia imezimwa</string>
     <string name="mfa_disable_title">Zima uthibitishaji wa hatua mbili?</string>
     <string name="mfa_disable_message">Weka msimbo wa sasa wa tarakimu sita kutoka programu yako ya uthibitishaji.</string>
     <string name="mfa_disable_action">Zima MFA</string>

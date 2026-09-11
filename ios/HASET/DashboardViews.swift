@@ -5290,9 +5290,11 @@ struct SettingsView: View {
     @State private var languagePickerPresented = false
     @State private var themePickerPresented = false
     @State private var mfaEnabled = false
+    @State private var mfaRequireOnLogin = false
     @State private var mfaBusy = true
     @State private var mfaEnrollmentPresented = false
     @State private var mfaDisablePresented = false
+    @State private var mfaDisableLoginPresented = false
 
     var body: some View {
         ScrollView {
@@ -5357,6 +5359,31 @@ struct SettingsView: View {
                             .labelsHidden()
                             .disabled(mfaBusy)
                         }
+                        if mfaEnabled {
+                            SettingsDivider()
+                            SettingsRow(
+                                icon: "lock",
+                                title: appViewModel.tr("mfa_require_login_title"),
+                                subtitle: appViewModel.tr("mfa_require_login_desc")
+                            ) {
+                                Toggle("", isOn: Binding(
+                                    get: { mfaRequireOnLogin },
+                                    set: { newValue in
+                                        if newValue {
+                                            mfaRequireOnLogin = true
+                                            if let userId = appViewModel.activeSession?.userId
+                                                ?? SessionStore().loadSession()?.userId {
+                                                SessionStore().setMfaRequiredOnLogin(userId: userId, required: true)
+                                            }
+                                        } else {
+                                            mfaDisableLoginPresented = true
+                                        }
+                                    }
+                                ))
+                                .labelsHidden()
+                                .disabled(mfaBusy)
+                            }
+                        }
                         SettingsDivider()
                         NavigationLink {
                             ForgotPasswordView(useAuthBackNavigation: false)
@@ -5389,6 +5416,7 @@ struct SettingsView: View {
             MFAEnrollmentView(
                 onComplete: {
                     mfaEnabled = true
+                    mfaRequireOnLogin = false
                     mfaEnrollmentPresented = false
                 },
                 onCancel: { mfaEnrollmentPresented = false }
@@ -5399,9 +5427,32 @@ struct SettingsView: View {
             MFADisableView(
                 onDisabled: {
                     mfaEnabled = false
+                    mfaRequireOnLogin = false
+                    if let userId = appViewModel.activeSession?.userId
+                        ?? SessionStore().loadSession()?.userId {
+                        SessionStore().setMfaRequiredOnLogin(userId: userId, required: false)
+                    }
                     mfaDisablePresented = false
                 },
                 onCancel: { mfaDisablePresented = false }
+            )
+            .environmentObject(appViewModel)
+        }
+        .sheet(isPresented: $mfaDisableLoginPresented) {
+            MFADisableLoginRequireView(
+                onDisabled: {
+                    mfaRequireOnLogin = false
+                    if let userId = appViewModel.activeSession?.userId
+                        ?? SessionStore().loadSession()?.userId {
+                        SessionStore().setMfaRequiredOnLogin(userId: userId, required: false)
+                    }
+                    mfaDisableLoginPresented = false
+                    appViewModel.alertState = AlertState(
+                        title: appViewModel.tr("settings"),
+                        message: appViewModel.tr("mfa_login_disabled_success")
+                    )
+                },
+                onCancel: { mfaDisableLoginPresented = false }
             )
             .environmentObject(appViewModel)
         }
@@ -5428,8 +5479,102 @@ struct SettingsView: View {
             SessionStore().saveSession(freshSession)
             appViewModel.activeSession = freshSession
             mfaEnabled = try await service.mobileMFAStatus(idToken: freshSession.idToken)
+            mfaRequireOnLogin = mfaEnabled && SessionStore().isMfaRequiredOnLogin(userId: freshSession.userId)
+            if !mfaEnabled {
+                SessionStore().setMfaRequiredOnLogin(userId: freshSession.userId, required: false)
+                mfaRequireOnLogin = false
+            }
         } catch {
             appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
+        }
+    }
+}
+
+private struct MFADisableLoginRequireView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    let onDisabled: () -> Void
+    let onCancel: () -> Void
+    @State private var code = ""
+    @State private var loading = false
+    @State private var error: String?
+    @State private var useRecoveryCode = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "lock.slash")
+                    .font(.system(size: 38, weight: .medium))
+                    .foregroundStyle(HASETTheme.redPrimary)
+                Text(appViewModel.tr("mfa_disable_login_title"))
+                    .font(HASETTheme.font(.medium, 20))
+                    .multilineTextAlignment(.center)
+                Text(useRecoveryCode
+                     ? "Enter one unused 10-character recovery code. This code will be consumed."
+                     : appViewModel.tr("mfa_disable_login_message"))
+                    .font(HASETTheme.font(.regular, 14))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                if useRecoveryCode {
+                    SecureField("Recovery code", text: $code)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: code) { value in
+                            code = String(value.uppercased().filter { "0123456789ABCDEF".contains($0) }.prefix(10))
+                            error = nil
+                        }
+                } else {
+                    SixDigitMFAInput(code: $code, isInvalid: error != nil, isVerified: false) {}
+                }
+                if let error {
+                    Text(error)
+                        .font(HASETTheme.font(.regular, 13))
+                        .foregroundStyle(HASETTheme.redPrimary)
+                        .multilineTextAlignment(.center)
+                }
+                Button(loading ? "…" : appViewModel.tr("mfa_disable_login_action")) { verifyAndDisable() }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(loading || code.count != (useRecoveryCode ? 10 : 6))
+                Button(useRecoveryCode ? "Use authenticator code" : "Use a recovery code") {
+                    code = ""
+                    error = nil
+                    useRecoveryCode.toggle()
+                }
+                .foregroundStyle(HASETTheme.greenPrimary)
+                Button(appViewModel.tr("cancel"), action: onCancel)
+                    .foregroundStyle(HASETTheme.greenPrimary)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(HASETTheme.backgroundPrimary.ignoresSafeArea())
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func verifyAndDisable() {
+        guard code.count == (useRecoveryCode ? 10 : 6), !loading else { return }
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            error = "Authentication expired. Please sign in again."
+            return
+        }
+        loading = true
+        error = nil
+        Task {
+            do {
+                let service = AuthService()
+                let freshSession = try await service.refreshSessionIfNeeded(session)
+                SessionStore().saveSession(freshSession)
+                appViewModel.activeSession = freshSession
+                try await service.verifyLoginMobileMFA(code: code, idToken: freshSession.idToken)
+                loading = false
+                code = ""
+                onDisabled()
+            } catch {
+                loading = false
+                code = ""
+                self.error = error.localizedDescription
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.repositories.AuthRepository;
 import com.haset.hasetapp.utils.FirebaseHelper;
 import com.haset.hasetapp.utils.CrashMonitor;
+import com.haset.hasetapp.utils.PreferenceManager;
 import com.haset.hasetapp.api.MobileMfaApiService;
 import com.haset.hasetapp.api.RetrofitClient;
 import com.google.gson.JsonObject;
@@ -101,7 +102,9 @@ public class AuthViewModel extends AndroidViewModel {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!response.isSuccessful() || response.body() == null) { authState.postValue(AuthState.error("MFA service unavailable. Please try again later.")); return; }
                     boolean enabled = response.body().has("two_factor_enabled") && response.body().get("two_factor_enabled").getAsBoolean();
-                    if (enabled) authState.postValue(AuthState.mfaRequired()); else fetchUserData(user.getUid());
+                    boolean requireOnLogin = new PreferenceManager(getApplication()).isMfaRequiredOnLogin(user.getUid());
+                    if (enabled && requireOnLogin) authState.postValue(AuthState.mfaRequired());
+                    else fetchUserData(user.getUid());
                 }
                 public void onFailure(Call<JsonObject> call, Throwable t) { CrashMonitor.report("auth", "AuthViewModel.checkMfa", "MFA status check failed", t); authState.postValue(AuthState.error("MFA service unavailable.")); }
             });

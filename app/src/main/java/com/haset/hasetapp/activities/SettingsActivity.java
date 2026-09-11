@@ -51,6 +51,8 @@ public class SettingsActivity extends BaseActivity {
     private MaterialSwitch switchNotification;
     private MaterialSwitch switchLocation;
     private MaterialSwitch switchMfa;
+    private MaterialSwitch switchMfaRequireLogin;
+    private View layoutMfaRequireLogin;
     private TextView tvLanguageValue;
     private TextView tvThemeValue;
     private TextView tvMfaDescription;
@@ -59,6 +61,7 @@ public class SettingsActivity extends BaseActivity {
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
     private static final int MFA_ENROLLMENT_REQUEST = 1702;
     private boolean updatingMfaSwitch;
+    private boolean updatingMfaRequireLoginSwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +95,8 @@ public class SettingsActivity extends BaseActivity {
         switchNotification = findViewById(R.id.switchNotification);
         switchLocation = findViewById(R.id.switchLocation);
         switchMfa = findViewById(R.id.switchMfa);
+        switchMfaRequireLogin = findViewById(R.id.switchMfaRequireLogin);
+        layoutMfaRequireLogin = findViewById(R.id.layoutMfaRequireLogin);
         tvLanguageValue = findViewById(R.id.tvLanguageValue);
         tvThemeValue = findViewById(R.id.tvThemeValue);
         tvMfaDescription = findViewById(R.id.tvMfaDescription);
@@ -163,42 +168,70 @@ public class SettingsActivity extends BaseActivity {
                 showDisableMfaDialog();
             }
         });
+        if (switchMfaRequireLogin != null) {
+            switchMfaRequireLogin.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (updatingMfaRequireLoginSwitch) return;
+                String userId = currentUserId();
+                if (userId == null) {
+                    setMfaRequireLoginUi(false, true);
+                    return;
+                }
+                if (isChecked) {
+                    preferenceManager.setMfaRequiredOnLogin(userId, true);
+                    return;
+                }
+                // Turning off requires MFA verification
+                setMfaRequireLoginUi(true, true);
+                showDisableLoginMfaDialog();
+            });
+        }
         loadMfaStatus();
+    }
+
+    private String currentUserId() {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user != null) return user.getUid();
+        return preferenceManager.getUserId();
     }
 
     private void loadMfaStatus() {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) {
-            setMfaUi(false, false);
+            setMfaUi(false, false, false);
             return;
         }
         switchMfa.setEnabled(false);
+        if (switchMfaRequireLogin != null) switchMfaRequireLogin.setEnabled(false);
         user.getIdToken(true).addOnSuccessListener(token ->
                 RetrofitClient.getInstance().getMobileMfaApiService().status("Bearer " + token.getToken())
                         .enqueue(new Callback<JsonObject>() {
                             @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                                 if (!response.isSuccessful() || response.body() == null) {
-                                    setMfaUi(false, false);
+                                    setMfaUi(false, false, false);
                                     Toast.makeText(SettingsActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_SHORT).show();
                                     return;
                                 }
                                 boolean enabled = response.body().has("two_factor_enabled")
                                         && response.body().get("two_factor_enabled").getAsBoolean();
-                                setMfaUi(enabled, true);
+                                setMfaUi(enabled, true, false);
                             }
 
                             @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
-                                setMfaUi(false, false);
+                                setMfaUi(false, false, false);
                                 Toast.makeText(SettingsActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_SHORT).show();
                             }
                         }))
                 .addOnFailureListener(error -> {
-                    setMfaUi(false, false);
+                    setMfaUi(false, false, false);
                     Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void setMfaUi(boolean enabled, boolean interactive) {
+        setMfaUi(enabled, interactive, !enabled);
+    }
+
+    private void setMfaUi(boolean enabled, boolean interactive, boolean clearLoginPreference) {
         updatingMfaSwitch = true;
         switchMfa.setChecked(enabled);
         switchMfa.setEnabled(interactive);
@@ -206,6 +239,131 @@ public class SettingsActivity extends BaseActivity {
         if (tvMfaDescription != null) {
             tvMfaDescription.setText(enabled ? R.string.mfa_enabled_desc : R.string.mfa_disabled_desc);
         }
+        if (!enabled && clearLoginPreference) {
+            String userId = currentUserId();
+            if (userId != null) preferenceManager.setMfaRequiredOnLogin(userId, false);
+            setMfaRequireLoginUi(false, false);
+            return;
+        }
+        if (!enabled) {
+            setMfaRequireLoginUi(false, false);
+            return;
+        }
+        boolean requireOnLogin = preferenceManager.isMfaRequiredOnLogin(currentUserId());
+        setMfaRequireLoginUi(requireOnLogin, interactive);
+    }
+
+    private void setMfaRequireLoginUi(boolean requireOnLogin, boolean interactive) {
+        boolean show = switchMfa != null && switchMfa.isChecked();
+        if (layoutMfaRequireLogin != null) {
+            layoutMfaRequireLogin.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+        if (switchMfaRequireLogin == null) return;
+        updatingMfaRequireLoginSwitch = true;
+        switchMfaRequireLogin.setChecked(requireOnLogin);
+        switchMfaRequireLogin.setEnabled(show && interactive);
+        updatingMfaRequireLoginSwitch = false;
+    }
+
+    private void showDisableLoginMfaDialog() {
+        MfaCodeInputView input = new MfaCodeInputView(this);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.mfa_disable_login_title)
+                .setMessage(R.string.mfa_disable_login_message)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, (dismissed, which) -> setMfaRequireLoginUi(true, true))
+                .setNeutralButton(R.string.use_recovery_code, null)
+                .setPositiveButton(R.string.mfa_disable_login_action, null)
+                .create();
+        dialog.setOnCancelListener(ignored -> setMfaRequireLoginUi(true, true));
+        dialog.setOnShowListener(ignored -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                if (!input.isComplete()) {
+                    input.setErrorState(true);
+                    return;
+                }
+                String code = input.getCode();
+                input.clearCode();
+                dialog.dismiss();
+                verifyThenDisableLoginMfa(code);
+            });
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> {
+                dialog.dismiss();
+                showRecoveryDisableLoginMfaDialog();
+            });
+        });
+        dialog.show();
+        input.focusFirst();
+    }
+
+    private void showRecoveryDisableLoginMfaDialog() {
+        EditText input = new EditText(this);
+        input.setHint(R.string.recovery_code_hint);
+        input.setSingleLine(true);
+        input.setAllCaps(true);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+                | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(10)});
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.recovery_code_title)
+                .setMessage(R.string.recovery_code_message)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, (dismissed, which) -> setMfaRequireLoginUi(true, true))
+                .setPositiveButton(R.string.mfa_disable_login_action, null)
+                .create();
+        dialog.setOnCancelListener(ignored -> setMfaRequireLoginUi(true, true));
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String code = input.getText().toString().trim().toUpperCase(java.util.Locale.US);
+            if (!code.matches("[A-F0-9]{10}")) {
+                input.setError(getString(R.string.invalid_recovery_code));
+                return;
+            }
+            dialog.dismiss();
+            verifyThenDisableLoginMfa(code);
+        }));
+        dialog.show();
+        input.requestFocus();
+    }
+
+    private void verifyThenDisableLoginMfa(String code) {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        String userId = currentUserId();
+        if (user == null || userId == null) {
+            setMfaRequireLoginUi(true, true);
+            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (switchMfaRequireLogin != null) switchMfaRequireLogin.setEnabled(false);
+        CustomDialog.showLoading(this, getString(R.string.mfa_disable_login_action));
+        user.getIdToken(true).addOnSuccessListener(token -> {
+            JsonObject body = new JsonObject();
+            body.addProperty("code", code);
+            RetrofitClient.getInstance().getMobileMfaApiService().verify("Bearer " + token.getToken(), body)
+                    .enqueue(new Callback<JsonObject>() {
+                        @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                            CustomDialog.hideLoading();
+                            if (response.isSuccessful()) {
+                                preferenceManager.setMfaRequiredOnLogin(userId, false);
+                                setMfaRequireLoginUi(false, true);
+                                Toast.makeText(SettingsActivity.this, R.string.mfa_login_disabled_success, Toast.LENGTH_SHORT).show();
+                            } else {
+                                setMfaRequireLoginUi(true, true);
+                                Toast.makeText(SettingsActivity.this, R.string.invalid_or_expired_mfa_code, Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
+                            CustomDialog.hideLoading();
+                            setMfaRequireLoginUi(true, true);
+                            Toast.makeText(SettingsActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_LONG).show();
+                        }
+                    });
+        }).addOnFailureListener(error -> {
+            CustomDialog.hideLoading();
+            setMfaRequireLoginUi(true, true);
+            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void showDisableMfaDialog() {

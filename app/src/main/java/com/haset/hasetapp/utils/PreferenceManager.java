@@ -110,6 +110,14 @@ public class PreferenceManager {
         int theme = getTheme();
         String language = getLanguage();
         boolean notificationEnabled = isNotificationEnabled();
+        java.util.Map<String, Boolean> mfaLoginPrefs = new java.util.HashMap<>();
+        for (java.util.Map.Entry<String, ?> entry : sharedPreferences.getAll().entrySet()) {
+            if (entry.getKey() != null
+                    && entry.getKey().startsWith(KEY_MFA_REQUIRE_ON_LOGIN_PREFIX)
+                    && entry.getValue() instanceof Boolean) {
+                mfaLoginPrefs.put(entry.getKey(), (Boolean) entry.getValue());
+            }
+        }
         
         // Clear all preferences
         editor.clear();
@@ -119,8 +127,25 @@ public class PreferenceManager {
         editor.putInt(KEY_THEME, theme);
         editor.putString(KEY_LANGUAGE, language);
         editor.putBoolean(KEY_NOTIFICATION_ENABLED, notificationEnabled);
+        for (java.util.Map.Entry<String, Boolean> entry : mfaLoginPrefs.entrySet()) {
+            editor.putBoolean(entry.getKey(), entry.getValue());
+        }
         
         editor.apply();
+    }
+
+    /** Per-user: when MFA is enrolled, optionally challenge at login. Default off. */
+    private static final String KEY_MFA_REQUIRE_ON_LOGIN_PREFIX = "mfa_require_on_login_";
+
+    public void setMfaRequiredOnLogin(String userId, boolean required) {
+        if (userId == null || userId.isEmpty()) return;
+        editor.putBoolean(KEY_MFA_REQUIRE_ON_LOGIN_PREFIX + userId, required);
+        editor.apply();
+    }
+
+    public boolean isMfaRequiredOnLogin(String userId) {
+        if (userId == null || userId.isEmpty()) return false;
+        return sharedPreferences.getBoolean(KEY_MFA_REQUIRE_ON_LOGIN_PREFIX + userId, false);
     }
     
     // Theme preference methods

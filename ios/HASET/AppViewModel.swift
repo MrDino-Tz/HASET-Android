@@ -366,7 +366,7 @@ final class AppViewModel: ObservableObject {
                 loginErrorMessage = nil
                 activeSession = result.0
                 let mfaEnabled = try await authService.mobileMFAStatus(idToken: result.0.idToken)
-                if mfaEnabled {
+                if mfaEnabled && sessionStore.isMfaRequiredOnLogin(userId: result.0.userId) {
                     pendingMFASession = result.0
                     pendingMFAProfile = result.1
                     mfaError = nil

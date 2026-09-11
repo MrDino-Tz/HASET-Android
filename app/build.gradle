@@ -12,7 +12,7 @@ android {
         applicationId "com.haset.hasetapp"
         minSdk 24
         targetSdk 36
-        versionCode 10
+        versionCode 11
         versionName "1.0.0.DTC"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -80,24 +80,27 @@ android {
     }
 }
 
-// Name release AAB like: app-release-v10.aab (Play Console accepts any filename)
-tasks.configureEach { task ->
-    if (task.name == "bundleRelease" || task.name == "signReleaseBundle") {
-        task.doLast {
-            def versionedName = "app-release-v${android.defaultConfig.versionCode}.aab"
-            def candidates = [
-                    file("${layout.buildDirectory.get().asFile}/outputs/bundle/release/app-release.aab"),
-                    file("${projectDir}/release/app-release.aab")
-            ]
-            candidates.each { defaultAab ->
-                if (!defaultAab.exists()) return
-                def versionedAab = new File(defaultAab.parentFile, versionedName)
-                if (versionedAab.exists()) versionedAab.delete()
-                if (defaultAab.renameTo(versionedAab)) {
-                    println "Created: ${versionedAab.absolutePath}"
-                }
-            }
+// Keep app-release.aab for AGP/IDE; also copy app-release-v{versionCode}.aab for uploads.
+tasks.register("copyVersionedReleaseBundle") {
+    doLast {
+        def versionedName = "app-release-v${android.defaultConfig.versionCode}.aab"
+        def candidates = [
+                file("${layout.buildDirectory.get().asFile}/outputs/bundle/release/app-release.aab"),
+                file("${projectDir}/release/app-release.aab")
+        ]
+        candidates.each { defaultAab ->
+            if (!defaultAab.exists()) return
+            def versionedAab = new File(defaultAab.parentFile, versionedName)
+            versionedAab.bytes = defaultAab.bytes
+            println "Created: ${versionedAab.absolutePath}"
         }
+    }
+}
+
+// Lazy: AGP creates bundleRelease after this script is evaluated.
+tasks.configureEach { task ->
+    if (task.name == "bundleRelease" || task.name == "produceReleaseBundleIdeListingFile") {
+        task.finalizedBy("copyVersionedReleaseBundle")
     }
 }
 

@@ -76,6 +76,20 @@ final class SessionStore {
         set { defaults.set(newValue, forKey: locationEnabledKey) }
     }
 
+    private func mfaRequireOnLoginKey(userId: String) -> String {
+        "mfa_require_on_login_\(userId)"
+    }
+
+    func isMfaRequiredOnLogin(userId: String) -> Bool {
+        guard !userId.isEmpty else { return false }
+        return defaults.bool(forKey: mfaRequireOnLoginKey(userId: userId))
+    }
+
+    func setMfaRequiredOnLogin(userId: String, required: Bool) {
+        guard !userId.isEmpty else { return }
+        defaults.set(required, forKey: mfaRequireOnLoginKey(userId: userId))
+    }
+
     func saveSession(_ session: StoredSession) {
         keychain.save(session, for: sessionKey)
     }
