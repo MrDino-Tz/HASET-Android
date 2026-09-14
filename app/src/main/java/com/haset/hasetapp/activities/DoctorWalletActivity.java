@@ -205,10 +205,12 @@ public class DoctorWalletActivity extends BaseActivity {
                 if (!wallet.isMobileMoneyAvailable() && previous.isMobileMoneyPending() && !TextUtils.isEmpty(previous.getMobileMoneyLabel())) {
                     wallet.setMobileMoneyPending(true);
                     wallet.setMobileMoneyLabel(previous.getMobileMoneyLabel());
+                    preservePendingPayoutStatus(wallet, true);
                 }
                 if (!wallet.isBankAvailable() && previous.isBankPending() && !TextUtils.isEmpty(previous.getBankLabel())) {
                     wallet.setBankPending(true);
                     wallet.setBankLabel(previous.getBankLabel());
+                    preservePendingPayoutStatus(wallet, false);
                 }
             }
             if (wallet != null) {
@@ -605,12 +607,41 @@ public class DoctorWalletActivity extends BaseActivity {
                     : currentWallet.getBankStatus();
         }
         if (!TextUtils.isEmpty(status)) {
-            if ("cooling_off".equalsIgnoreCase(status)
-                    || "cooling-off".equalsIgnoreCase(status)
-                    || "cooldown".equalsIgnoreCase(status)) {
-                return getString(R.string.payout_destination_cooling_off);
+            return payoutDestinationStatusMessage(status);
+        }
+        return getString(R.string.payout_destination_pending_security_hold);
+    }
+
+    private void preservePendingPayoutStatus(DoctorWalletEntity wallet, boolean mobileMoney) {
+        String status = mobileMoney ? wallet.getMobileMoneyStatus() : wallet.getBankStatus();
+        if (TextUtils.isEmpty(status) || "not_configured".equalsIgnoreCase(status)) {
+            if (mobileMoney) {
+                wallet.setMobileMoneyStatus("pending");
+            } else {
+                wallet.setBankStatus("pending");
             }
-            return getString(R.string.withdraw_reason_backend_status, status);
+        }
+    }
+
+    private String payoutDestinationStatusMessage(String status) {
+        if (TextUtils.isEmpty(status) || "not_configured".equalsIgnoreCase(status)) {
+            return getString(R.string.payout_destination_pending_security_hold);
+        }
+        if ("cooling_off".equalsIgnoreCase(status)
+                || "cooling-off".equalsIgnoreCase(status)
+                || "cooldown".equalsIgnoreCase(status)) {
+            return getString(R.string.payout_destination_cooling_off);
+        }
+        String normalized = status.trim().toLowerCase(Locale.US);
+        if (normalized.contains("cooling") || normalized.contains("cooldown")) {
+            return getString(R.string.payout_destination_cooling_off);
+        }
+        if (normalized.contains("pending")
+                || normalized.contains("review")
+                || normalized.contains("requested")
+                || normalized.contains("hold")
+                || normalized.contains("security")) {
+            return getString(R.string.payout_destination_pending_security_hold);
         }
         return getString(R.string.withdraw_reason_configured_not_ready);
     }
@@ -727,8 +758,9 @@ public class DoctorWalletActivity extends BaseActivity {
                             if (r.isSuccessful()) {
                                 mirrorPendingPayoutDestination(destination, user.getUid());
                                 dialog.dismiss();
-                                Toast.makeText(DoctorWalletActivity.this, "Payout account submitted. Waiting for admin approval before withdrawal.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(DoctorWalletActivity.this, R.string.payout_account_submitted, Toast.LENGTH_LONG).show();
                                 updatePendingPayoutDestinationUi(destination);
+                                updateWithdrawButtonState();
                                 viewModel.refreshWalletBalance(preferenceManager.getUserId());
                             } else {
                                 String errorMessage = payoutErrorMessage(r);
@@ -762,9 +794,8 @@ public class DoctorWalletActivity extends BaseActivity {
                         dialog.dismiss();
                         updatePendingPayoutDestinationUi(destination);
                         viewModel.refreshWalletBalance(preferenceManager.getUserId());
-                        Toast.makeText(DoctorWalletActivity.this,
-                                "Payout account submitted. Waiting for admin approval before withdrawal.",
-                                Toast.LENGTH_LONG).show();
+                        Toast.makeText(DoctorWalletActivity.this, R.string.payout_account_submitted, Toast.LENGTH_LONG).show();
+                        updateWithdrawButtonState();
                     }
 
                     @Override
@@ -784,10 +815,12 @@ public class DoctorWalletActivity extends BaseActivity {
         if (bank) {
             currentWallet.setBankAvailable(false);
             currentWallet.setBankPending(true);
+            currentWallet.setBankStatus("pending");
             currentWallet.setBankLabel((destination.get("bank_code").getAsString() + "  " + destination.get("bank_account").getAsString()).trim());
         } else {
             currentWallet.setMobileMoneyAvailable(false);
             currentWallet.setMobileMoneyPending(true);
+            currentWallet.setMobileMoneyStatus("pending");
             currentWallet.setMobileMoneyLabel((destination.get("provider").getAsString() + "  " + destination.get("phone_number").getAsString()).trim());
         }
     }
