@@ -161,13 +161,11 @@
         <activity
             android:name=".activities.FullScreenImageActivity"
             android:exported="false"
-            android:theme="@style/Theme.HASETApp"
-            android:screenOrientation="portrait"/>
+            android:theme="@style/Theme.HASETApp"/>
         <activity
             android:name=".activities.VideoPlayerActivity"
             android:exported="false"
-            android:theme="@style/Theme.HASETApp"
-            android:screenOrientation="portrait"/>
+            android:theme="@style/Theme.HASETApp"/>
         <activity
             android:name=".MainActivity"
             android:exported="false" />
@@ -215,13 +213,18 @@
         <activity
             android:name=".activities.PrescriptionActivity"
             android:exported="false"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.HASETApp" />
 
         <activity
             android:name=".activities.MfaEnrollmentActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
+            android:exported="false" />
+
+        <!-- zxing-android-embedded locks its CaptureActivity to sensorLandscape;
+             lift the restriction so large-screen/foldable policy is satisfied. -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="unspecified"
+            tools:replace="android:screenOrientation" />
     </application>
 
 </manifest>

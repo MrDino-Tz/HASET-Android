@@ -23,6 +23,11 @@ import java.util.List;
 
 public class HomeRepository {
     private final FirebaseHelper firebaseHelper = FirebaseHelper.getInstance();
+    private final Application application;
+
+    public HomeRepository(Application application) {
+        this.application = application;
+    }
 
     public LiveData<List<Doctor>> getDoctors() {
         MutableLiveData<List<Doctor>> doctorsLiveData = new MutableLiveData<>();
@@ -191,7 +196,8 @@ public class HomeRepository {
                                 article.setPostId(ds.getKey());
                             }
                             // Only real published posts with a title. Deleted/empty stubs stay hidden.
-                            if (article.isVisibleToPatients()) {
+                            if (article.isVisibleToPatients()
+                                    && article.isAvailableInLanguage(com.haset.hasetapp.utils.LocaleHelper.getLanguage(application))) {
                                 articles.add(article);
                             }
                         }

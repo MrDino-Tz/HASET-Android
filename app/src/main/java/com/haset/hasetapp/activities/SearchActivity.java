@@ -127,7 +127,11 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         searchResults.clear();
 
         // 1. Search App Sections (Universal Navigation)
-        String[] sectionTitles = {"Doctors Center", "Health Articles", "Book Appointment"};
+        String[] sectionTitles = {
+            getString(R.string.search_doctors_center),
+            getString(R.string.search_health_articles_category),
+            getString(R.string.search_book_appointment)
+        };
         String[] sectionTags = {"Doctors", "Articles", "Appointments"};
         
         for (int i = 0; i < sectionTitles.length; i++) {
@@ -135,7 +139,7 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
                 searchResults.add(new SearchResultAdapter.SearchResult(
                     SearchResultAdapter.TYPE_SUGGESTION,
                     sectionTitles[i],
-                    "App Section",
+                    getString(R.string.search_app_section),
                     sectionTags[i]
                 ));
             }
@@ -190,8 +194,16 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
         searchResults.clear();
         
         // Universal categories as starting points
-        String[] cats = {"Doctors Center", "Health Articles", "Book Appointment"};
-        String[] subs = {"Find qualified specialists", "Read expert health tips", "Schedule your visit"};
+        String[] cats = {
+            getString(R.string.search_doctors_center),
+            getString(R.string.search_health_articles_category),
+            getString(R.string.search_book_appointment)
+        };
+        String[] subs = {
+            getString(R.string.search_find_qualified_specialists),
+            getString(R.string.search_read_expert_health_tips),
+            getString(R.string.search_schedule_your_visit)
+        };
         String[] tags = {"Doctors", "Articles", "Appointments"};
         
         for (int i = 0; i < cats.length; i++) {
@@ -217,7 +229,7 @@ public class SearchActivity extends BaseActivity implements SearchResultAdapter.
             // Update subtitle with search query if available
             String currentQuery = etSearch.getText().toString().trim();
             if (!currentQuery.isEmpty()) {
-                tvNoResultsSubtitle.setText("No results found for \"" + currentQuery + "\"\nTry searching with different keywords");
+                tvNoResultsSubtitle.setText(getString(R.string.search_no_results_for, currentQuery));
             } else {
                 tvNoResultsSubtitle.setText(R.string.try_different_keywords);
             }

@@ -12,6 +12,7 @@ public class ArticlePostEntity {
     private String type; // "image", "text"
     private String title;
     private String description;
+    private String language;
     @androidx.room.Ignore
     private String titleSw;
     @androidx.room.Ignore
@@ -87,6 +88,9 @@ public class ArticlePostEntity {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
+
     public String getTitleSw() { return titleSw; }
     public void setTitleSw(String titleSw) { this.titleSw = titleSw; }
 
@@ -113,6 +117,27 @@ public class ArticlePostEntity {
     public String getLocalizedDescription(String language) {
         return "sw".equalsIgnoreCase(language) && descriptionSw != null && !descriptionSw.trim().isEmpty()
                 ? descriptionSw : description;
+    }
+
+    public boolean isAvailableInLanguage(String selectedLanguage) {
+        String selected = normalizeLanguage(selectedLanguage);
+        String content = normalizeLanguage(language);
+        boolean hasSwahiliTranslation = hasText(titleSw) || hasText(descriptionSw);
+
+        if (hasSwahiliTranslation) return true;
+        return content.isEmpty() || content.equals(selected);
+    }
+
+    private static String normalizeLanguage(String value) {
+        if (value == null) return "";
+        String normalized = value.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized.equals("swahili") || normalized.equals("kiswahili")) return "sw";
+        if (normalized.equals("english")) return "en";
+        return normalized;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     public String getProfileName() { return profileName; }

@@ -53,7 +53,7 @@ import java.util.concurrent.Executors;
  * - Version 19: Added isDemo field to DoctorEntity
  * - Version 20: Removed the obsolete local password column; authentication is Firebase-only
  */
-@Database(entities = {UserEntity.class, DoctorEntity.class, DoctorRatingEntity.class, DoctorWalletEntity.class, ArticlePostEntity.class, AuditLogEntity.class, PrescriptionEntity.class, WithdrawalRequest.class}, version = 20, exportSchema = false)
+@Database(entities = {UserEntity.class, DoctorEntity.class, DoctorRatingEntity.class, DoctorWalletEntity.class, ArticlePostEntity.class, AuditLogEntity.class, PrescriptionEntity.class, WithdrawalRequest.class}, version = 21, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
     private static final String TAG = "AppDatabase";
@@ -2733,6 +2733,13 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL("ALTER TABLE users_secure RENAME TO users");
         }
     };
+
+    static final Migration MIGRATION_20_21 = new Migration(20, 21) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE article_posts ADD COLUMN language TEXT");
+        }
+    };
     
     
     private static volatile AppDatabase INSTANCE;
@@ -2804,7 +2811,8 @@ public abstract class AppDatabase extends RoomDatabase {
                                 MIGRATION_16_17,   // Handles 16→17 - withdrawal requests table
                                 MIGRATION_17_18,   // Handles 17→18 - adds imageUrl, views, authorId to article_posts
                                 MIGRATION_18_19,   // Handles 18→19 - adds isDemo field to doctors table
-                                MIGRATION_19_20    // Handles 19→20 - removes obsolete local password storage
+                                MIGRATION_19_20,   // Handles 19→20 - removes obsolete local password storage
+                                MIGRATION_20_21    // Handles 20→21 - adds article content language
                             )
                             .build();
                     

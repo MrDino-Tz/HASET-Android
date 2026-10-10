@@ -177,7 +177,11 @@ test("allows safe doctor enrollment but protects approval fields", async () => {
     doctorId: "doctor-b", regNo: "TEST-001", approved: false, verified: false,
   }));
   await assertFails(update(ref(otherDoctor, "doctors/doctor-b"), { approved: true }));
-  await assertSucceeds(update(ref(admin, "doctors/doctor-b"), { approved: true, verified: true }));
+  await assertSucceeds(update(ref(admin, "doctors/doctor-b"), {
+    approved: true,
+    verified: true,
+    documentsVerified: true,
+  }));
 });
 
 test("allows approved doctors to edit profile fields without changing approval flags", async () => {
@@ -289,11 +293,19 @@ test("allows only the patient to create a pending appointment with an approved d
     status: "awaiting_payment",
     paymentStatus: "unpaid",
   }));
-  await assertSucceeds(set(ref(patient, "appointments/appointment-paid"), {
+  await assertFails(set(ref(patient, "appointments/appointment-paid"), {
     ...appointment,
     appointmentId: "appointment-paid",
     status: "pending",
     paymentStatus: "paid",
+  }));
+  await assertSucceeds(set(ref(patient, "appointments/appointment-paid-verified"), {
+    ...appointment,
+    appointmentId: "appointment-paid-verified",
+    status: "pending",
+    paymentStatus: "paid",
+    amount: 500,
+    paymentTransactionId: "9001",
   }));
 });
 
@@ -326,6 +338,7 @@ test("limits appointment reads and lifecycle updates to participants", async () 
   await assertFails(update(ref(doctor, "appointments/appointment-a"), { status: "approved", updatedAt: 1786500001000 }));
   await assertSucceeds(update(ref(patient, "appointments/appointment-a"), {
     status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+    amount: 500, paymentTransactionId: "9001",
   }));
   await assertSucceeds(update(ref(patient, "appointments/appointment-a"), {
     date: "13/08/2026", time: "11:00", status: "pending", lastUpdated: 1786500002000, rescheduledBy: "patient-a",
@@ -345,6 +358,7 @@ test("allows patients to cancel pending or visit appointments, but not approved 
   }));
   await assertSucceeds(update(ref(patient, "appointments/cancel-pending"), {
     status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+    amount: 500, paymentTransactionId: "9001",
   }));
   await assertSucceeds(update(ref(patient, "appointments/cancel-pending"), {
     status: "cancelled", doctorId: "doctor-a", patientId: "patient-a",
@@ -359,6 +373,7 @@ test("allows patients to cancel pending or visit appointments, but not approved 
   }));
   await assertSucceeds(update(ref(patient, "appointments/cancel-approved-visit"), {
     status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+    amount: 500, paymentTransactionId: "9001",
   }));
   await assertSucceeds(update(ref(doctor, "appointments/cancel-approved-visit"), {
     status: "approved", doctorId: "doctor-a", patientId: "patient-a", updatedAt: 1786500001000,
@@ -376,6 +391,7 @@ test("allows patients to cancel pending or visit appointments, but not approved 
   }));
   await assertSucceeds(update(ref(patient, "appointments/cancel-approved-chat"), {
     status: "pending", paymentStatus: "paid", doctorId: "doctor-a", patientId: "patient-a",
+    amount: 500, paymentTransactionId: "9001",
   }));
   await assertSucceeds(update(ref(doctor, "appointments/cancel-approved-chat"), {
     status: "approved", doctorId: "doctor-a", patientId: "patient-a", updatedAt: 1786500001000,
@@ -505,6 +521,7 @@ test("requires paid approved appointment session before sending chat messages", 
       appointmentId,
       status: "approved",
       paymentStatus: "paid",
+      appointmentType: "Online Chat",
     });
   });
 
@@ -519,6 +536,43 @@ test("requires paid approved appointment session before sending chat messages", 
     createdAt: startsAt,
   }));
   await assertSucceeds(set(ref(patient, `messages/${chatRoomId}/${message.messageId}`), message));
+});
+
+test("blocks extending the same paid chat appointment beyond its original 24 hour window", async () => {
+  const appointmentId = "paid-chat-appointment-no-extend";
+  const chatRoomId = "patient-a_doctor-a_no_extend";
+  const startsAt = Date.now();
+  const expiresAt = startsAt + 24 * 60 * 60 * 1000;
+  const extendedStart = startsAt + 60 * 60 * 1000;
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database(), `appointments/${appointmentId}`), {
+      ...appointment,
+      appointmentId,
+      status: "approved",
+      paymentStatus: "paid",
+      appointmentType: "Online Chat",
+    });
+    await set(ref(context.database(), `chat_sessions/${chatRoomId}`), {
+      appointmentId,
+      patientId: "patient-a",
+      doctorId: "doctor-a",
+      chatStartsAt: startsAt,
+      chatExpiresAt: expiresAt,
+      isChatActive: true,
+      createdAt: startsAt,
+    });
+  });
+
+  await assertSucceeds(update(ref(patient, `chat_sessions/${chatRoomId}`), {
+    isChatActive: false,
+    endedAt: startsAt + 5000,
+  }));
+  await assertFails(update(ref(patient, `chat_sessions/${chatRoomId}`), {
+    chatStartsAt: extendedStart,
+    chatExpiresAt: extendedStart + 24 * 60 * 60 * 1000,
+    isChatActive: true,
+  }));
 });
 
 test("blocks new chat messages after the paid chat window expires", async () => {
@@ -552,6 +606,31 @@ test("blocks new chat messages after the paid chat window expires", async () => 
   await assertFails(set(ref(patient, `messages/${room}/${message.messageId}`), message));
 });
 
+test("blocks chat session creation for approved online chat without explicit paid status", async () => {
+  const appointmentId = "approved-chat-missing-payment";
+  const chatRoomId = "patient-a_doctor-a_missing_payment";
+  const startsAt = Date.now();
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await set(ref(context.database(), `appointments/${appointmentId}`), {
+      ...appointment,
+      appointmentId,
+      status: "approved",
+      appointmentType: "Online Chat",
+    });
+  });
+
+  await assertFails(set(ref(patient, `chat_sessions/${chatRoomId}`), {
+    appointmentId,
+    patientId: "patient-a",
+    doctorId: "doctor-a",
+    chatStartsAt: startsAt,
+    chatExpiresAt: startsAt + 24 * 60 * 60 * 1000,
+    isChatActive: true,
+    createdAt: startsAt,
+  }));
+});
+
 test("allows doctors to deliver saved prescription cards to chat", async () => {
   const prescriptionId = "prescription-card-a";
   const room = "doctor-a_patient-a_prescription";
@@ -583,6 +662,15 @@ test("allows doctors to deliver saved prescription cards to chat", async () => {
       instructions: "",
       createdAt: Date.now(),
     });
+    const startsAt = Date.now();
+    await set(ref(context.database(), `chat_sessions/${room}`), {
+      appointmentId: "appointment-a",
+      patientId: "patient-a",
+      doctorId: "doctor-a",
+      chatStartsAt: startsAt,
+      chatExpiresAt: startsAt + 24 * 60 * 60 * 1000,
+      isChatActive: true,
+    });
   });
 
   await assertSucceeds(set(ref(doctor, `messages/${room}/${prescriptionMessage.messageId}`), prescriptionMessage));
@@ -606,12 +694,14 @@ test("allows a new paid appointment to replace an expired chat session", async (
       appointmentId: oldAppointmentId,
       status: "approved",
       paymentStatus: "paid",
+      appointmentType: "Online Chat",
     });
     await set(ref(context.database(), `appointments/${newAppointmentId}`), {
       ...appointment,
       appointmentId: newAppointmentId,
       status: "approved",
       paymentStatus: "paid",
+      appointmentType: "Online Chat",
     });
     await set(ref(context.database(), `chat_sessions/${room}`), {
       appointmentId: oldAppointmentId,
@@ -660,6 +750,9 @@ test("allows patient to complete pending service payment with a real transaction
   }));
   await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
     status: "paid", transactionId: "", paidAt: 1786500001000,
+  }));
+  await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
+    status: "paid", transactionId: "9999", paidAt: 1786500001000,
   }));
   await assertFails(update(ref(patient, `service_payment_requests/${serviceId}`), {
     status: "paid", transactionId: "9001", patientPayAmount: 1, paidAt: 1786500001000,

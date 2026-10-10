@@ -24,7 +24,7 @@
     <string name="error_invalid_credential">Incorrect email or password.</string>
     <string name="error_user_not_found">No account was found with this email.</string>
     <string name="error_user_disabled">This account has been disabled.</string>
-    <string name="error_weak_password">Password must be at least 13 characters with an uppercase letter and a special character (!@#$%^&amp;*).</string>
+    <string name="error_weak_password">Use at least 12 characters with uppercase, lowercase, and a number.</string>
     <string name="error_email_bad_format">Please enter a valid email address.</string>
     <string name="error_too_many_requests">Too many attempts. Please try again later.</string>
     <string name="error_email_not_verified">Please verify your email address to continue.</string>
@@ -52,6 +52,10 @@
     <string name="or_continue_with_account">Or Continue With Account</string>
     <string name="google">Google</string>
     <string name="login_with_google">Log in with Google</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="google_signed_in_complete_details">Signed in with Google. Complete your professional details to finish registration.</string>
+    <string name="google_register_payment_next">Registration successful. Sign in with Google to complete your doctor registration payment.</string>
+    <string name="account_exists_sign_in">You already have an account. Please sign in instead.</string>
     <string name="forgot_password_description">Enter your email address and we\'ll send you a link to reset your password.</string>
     <string name="send_reset_link">Send Reset Link</string>
     <string name="remember_password">Remember your password?</string>
@@ -87,7 +91,7 @@
     <string name="confirm_new_password_hint">Confirm New Password</string>
     <string name="btn_reset_password">Reset Password</string>
     <string name="invalid_reset_code">Invalid or expired reset code. Request a new email.</string>
-    <string name="weak_password_error">Password must be at least 13 characters with an uppercase letter and a special character (!@#$%^&amp;*).</string>
+    <string name="weak_password_error">Use at least 12 characters with uppercase, lowercase, and a number.</string>
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="password_reset_success">Password reset successfully. Please sign in.</string>
     <string name="reset_code_verified_as">Code verified for: %1$s</string>
@@ -241,6 +245,10 @@
     <string name="error_email">Please enter a valid email</string>
     <string name="error_password">Password must be at least 6 characters</string>
     <string name="error_strong_password">Use at least 12 characters with uppercase, lowercase, and a number</string>
+    <string name="error_password_min_12">Use at least 12 characters</string>
+    <string name="error_password_uppercase">Add an uppercase letter</string>
+    <string name="error_password_lowercase">Add a lowercase letter</string>
+    <string name="error_password_number">Add a number</string>
     <string name="password_strength_label">Password strength</string>
     <string name="password_strength_weak">Weak</string>
     <string name="password_strength_fair">Fair</string>
@@ -251,6 +259,7 @@
     <string name="login_locked">Too many failed login attempts. Please try again in %1$d minute(s).</string>
     <string name="error_phone">Please enter a valid phone number</string>
     <string name="error_name">Please enter your name</string>
+    <string name="error_name_invalid">Enter a valid full name (letters only, e.g. Amina Hassan)</string>
     <string name="error_password_match">Passwords do not match</string>
     <string name="error_fields">Please fill all fields</string>
     <string name="age_label">Age: %d</string>
@@ -1949,5 +1958,14 @@
 <!-- Home tour welcome -->
     <string name="tour_home_welcome_title">Welcome to AfyaHASET</string>
     <string name="tour_home_welcome_desc">Here is your home screen — get started in a few taps.</string>
+    <string name="search_doctors_center">Doctors Center</string>
+    <string name="search_health_articles_category">Health Articles</string>
+    <string name="search_book_appointment">Book Appointment</string>
+    <string name="search_find_qualified_specialists">Find qualified specialists</string>
+    <string name="search_read_expert_health_tips">Read expert health tips</string>
+    <string name="search_schedule_your_visit">Schedule your visit</string>
+    <string name="search_app_section">App Section</string>
+    <string name="search_no_results_for">No results found for "%1$s"\nTry searching with different keywords</string>
+    <string name="article_unavailable_language">This article is not available in the selected language.</string>
 
 </resources>

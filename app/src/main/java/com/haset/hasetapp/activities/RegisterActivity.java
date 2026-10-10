@@ -3,6 +3,7 @@ package com.haset.hasetapp.activities;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -11,12 +12,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
-// import com.google.android.gms.auth.api.signin.GoogleSignIn;
-// import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-// import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-// import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-// import com.google.android.gms.common.api.ApiException;
-// import com.google.android.gms.tasks.Task;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -37,11 +38,12 @@ import com.haset.hasetapp.viewmodels.AuthViewModel;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.models.AppConfig;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.GoogleAuthHelper;
 
 public class RegisterActivity extends BaseActivity implements com.haset.hasetapp.fragments.WelcomeBottomSheet.WelcomeCallback {
     private static final String TAG = "HASETDoctorFlow";
-    private TextInputEditText etFullName, etEmail, etPhone, etPassword, etRegNo, etNin;
-    private com.google.android.material.textfield.TextInputLayout tilRegNo, tilNin;
+    private TextInputEditText etFullName, etEmail, etPassword, etRegNo, etNin;
+    private com.google.android.material.textfield.TextInputLayout tilFullName, tilEmail, tilPassword, tilRegNo, tilNin;
     private LinearLayout layoutDoctorDocuments;
     private MaterialButton btnUploadNin, btnUploadMct;
     private TextView tvNinUploadStatus, tvMctUploadStatus;
@@ -57,8 +59,12 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
     private String userRole;
     private PreferenceManager preferenceManager;
 
-    // private GoogleSignInClient mGoogleSignInClient;
-    // private ActivityResultLauncher<Intent> googleSignInLauncher;
+    private GoogleSignInClient mGoogleSignInClient;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
+    /** True while completing a doctor registration that was authenticated via Google. */
+    private boolean registeredViaGoogle;
+    /** True when this screen just provisioned a brand-new Google patient. */
+    private boolean provisionedViaGoogle;
 
     private AuthViewModel authViewModel;
     private ActivityResultLauncher<Intent> doctorPaymentLauncher;
@@ -134,40 +140,47 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
             }, 500);
         });
 
-        /*
         // Configure Google Sign-In
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        */
+        mGoogleSignInClient = GoogleAuthHelper.getClient(this);
 
-        /*
         // Initialize Google Sign-In Launcher
         googleSignInLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        try {
-                            GoogleSignInAccount account = GoogleSignIn.getSignedInAccountFromIntent(result.getData())
-                                    .getResult(ApiException.class);
-                            if (account != null) {
-                                authViewModel.loginWithGoogle(account.getIdToken());
-                            }
-                        } catch (ApiException e) {
-                            Log.w("RegisterActivity", "Google sign in failed", e);
-                            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                                "Google Sign-In failed: " + e.getMessage(), com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                    Intent data = result.getData();
+                    if (data == null) {
+                        // User backed out of the Google account chooser.
+                        CustomDialog.hideLoading();
+                        return;
+                    }
+                    // Google returns RESULT_CANCELED *with* the error status inside the
+                    // intent when sign-in fails after picking an account, so the data
+                    // must always be inspected — not only on RESULT_OK.
+                    try {
+                        GoogleSignInAccount account = GoogleSignIn.getSignedInAccountFromIntent(data)
+                                .getResult(ApiException.class);
+                        if (account != null && account.getIdToken() != null) {
+                            authViewModel.loginWithGoogle(account.getIdToken());
+                        } else {
+                            CustomDialog.hideLoading();
+                            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                                "Google Sign-In returned no account. Please try again.", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                                 .setBackgroundTint(getResources().getColor(R.color.colorError))
                                 .show();
                         }
-                    } else {
+                    } catch (ApiException e) {
+                        Log.w("RegisterActivity", "Google sign in failed: statusCode=" + e.getStatusCode(), e);
                         CustomDialog.hideLoading();
+                        String message = com.haset.hasetapp.utils.GoogleSignInErrors.message(e.getStatusCode());
+                        if (message != null) {
+                            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                                message, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                                .setBackgroundTint(getResources().getColor(R.color.colorError))
+                                .show();
+                        }
                     }
                 }
         );
-        */
 
         tvRole.setText(userRole.equals(Constants.ROLE_PATIENT) ? 
                 getString(R.string.patient) : getString(R.string.doctor));
@@ -181,9 +194,11 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
 
     private void initViews() {
         etFullName = findViewById(R.id.etFullName);
+        tilFullName = findViewById(R.id.tilFullName);
         etEmail = findViewById(R.id.etEmail);
-        etPhone = findViewById(R.id.etPhone);
+        tilEmail = findViewById(R.id.tilEmail);
         etPassword = findViewById(R.id.etPassword);
+        tilPassword = findViewById(R.id.tilPassword);
         etRegNo = findViewById(R.id.etRegNo);
         tilRegNo = findViewById(R.id.tilRegNo);
         etNin = findViewById(R.id.etNin);
@@ -208,6 +223,7 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
         
         setupClickListeners();
         setupPasswordStrengthWatcher();
+        setupFieldErrorClearing();
     }
 
     private void setupKeyboardScroll() {
@@ -258,7 +274,32 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
 
             @Override
             public void afterTextChanged(android.text.Editable s) {
+                if (tilPassword != null && tilPassword.getError() != null) {
+                    tilPassword.setError(null);
+                }
                 updatePasswordStrength(s != null ? s.toString() : "");
+            }
+        });
+    }
+
+    private void setupFieldErrorClearing() {
+        clearErrorWhileTyping(etFullName, tilFullName);
+        clearErrorWhileTyping(etEmail, tilEmail);
+    }
+
+    private void clearErrorWhileTyping(android.widget.EditText editText,
+                                       com.google.android.material.textfield.TextInputLayout layout) {
+        if (editText == null || layout == null) return;
+        editText.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (layout.getError() != null) layout.setError(null);
             }
         });
     }
@@ -319,17 +360,19 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
     }
     
     private void setupClickListeners() {
-        /*
         if (btnGoogleLogin != null) {
             btnGoogleLogin.setOnClickListener(v -> {
-                CustomDialog.showLoading(this, "Opening Google...");
-                Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-                googleSignInLauncher.launch(signInIntent);
+                if (!com.haset.hasetapp.utils.NetworkUtils.isNetworkAvailable(this)) {
+                    com.haset.hasetapp.utils.SnackbarHelper.error(findViewById(android.R.id.content),
+                            getString(R.string.no_internet_desc));
+                    return;
+                }
+                CustomDialog.showLoading(this, getString(R.string.loading));
+                GoogleAuthHelper.signOutThen(this, () -> {
+                    Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+                    googleSignInLauncher.launch(signInIntent);
+                });
             });
-        }
-        */
-        if (btnGoogleLogin != null) {
-             btnGoogleLogin.setVisibility(android.view.View.GONE);
         }
         
         findViewById(R.id.tvPrivacyPolicy).setOnClickListener(v -> 
@@ -367,10 +410,16 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
                 case SUCCESS:
                     CustomDialog.hideLoading();
                     if (Constants.ROLE_DOCTOR.equals(userRole)) {
+                        String doctorTitle = registeredViaGoogle
+                                ? getString(R.string.registration_successful)
+                                : getString(R.string.verification_email_sent);
+                        String doctorMessage = registeredViaGoogle
+                                ? getString(R.string.google_register_payment_next)
+                                : getString(R.string.verify_email_before_login_payment);
                         com.haset.hasetapp.fragments.WelcomeBottomSheet welcome =
                                 com.haset.hasetapp.fragments.WelcomeBottomSheet.newInstance(
-                                        getString(R.string.verification_email_sent),
-                                        getString(R.string.verify_email_before_login_payment));
+                                        doctorTitle,
+                                        doctorMessage);
                         welcome.show(getSupportFragmentManager(), com.haset.hasetapp.fragments.WelcomeBottomSheet.TAG);
                     } else {
                         com.haset.hasetapp.fragments.WelcomeBottomSheet welcome =
@@ -380,16 +429,30 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
                     break;
                 case AUTHENTICATED:
                     CustomDialog.hideLoading();
-                    UserEntity user = (UserEntity) state.data;
-                    onAuthSuccess(user);
+                    if (provisionedViaGoogle) {
+                        // Brand-new Google patient we just created on this screen.
+                        provisionedViaGoogle = false;
+                        UserEntity user = (UserEntity) state.data;
+                        onAuthSuccess(user);
+                    } else {
+                        // Google sign-in resolved to an existing account: send them
+                        // to login where verification/payment gates are enforced.
+                        com.haset.hasetapp.utils.SnackbarHelper.info(findViewById(android.R.id.content),
+                                getString(R.string.account_exists_sign_in));
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.auth_fade_enter, R.anim.auth_fade_exit);
+                            finish();
+                        }, 1500);
+                    }
                     break;
-                /*
                 case UNREGISTERED:
                     CustomDialog.hideLoading();
                     String uid = (String) state.data;
-                    createNewGoogleUser(uid);
+                    onGoogleUserUnregistered(uid);
                     break;
-                */
                 case IDLE:
                     CustomDialog.hideLoading();
                     break;
@@ -410,7 +473,52 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
         showSuccessAndNavigate(DashboardActivity.class, "Registration Successful", getString(R.string.verify_email_after_registration));
     }
 
-    /*
+    /**
+     * A Google account signed in but has no profile in the app yet.
+     * Doctors must stay on this form and supply reg. number, NIN and both
+     * PDFs before the profile is created; patients are auto-provisioned.
+     */
+    private void onGoogleUserUnregistered(String uid) {
+        FirebaseUser fUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (fUser == null) return;
+
+        if (Constants.ROLE_DOCTOR.equals(userRole)) {
+            registeredViaGoogle = true;
+            holdForDoctorDetails(fUser);
+        } else {
+            createNewGoogleUser(uid);
+        }
+    }
+
+    private void holdForDoctorDetails(FirebaseUser fUser) {
+        if (etFullName != null && etFullName.getText() != null
+                && etFullName.getText().toString().trim().isEmpty()
+                && fUser.getDisplayName() != null) {
+            etFullName.setText(fUser.getDisplayName());
+        }
+        if (etEmail != null) {
+            etEmail.setText(fUser.getEmail());
+            etEmail.setEnabled(false);
+            etEmail.setFocusable(false);
+            etEmail.setFocusableInTouchMode(false);
+        }
+        if (tilPassword != null) tilPassword.setVisibility(android.view.View.GONE);
+        if (passwordStrengthBar != null) passwordStrengthBar.setVisibility(android.view.View.GONE);
+        if (tvPasswordStrength != null) tvPasswordStrength.setVisibility(android.view.View.GONE);
+        com.haset.hasetapp.utils.SnackbarHelper.success(findViewById(android.R.id.content),
+                getString(R.string.google_signed_in_complete_details));
+
+        // Bring the reg. number / NIN / PDF upload fields into view so the
+        // doctor immediately sees what is still required.
+        final android.view.View doctorStart = findViewById(R.id.tilRegNo);
+        if (doctorStart != null && doctorStart.getParent() instanceof android.view.ViewGroup
+                && doctorStart.getParent().getParent() instanceof android.widget.ScrollView) {
+            final android.widget.ScrollView scrollView =
+                    (android.widget.ScrollView) doctorStart.getParent().getParent();
+            doctorStart.post(() -> scrollView.smoothScrollTo(0, Math.max(0, doctorStart.getTop() - 16)));
+        }
+    }
+
     private void createNewGoogleUser(String uid) {
         FirebaseUser fUser = FirebaseAuth.getInstance().getCurrentUser();
         if (fUser == null) return;
@@ -418,42 +526,42 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
         UserEntity newUser = new UserEntity();
         newUser.setUserId(uid);
         newUser.setEmail(fUser.getEmail());
-        newUser.setFullName(fUser.getDisplayName());
-        newUser.setRole(userRole != null ? userRole : Constants.ROLE_PATIENT);
+        newUser.setFullName(fUser.getDisplayName() != null ? fUser.getDisplayName() : "");
+        newUser.setRole(Constants.ROLE_PATIENT); // Google sign-up defaults to patient
         newUser.setCreatedAt(System.currentTimeMillis());
 
+        provisionedViaGoogle = true;
         authViewModel.saveUserAndLogin(newUser);
     }
-    */
 
     private void registerUser() {
         final String fullName = etFullName.getText().toString().trim();
         final String email = etEmail.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
-        final String password = etPassword.getText().toString().trim();
+        final String password = registeredViaGoogle
+                ? ""
+                : etPassword.getText().toString().trim();
 
-        String phoneDigits = phone.replaceAll("[^0-9]", "");
-        phoneDigits = phoneDigits.replaceFirst("^255", "");
-        phoneDigits = phoneDigits.replaceFirst("^0+", "");
-        final String finalPhoneNumber = "+255" + phoneDigits;
-
-        if (!ValidationUtils.isValidName(fullName)) {
-            etFullName.setError(getString(R.string.error_name));
+        if (fullName.isEmpty()) {
+            tilFullName.setError(getString(R.string.error_full_name_required));
+            etFullName.requestFocus();
             return;
         }
+        if (!ValidationUtils.isValidName(fullName)) {
+            tilFullName.setError(getString(R.string.error_name_invalid));
+            etFullName.requestFocus();
+            return;
+        }
+        tilFullName.setError(null);
 
         if (!ValidationUtils.isValidEmail(email)) {
-            etEmail.setError(getString(R.string.error_email));
+            tilEmail.setError(getString(R.string.error_email));
+            etEmail.requestFocus();
             return;
         }
+        tilEmail.setError(null);
 
-        if (!ValidationUtils.isValidPhone(finalPhoneNumber)) {
-            etPhone.setError(getString(R.string.error_phone));
-            return;
-        }
-
-        if (!ValidationUtils.isStrongPassword(password)) {
-            etPassword.setError(getString(R.string.error_strong_password));
+        if (!registeredViaGoogle && !ValidationUtils.isStrongPassword(password)) {
+            tilPassword.setError(getPasswordRequirementError(password));
             return;
         }
 
@@ -498,13 +606,25 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
             }
         }
 
+        if (!com.haset.hasetapp.utils.NetworkUtils.isNetworkAvailable(this)) {
+            com.haset.hasetapp.utils.SnackbarHelper.error(
+                    findViewById(android.R.id.content), getString(R.string.error_network));
+            return;
+        }
+
         btnRegister.setEnabled(false);
 
         UserEntity newUser = new UserEntity();
         newUser.setEmail(email);
         newUser.setFullName(fullName);
-        newUser.setPhone(finalPhoneNumber);
+        newUser.setPhone("");
         newUser.setRole(userRole);
+        if (registeredViaGoogle) {
+            FirebaseUser googleUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (googleUser != null) {
+                newUser.setUserId(googleUser.getUid());
+            }
+        }
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
             newUser.setRegNo(regNo);
             newUser.setNin(nin);
@@ -513,9 +633,27 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
 
         if (Constants.ROLE_DOCTOR.equals(userRole)) {
             uploadDoctorDocumentsThenRegister(email, password, newUser);
+        } else if (registeredViaGoogle) {
+            authViewModel.finishGoogleRegistration(newUser);
         } else {
             authViewModel.register(email, password, newUser);
         }
+    }
+
+    private String getPasswordRequirementError(String password) {
+        if (password == null || password.length() < 12) {
+            return getString(R.string.error_password_min_12);
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            return getString(R.string.error_password_uppercase);
+        }
+        if (!password.matches(".*[a-z].*")) {
+            return getString(R.string.error_password_lowercase);
+        }
+        if (!password.matches(".*[0-9].*")) {
+            return getString(R.string.error_password_number);
+        }
+        return getString(R.string.error_strong_password);
     }
 
     private void uploadDoctorDocumentsThenRegister(String email, String password, UserEntity newUser) {
@@ -541,7 +679,9 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
                         resetRegisterButton();
                         com.haset.hasetapp.utils.SnackbarHelper.error(
                                 findViewById(android.R.id.content),
-                                error != null ? error : getString(R.string.error_nin_document_required));
+                                error != null
+                                        ? com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(RegisterActivity.this, error)
+                                        : getString(R.string.error_nin_document_required));
                     }
                 });
     }
@@ -561,7 +701,12 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
                         pendingMctCertificateUrl = downloadUrl;
                         newUser.setNinDocumentUrl(pendingNinDocumentUrl);
                         newUser.setMctCertificateUrl(pendingMctCertificateUrl);
-                        authViewModel.register(email, password, newUser);
+                        if (registeredViaGoogle) {
+                            // Auth already exists (Google): just save the doctor profile.
+                            authViewModel.finishGoogleRegistration(newUser);
+                        } else {
+                            authViewModel.register(email, password, newUser);
+                        }
                     }
 
                     @Override
@@ -570,7 +715,9 @@ public class RegisterActivity extends BaseActivity implements com.haset.hasetapp
                         resetRegisterButton();
                         com.haset.hasetapp.utils.SnackbarHelper.error(
                                 findViewById(android.R.id.content),
-                                error != null ? error : getString(R.string.error_mct_certificate_required));
+                                error != null
+                                        ? com.haset.hasetapp.utils.ErrorDisplay.localizeMessage(RegisterActivity.this, error)
+                                        : getString(R.string.error_mct_certificate_required));
                     }
                 });
     }

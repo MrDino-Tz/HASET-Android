@@ -92,23 +92,52 @@ public class AuthViewModel extends AndroidViewModel {
                 pendingFirebaseUser = refreshed;
                 checkMfaThenFetch(refreshed);
             })
-            .addOnFailureListener(error -> authState.setValue(AuthState.error("Unable to refresh authentication.")));
+            .addOnFailureListener(error -> authState.setValue(AuthState.error(
+                    "Network error. Please check your connection and try again.")));
     }
 
     private void checkMfaThenFetch(FirebaseUser user) {
+        checkMfaThenFetch(user, false);
+    }
+
+    /**
+     * @param googleSignIn when true, MFA-status backend failures fall through to
+     *                     fetchUserData() instead of blocking the login. Google users
+     *                     may be unknown to the MFA service and must not be stuck.
+     */
+    private void checkMfaThenFetch(FirebaseUser user, boolean googleSignIn) {
+        boolean requireOnLogin = new PreferenceManager(getApplication()).isMfaRequiredOnLogin(user.getUid());
+        if (!requireOnLogin) {
+            fetchUserData(user.getUid());
+            return;
+        }
+
         user.getIdToken(true).addOnSuccessListener(token -> {
             MobileMfaApiService api = RetrofitClient.getInstance().getMobileMfaApiService();
             api.status("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                    if (!response.isSuccessful() || response.body() == null) { authState.postValue(AuthState.error("MFA service unavailable. Please try again later.")); return; }
+                    if (!response.isSuccessful() || response.body() == null) {
+                        if (googleSignIn) { fetchUserData(user.getUid()); return; }
+                        authState.postValue(AuthState.error("MFA service unavailable. Please try again later."));
+                        return;
+                    }
                     boolean enabled = response.body().has("two_factor_enabled") && response.body().get("two_factor_enabled").getAsBoolean();
-                    boolean requireOnLogin = new PreferenceManager(getApplication()).isMfaRequiredOnLogin(user.getUid());
-                    if (enabled && requireOnLogin) authState.postValue(AuthState.mfaRequired());
+                    if (enabled) authState.postValue(AuthState.mfaRequired());
                     else fetchUserData(user.getUid());
                 }
-                public void onFailure(Call<JsonObject> call, Throwable t) { CrashMonitor.report("auth", "AuthViewModel.checkMfa", "MFA status check failed", t); authState.postValue(AuthState.error("MFA service unavailable.")); }
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+                    CrashMonitor.report("auth", "AuthViewModel.checkMfa", "MFA status check failed", t);
+                    if (googleSignIn) { fetchUserData(user.getUid()); return; }
+                    authState.postValue(AuthState.error(
+                            "Network error. Please check your connection and try again."));
+                }
             });
-        }).addOnFailureListener(e -> CrashMonitor.report("auth", "AuthViewModel.checkMfa", "token refresh failed during MFA check", e));
+        }).addOnFailureListener(e -> {
+            CrashMonitor.report("auth", "AuthViewModel.checkMfa", "token refresh failed during MFA check", e);
+            if (googleSignIn) fetchUserData(user.getUid());
+            else authState.postValue(AuthState.error(
+                    "Network error. Please check your connection and try again."));
+        });
     }
 
     public void verifyMfa(String code) {
@@ -133,19 +162,8 @@ public class AuthViewModel extends AndroidViewModel {
         repository.registerWithEmail(email, password, userData, new FirebaseHelper.OnCompleteListener<FirebaseUser>() {
             @Override
             public void onSuccess(FirebaseUser result) {
-                repository.sendEmailVerificationViaSmtp(result, userData.getFullName(), new FirebaseHelper.OnCompleteListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-                        completeRegistrationPendingVerification();
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        repository.logout();
-                        authState.postValue(AuthState.error(
-                            error != null ? error : "Unable to send verification email."));
-                    }
-                });
+                repository.sendEmailVerificationViaSmtp(result, userData.getFullName(), null);
+                completeRegistrationPendingVerification();
             }
 
             @Override
@@ -188,13 +206,15 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
-    /*
     public void loginWithGoogle(String idToken) {
-        authState.setValue(AuthState.loading("Connecting with Google..."));
+        authState.setValue(AuthState.loading(getApplication().getString(com.haset.hasetapp.R.string.loading)));
         repository.signInWithGoogle(idToken, new FirebaseHelper.OnCompleteListener<FirebaseUser>() {
             @Override
             public void onSuccess(FirebaseUser result) {
-                fetchUserData(result.getUid());
+                pendingFirebaseUser = result;
+                // Google emails are already verified by the provider: skip the SMTP
+                // verification gate, but still honor the MFA check when available.
+                checkMfaThenFetch(result, true);
             }
 
             @Override
@@ -203,7 +223,6 @@ public class AuthViewModel extends AndroidViewModel {
             }
         });
     }
-    */
 
     public void resetPassword(String email) {
         long now = android.os.SystemClock.elapsedRealtime();
@@ -286,8 +305,31 @@ public class AuthViewModel extends AndroidViewModel {
         });
     }
 
+    /**
+     * Completes a Google registration whose Firebase auth already exists
+     * (e.g. doctor who just supplied NIN/PDFs): saves the profile without
+     * creating a password user and without sending a verification email.
+     */
+    public void finishGoogleRegistration(UserEntity user) {
+        authState.setValue(AuthState.loading("Finalizing registration..."));
+        repository.saveUserData(user, new FirebaseHelper.OnCompleteListener<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                currentUser.setValue(user);
+                authState.postValue(AuthState.success(
+                        getApplication().getString(com.haset.hasetapp.R.string.google_register_payment_next)));
+            }
+
+            @Override
+            public void onError(String error) {
+                authState.postValue(AuthState.error(error));
+            }
+        });
+    }
+
     public void logout() {
         repository.logout();
+        com.haset.hasetapp.utils.GoogleAuthHelper.signOut(getApplication());
         currentUser.setValue(null);
         authState.setValue(AuthState.idle());
     }

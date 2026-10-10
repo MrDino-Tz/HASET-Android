@@ -26,14 +26,12 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import android.widget.CheckBox;
-// import com.google.android.gms.auth.api.signin.GoogleSignIn;
-// import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-// import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-// import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-// import com.google.android.gms.common.api.ApiException;
-// import com.google.android.gms.tasks.Task;
-// import com.google.firebase.auth.AuthCredential;
-// import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.haset.hasetapp.R;
 import com.haset.hasetapp.activities.DashboardActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
@@ -61,6 +59,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.haset.hasetapp.utils.NetworkUtils;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.GoogleAuthHelper;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
 import com.haset.hasetapp.ui.MfaCodeInputView;
 
@@ -80,8 +79,8 @@ public class LoginActivity extends BaseActivity {
     private UserEntity loggedInUser; // Store user for notification after permission
     private android.app.Dialog mfaDialog;
 
-    // private GoogleSignInClient mGoogleSignInClient;
-    // private ActivityResultLauncher<Intent> googleSignInLauncher;
+    private GoogleSignInClient mGoogleSignInClient;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
 
     private AuthViewModel authViewModel;
 
@@ -133,40 +132,47 @@ public class LoginActivity extends BaseActivity {
             }, 500);
         });
 
-        /*
         // Configure Google Sign-In
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        */
+        mGoogleSignInClient = GoogleAuthHelper.getClient(this);
 
-        /*
         // Initialize Google Sign-In Launcher
         googleSignInLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        try {
-                            GoogleSignInAccount account = GoogleSignIn.getSignedInAccountFromIntent(result.getData())
-                                    .getResult(ApiException.class);
-                            if (account != null) {
-                                authViewModel.loginWithGoogle(account.getIdToken());
-                            }
-                        } catch (ApiException e) {
-                            Log.w("LoginActivity", "Google sign in failed", e);
-                            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content), 
-                                "Google Sign-In failed: " + e.getMessage(), com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
+                    Intent data = result.getData();
+                    if (data == null) {
+                        // User backed out of the Google account chooser.
+                        CustomDialog.hideLoading();
+                        return;
+                    }
+                    // Google returns RESULT_CANCELED *with* the error status inside the
+                    // intent when sign-in fails after picking an account, so the data
+                    // must always be inspected — not only on RESULT_OK.
+                    try {
+                        GoogleSignInAccount account = GoogleSignIn.getSignedInAccountFromIntent(data)
+                                .getResult(ApiException.class);
+                        if (account != null && account.getIdToken() != null) {
+                            authViewModel.loginWithGoogle(account.getIdToken());
+                        } else {
+                            CustomDialog.hideLoading();
+                            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                                "Google Sign-In returned no account. Please try again.", com.google.android.material.snackbar.Snackbar.LENGTH_SHORT)
                                 .setBackgroundTint(getResources().getColor(R.color.colorError))
                                 .show();
                         }
-                    } else {
+                    } catch (ApiException e) {
+                        Log.w("LoginActivity", "Google sign in failed: statusCode=" + e.getStatusCode(), e);
                         CustomDialog.hideLoading();
+                        String message = com.haset.hasetapp.utils.GoogleSignInErrors.message(e.getStatusCode());
+                        if (message != null) {
+                            com.google.android.material.snackbar.Snackbar.make(findViewById(android.R.id.content),
+                                message, com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                                .setBackgroundTint(getResources().getColor(R.color.colorError))
+                                .show();
+                        }
                     }
                 }
         );
-        */
 
         // Setup permission launcher
         setupNotificationPermissionLauncher();
@@ -237,34 +243,22 @@ public class LoginActivity extends BaseActivity {
     private void updatePasswordAuth(String password) {
         if (tvPasswordAuth == null) return;
         tilPassword.setError(null);
-
-        if (password == null || password.isEmpty()) {
-            tvPasswordAuth.setVisibility(android.view.View.GONE);
-            return;
-        }
-
-        if (ValidationUtils.isStrongPassword(password)) {
-            tvPasswordAuth.setText(getString(R.string.password_auth_ok));
-            tvPasswordAuth.setTextColor(getResources().getColor(R.color.green_primary));
-        } else {
-            tvPasswordAuth.setText(getString(R.string.error_strong_password));
-            tvPasswordAuth.setTextColor(getResources().getColor(R.color.red_primary));
-        }
-        tvPasswordAuth.setVisibility(android.view.View.VISIBLE);
+        tvPasswordAuth.setVisibility(android.view.View.GONE);
     }
 
     private void setupClickListeners() {
-        /*
         if (btnGoogleLogin != null) {
             btnGoogleLogin.setOnClickListener(v -> {
-                CustomDialog.showLoading(this, "Opening Google...");
-                Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-                googleSignInLauncher.launch(signInIntent);
+                if (!NetworkUtils.isNetworkAvailable(this)) {
+                    showNoInternetBottomSheet();
+                    return;
+                }
+                CustomDialog.showLoading(this, getString(R.string.loading));
+                GoogleAuthHelper.signOutThen(this, () -> {
+                    Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+                    googleSignInLauncher.launch(signInIntent);
+                });
             });
-        }
-        */
-        if (btnGoogleLogin != null) {
-             btnGoogleLogin.setVisibility(android.view.View.GONE);
         }
         
         findViewById(R.id.tvPrivacyPolicy).setOnClickListener(v -> 
@@ -332,13 +326,11 @@ public class LoginActivity extends BaseActivity {
                     resetLoginButton();
                     showMfaDialog(true);
                     break;
-                /*
                 case UNREGISTERED:
                     CustomDialog.hideLoading();
                     String uid = (String) state.data;
                     createNewGoogleUser(uid);
                     break;
-                */
                 case IDLE:
                     CustomDialog.hideLoading();
                     break;
@@ -550,7 +542,6 @@ public class LoginActivity extends BaseActivity {
             getString(R.string.doctor_reg_payment_required));
     }
 
-    /*
     private void createNewGoogleUser(String uid) {
         FirebaseUser fUser = FirebaseAuth.getInstance().getCurrentUser();
         if (fUser == null) return;
@@ -558,13 +549,12 @@ public class LoginActivity extends BaseActivity {
         UserEntity newUser = new UserEntity();
         newUser.setUserId(uid);
         newUser.setEmail(fUser.getEmail());
-        newUser.setFullName(fUser.getDisplayName());
+        newUser.setFullName(fUser.getDisplayName() != null ? fUser.getDisplayName() : "");
         newUser.setRole(Constants.ROLE_PATIENT); // Default role
         newUser.setCreatedAt(System.currentTimeMillis());
 
         authViewModel.saveUserAndLogin(newUser);
     }
-    */
 
     private void loginUser() {
         if (isLoginLocked()) {
@@ -584,8 +574,14 @@ public class LoginActivity extends BaseActivity {
             return;
         }
 
-        if (!ValidationUtils.isStrongPassword(password)) {
-            tilPassword.setError(getString(R.string.error_strong_password));
+        if (password.isEmpty()) {
+            tilPassword.setError(getString(R.string.error_invalid_credential));
+            return;
+        }
+
+        if (!com.haset.hasetapp.utils.NetworkUtils.isNetworkAvailable(this)) {
+            com.haset.hasetapp.utils.SnackbarHelper.error(
+                    findViewById(android.R.id.content), getString(R.string.error_network));
             return;
         }
 

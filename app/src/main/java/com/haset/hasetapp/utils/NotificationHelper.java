@@ -6,7 +6,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.util.Log;
 
@@ -177,12 +176,17 @@ public class NotificationHelper {
 
     private Bitmap getBitmapFromURL(String strURL) {
         try {
-            java.net.URL url = new java.net.URL(strURL);
-            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            java.io.InputStream input = connection.getInputStream();
-            return BitmapFactory.decodeStream(input);
+            // Glide (via GlideApp/OkHttp) handles downsampling, caching and
+            // connection management — replaces manual HttpURLConnection +
+            // BitmapFactory.decodeStream which could OOM on large images.
+            return GlideApp.with(context)
+                    .asBitmap()
+                    .load(strURL)
+                    // Cap size: API 37 limits RemoteViews bitmap memory, and
+                    // BigPicture renders well below this width anyway.
+                    .override(1080, 1080)
+                    .submit()
+                    .get(15, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
             Log.e("NotificationHelper", "Error loading image: " + e.getMessage());
             return null;

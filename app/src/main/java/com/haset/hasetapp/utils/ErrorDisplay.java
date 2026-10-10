@@ -111,7 +111,7 @@ public final class ErrorDisplay {
             return context.getString(R.string.error_auth_expired);
         }
 
-        String lower = message.toLowerCase();
+        String lower = message.toLowerCase(java.util.Locale.ROOT);
 
         // Network / connectivity — Firebase and generic IO exceptions.
         if (lower.contains("network error") || lower.contains("unable to resolve host")
@@ -121,7 +121,8 @@ public final class ErrorDisplay {
         }
 
         // Firebase auth error codes / messages.
-        if (lower.contains("email address is already in use") || lower.contains("email_exists")) {
+        if (lower.contains("email address is already in use") || lower.contains("email_exists")
+                || lower.contains("email is already in use")) {
             return context.getString(R.string.error_account_exists);
         }
         if (lower.contains("no user record") || lower.contains("user not found")
@@ -131,16 +132,19 @@ public final class ErrorDisplay {
         if (lower.contains("user account has been disabled") || lower.contains("user_disabled")) {
             return context.getString(R.string.error_user_disabled);
         }
-        if (lower.contains("password is invalid") || lower.contains("invalid_credential")
+        if (lower.contains("incorrect email or password") || lower.contains("password is invalid")
+                || lower.contains("invalid_credential")
                 || lower.contains("wrong password") || lower.contains("invalid-credential")
                 || lower.contains("credential is incorrect")) {
             return context.getString(R.string.error_invalid_credential);
         }
         if (lower.contains("weak_password") || lower.contains("password should be at least")
+                || lower.contains("password must be at least 12 characters")
                 || lower.contains("password-does-not-meet-requirements") || lower.contains("missing password requirements")) {
             return context.getString(R.string.error_weak_password);
         }
-        if (lower.contains("badly formatted") || lower.contains("invalid_email")
+        if (lower.contains("please enter a valid email") || lower.contains("badly formatted")
+                || lower.contains("invalid_email") || lower.contains("invalid-email")
                 || lower.contains("email address is invalid")) {
             return context.getString(R.string.error_email_bad_format);
         }
@@ -151,7 +155,8 @@ public final class ErrorDisplay {
                 || lower.contains("verify your email")) {
             return context.getString(R.string.error_email_not_verified);
         }
-        if (lower.contains("not enabled") && lower.contains("sign")) {
+        if ((lower.contains("not enabled") && lower.contains("sign"))
+                || lower.contains("firebase authentication is blocking sign-up")) {
             return context.getString(R.string.error_signin_not_enabled);
         }
         if (lower.contains("credential is no longer valid") || lower.contains("must sign in again")

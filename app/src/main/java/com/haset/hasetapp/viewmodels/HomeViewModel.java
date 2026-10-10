@@ -28,7 +28,7 @@ public class HomeViewModel extends AndroidViewModel {
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
-        this.repository = new HomeRepository();
+        this.repository = new HomeRepository(application);
         this.badgeHelper = new NotificationBadgeHelper(application);
         this.notificationCount = new MutableLiveData<>(0);
         updateNotificationCount();

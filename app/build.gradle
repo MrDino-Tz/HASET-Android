@@ -5,22 +5,22 @@ plugins {
 }
 
 android {
-    namespace 'com.haset.hasetapp'
-    compileSdk 36
+    namespace = 'com.haset.hasetapp'
+    compileSdk = 37
 
     defaultConfig {
-        applicationId "com.haset.hasetapp"
-        minSdk 24
-        targetSdk 36
-        versionCode 11
-        versionName "1.0.0.DTC"
+        applicationId = "com.haset.hasetapp"
+        minSdk = 24
+        targetSdk = 37
+        versionCode = 16
+        versionName = "1.0.0.DTC"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        // Only include ARM architectures (exclude x86/x86_64 for emulators)
-        // This reduces APK size from ~201MB to ~60MB
+        // ARM for devices, x86_64 for ChromeOS/emulators (Play Console requirement).
+        // x86 still excluded to keep size down.
         ndk {
-            abiFilters 'arm64-v8a', 'armeabi-v7a'
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
         }
         
         // Room schema export location (for database migration tracking)
@@ -42,22 +42,22 @@ android {
             def keystorePath = keystoreProperties.getProperty("storeFile", "keyforAfyaNew.jks")
             def keystoreFile = rootProject.file(keystorePath)
             if (keystoreFile.exists()) {
-                storeFile keystoreFile
-                storePassword keystoreProperties.getProperty("storePassword", System.getenv("STORE_PASSWORD"))
-                keyAlias keystoreProperties.getProperty("keyAlias", System.getenv("KEY_ALIAS"))
-                keyPassword keystoreProperties.getProperty("keyPassword", System.getenv("KEY_PASSWORD"))
+                storeFile = keystoreFile
+                storePassword = keystoreProperties.getProperty("storePassword", System.getenv("STORE_PASSWORD"))
+                keyAlias = keystoreProperties.getProperty("keyAlias", System.getenv("KEY_ALIAS"))
+                keyPassword = keystoreProperties.getProperty("keyPassword", System.getenv("KEY_PASSWORD"))
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
-            minifyEnabled true
-            shrinkResources true
+            signingConfig = signingConfigs.release
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             ndk {
-                debugSymbolLevel 'FULL'
+                debugSymbolLevel = 'FULL'
             }
         }
     }
@@ -67,12 +67,12 @@ android {
     }
     
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
     
     // Fix for 16 KB page alignment (Android 15+ compatibility)
     // Setting this to true extracts native libs at install time, avoiding alignment issues
-    // with older libraries like Fresco (libimagepipeline.so) that are not 16KB aligned.
+    // with older libraries like Fresco (the imagepipeline native library) that are not 16KB aligned.
     packaging {
         jniLibs {
             useLegacyPackaging = true
@@ -113,85 +113,85 @@ dependencies {
     implementation libs.lifecycle.livedata.ktx
     implementation libs.lifecycle.viewmodel.ktx
     implementation libs.androidx.browser
-    implementation 'androidx.print:print:1.0.0'
+    implementation libs.androidx.print
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
     
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:34.17.0')
-    implementation 'com.google.firebase:firebase-auth'
-    implementation 'com.google.firebase:firebase-database'
-    implementation 'com.google.firebase:firebase-messaging'
-    implementation 'com.google.firebase:firebase-crashlytics'
-    implementation 'com.google.firebase:firebase-analytics'
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.auth
+    implementation libs.firebase.database
+    implementation libs.firebase.messaging
+    implementation libs.firebase.crashlytics
+    implementation libs.firebase.analytics
     
     // Room Database (Local Storage)
-    implementation 'androidx.room:room-runtime:2.6.1'
-    annotationProcessor 'androidx.room:room-compiler:2.6.1'
+    implementation libs.room.runtime
+    annotationProcessor libs.room.compiler
     
     // OkHttp BOM (Bill of Materials) - must be declared as platform
-    implementation platform('com.squareup.okhttp3:okhttp-bom:4.12.0')
-    implementation 'com.squareup.okhttp3:okhttp'
+    implementation platform(libs.okhttp.bom)
+    implementation libs.okhttp
     
     // Retrofit for API
-    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation libs.retrofit
+    implementation libs.retrofit.converter.gson
     
     // Lifecycle & ViewModel
-    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.6.2'
-    implementation 'androidx.lifecycle:lifecycle-livedata:2.6.2'
+    implementation libs.lifecycle.viewmodel
+    implementation libs.lifecycle.livedata
     
     // Navigation
-    implementation 'androidx.navigation:navigation-fragment:2.7.6'
-    implementation 'androidx.navigation:navigation-ui:2.7.6'
+    implementation libs.navigation.fragment
+    implementation libs.navigation.ui
     
     // RecyclerView & CardView
-    implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation libs.recyclerview
+    implementation libs.cardview
     
     // ViewPager2
-    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+    implementation libs.viewpager2
     
     // SwipeRefreshLayout
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation libs.swiperefreshlayout
     
     // Glide for images (+ OkHttp so CDN loads get real timeouts/retries)
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
-    implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+    implementation libs.glide
+    implementation libs.glide.okhttp3.integration
+    annotationProcessor libs.glide.compiler
     
     // CircleImageView
-    implementation 'de.hdodenhof:circleimageview:3.1.0'
-    
-    // Material DateTime Picker
-    implementation 'com.google.android.material:material:1.11.0'
+    implementation libs.circleimageview
     
     // Google Play Services Location
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation libs.google.play.services.location
+
+    // Google Sign-In
+    implementation libs.google.play.services.auth
     
     // Gson for JSON parsing
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation libs.gson
     
     // Facebook Shimmer for loading effects
-    implementation 'com.facebook.shimmer:shimmer:0.5.0'
+    implementation libs.shimmer
     
     // Cloudinary for media upload
-    implementation 'com.cloudinary:cloudinary-android:2.3.1'
+    implementation libs.cloudinary.android
     
-    // Force Fresco 3.4.0 for Android 15 16KB page size compatibility (Pulled by Cloudinary)
-    implementation 'com.facebook.fresco:fresco:3.4.0'
-    implementation 'com.facebook.fresco:imagepipeline:3.4.0'
-    implementation 'com.facebook.fresco:nativeimagefilters:3.4.0'
-    implementation 'com.facebook.fresco:nativeimagetranscoder:3.4.0'
+    // Force Fresco for Android 15 16KB page size compatibility (Pulled by Cloudinary)
+    implementation libs.fresco
+    implementation libs.fresco.imagepipeline
+    implementation libs.fresco.nativeimagefilters
+    implementation libs.fresco.nativeimagetranscoder
     
-    // ZXing for QR Code generation
-    implementation 'com.google.zxing:core:3.5.2'
-    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    // zxing for QR Code generation
+    implementation libs.zxing.core
+    implementation libs.zxing.android.embedded
     
     // WorkManager for background tasks
-    implementation 'androidx.work:work-runtime:2.9.0'
+    implementation libs.work.runtime
 
     // First-time in-app spotlight tips
-    implementation 'com.getkeepsafe.taptargetview:taptargetview:1.14.0'
+    implementation libs.taptargetview
 }

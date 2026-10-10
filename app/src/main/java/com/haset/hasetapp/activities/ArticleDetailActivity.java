@@ -74,16 +74,15 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
     }
 
     private void setupStatusBar() {
-        Window window = getWindow();
-        View decorView = window.getDecorView();
-
-        if ((getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES) {
-            window.setStatusBarColor(getColor(R.color.background_primary));
-            decorView.setSystemUiVisibility(decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-        } else {
-            window.setStatusBarColor(getColor(R.color.green_primary));
-            decorView.setSystemUiVisibility(decorView.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-        }
+        // Bar color comes from the theme; only icon appearance is set here
+        // (deprecated setStatusBarColor/setSystemUiVisibility replaced).
+        boolean night = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        androidx.core.view.WindowInsetsControllerCompat controller =
+                androidx.core.view.WindowCompat.getInsetsController(
+                        getWindow(), getWindow().getDecorView());
+        // Light (day) theme: dark icons; night theme: white icons
+        controller.setAppearanceLightStatusBars(!night);
     }
 
     @Override
@@ -148,6 +147,12 @@ public class ArticleDetailActivity extends LocalizedAppCompatActivity {
 
         if (article == null) {
             Toast.makeText(this, R.string.error_loading_article, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        if (!article.isAvailableInLanguage(com.haset.hasetapp.utils.LocaleHelper.getLanguage(this))) {
+            Toast.makeText(this, R.string.article_unavailable_language, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }

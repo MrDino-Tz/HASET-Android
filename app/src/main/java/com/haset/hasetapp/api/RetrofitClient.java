@@ -32,7 +32,7 @@ public class RetrofitClient {
                 .build();
         mobileMfaRetrofit = new Retrofit.Builder()
                 .baseUrl(Constants.PAYMENT_API_BASE_URL)
-                .client(client)
+                .client(buildMfaClient())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         doctorPayoutRetrofit = new Retrofit.Builder()
@@ -55,6 +55,15 @@ public class RetrofitClient {
                 .retryOnConnectionFailure(true);
 
         return builder.build();
+    }
+
+    private OkHttpClient buildMfaClient() {
+        return new OkHttpClient.Builder()
+                .connectTimeout(8, TimeUnit.SECONDS)
+                .readTimeout(8, TimeUnit.SECONDS)
+                .writeTimeout(8, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .build();
     }
 
     public static synchronized RetrofitClient getInstance() {

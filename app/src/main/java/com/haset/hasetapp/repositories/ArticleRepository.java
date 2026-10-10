@@ -15,11 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ArticleRepository {
+    private final Application application;
     private final ArticlePostDao articlePostDao;
     private final ArticlePostHelper articlePostHelper;
     private final ExecutorService executorService;
 
     public ArticleRepository(Application application) {
+        this.application = application;
         AppDatabase db = AppDatabase.getInstance(application);
         articlePostDao = db.articlePostDao();
         articlePostHelper = ArticlePostHelper.getInstance();
@@ -35,7 +37,8 @@ public class ArticleRepository {
             List<ArticlePostEntity> localPosts = articlePostDao.getPublishedPosts();
             List<ArticlePostEntity> visible = new java.util.ArrayList<>();
             for (ArticlePostEntity post : localPosts) {
-                if (post != null && post.isVisibleToPatients()) {
+                if (post != null && post.isVisibleToPatients()
+                        && post.isAvailableInLanguage(com.haset.hasetapp.utils.LocaleHelper.getLanguage(application))) {
                     visible.add(post);
                 }
             }
@@ -52,7 +55,8 @@ public class ArticleRepository {
                 List<ArticlePostEntity> visible = new java.util.ArrayList<>();
                 if (result != null) {
                     for (ArticlePostEntity post : result) {
-                        if (post != null && post.isVisibleToPatients()) {
+                        if (post != null && post.isVisibleToPatients()
+                                && post.isAvailableInLanguage(com.haset.hasetapp.utils.LocaleHelper.getLanguage(application))) {
                             visible.add(post);
                         }
                     }
@@ -191,7 +195,14 @@ public class ArticleRepository {
         articlePostHelper.getSavedArticles(userId, new ArticlePostHelper.OnCompleteListener<List<ArticlePostEntity>>() {
             @Override
             public void onSuccess(List<ArticlePostEntity> result) {
-                data.postValue(result);
+                List<ArticlePostEntity> visible = new java.util.ArrayList<>();
+                if (result != null) {
+                    String language = com.haset.hasetapp.utils.LocaleHelper.getLanguage(application);
+                    for (ArticlePostEntity post : result) {
+                        if (post != null && post.isAvailableInLanguage(language)) visible.add(post);
+                    }
+                }
+                data.postValue(visible);
             }
 
             @Override

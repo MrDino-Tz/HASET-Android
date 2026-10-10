@@ -402,6 +402,12 @@ public class CustomDialog {
         dialog.setCancelable(false);
         
         View view = LayoutInflater.from(context).inflate(R.layout.layout_loading_dialog, null);
+
+        View loadingLogo = view.findViewById(R.id.ivLoadingLogo);
+        if (loadingLogo != null) {
+            loadingLogo.startAnimation(android.view.animation.AnimationUtils.loadAnimation(
+                    context, R.anim.loading_logo_pulse));
+        }
         
         TextView tvMessage = view.findViewById(R.id.tvLoadingMessage);
         if (tvMessage != null) {

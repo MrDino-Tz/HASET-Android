@@ -25,7 +25,7 @@
     <string name="error_invalid_credential">Barua pepe au nenosiri si sahihi.</string>
     <string name="error_user_not_found">Hakuna akaunti iliyopatikana kwa barua pepe hii.</string>
     <string name="error_user_disabled">Akaunti hii imezimwa.</string>
-    <string name="error_weak_password">Nenosiri lazima liwe na angalau herufi 13, herufi kubwa na ishara maalum (!@#$%^&amp;*).</string>
+    <string name="error_weak_password">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba.</string>
     <string name="error_email_bad_format">Tafadhali weka barua pepe sahihi.</string>
     <string name="error_too_many_requests">Majaribio ni mengi sana. Tafadhali jaribu tena baadaye.</string>
     <string name="error_email_not_verified">Tafadhali thibitisha barua pepe yako ili uendelee.</string>
@@ -83,7 +83,7 @@
     <string name="confirm_new_password_hint">Thibitisha Nenosiri Mpya</string>
     <string name="btn_reset_password">Badilisha Nenosiri</string>
     <string name="invalid_reset_code">Nambari ya kubadilisha ni batili au muda umeisha. Tuma barua pepe mpya.</string>
-    <string name="weak_password_error">Nenosiri lazima liwe na angalau herufi 13, herufi kubwa na ishara maalum (!@#$%^&amp;*).</string>
+    <string name="weak_password_error">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba.</string>
     <string name="password_reset_success">Nenosiri limebadilishwa. Tafadhali ingia tena.</string>
     <string name="reset_code_verified_as">Nambari imethibitishwa kwa: %1$s</string>
     <string name="security_warning_title">Taarifa ya Usalama</string>
@@ -216,6 +216,10 @@
     <string name="error_email">Tafadhali weka barua pepe sahihi</string>
     <string name="error_password">Nenosiri lazima liwe na angalau herufi 6</string>
     <string name="error_strong_password">Tumia angalau herufi 12 zenye herufi kubwa, ndogo na namba</string>
+    <string name="error_password_min_12">Tumia angalau herufi 12</string>
+    <string name="error_password_uppercase">Ongeza herufi kubwa</string>
+    <string name="error_password_lowercase">Ongeza herufi ndogo</string>
+    <string name="error_password_number">Ongeza namba</string>
     <string name="password_strength_label">Nguvu ya nenosiri</string>
     <string name="password_strength_weak">Dhaifu</string>
     <string name="password_strength_fair">Wastani</string>
@@ -226,6 +230,7 @@
     <string name="login_locked">Majiribio mengi ya kuingia yameshindwa. Tafadhali jaribu tena baada ya dakika %1$d.</string>
     <string name="error_phone">Tafadhali weka namba ya simu sahihi</string>
     <string name="error_name">Tafadhali weka jina lako</string>
+    <string name="error_name_invalid">Weka jina sahihi (herufi tu, mf. Amina Hassan)</string>
     <string name="error_password_match">Manenosiri hayafanani</string>
     <string name="error_fields">Tafadhali jaza sifa zote</string>
     <string name="age_label">Umri: %d</string>
@@ -1449,7 +1454,7 @@
     <string name="settings_coming_soon">Mipangilio Inakuja Hivi Karibuni!</string>
     <!-- Newly Added Translations -->
     <string name="article">Makala</string>
-    <string name="article_like_error">Haikuweza kusasisha kupendwa: %1</string>
+    <string name="article_like_error">Haikuweza kusasisha kupendwa: %1$s</string>
     <string name="articles">Makala</string>
     <string name="audit_logs">Kumbukumbu za Ukaguzi</string>
     <string name="bank_account">Akaunti ya Benki</string>
@@ -1657,7 +1662,7 @@ Pakia bango kamili la picha</string>
     <string name="shop_now">Shop Now</string>
     <string name="categories">Categories</string>
     <string name="bestseller_products">Bestseller Products</string>
-    <string name="search_health_articles">Search health articles...</string>
+    <string name="search_health_articles">Tafuta makala za afya...</string>
     <string name="search_articles_tags_authors">Search articles, tags, authors...</string>
     <string name="str_0100">01:00</string>
     <string name="read_more">Soma Zaidi</string>
@@ -1807,16 +1812,16 @@ Pakia bango kamili la picha</string>
     <string name="doctor_details">Maelezo ya Daktari</string>
     <string name="dr">DR</string>
     <string name="loading_1">Loading. . .</string>
-    <string name="contact_information">Contact Information</string>
+    <string name="contact_information">Taarifa za Mawasiliano</string>
     <string name="str_255_712_345_678">+255 712 345 678</string>
     <string name="drjohndoeexamplecom">dr.john.doe@example.com</string>
     <string name="str_123_main_street_city">123 Main Street, City</string>
-    <string name="availability_amp_fees">Availability &amp;amp;amp; Fees</string>
-    <string name="fee">Fee:</string>
-    <string name="choose_appointment_type">Choose Appointment Type</string>
-    <string name="instant_appointment">Instant Appointment</string>
-    <string name="connect_immediately_with_the_doctor">Connect immediately with the doctor</string>
-    <string name="online_chat">Online Chat</string>
+    <string name="availability_amp_fees">Upatikanaji na Ada</string>
+    <string name="fee">Ada:</string>
+    <string name="choose_appointment_type">Chagua Aina ya Miadi</string>
+    <string name="instant_appointment">Miadi ya Papo Hapo</string>
+    <string name="connect_immediately_with_the_doctor">Wasiliana na daktari mara moja</string>
+    <string name="online_chat">Mazungumzo ya Mtandaoni</string>
     <string name="book_for_a_future_date_and_time">Book for a future date and time</string>
     <string name="no_products_found">No products found</string>
     <string name="try_adjusting_your_search_or_filters">Try adjusting your search or filters</string>
@@ -1855,9 +1860,9 @@ Pakia bango kamili la picha</string>
     <string name="pf">PF</string>
     <string name="davis">Davis</string>
     <string name="childrens_corner">Kona ya Watoto</string>
-    <string name="view_all_1">View All ></string>
+    <string name="view_all_1">Ona Zote ></string>
     <string name="chat_doctor">Ongea na Daktari</string>
-    <string name="news">News</string>
+    <string name="news">Habari</string>
     <string name="childrens_1">Watoto</string>
     <string name="quotafya_ni_mali_yenye_thamani_kuliko_fe">&amp;amp;quot;Afya ni mali yenye thamani kuliko fedha zote.&amp;amp;quot;</string>
     <string name="haset_hospital_1">— Hospitali ya HASET</string>
@@ -1887,7 +1892,7 @@ Pakia bango kamili la picha</string>
     <string name="delete_everything">Delete Everything</string>
     <string name="str_1000_2000">• 10:00 - 20:00</string>
     <string name="consultation_0_tzs">Consultation: 0 TZS</string>
-    <string name="find_doctor">Find Doctor</string>
+    <string name="find_doctor">Tafuta Daktari</string>
     <string name="search_nearest_available_doctor">Search Nearest Available Doctor</string>
     <string name="try_adjusting_your_search_or_check_back_">Try adjusting your search or check back later</string>
     <string name="confirm_payout">Confirm Payout</string>
@@ -1950,5 +1955,36 @@ Pakia bango kamili la picha</string>
 <!-- Home tour welcome -->
     <string name="tour_home_welcome_title">Karibu AfyaHASET</string>
     <string name="tour_home_welcome_desc">Hapa ni ukurasa wako wa nyumbani. Anza kwa hatua chache.</string>
+
+<!-- Google sign-in -->
+    <string name="continue_with_google">Endelea na Google</string>
+    <string name="account_exists_sign_in">Tayari una akaunti. Tafadhali ingia badala yake.</string>
+    <string name="google_signed_in_complete_details">Umeingia kwa Google. Kamilisha taarifa zako za kitaalamu ili kumaliza usajili.</string>
+    <string name="google_register_payment_next">Usajili umefanikiwa. Ingia kwa Google ili kukamilisha malipo ya usajili wako wa udaktari.</string>
+
+<!-- Appointments / booking -->
+    <string name="booking_blocked_doctor_not_active">Daktari hayupo mtandaoni sasa hivi. Waombe kufungua programu na kuwasha hali ya Mtandaoni, au panga Ziara badala yake.</string>
+    <string name="booking_blocked_permission">Kuweka miadi kumezuiwa (ruhusa imekataliwa). Toka na uingie tena, au chagua daktari mwingine.</string>
+    <string name="booking_network_error">Hitilafu ya mtandai wakati wa kuweka miadi. Angalia muunganisho wako na ujaribu tena.</string>
+    <string name="booking_presence_check_failed">Imeshindikana kuthibitisha kama daktari yuko mtandaoni. Angalia muunganisho wako na ujaribu tena.</string>
+    <string name="cannot_cancel_active_chat_appointment">Huwezi kughairi ongeko la Mazungumzo lililoidhinishwa. Kipindi cha saa 24 za mazungumzo bado kinapatikana hadi kinaisha.</string>
+    <string name="chat_appointment_cancelled">Ongeko hili la mazungumzo limeghairiwa.</string>
+
+<!-- Video / prescriptions / payment / status -->
+    <string name="open_video">Fungua video</string>
+    <string name="unable_to_play_video">Imeshindikana kucheza video hii</string>
+    <string name="prescription_image_upload_blocked">Upakaji picha umezuiwa. Tafadhali ujaribu tena au toa dawa bila picha.</string>
+    <string name="prescription_image_upload_failed">Imeshindikana kupakia picha ya dawa. Tafadhali ujaribu tena.</string>
+    <string name="unable_to_prepare_payment">Imeshindikana kuandaa kipindi cha malipo</string>
+    <string name="status_online_presence_hint">Uko mtandaoni kwa Mazungumzo ya Haraka. Wacha programu iwe wazi ili uendelee kupatikana.</string>
+    <string name="search_doctors_center">Kituo cha Madaktari</string>
+    <string name="search_health_articles_category">Makala za Afya</string>
+    <string name="search_book_appointment">Weka Miadi</string>
+    <string name="search_find_qualified_specialists">Tafuta madaktari bingwa</string>
+    <string name="search_read_expert_health_tips">Soma ushauri wa afya kutoka kwa wataalamu</string>
+    <string name="search_schedule_your_visit">Panga ziara yako</string>
+    <string name="search_app_section">Sehemu ya Programu</string>
+    <string name="search_no_results_for">Hakuna matokeo ya "%1$s"\nJaribu kutafuta kwa maneno mengine</string>
+    <string name="article_unavailable_language">Makala haya hayapatikani kwa lugha uliyochagua.</string>
 
 </resources>

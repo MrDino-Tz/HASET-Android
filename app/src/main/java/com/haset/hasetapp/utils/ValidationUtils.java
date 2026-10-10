@@ -30,7 +30,12 @@ public class ValidationUtils {
     }
     
     public static boolean isValidName(String name) {
-        return name != null && !name.trim().isEmpty() && name.length() >= 2;
+        if (name == null) return false;
+        String trimmed = name.trim();
+        if (trimmed.length() < 2) return false;
+        if (!trimmed.matches("[\\p{L}][\\p{L} .\\-']*[\\p{L}]|[\\p{L}]")) return false;
+        long letters = trimmed.chars().filter(Character::isLetter).count();
+        return letters >= 2;
     }
     
     public static boolean isValidNin(String nin) {

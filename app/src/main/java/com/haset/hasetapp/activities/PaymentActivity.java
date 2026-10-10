@@ -275,8 +275,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
                     | android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
-            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
 
         TextView tvDialogMessage = dialogView.findViewById(R.id.tvDialogMessage);
@@ -338,8 +336,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
                     | android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
-            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
 
         MaterialButton btnDone = dialogView.findViewById(R.id.btnDone);
@@ -407,8 +403,6 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
                     | android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(android.graphics.Color.TRANSPARENT);
-            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT);
         }
 
         TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);

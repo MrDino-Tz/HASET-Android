@@ -463,16 +463,31 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                         if (activateExistingChatSession(snapshot)) {
                             return;
                         }
-                        queryAppointmentsForChatAccess();
+                        queryAppointmentsForChatAccess(getExpiredSessionAppointmentId(snapshot));
                     }
 
                     @Override
                     public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
                         Log.w("ChatActivity", "Unable to read chat session before appointment check",
                                 error.toException());
-                        queryAppointmentsForChatAccess();
+                        queryAppointmentsForChatAccess(null);
                     }
                 });
+    }
+
+    private String getExpiredSessionAppointmentId(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
+        if (!snapshot.exists()) return null;
+
+        String patientId = snapshot.child("patientId").getValue(String.class);
+        String doctorId = snapshot.child("doctorId").getValue(String.class);
+        boolean participantsMatch = (currentUserId.equals(patientId) && chatUserId.equals(doctorId))
+                || (currentUserId.equals(doctorId) && chatUserId.equals(patientId));
+        if (!participantsMatch) return null;
+
+        long expiresAt = getLongChild(snapshot, "chatExpiresAt", 0L);
+        if (expiresAt <= 0 || expiresAt > System.currentTimeMillis()) return null;
+
+        return snapshot.child("appointmentId").getValue(String.class);
     }
 
     private boolean activateExistingChatSession(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
@@ -516,7 +531,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
         return true;
     }
 
-    private void queryAppointmentsForChatAccess() {
+    private void queryAppointmentsForChatAccess(String expiredSessionAppointmentId) {
         String role = preferenceManager.getUserRole();
         String queryField = Constants.ROLE_DOCTOR.equals(role) ? "doctorId" : "patientId";
         com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef()
@@ -535,6 +550,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                     long bestExpires = -1L;
 
                     for (com.google.firebase.database.DataSnapshot child : snapshot.getChildren()) {
+                        String appointmentId = child.getKey();
                         String patientId = child.child("patientId").getValue(String.class);
                         String doctorId = child.child("doctorId").getValue(String.class);
                         String status = child.child("status").getValue(String.class);
@@ -563,9 +579,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                         }
 
                         hasEligibleStatus = true;
-                        boolean paid = Constants.PAYMENT_STATUS_PAID.equalsIgnoreCase(paymentStatus)
-                                // Legacy approved chat rows often omit paymentStatus.
-                                || (paymentStatus == null || paymentStatus.trim().isEmpty());
+                        boolean paid = Constants.PAYMENT_STATUS_PAID.equalsIgnoreCase(paymentStatus);
                         if (!paid) {
                             continue;
                         }
@@ -573,6 +587,10 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(this);
                         hasEligiblePaid = true;
                         long existingStart = getLongChild(child, "chatStartsAt", getLongChild(child, "chatStartTime", 0L));
                         long existingExpires = getLongChild(child, "chatExpiresAt", 0L);
+                        if (existingStart <= 0 && appointmentId != null && appointmentId.equals(expiredSessionAppointmentId)) {
+                            onlyExpiredPaidSession = true;
+                            continue;
+                        }
                         if (existingExpires <= 0 && existingStart > 0) {
                             existingExpires = existingStart + CHAT_SESSION_DURATION;
                         }

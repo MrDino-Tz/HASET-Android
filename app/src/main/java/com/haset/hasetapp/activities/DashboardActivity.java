@@ -30,6 +30,7 @@ import com.haset.hasetapp.utils.HealthTipsHelper;
 import com.haset.hasetapp.utils.StatusBarHelper;
 import com.haset.hasetapp.utils.ThemeHelper;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.GoogleAuthHelper;
 import com.haset.hasetapp.fragments.NoInternetBottomSheet;
 import com.haset.hasetapp.workers.TrendingArticlesWorker;
 
@@ -109,6 +110,7 @@ public class DashboardActivity extends BaseActivity {
 
     private void sendUnpaidDoctorToLogin() {
         com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+        GoogleAuthHelper.signOut(this);
         preferenceManager.setLoggedIn(false);
         Intent login = new Intent(DashboardActivity.this, LoginActivity.class);
         login.putExtra("unpaid_doctor", true);

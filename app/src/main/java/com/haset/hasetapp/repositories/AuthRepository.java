@@ -5,12 +5,12 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-// import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
-// import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -24,6 +24,8 @@ import com.haset.hasetapp.utils.CrashMonitor;
 import com.haset.hasetapp.utils.FirebaseHelper;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -101,19 +103,21 @@ public class AuthRepository {
             });
     }
 
-/*
     public void signInWithGoogle(String idToken, FirebaseHelper.OnCompleteListener<FirebaseUser> callback) {
+        CrashMonitor.step("auth", "AuthRepository.signInWithGoogle", "google sign-in started");
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
             .addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
+                    CrashMonitor.breadcrumb("google sign-in succeeded uid=" + currentUid());
                     callback.onSuccess(mAuth.getCurrentUser());
                 } else {
-                    callback.onError(task.getException() != null ? task.getException().getMessage() : "Google sign-in failed");
+                    CrashMonitor.report("auth", "AuthRepository.signInWithGoogle", "google sign-in failed",
+                            task.getException());
+                    callback.onError(mapFirebaseAuthError(task.getException(), "Google sign-in failed"));
                 }
             });
     }
-*/
 
     public void getUserData(String uid, FirebaseHelper.OnCompleteListener<UserEntity> callback) {
         usersRef.child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -426,9 +430,17 @@ public class AuthRepository {
             return fallbackMessage;
         }
 
+        if (isNetworkFailure(exception)) {
+            return "Network error. Please check your connection and try again.";
+        }
+
         String message = exception.getMessage();
         if (exception instanceof FirebaseAuthException) {
             String errorCode = ((FirebaseAuthException) exception).getErrorCode();
+            if ("ERROR_NETWORK_REQUEST_FAILED".equals(errorCode)
+                    || "network-request-failed".equalsIgnoreCase(errorCode)) {
+                return "Network error. Please check your connection and try again.";
+            }
             if ("ERROR_INVALID_CREDENTIAL".equals(errorCode)
                     || "ERROR_INVALID_LOGIN_CREDENTIALS".equals(errorCode)
                     || "ERROR_WRONG_PASSWORD".equals(errorCode)
@@ -461,5 +473,28 @@ public class AuthRepository {
         }
 
         return message != null && !message.trim().isEmpty() ? message : fallbackMessage;
+    }
+
+    private boolean isNetworkFailure(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof IOException
+                    || current instanceof SocketTimeoutException
+                    || current instanceof UnknownHostException
+                    || current.getClass().getSimpleName().contains("NetworkException")) {
+                return true;
+            }
+            String message = current.getMessage();
+            if (message != null) {
+                String lower = message.toLowerCase(java.util.Locale.ROOT);
+                if (lower.contains("network error") || lower.contains("network request failed")
+                        || lower.contains("unable to resolve host") || lower.contains("failed to connect")
+                        || lower.contains("timed out") || lower.contains("timeout")) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

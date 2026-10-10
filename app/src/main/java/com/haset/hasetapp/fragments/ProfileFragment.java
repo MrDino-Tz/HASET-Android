@@ -43,6 +43,7 @@ import com.haset.hasetapp.activities.EditProfileActivity;
 import com.haset.hasetapp.activities.LoginActivity;
 import com.haset.hasetapp.database.entities.UserEntity;
 import com.haset.hasetapp.utils.FirebaseHelper;
+import com.haset.hasetapp.utils.GoogleAuthHelper;
 import com.haset.hasetapp.models.Doctor;
 import com.haset.hasetapp.utils.AuditLogger;
 import com.haset.hasetapp.utils.StylishQRCodeGenerator;
@@ -483,6 +484,7 @@ com.haset.hasetapp.utils.SensitiveActivityHelper.blockScreenshots(getActivity())
                 
                 // Sign out from Firebase Auth
                 FirebaseHelper.getFirebaseAuth().signOut();
+                GoogleAuthHelper.signOut(requireContext());
                 
                 // Clear preferences
                 preferenceManager.clearPreferences();
