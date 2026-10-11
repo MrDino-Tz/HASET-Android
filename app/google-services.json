@@ -15,6 +15,30 @@
       },
       "oauth_client": [
         {
+          "client_id": "44252460208-6b51uqraq9bb4ji211oruso1h2ijt6u2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.haset.hasetapp",
+            "certificate_hash": "cba1a1e07c431f5dc5f1e6def336e60f196c9b9b"
+          }
+        },
+        {
+          "client_id": "44252460208-9p633n2p6t8ksbhiv3j8mv3idmctj3nb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.haset.hasetapp",
+            "certificate_hash": "5788689321c06256afabe92ccea82fcd6ace5ed6"
+          }
+        },
+        {
+          "client_id": "44252460208-hs958is07idgm4fd3ubkruqt5dgl7icm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.haset.hasetapp",
+            "certificate_hash": "18aaa2534347c8f4fb235838b0bf6fc275a8b413"
+          }
+        },
+        {
           "client_id": "44252460208-ueavvr14am7oboa32q66mgg0g6hd4arn.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -30,6 +54,13 @@
             {
               "client_id": "44252460208-ueavvr14am7oboa32q66mgg0g6hd4arn.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "44252460208-uv6f9p47ti6jk1dqbdgps3knsfjvapsb.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.haset.hasetapp"
+              }
             }
           ]
         }

@@ -12,7 +12,7 @@ android {
         applicationId = "com.haset.hasetapp"
         minSdk = 24
         targetSdk = 37
-        versionCode = 16
+        versionCode = 19
         versionName = "1.0.0.DTC"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -178,6 +178,10 @@ dependencies {
     
     // Cloudinary for media upload
     implementation libs.cloudinary.android
+
+    // On-device video transcoding before upload
+    implementation libs.media3.transformer
+    implementation libs.media3.effect
     
     // Force Fresco for Android 15 16KB page size compatibility (Pulled by Cloudinary)
     implementation libs.fresco

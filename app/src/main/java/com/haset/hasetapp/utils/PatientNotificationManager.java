@@ -42,6 +42,7 @@ public class PatientNotificationManager {
     // SharedPreferences keys
     private static final String PREF_PATIENT_NOTIFICATIONS = "patient_notifications";
     private static final String PREF_NOTIFIED_APPOINTMENTS = "notified_appointments"; // Track already notified approvals
+    private static final long MAX_APPROVAL_NOTIFICATION_AGE_MS = TimeUnit.HOURS.toMillis(24);
     private static final String PREF_NOTIFIED_PRESCRIPTIONS = "notified_prescriptions"; // Track already notified prescriptions
 
     private static final String PREF_LAST_HEALTH_TIP_TIME = "last_health_tip_time";
@@ -68,6 +69,9 @@ public class PatientNotificationManager {
     private Handler healthTipHandler;
     private Runnable healthTipRunnable;
     private boolean isAppActive = false;
+    private com.google.firebase.database.DatabaseReference approvalAppointmentsRef;
+    private com.google.firebase.database.ValueEventListener approvalListener;
+    private String approvalPatientId;
     
     public PatientNotificationManager(Context context) {
         this.context = context;
@@ -551,28 +555,41 @@ public class PatientNotificationManager {
     }
     
     public void startListeningForApprovals(String patientId) {
-        if (patientId == null) return;
+        if (patientId == null || patientId.trim().isEmpty()) return;
+        if (patientId.equals(approvalPatientId) && approvalListener != null) return;
+
+        if (approvalAppointmentsRef != null && approvalListener != null) {
+            approvalAppointmentsRef.removeEventListener(approvalListener);
+        }
 
         Log.d(TAG, "Starting approval listener for patient: " + patientId);
-        com.google.firebase.database.DatabaseReference appointmentsRef = 
+        approvalAppointmentsRef =
             com.haset.hasetapp.utils.FirebaseHelper.getAppointmentsRef();
-        
-        com.google.firebase.database.Query query = appointmentsRef.orderByChild("patientId").equalTo(patientId);
-        
-        query.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+        approvalPatientId = patientId;
+        com.google.firebase.database.Query query = approvalAppointmentsRef
+                .orderByChild("patientId").equalTo(patientId);
+
+        approvalListener = new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull com.google.firebase.database.DataSnapshot snapshot) {
                 if (!snapshot.exists()) return;
+
+                long now = System.currentTimeMillis();
 
                 for (com.google.firebase.database.DataSnapshot appointmentSnapshot : snapshot.getChildren()) {
                     String status = appointmentSnapshot.child("status").getValue(String.class);
                     String appointmentId = appointmentSnapshot.getKey();
                     String doctorName = appointmentSnapshot.child("doctorName").getValue(String.class);
                     String type = appointmentSnapshot.child("appointmentType").getValue(String.class);
+                    Long updatedAt = appointmentSnapshot.child("updatedAt").getValue(Long.class);
 
-                    if (Constants.STATUS_APPROVED.equalsIgnoreCase(status)) {
+                    if (appointmentId != null
+                            && Constants.STATUS_APPROVED.equalsIgnoreCase(status)
+                            && updatedAt != null
+                            && updatedAt <= now
+                            && now - updatedAt <= MAX_APPROVAL_NOTIFICATION_AGE_MS) {
                         String doctorId = appointmentSnapshot.child("doctorId").getValue(String.class);
-                        checkAndNotifyApproval(appointmentId, doctorName, doctorId, type);
+                        checkAndNotifyApproval(patientId, appointmentId, doctorName, doctorId, type);
                     }
                 }
             }
@@ -581,21 +598,24 @@ public class PatientNotificationManager {
             public void onCancelled(@NonNull com.google.firebase.database.DatabaseError error) {
                 Log.e(TAG, "Approval listener cancelled: " + error.getMessage());
             }
-        });
+        };
+        query.addValueEventListener(approvalListener);
     }
 
-    private void checkAndNotifyApproval(String appointmentId, String doctorName, String doctorId, String type) {
-        // Use a separate set of prefs to track notified appointments to avoid spamming on every data change
+    private void checkAndNotifyApproval(String patientId, String appointmentId,
+                                        String doctorName, String doctorId, String type) {
         SharedPreferences notifiedPrefs = context.getSharedPreferences(PREF_NOTIFIED_APPOINTMENTS, Context.MODE_PRIVATE);
-        boolean alreadyNotified = notifiedPrefs.getBoolean(appointmentId, false);
+        String patientAppointmentKey = patientId + "_" + appointmentId;
+        boolean alreadyNotified = notifiedPrefs.getBoolean(patientAppointmentKey, false)
+                || notifiedPrefs.getBoolean(appointmentId, false);
 
         if (!alreadyNotified) {
-            showApprovalNotification(doctorName, doctorId, type);
-            notifiedPrefs.edit().putBoolean(appointmentId, true).apply();
+            showApprovalNotification(appointmentId, doctorName, doctorId, type);
+            notifiedPrefs.edit().putBoolean(patientAppointmentKey, true).apply();
         }
     }
 
-    private void showApprovalNotification(String doctorName, String doctorId, String type) {
+    private void showApprovalNotification(String appointmentId, String doctorName, String doctorId, String type) {
         String title = "Miadi Imeidhinishwa! ✅";
         String message = "Dkt. " + doctorName + " ameidhinisha " + (type != null ? type : "miadi") + " yako. Unaweza kuanza kikao cha mazungumzo sasa.";
         
@@ -604,7 +624,7 @@ public class PatientNotificationManager {
         mainIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent mainPendingIntent = PendingIntent.getActivity(
                 context,
-                new Random().nextInt(1000),
+                appointmentId.hashCode(),
                 mainIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -618,7 +638,7 @@ public class PatientNotificationManager {
         
         PendingIntent chatPendingIntent = PendingIntent.getActivity(
                 context,
-                new Random().nextInt(1000),
+                appointmentId.hashCode(),
                 chatIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -636,7 +656,7 @@ public class PatientNotificationManager {
                 .setContentIntent(chatPendingIntent)
                 .addAction(R.drawable.messages_24, "Soga sasa", chatPendingIntent);
 
-        notificationManager.notify(new Random().nextInt(10000), builder.build());
+        notificationManager.notify(appointmentId.hashCode(), builder.build());
         Log.d(TAG, "Approval notification shown with chat action for doctor: " + doctorName);
     }
 

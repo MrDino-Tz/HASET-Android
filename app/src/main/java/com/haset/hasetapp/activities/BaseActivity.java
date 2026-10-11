@@ -46,6 +46,7 @@ public abstract class BaseActivity extends AppCompatActivity implements NoIntern
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        com.haset.hasetapp.utils.EdgeToEdgeHelper.enable(this);
         setupNetworkMonitoring();
     }
 

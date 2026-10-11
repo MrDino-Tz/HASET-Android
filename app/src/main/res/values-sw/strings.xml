@@ -1893,7 +1893,7 @@ Pakia bango kamili la picha</string>
     <string name="str_1000_2000">• 10:00 - 20:00</string>
     <string name="consultation_0_tzs">Consultation: 0 TZS</string>
     <string name="find_doctor">Tafuta Daktari</string>
-    <string name="search_nearest_available_doctor">Search Nearest Available Doctor</string>
+    <string name="search_nearest_available_doctor">Tafuta daktari anayepatikana aliye karibu zaidi</string>
     <string name="try_adjusting_your_search_or_check_back_">Try adjusting your search or check back later</string>
     <string name="confirm_payout">Confirm Payout</string>
     <string name="you_are_about_to_release_funds_via_zeno_">You are about to release funds via Zeno. This action cannot be undone.</string>

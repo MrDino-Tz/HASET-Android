@@ -1,11 +1,18 @@
 package com.haset.hasetapp.activities;
 
 import android.content.Context;
+import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public abstract class LocalizedAppCompatActivity extends AppCompatActivity {
     private String attachedLanguage;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        com.haset.hasetapp.utils.EdgeToEdgeHelper.enable(this);
+    }
 
     @Override
     protected void attachBaseContext(Context newBase) {

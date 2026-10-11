@@ -1,8 +1,25 @@
 package com.haset.hasetapp.utils;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.util.Log;
+
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.MimeTypes;
+import androidx.media3.effect.Presentation;
+import androidx.media3.transformer.Composition;
+import androidx.media3.transformer.DefaultEncoderFactory;
+import androidx.media3.transformer.AudioEncoderSettings;
+import androidx.media3.transformer.EditedMediaItem;
+import androidx.media3.transformer.EditedMediaItemSequence;
+import androidx.media3.transformer.Effects;
+import androidx.media3.transformer.ExportException;
+import androidx.media3.transformer.ExportResult;
+import androidx.media3.transformer.Transformer;
+import androidx.media3.transformer.VideoEncoderSettings;
 
 import com.cloudinary.android.MediaManager;
 import com.cloudinary.android.callback.ErrorInfo;
@@ -14,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,8 +43,9 @@ import java.util.Map;
  */
 public class CloudinaryUploadHelper {
     private static final String TAG = "CloudinaryUpload";
-    private static final long MAX_STANDARD_UPLOAD_BYTES = 25L * 1024L * 1024L;
-    private static final long MAX_VIDEO_UPLOAD_BYTES = 100L * 1024L * 1024L;
+    private static final long MAX_STANDARD_UPLOAD_BYTES = 1024L * 1024L;
+    private static final long MAX_VIDEO_UPLOAD_BYTES = 5L * 1024L * 1024L;
+    private static final long MAX_SOURCE_BYTES = 500L * 1024L * 1024L;
     private static String uploadPreset;
     private static String cloudName;
 
@@ -55,6 +75,9 @@ public class CloudinaryUploadHelper {
 
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
             String safeName = fileName != null ? fileName.replaceAll("[^A-Za-z0-9._-]", "_") : "file";
+            if ("image".equalsIgnoreCase(fileType)) {
+                safeName = safeName.replaceAll("\\.[^.]*$", "") + ".jpg";
+            }
             String uniqueFileName = fileType + "_" + timestamp + "_" + safeName;
 
             String resourceType = getResourceType(fileType, fileName);
@@ -64,29 +87,88 @@ public class CloudinaryUploadHelper {
             if ("image".equals(resourceType) || "video".equals(resourceType) || "auto".equals(resourceType)) {
                 publicId = publicId.replaceAll("\\.[^.]*$", "");
             }
-
-            Map<String, Object> options = new HashMap<>();
-            options.put("folder", folder);
-            options.put("public_id", publicId);
-            options.put("resource_type", resourceType);
-            // Do NOT pass access_mode/type here — unsigned presets reject them.
-            // Public delivery is already configured on preset haset_mobile_unsigned.
-
-            if ("image".equalsIgnoreCase(fileType)) {
-                options.put("quality", "auto");
-                options.put("fetch_format", "auto");
-            }
-            if ("video".equalsIgnoreCase(fileType)) {
-                // Do not force format=mp4 on unsigned upload — many presets reject/eager-process
-                // it and the request can stall. Deliver as mp4 via URL transform when playing.
-            }
+            final String uploadPublicId = publicId;
 
             long maxUploadBytes = getMaxUploadBytes(fileType);
-            File file = uriToFile(context, fileUri, maxUploadBytes, fileName);
+            File source = uriToFile(context, fileUri,
+                    "video".equalsIgnoreCase(fileType) || "image".equalsIgnoreCase(fileType)
+                            ? MAX_SOURCE_BYTES : maxUploadBytes, fileName);
+            File file = source;
             if (file == null) {
                 if (listener != null) listener.onUploadError("Failed to access file");
                 return;
             }
+            if (source.length() > ("video".equalsIgnoreCase(fileType) || "image".equalsIgnoreCase(fileType)
+                    ? MAX_SOURCE_BYTES : maxUploadBytes)) {
+                deleteIfTemporary(context, source);
+                if (listener != null) listener.onUploadError("Selected file exceeds the allowed processing size.");
+                return;
+            }
+
+            if ("image".equalsIgnoreCase(fileType)) {
+                file = compressImage(context, source);
+                if (file == null || file.length() > maxUploadBytes) {
+                    deleteIfTemporary(context, source);
+                    deleteIfTemporary(context, file);
+                    if (listener != null) listener.onUploadError("Could not reduce this image below 1 MB.");
+                    return;
+                }
+            } else if ("video".equalsIgnoreCase(fileType)) {
+                if (source.length() <= maxUploadBytes) {
+                    // Small videos do not need transcoding.
+                } else {
+                    compressVideo(context, source, fileName, compressed -> {
+                        deleteIfTemporary(context, source);
+                        if (compressed == null || compressed.length() > MAX_VIDEO_UPLOAD_BYTES) {
+                            deleteIfTemporary(context, compressed);
+                            if (listener != null) listener.onUploadError(
+                                    "This video could not be reduced to 5 MB. Choose a shorter video.");
+                            return;
+                        }
+                        dispatchUpload(context, compressed, uniqueFileName, uploadPublicId, folder,
+                                resourceType, MAX_VIDEO_UPLOAD_BYTES, listener);
+                    }, error -> {
+                        deleteIfTemporary(context, source);
+                        if (listener != null) listener.onUploadError("Could not compress video: " + error);
+                    });
+                    return;
+                }
+            } else if (file.length() > maxUploadBytes) {
+                deleteIfTemporary(context, source);
+                if (listener != null) listener.onUploadError("Files must be 1 MB or smaller.");
+                return;
+            }
+
+            if (file.length() > maxUploadBytes) {
+                deleteIfTemporary(context, source);
+                deleteIfTemporary(context, file);
+                if (listener != null) listener.onUploadError("Files must be 1 MB or smaller.");
+                return;
+            }
+
+            if (file != source) deleteIfTemporary(context, source);
+            dispatchUpload(context, file, uniqueFileName, uploadPublicId, folder, resourceType, maxUploadBytes, listener);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error preparing file upload: " + e.getMessage(), e);
+            ErrorLogger.log(e);
+            if (listener != null) {
+                listener.onUploadError("Error preparing upload: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void dispatchUpload(Context context, File file, String uniqueFileName, String publicId,
+                                       String folder, String resourceType, long maxUploadBytes,
+                                       OnFileUploadListener listener) {
+        Map<String, Object> options = new HashMap<>();
+        options.put("folder", folder);
+        options.put("public_id", publicId);
+        options.put("resource_type", resourceType);
+        if ("image".equals(resourceType)) {
+            options.put("quality", "auto");
+            options.put("fetch_format", "auto");
+        }
 
             MediaManager.get().upload(file.getAbsolutePath())
                     .options(options)
@@ -118,6 +200,7 @@ public class CloudinaryUploadHelper {
                             if (listener != null) {
                                 listener.onUploadSuccess(deliveryUrl, uniqueFileName);
                             }
+                            deleteIfTemporary(context, file);
                         }
 
                         @Override
@@ -130,6 +213,7 @@ public class CloudinaryUploadHelper {
                                 errorMessage = "Invalid request. Please check file format.";
                             }
                             if (listener != null) listener.onUploadError(errorMessage);
+                            deleteIfTemporary(context, file);
                         }
 
                         @Override
@@ -138,13 +222,95 @@ public class CloudinaryUploadHelper {
                         }
                     })
                     .dispatch(context);
+    }
 
-        } catch (Exception e) {
-            Log.e(TAG, "Error preparing file upload: " + e.getMessage(), e);
-            ErrorLogger.log(e);
-            if (listener != null) {
-                listener.onUploadError("Error preparing upload: " + e.getMessage());
+    private interface VideoResult { void complete(File file); }
+    private interface VideoError { void fail(String message); }
+
+    private static void compressVideo(Context context, File source, String name,
+                                      VideoResult success, VideoError failure) {
+        File output;
+        try {
+            MediaMetadataRetriever metadata = new MediaMetadataRetriever();
+            long durationMs;
+            try {
+                metadata.setDataSource(source.getAbsolutePath());
+                durationMs = Long.parseLong(metadata.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_DURATION));
+            } finally {
+                metadata.release();
             }
+            if (durationMs <= 0) throw new IOException("Video duration is unavailable");
+            int videoBitrate = (int) Math.max(100_000L,
+                    Math.min(1_000_000L, (4L * 1024L * 1024L * 8L * 1000L / durationMs) - 64_000L));
+            output = File.createTempFile("compressed_", ".mp4", context.getCacheDir());
+            // Transformer creates the destination itself.
+            //noinspection ResultOfMethodCallIgnored
+            output.delete();
+            MediaItem item = MediaItem.fromUri(Uri.fromFile(source));
+            Effects effects = new Effects(Collections.emptyList(),
+                    Arrays.asList(Presentation.createForHeight(360)));
+            EditedMediaItem edited = new EditedMediaItem.Builder(item).setEffects(effects).build();
+            EditedMediaItemSequence sequence = new EditedMediaItemSequence.Builder(edited).build();
+            Composition composition = new Composition.Builder(sequence).build();
+            DefaultEncoderFactory encoderFactory = new DefaultEncoderFactory.Builder(context)
+                    .setRequestedAudioEncoderSettings(new AudioEncoderSettings.Builder()
+                            .setBitrate(48_000).build())
+                    .setRequestedVideoEncoderSettings(new VideoEncoderSettings.Builder()
+                            .setBitrate(videoBitrate).build())
+                    .build();
+            Transformer transformer = new Transformer.Builder(context.getApplicationContext())
+                    .setVideoMimeType(MimeTypes.VIDEO_H264)
+                    .setEncoderFactory(encoderFactory)
+                    .addListener(new Transformer.Listener() {
+                        @Override public void onCompleted(Composition composition, ExportResult result) {
+                            success.complete(output);
+                        }
+                        @Override public void onError(Composition composition, ExportResult result,
+                                                      ExportException exception) {
+                            //noinspection ResultOfMethodCallIgnored
+                            output.delete();
+                            failure.fail(exception.getMessage() != null ? exception.getMessage() : "transcoding failed");
+                        }
+                    }).build();
+            transformer.start(composition, output.getAbsolutePath());
+        } catch (Exception e) {
+            failure.fail(e.getMessage() != null ? e.getMessage() : "transcoding failed");
+        }
+    }
+
+    private static File compressImage(Context context, File source) throws IOException {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(source.getAbsolutePath(), bounds);
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+        int sample = 1;
+        while (Math.max(bounds.outWidth / sample, bounds.outHeight / sample) > 1800) sample *= 2;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sample;
+        Bitmap bitmap = BitmapFactory.decodeFile(source.getAbsolutePath(), options);
+        if (bitmap == null) return null;
+        File output = File.createTempFile("image_upload_", ".jpg", context.getCacheDir());
+        try (FileOutputStream stream = new FileOutputStream(output)) {
+            int quality = 88;
+            do {
+                stream.getChannel().truncate(0);
+                stream.getChannel().position(0);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
+                stream.flush();
+                if (output.length() <= MAX_STANDARD_UPLOAD_BYTES) break;
+                quality -= 12;
+            } while (quality >= 40);
+        } finally {
+            bitmap.recycle();
+        }
+        return output;
+    }
+
+    private static void deleteIfTemporary(Context context, File file) {
+        if (file != null && file.getAbsolutePath().startsWith(context.getCacheDir().getAbsolutePath())) {
+            //noinspection ResultOfMethodCallIgnored
+            file.delete();
         }
     }
 
