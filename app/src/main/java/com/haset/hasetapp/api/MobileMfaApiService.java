@@ -22,5 +22,8 @@ public interface MobileMfaApiService {
     @POST("mobile/mfa/verify") Call<JsonObject> verify(@Header("Authorization") String auth, @Body JsonObject body);
 
     @Headers("Accept: application/json")
+    @POST("mobile/mfa/email-otp") Call<JsonObject> sendEmailOtp(@Header("Authorization") String auth);
+
+    @Headers("Accept: application/json")
     @POST("mobile/mfa/disable") Call<JsonObject> disable(@Header("Authorization") String auth, @Body JsonObject body);
 }

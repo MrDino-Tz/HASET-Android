@@ -108,3 +108,12 @@ __pycache__/
 *.pyc
 *.class
 target/
+
+# iOS parity working docs (session artifacts, kept out of git)
+docs/ios-implementation-status.md
+docs/ios-parity-audit.md
+docs/ios-setup-and-build.md
+
+# Android WIP (withdrawal email OTP, uncommitted working files)
+app/src/main/java/com/haset/hasetapp/activities/WithdrawalEmailOtpActivity.java
+app/src/main/res/layout/activity_withdrawal_email_otp.xml

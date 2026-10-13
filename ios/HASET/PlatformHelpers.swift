@@ -64,17 +64,6 @@ final class AuditLogger {
             idToken: idToken
         )
     }
-
-    func logOpenPharmacy(profile: UserProfile?, idToken: String?) {
-        logAction(
-            action: "OPEN_PHARMACY",
-            description: "User opened Pharmacy section",
-            entityType: "PHARMACY",
-            entityId: nil,
-            profile: profile,
-            idToken: idToken
-        )
-    }
 }
 
 // MARK: - Appointment Reminders

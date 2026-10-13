@@ -169,6 +169,7 @@ dependencies {
 
     // Google Sign-In
     implementation libs.google.play.services.auth
+    implementation libs.play.app.update
     
     // Gson for JSON parsing
     implementation libs.gson

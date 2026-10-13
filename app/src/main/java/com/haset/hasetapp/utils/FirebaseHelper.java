@@ -905,6 +905,65 @@ public class FirebaseHelper {
         });
     }
 
+    /**
+     * Persist a payout destination that is immediately active. Mirrors the
+     * destination into the doctor's wallet node as approved/available so the
+     * doctor can withdraw to it right away. Only masked account values are stored.
+     */
+    public static void savePayoutDestinationInstant(String doctorId, String destinationType,
+            String provider, String bankCode, String phoneNumber, String bankAccount,
+            OnCompleteListener<Boolean> listener) {
+        if (doctorId == null || doctorId.isEmpty()) {
+            if (listener != null) listener.onError("Missing doctor id.");
+            return;
+        }
+        boolean bank = "bank".equalsIgnoreCase(destinationType);
+        String maskedAccount = bank ? maskAccount(bankAccount) : maskAccount(phoneNumber);
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("doctor_id", doctorId);
+        request.put("destination_type", bank ? "bank" : "mobile_money");
+        request.put("provider", bank ? bankCode : provider);
+        if (bank && bankCode != null) request.put("bank_code", bankCode);
+        request.put("masked_account", maskedAccount);
+        request.put("status", "approved");
+        request.put("submitted_by", doctorId);
+        request.put("created_at", System.currentTimeMillis());
+        request.put("can_review", true);
+
+        Map<String, Object> walletDestination = new HashMap<>();
+        walletDestination.put("status", "approved");
+        walletDestination.put("available", true);
+        walletDestination.put("masked_account", maskedAccount);
+        walletDestination.put("created_at", System.currentTimeMillis());
+        if (bank) {
+            walletDestination.put("bank_code", bankCode);
+            walletDestination.put("provider", bankCode);
+        } else {
+            walletDestination.put("provider", provider);
+        }
+
+        DatabaseReference requestRef = getPayoutDestinationRequestsRef().child(doctorId);
+        DatabaseReference walletTypeRef = getDoctorWalletsRef().child(doctorId)
+                .child("payout_destinations").child(bank ? "bank" : "mobile_money");
+
+        requestRef.setValue(request, (error, ref) -> {
+            if (error != null) {
+                Log.e("FirebaseHelper", "Failed to write active payout destination: " + error.getMessage());
+                if (listener != null) listener.onError(error.getMessage());
+                return;
+            }
+            walletTypeRef.setValue(walletDestination, (walletError, walletRef) -> {
+                if (walletError != null) {
+                    Log.e("FirebaseHelper", "Failed to write wallet payout_destinations: " + walletError.getMessage());
+                    if (listener != null) listener.onError(walletError.getMessage());
+                    return;
+                }
+                if (listener != null) listener.onSuccess(true);
+            });
+        });
+    }
+
     private static String maskAccount(String value) {
         if (value == null) return "";
         String digits = value.replaceAll("[^0-9]", "");

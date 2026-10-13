@@ -75,7 +75,7 @@ struct RootView: View {
                 doctor: pending.doctor,
                 amount: pending.amount,
                 initialMethod: .mobileMoney,
-                onPaymentConfirmed: {
+                onPaymentConfirmed: { _ in
                     Task { await appViewModel.completeDoctorRegistrationPayment() }
                 },
                 onCancelRegistrationPayment: {
@@ -97,6 +97,18 @@ struct RootView: View {
                 .environmentObject(appViewModel)
         }
         .overlay {
+            RatingPromptPresenter()
+                .environmentObject(appViewModel)
+        }
+        .overlay(alignment: .bottom) {
+            if !appViewModel.isOnline {
+                OfflineBannerView()
+                    .environmentObject(appViewModel)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: appViewModel.isOnline)
+        .overlay {
             if appViewModel.isLoading {
                 ZStack {
                     Color.black.opacity(0.18).ignoresSafeArea()
@@ -106,5 +118,63 @@ struct RootView: View {
                 }
             }
         }
+    }
+}
+
+private struct RatingPromptPresenter: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .accessibilityHidden(true)
+            .sheet(isPresented: $appViewModel.showRatingPrompt) {
+                RateAppView()
+                    .environmentObject(appViewModel)
+            }
+    }
+}
+
+struct OfflineBannerView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 18))
+                .foregroundStyle(.white)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(appViewModel.tr("no_internet_title"))
+                    .font(HASETTheme.font(.medium, 14))
+                Text(appViewModel.tr("no_internet_message"))
+                    .font(HASETTheme.font(.regular, 12))
+                    .lineLimit(2)
+            }
+            .foregroundStyle(.white)
+
+            Spacer(minLength: 8)
+
+            Button(appViewModel.tr("retry")) {
+                Task { await appViewModel.refreshAfterReconnect() }
+            }
+            .font(HASETTheme.font(.medium, 14))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color.white.opacity(0.22)))
+            .accessibilityLabel(appViewModel.tr("retry"))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(HASETTheme.redPrimary)
+                .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
+        )
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
+        .accessibilityElement(children: .combine)
     }
 }

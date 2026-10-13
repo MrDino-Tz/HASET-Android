@@ -1,5 +1,7 @@
 import Foundation
 import UIKit
+import Network
+import GoogleSignIn
 
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -7,6 +9,7 @@ final class AppViewModel: ObservableObject {
     @Published var currentUser: UserProfile?
     @Published var activeSession: StoredSession?
     @Published var isLoading = false
+    @Published var isGoogleSignInInProgress = false
     @Published var alertState: AlertState?
     @Published var selectedLanguage: String
     @Published var pendingResetEmail = ""
@@ -33,6 +36,9 @@ final class AppViewModel: ObservableObject {
     @Published var blockingDialog: BlockingDialogState?
     @Published var showUnpaidDoctorMessage = false
     @Published var pendingPasswordResetCode: String?
+    @Published var isOnline = true
+    @Published var showRatingPrompt = false
+    @Published var pendingNavigation: PendingNavigation?
 
     private let sessionStore = SessionStore()
     private let authService = AuthService()
@@ -46,6 +52,7 @@ final class AppViewModel: ObservableObject {
     private let passwordResetCooldown: TimeInterval = 30
     private var loginAttemptCount = 0
     private var loginLockoutUntil: Date?
+    private let pathMonitor = NWPathMonitor()
 
     init() {
         selectedLanguage = sessionStore.languageCode
@@ -60,9 +67,92 @@ final class AppViewModel: ObservableObject {
             guard let token = notification.object as? String else { return }
             Task { await self?.syncDeviceToken(token) }
         }
+        NotificationCenter.default.addObserver(
+            forName: .hasetNotificationOpened,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let userInfo = notification.object as? [AnyHashable: Any] else { return }
+            self?.handleNotificationOpen(userInfo)
+        }
+        startNetworkMonitor()
+        registerAppLaunch()
         Task {
             await bootstrap()
         }
+    }
+
+    // MARK: - Connectivity
+
+    private func startNetworkMonitor() {
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            let online = path.status == .satisfied
+            DispatchQueue.main.async {
+                guard let self, self.isOnline != online else { return }
+                self.isOnline = online
+            }
+        }
+        pathMonitor.start(queue: DispatchQueue(label: "com.haset.network-monitor"))
+    }
+
+    func refreshAfterReconnect() async {
+        guard activeSession != nil || sessionStore.loadSession() != nil else { return }
+        await loadPatientHomeContent(force: true)
+        await loadDoctors(force: true)
+        await loadAppointments(force: true)
+        await loadConversations(force: true)
+        await loadNotifications(force: true)
+        if currentUser?.role == .doctor {
+            await loadDoctorWallet(force: true)
+            await loadDoctorPresence(force: true)
+        }
+    }
+
+    // MARK: - Rating prompt
+
+    func registerAppLaunch() {
+        let defaults = UserDefaults.standard
+        let now = Date().timeIntervalSince1970
+        if defaults.double(forKey: "rating_first_launch_time") == 0 {
+            defaults.set(now, forKey: "rating_first_launch_time")
+        }
+        let count = defaults.integer(forKey: "rating_launch_count") + 1
+        defaults.set(count, forKey: "rating_launch_count")
+        guard !defaults.bool(forKey: "rating_requested") else { return }
+        let firstLaunch = defaults.double(forKey: "rating_first_launch_time")
+        let daysSinceFirstLaunch = (now - firstLaunch) / 86_400
+        if count >= 5 && daysSinceFirstLaunch >= 3 {
+            showRatingPrompt = true
+        }
+    }
+
+    // MARK: - Push notification routing
+
+    private func handleNotificationOpen(_ userInfo: [AnyHashable: Any]) {
+        guard route.isDashboard else { return }
+        let destination = (userInfo["navigate_to"] as? String) ?? ""
+        let relatedId = (userInfo["relatedId"] as? String) ?? ""
+        let senderId = (userInfo["senderId"] as? String) ?? ""
+        switch destination {
+        case "appointments":
+            pendingNavigation = .tab(.appointments)
+        case "chat":
+            pendingNavigation = .chat(otherUserId: senderId.isEmpty ? relatedId : senderId)
+        case "prescription_detail":
+            pendingNavigation = .prescriptions
+        case "notifications":
+            pendingNavigation = .notifications
+        case "health_tip":
+            let title = (userInfo["title"] as? String) ?? tr("health_tip")
+            let body = (userInfo["body"] as? String) ?? (userInfo["message"] as? String) ?? ""
+            pendingNavigation = .alert(title: title, message: body)
+        default:
+            pendingNavigation = .notifications
+        }
+    }
+
+    func clearPendingNavigation() {
+        pendingNavigation = nil
     }
 
     func tr(_ key: String) -> String {
@@ -404,6 +494,94 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func signInWithGoogle() {
+        guard !isLoading, !isGoogleSignInInProgress else { return }
+        guard let presenter = foregroundTopViewController() else {
+            alertState = AlertState(title: tr("error"), message: tr("google_sign_in_failed"))
+            return
+        }
+
+        isGoogleSignInInProgress = true
+        GIDSignIn.sharedInstance.signIn(withPresenting: presenter) { [weak self] result, error in
+            guard let self else { return }
+            Task { @MainActor in
+                if let error {
+                    self.isGoogleSignInInProgress = false
+                    let nsError = error as NSError
+                    if nsError.domain == kGIDSignInErrorDomain,
+                       nsError.code == GIDSignInError.canceled.rawValue {
+                        return
+                    }
+                    self.alertState = AlertState(
+                        title: self.tr("error"),
+                        message: self.tr("google_sign_in_failed")
+                    )
+                    return
+                }
+                guard let idToken = result?.user.idToken?.tokenString else {
+                    self.isGoogleSignInInProgress = false
+                    self.alertState = AlertState(
+                        title: self.tr("error"),
+                        message: self.tr("google_sign_in_failed")
+                    )
+                    return
+                }
+
+                let displayName = result?.user.profile?.name
+                let fallbackEmail = result?.user.profile?.email
+                self.isLoading = true
+                defer {
+                    self.isLoading = false
+                    self.isGoogleSignInInProgress = false
+                }
+
+                do {
+                    let signedIn = try await self.authService.signInWithGoogle(
+                        googleIDToken: idToken,
+                        displayName: displayName,
+                        fallbackEmail: fallbackEmail
+                    )
+                    let session = signedIn.0
+                    let profile = signedIn.1
+                    self.activeSession = session
+
+                    let mfaEnabled = (try? await self.authService.mobileMFAStatus(idToken: session.idToken)) ?? false
+                    if mfaEnabled && self.sessionStore.isMfaRequiredOnLogin(userId: session.userId) {
+                        self.pendingMFASession = session
+                        self.pendingMFAProfile = profile
+                        self.mfaError = nil
+                        self.route = .mfaChallenge
+                        return
+                    }
+
+                    self.sessionStore.saveSession(session)
+                    try await self.completeAuthenticatedLogin(session: session, profile: profile)
+                } catch ServiceError.message(let message) {
+                    self.alertState = AlertState(
+                        title: self.tr("error"),
+                        message: self.localizedLoginError(message)
+                    )
+                } catch {
+                    self.alertState = AlertState(
+                        title: self.tr("error"),
+                        message: self.tr("google_sign_in_failed")
+                    )
+                }
+            }
+        }
+    }
+
+    private func foregroundTopViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let windowScene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        let window = windowScene?.windows.first { $0.isKeyWindow } ?? windowScene?.windows.first
+        var top = window?.rootViewController
+        while let presented = top?.presentedViewController {
+            top = presented
+        }
+        return top
+    }
+
     @Published var pendingMFASession: StoredSession?
     @Published var pendingMFAProfile: UserProfile?
     func verifyLoginMFA(code: String) {
@@ -719,13 +897,21 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    func submitBugReport(_ message: String) {
+    func submitBugReport(_ message: String) async throws {
         let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            alertState = AlertState(title: tr("error"), message: tr("describe_issue_first"))
-            return
+            throw ServiceError.invalidResponse
         }
-        alertState = AlertState(title: tr("report_sent"), message: tr("report_recorded"))
+        guard let profile = currentUser,
+              let session = activeSession ?? SessionStore().loadSession() else {
+            throw ServiceError.message(tr("session_expired"))
+        }
+        try await authService.submitSupportTicket(
+            userId: profile.userId,
+            userName: profile.fullName,
+            report: trimmed,
+            idToken: session.idToken
+        )
     }
 
     func bookAppointment(
@@ -850,6 +1036,32 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func markPayoutDestinationAvailable(type: String, provider: String, phone: String) {
+        guard var wallet = doctorWallet else { return }
+        let label = "\(provider)  \(phone)".trimmingCharacters(in: .whitespaces)
+        let destination = PayoutDestinationSummary(available: true, label: label)
+        if type == "bank" {
+            wallet = DoctorWalletSummary(
+                doctorId: wallet.doctorId,
+                balance: wallet.balance,
+                totalEarnings: wallet.totalEarnings,
+                lastUpdated: wallet.lastUpdated,
+                mobileMoneyDestination: wallet.mobileMoneyDestination,
+                bankDestination: destination
+            )
+        } else {
+            wallet = DoctorWalletSummary(
+                doctorId: wallet.doctorId,
+                balance: wallet.balance,
+                totalEarnings: wallet.totalEarnings,
+                lastUpdated: wallet.lastUpdated,
+                mobileMoneyDestination: destination,
+                bankDestination: wallet.bankDestination
+            )
+        }
+        doctorWallet = wallet
+    }
+
     func loadDoctorPresence(force: Bool) async {
         guard currentUser?.role == .doctor else { return }
         if doctorPresence != nil && !force { return }
@@ -945,7 +1157,8 @@ final class AppViewModel: ObservableObject {
                 defer { group.cancelAll() }
                 return try await group.next()!
             }
-            appointments = result
+            appointments = prepareAppointmentsForDisplay(result, role: currentUser.role, idToken: idToken)
+            syncNotificationBadge()
         } catch {
             // Keep already-loaded appointments visible during a transient
             // network failure instead of replacing them with a spinner/blank.
@@ -954,6 +1167,42 @@ final class AppViewModel: ObservableObject {
             }
             didLoadAppointments = false
             alertState = AlertState(title: tr("error"), message: "Unable to load appointments: \(error.localizedDescription)")
+        }
+    }
+
+    /// Applies Android's appointment lifecycle rules to a freshly fetched list:
+    /// auto-completes stale approved visits, hides unpaid drafts from doctors,
+    /// and drops terminal records older than the 60-day retention window.
+    private func prepareAppointmentsForDisplay(
+        _ fetched: [AppointmentSummary],
+        role: UserRole,
+        idToken: String?
+    ) -> [AppointmentSummary] {
+        var prepared = fetched
+        for index in prepared.indices where prepared[index].shouldAutoComplete {
+            let appointmentId = prepared[index].id
+            prepared[index].status = .completed
+            prepared[index].rawStatus = "completed"
+            Task { [authService] in
+                try? await authService.updateAppointmentStatus(
+                    appointmentId: appointmentId,
+                    status: "completed",
+                    idToken: idToken ?? ""
+                )
+            }
+        }
+
+        if role == .doctor {
+            prepared = prepared.filter { !$0.isHiddenFromDoctorUntilPaid }
+        }
+
+        return prepared.filter { appointment in
+            switch appointment.status {
+            case .completed, .cancelled, .declined:
+                return appointment.isWithinHistoryRetention
+            case .pending, .approved:
+                return true
+            }
         }
     }
 
@@ -1051,8 +1300,9 @@ final class AppViewModel: ObservableObject {
         return try? await authService.fetchProfileImage(userId: userId, idToken: session.idToken)
     }
 
-    func sendChatMessage(chatRoomId: String, receiverId: String, receiverName: String, message: String, messageType: String = "text", attachmentURL: String? = nil, attachmentFileName: String? = nil, replyToMessageID: String? = nil, replyToText: String? = nil) async throws {
-        guard let currentUser else { return }
+    @discardableResult
+    func sendChatMessage(chatRoomId: String, receiverId: String, receiverName: String, message: String, messageType: String = "text", attachmentURL: String? = nil, attachmentFileName: String? = nil, attachmentSize: String? = nil, prescriptionId: String? = nil, replyToMessageID: String? = nil, replyToText: String? = nil) async throws -> String {
+        guard let currentUser else { throw ServiceError.message("Authentication expired. Please sign in again.") }
         guard let session = activeSession ?? sessionStore.loadSession() else {
             throw ServiceError.message("Authentication expired. Please sign in again.")
         }
@@ -1061,7 +1311,7 @@ final class AppViewModel: ObservableObject {
         var sender = currentUser
         sender.userId = session.userId
         let idToken = session.idToken
-        try await authService.sendChatMessage(
+        return try await authService.sendChatMessage(
             chatRoomId: chatRoomId,
             sender: sender,
             receiverId: receiverId,
@@ -1070,6 +1320,8 @@ final class AppViewModel: ObservableObject {
             messageType: messageType,
             attachmentURL: attachmentURL,
             attachmentFileName: attachmentFileName,
+            attachmentSize: attachmentSize,
+            prescriptionId: prescriptionId,
             replyToMessageID: replyToMessageID,
             replyToText: replyToText,
             idToken: idToken
@@ -1104,16 +1356,62 @@ final class AppViewModel: ObservableObject {
         let idToken = sessionStore.loadSession()?.idToken
         do {
             notifications = try await authService.fetchNotifications(userId: currentUser.userId, idToken: idToken)
-            await MainActor.run {
-                UIApplication.shared.applicationIconBadgeNumber = notifications.filter { !$0.isRead }.count
-            }
+            syncNotificationBadge()
         } catch {
             notifications = []
         }
     }
 
+    /// Mirrors Android's `NotificationActivity` hidden-appointment state: a
+    /// locally persisted set (SharedPreferences / UserDefaults) of appointment
+    /// ids that were cleared from the Appointments tab. Android stores it in
+    /// `PREF_NOTIFICATION_CLEAR_STATE`; iOS keeps the same key semantics.
+    static let notificationHiddenAppointmentIdsKey = "notification_hidden_appointment_ids"
+
+    static func notificationHiddenAppointmentIds() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: notificationHiddenAppointmentIdsKey) ?? [])
+    }
+
+    static func saveNotificationHiddenAppointmentIds(_ ids: Set<String>) {
+        UserDefaults.standard.set(Array(ids), forKey: notificationHiddenAppointmentIdsKey)
+    }
+
+    /// Total unread count shown on the dashboard bell. Mirrors Android's
+    /// `getTotalFromAllTabs()`: unread appointments (visible, not locally
+    /// cleared, status != "read") plus unread generic notifications.
+    var unreadNotificationCount: Int {
+        let hidden = AppViewModel.notificationHiddenAppointmentIds()
+        let appointmentUnread = appointments.filter {
+            !hidden.contains($0.id) && $0.rawStatus.lowercased() != "read"
+        }.count
+        return appointmentUnread + notifications.filter { !$0.isRead }.count
+    }
+
+    /// Recomputes the app-icon badge after notification state changes that
+    /// happen outside the view model (e.g. clearing appointment rows).
+    func refreshNotificationBadge() {
+        syncNotificationBadge()
+    }
+
+    func clearAllNotifications() async {
+        guard let currentUser else { return }
+        notifications = []
+        syncNotificationBadge()
+        let idToken = sessionStore.loadSession()?.idToken
+        do {
+            try await authService.clearNotifications(userId: currentUser.userId, idToken: idToken)
+        } catch {
+            alertState = AlertState(title: tr("error"), message: error.localizedDescription)
+        }
+    }
+
+    private func syncNotificationBadge() {
+        UIApplication.shared.applicationIconBadgeNumber = unreadNotificationCount
+    }
+
     func logout() {
         UIApplication.shared.applicationIconBadgeNumber = 0
+        GIDSignIn.sharedInstance.signOut()
         sessionStore.clearSession()
         activeSession = nil
         pendingMFASession = nil

@@ -25,6 +25,7 @@
 		4C11A0160A0010000A001000 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4C11A0170A0010000A001000 /* GoogleService-Info.plist */; };
 		4C11A0180A0010000A001000 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4C11A01A0A0010000A001000 /* FirebaseCore */; };
 		4C11A0190A0010000A001000 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 4C11A01B0A0010000A001000 /* FirebaseMessaging */; };
+		4C11A0210A0010000A001000 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 4C11A0220A0010000A001000 /* GoogleSignIn */; };
 		5E064768D0BAA590AC097C88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 22E4F6650BEE9A7D875E2D74 /* Assets.xcassets */; };
 		534A56BD5F8B066A23367FE7 /* app_logo_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 1282AB8206000ACD25846A45 /* app_logo_icon.png */; };
 		5A1EA944A3C7640161980FA9 /* Poppins-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FBCFC4155A63C194B2E20F0A /* Poppins-Black.ttf */; };
@@ -38,6 +39,10 @@
 		DCE2F210EF746C2618281709 /* onboard_img2.png in Resources */ = {isa = PBXBuildFile; fileRef = DF89F90750736592CA0FC07B /* onboard_img2.png */; };
 		EC49251F8D06EE85EF3A60B1 /* Poppins-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 810789846529A7DEE76AB742 /* Poppins-Regular.ttf */; };
 		EFC3B3B966881C2899DA2815 /* onboard_img3.png in Resources */ = {isa = PBXBuildFile; fileRef = CA371728F2BB16DFEDB9B6EB /* onboard_img3.png */; };
+		AA0000000000000000000010 /* LocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LocalizationTests.swift */; };
+		AA0000000000000000000011 /* AppointmentRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* AppointmentRulesTests.swift */; };
+		AA0000000000000000000012 /* AppointmentExportBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* AppointmentExportBuilderTests.swift */; };
+		AA0000000000000000000013 /* ChatAttachmentProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000F /* ChatAttachmentProcessorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -74,6 +79,11 @@
 		E49C941B789C258E764DAF4D /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F5F914A840A58A217048EFAA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		FBCFC4155A63C194B2E20F0A /* Poppins-Black.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Poppins-Black.ttf"; sourceTree = "<group>"; };
+		AA0000000000000000000002 /* HASETTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = HASETTests.xctest; path = HASETTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000000000000000000000C /* LocalizationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
+		AA000000000000000000000D /* AppointmentRulesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppointmentRulesTests.swift; sourceTree = "<group>"; };
+		AA000000000000000000000E /* AppointmentExportBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppointmentExportBuilderTests.swift; sourceTree = "<group>"; };
+		AA000000000000000000000F /* ChatAttachmentProcessorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatAttachmentProcessorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +94,14 @@
 				12B828107909D9C86190915B /* Foundation.framework in Frameworks */,
 				4C11A0180A0010000A001000 /* FirebaseCore in Frameworks */,
 				4C11A0190A0010000A001000 /* FirebaseMessaging in Frameworks */,
+				4C11A0210A0010000A001000 /* GoogleSignIn in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +114,7 @@
 				364825E8340E6EFC4CDADEAE /* Products */,
 				64308EC9BF1F0D55D9493487 /* Frameworks */,
 				B4044A2C14535B277E6D720A /* HASET */,
+				AA0000000000000000000009 /* HASETTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -103,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				0A5CBCDB2EF509752DBAB4B0 /* HASET.app */,
+				AA0000000000000000000002 /* HASETTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -180,6 +200,18 @@
 			name = iOS;
 			sourceTree = "<group>";
 		};
+		AA0000000000000000000009 /* HASETTests */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000000C /* LocalizationTests.swift */,
+				AA000000000000000000000D /* AppointmentRulesTests.swift */,
+				AA000000000000000000000E /* AppointmentExportBuilderTests.swift */,
+				AA000000000000000000000F /* ChatAttachmentProcessorTests.swift */,
+			);
+			name = HASETTests;
+			path = HASETTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -199,10 +231,29 @@
 			packageProductDependencies = (
 				4C11A01A0A0010000A001000 /* FirebaseCore */,
 				4C11A01B0A0010000A001000 /* FirebaseMessaging */,
+				4C11A0220A0010000A001000 /* GoogleSignIn */,
 			);
 			productName = HASET;
 			productReference = 0A5CBCDB2EF509752DBAB4B0 /* HASET.app */;
 			productType = "com.apple.product-type.application";
+		};
+		AA0000000000000000000001 /* HASETTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000006 /* Build configuration list for PBXNativeTarget "HASETTests" */;
+			buildPhases = (
+				AA0000000000000000000003 /* Sources */,
+				AA0000000000000000000004 /* Frameworks */,
+				AA0000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA000000000000000000000A /* PBXTargetDependency */,
+			);
+			name = HASETTests;
+			productName = HASETTests;
+			productReference = AA0000000000000000000002 /* HASETTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -229,9 +280,11 @@
 			projectRoot = "";
 			packageReferences = (
 				4C11A01D0A0010000A001000 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				4C11A0230A0010000A001000 /* XCRemoteSwiftPackageReference "GoogleSignIn" */,
 			);
 			targets = (
 				7FB1A63ABBC966DFCB50D02C /* HASET */,
+				AA0000000000000000000001 /* HASETTests */,
 			);
 		};
 /* End PBXProject section */
@@ -260,6 +313,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA0000000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -282,9 +342,74 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA0000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000000000010 /* LocalizationTests.swift in Sources */,
+				AA0000000000000000000011 /* AppointmentRulesTests.swift in Sources */,
+				AA0000000000000000000012 /* AppointmentExportBuilderTests.swift in Sources */,
+				AA0000000000000000000013 /* ChatAttachmentProcessorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXContainerItemProxy section */
+		AA000000000000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 10A894932A4DA7BECAD93DA5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7FB1A63ABBC966DFCB50D02C;
+			remoteInfo = HASET;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		AA000000000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7FB1A63ABBC966DFCB50D02C /* HASET */;
+			targetProxy = AA000000000000000000000B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		AA0000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.haset.hasetapp.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HASET.app/HASET";
+			};
+			name = Debug;
+		};
+		AA0000000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.haset.hasetapp.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HASET.app/HASET";
+			};
+			name = Release;
+		};
 		421922BA74E1A4F38B7E193C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -464,6 +589,14 @@
 				minimumVersion = 11.0.0;
 			};
 		};
+		4C11A0230A0010000A001000 /* XCRemoteSwiftPackageReference "GoogleSignIn" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -476,6 +609,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4C11A01D0A0010000A001000 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseMessaging;
+		};
+		4C11A0220A0010000A001000 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C11A0230A0010000A001000 /* XCRemoteSwiftPackageReference "GoogleSignIn" */;
+			productName = GoogleSignIn;
 		};
 /* End XCSwiftPackageProductDependency section */
 
@@ -494,6 +632,15 @@
 			buildConfigurations = (
 				421922BA74E1A4F38B7E193C /* Release */,
 				CCC6568BD58B296F5E9FF826 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000000000006 /* Build configuration list for PBXNativeTarget "HASETTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000007 /* Debug */,
+				AA0000000000000000000008 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -105,6 +105,15 @@ public class DoctorHomeViewModel extends AndroidViewModel {
         requestWithdrawalSecure(amount, 0, reason, payoutMethod, mfaCode);
     }
 
+    public void sendWithdrawalEmailOtp(FirebaseHelper.OnCompleteListener<Void> callback) {
+        repository.sendWithdrawalEmailOtp(callback);
+    }
+
+    public void submitWithdrawalWithEmailOtp(double amount, String reason, String payoutMethod, String code,
+                                             FirebaseHelper.OnCompleteListener<Boolean> callback) {
+        repository.requestWithdrawalSecure(amount, reason, payoutMethod, code, callback);
+    }
+
     public void requestWithdrawalSecure(double amount, double feeAmount, String reason, String payoutMethod, String mfaCode) {
         loading.setValue(true);
         error.setValue(null);

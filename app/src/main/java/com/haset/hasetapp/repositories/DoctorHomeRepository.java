@@ -453,6 +453,28 @@ public class DoctorHomeRepository {
         requestWithdrawalSecure(amount, 0, reason, payoutMethod, mfaCode, callback);
     }
 
+    public void sendWithdrawalEmailOtp(FirebaseHelper.OnCompleteListener<Void> callback) {
+        FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
+        if (user == null) { callback.onError("Authentication expired. Please sign in again."); return; }
+        user.getIdToken(true).addOnSuccessListener(token ->
+                RetrofitClient.getInstance().getMobileMfaApiService()
+                        .sendEmailOtp("Bearer " + token.getToken())
+                        .enqueue(new Callback<JsonObject>() {
+                            @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                                if (response.isSuccessful() && response.body() != null
+                                        && "success".equalsIgnoreCase(jsonString(response.body(), "status", ""))) {
+                                    callback.onSuccess(null);
+                                } else {
+                                    callback.onError(errorMessage(response, "Unable to send the email code. Please try again."));
+                                }
+                            }
+                            @Override public void onFailure(Call<JsonObject> call, Throwable error) {
+                                callback.onError("Network error while sending the email code.");
+                            }
+                        }))
+                .addOnFailureListener(error -> callback.onError("Authentication expired. Please sign in again."));
+    }
+
     public void requestWithdrawalSecure(double amount, double feeAmount, String reason, String payoutMethod, String mfaCode, FirebaseHelper.OnCompleteListener<Boolean> callback) {
         FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) { callback.onError("Authentication expired. Please sign in again."); return; }
@@ -462,20 +484,15 @@ public class DoctorHomeRepository {
             RetrofitClient.getInstance().getMobileMfaApiService().verify(bearer, codeBody).enqueue(new Callback<JsonObject>() {
                 public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) {
-                        String message = response.code() == 429 ? "Too many MFA attempts. Please wait and retry." : errorMessage(response, "Invalid or expired MFA code.");
+                        String message = response.code() == 429 ? "Too many code attempts. Please wait and retry." : errorMessage(response, "Invalid or expired email code.");
                         callback.onError(message);
                         return;
                     }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
                     long payoutAmount = Math.round(amount);
-                    long roundedFeeAmount = Math.round(Math.max(0, feeAmount));
-                    long totalDeductionAmount = payoutAmount + roundedFeeAmount;
                     JsonObject body = new JsonObject();
                     body.addProperty("request_id", "WR-" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
                     body.addProperty("amount", payoutAmount);
-                    body.addProperty("payout_amount", payoutAmount);
-                    body.addProperty("fee_amount", roundedFeeAmount);
-                    body.addProperty("total_deduction_amount", totalDeductionAmount);
                     body.addProperty("reason", reason);
                     body.addProperty("payout_method", payoutMethod);
                     RetrofitClient.getInstance().getDoctorPayoutApiService().requestWithdrawal(bearer, actionToken, body).enqueue(new Callback<JsonObject>() {
@@ -494,7 +511,7 @@ public class DoctorHomeRepository {
                     });
                 }
                 public void onFailure(Call<JsonObject> call, Throwable t) {
-                    callback.onError("Network error while verifying MFA.");
+                callback.onError("Network error while verifying the email code.");
                 }
             });
         }).addOnFailureListener(e -> callback.onError("Authentication expired. Please sign in again."));

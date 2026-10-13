@@ -15,12 +15,24 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.appupdate.AppUpdateOptions;
+import com.google.android.play.core.install.InstallStateUpdatedListener;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.InstallStatus;
+import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.gson.JsonObject;
 import com.haset.hasetapp.R;
@@ -56,8 +68,19 @@ public class SettingsActivity extends BaseActivity {
     private TextView tvLanguageValue;
     private TextView tvThemeValue;
     private TextView tvMfaDescription;
+    private TextView tvPhoneReminder;
+    private TextView tvUpdateStatus;
+    private View layoutAddPhone;
+    private View layoutCheckUpdates;
     private PreferenceManager preferenceManager;
     private ProfileViewModel viewModel;
+    private AppUpdateManager appUpdateManager;
+    private ActivityResultLauncher<androidx.activity.result.IntentSenderRequest> updateFlowLauncher;
+    private final InstallStateUpdatedListener updateStateListener = state -> {
+        if (state.installStatus() == InstallStatus.DOWNLOADED) {
+            showUpdateReadyPrompt();
+        }
+    };
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
     private static final int MFA_ENROLLMENT_REQUEST = 1702;
     private boolean updatingMfaSwitch;
@@ -71,9 +94,13 @@ public class SettingsActivity extends BaseActivity {
 
         preferenceManager = new PreferenceManager(this);
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
+        appUpdateManager = AppUpdateManagerFactory.create(this);
+        updateFlowLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartIntentSenderForResult(), this::onUpdateFlowResult);
 
         initializeViews();
         setupNotificationSwitch();
+        setupAccountAndUpdates();
         setupLocationSwitch();
         setupMfaSwitch();
         setupChangePasswordOption();
@@ -100,10 +127,98 @@ public class SettingsActivity extends BaseActivity {
         tvLanguageValue = findViewById(R.id.tvLanguageValue);
         tvThemeValue = findViewById(R.id.tvThemeValue);
         tvMfaDescription = findViewById(R.id.tvMfaDescription);
+        tvPhoneReminder = findViewById(R.id.tvPhoneReminder);
+        tvUpdateStatus = findViewById(R.id.tvUpdateStatus);
+        layoutAddPhone = findViewById(R.id.layoutAddPhone);
+        layoutCheckUpdates = findViewById(R.id.layoutCheckUpdates);
         TextView tvVersion = findViewById(R.id.tvVersion);
         if (tvVersion != null) {
             tvVersion.setText(R.string.app_version_100dtc);
         }
+    }
+
+    private void setupAccountAndUpdates() {
+        refreshPhoneReminder();
+        if (layoutAddPhone != null) {
+            layoutAddPhone.setOnClickListener(v ->
+                    startActivity(new Intent(this, EditProfileActivity.class)));
+        }
+        if (layoutCheckUpdates != null) {
+            layoutCheckUpdates.setOnClickListener(v -> checkForAppUpdate(true));
+        }
+        appUpdateManager.registerListener(updateStateListener);
+        checkForAppUpdate(false);
+    }
+
+    private void refreshPhoneReminder() {
+        if (tvPhoneReminder == null) return;
+        String phone = preferenceManager.getUserPhone();
+        tvPhoneReminder.setText(phone == null || phone.trim().isEmpty()
+                ? getString(R.string.settings_phone_missing)
+                : getString(R.string.settings_phone_saved, phone));
+    }
+
+    private void checkForAppUpdate(boolean showNoUpdateMessage) {
+        if (appUpdateManager == null) return;
+        appUpdateManager.getAppUpdateInfo()
+                .addOnSuccessListener(info -> {
+                    if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                            && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
+                        if (tvUpdateStatus != null) tvUpdateStatus.setText(R.string.settings_update_available);
+                        startFlexibleUpdate(info);
+                    } else {
+                        if (tvUpdateStatus != null) tvUpdateStatus.setText(R.string.settings_updates_desc);
+                        if (showNoUpdateMessage) {
+                            Toast.makeText(this, R.string.settings_no_update, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .addOnFailureListener(error -> {
+                    if (showNoUpdateMessage) {
+                        Toast.makeText(this, R.string.settings_update_unavailable, Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void startFlexibleUpdate(AppUpdateInfo info) {
+        try {
+            appUpdateManager.startUpdateFlowForResult(info, updateFlowLauncher,
+                    AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build());
+        } catch (Exception error) {
+            Toast.makeText(this, R.string.settings_update_unavailable, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void onUpdateFlowResult(ActivityResult result) {
+        if (result.getResultCode() != RESULT_OK && tvUpdateStatus != null) {
+            tvUpdateStatus.setText(R.string.settings_updates_desc);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshPhoneReminder();
+        if (appUpdateManager != null) {
+            appUpdateManager.getAppUpdateInfo().addOnSuccessListener(info -> {
+                if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                    showUpdateReadyPrompt();
+                }
+            });
+        }
+    }
+
+    private void showUpdateReadyPrompt() {
+        Snackbar.make(findViewById(android.R.id.content), R.string.settings_update_ready,
+                        Snackbar.LENGTH_INDEFINITE)
+                .setAction(R.string.settings_update_install, v -> appUpdateManager.completeUpdate())
+                .show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (appUpdateManager != null) appUpdateManager.unregisterListener(updateStateListener);
+        super.onDestroy();
     }
 
     private void setupChangePasswordOption() {

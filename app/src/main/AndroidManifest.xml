@@ -135,6 +135,11 @@
             android:exported="false"
             android:parentActivityName=".activities.DashboardActivity" />
         <activity
+            android:name=".activities.WithdrawalEmailOtpActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.DoctorWalletActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".activities.DoctorPatientsActivity"
             android:exported="false"
             android:parentActivityName=".activities.DashboardActivity" />

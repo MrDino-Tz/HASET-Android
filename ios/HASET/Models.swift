@@ -89,6 +89,19 @@ enum AppRoute: Equatable {
     case roleSelection
     case register(UserRole)
     case dashboard(UserRole)
+
+    var isDashboard: Bool {
+        if case .dashboard = self { return true }
+        return false
+    }
+}
+
+enum PendingNavigation: Equatable {
+    case tab(DashboardTab)
+    case chat(otherUserId: String)
+    case prescriptions
+    case notifications
+    case alert(title: String, message: String)
 }
 
 enum DashboardTab: Hashable {
@@ -221,10 +234,71 @@ struct AppointmentSummary: Identifiable, Hashable {
     let date: String
     let time: String
     let dateText: String
-    let status: Status
+    var status: Status
     let appointmentType: String?
     let profileImage: String?
     let createdAt: TimeInterval?
+    var rawStatus: String = ""
+    var paymentStatus: String? = nil
+
+    /// Mirrors Android `Appointment.isHiddenFromDoctorUntilPaid()`: unpaid
+    /// `awaiting_payment` drafts and `pending` requests without a paid flag must
+    /// never appear in a doctor's approval queue.
+    var isHiddenFromDoctorUntilPaid: Bool {
+        let normalized = rawStatus.lowercased()
+        if normalized == "awaiting_payment" { return true }
+        if normalized == "pending" { return (paymentStatus ?? "").lowercased() != "paid" }
+        return false
+    }
+
+    var isOnlineChat: Bool {
+        (appointmentType ?? "").caseInsensitiveCompare("Online Chat") == .orderedSame
+    }
+
+    var isCancelledStatus: Bool {
+        rawStatus.lowercased() == "cancelled" || status == .cancelled
+    }
+
+    /// Mirrors Android `canPatientCancel()`.
+    var canPatientCancel: Bool {
+        let normalized = rawStatus.lowercased()
+        if normalized == "awaiting_payment" || normalized == "pending" { return true }
+        if normalized == "approved" { return !isOnlineChat }
+        return false
+    }
+
+    /// Mirrors Android `shouldAutoComplete()` — approved in-person visits roll
+    /// to completed 24h after the scheduled time. Online Chat keeps its own
+    /// dedicated 24h session window and is never auto-completed early.
+    var shouldAutoComplete: Bool {
+        guard status == .approved, !isOnlineChat else { return false }
+        guard let scheduled = AppointmentSummary.scheduledMillis(date: date, time: time) else { return false }
+        return Date().timeIntervalSince1970 >= scheduled + 24 * 60 * 60
+    }
+
+    /// Mirrors Android `isWithinHistoryRetention()` (60 days), used to stop
+    /// terminal-state lists from growing forever.
+    var isWithinHistoryRetention: Bool {
+        let reference = (createdAt.map { $0 / 1000 }) ?? AppointmentSummary.scheduledMillis(date: date, time: time) ?? Date().timeIntervalSince1970
+        let cutoff = Date().timeIntervalSince1970 - 60 * 24 * 60 * 60
+        return reference >= cutoff
+    }
+
+    static func scheduledMillis(date: String, time: String) -> TimeInterval? {
+        let date = date.trimmingCharacters(in: .whitespacesAndNewlines)
+        let time = time.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !date.isEmpty, !time.isEmpty else { return nil }
+        let combined = "\(date) \(time)"
+        let formats = ["dd MMM yyyy HH:mm", "dd MMM yyyy hh:mm a", "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-dd'T'HH:mm"]
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        for format in formats {
+            formatter.dateFormat = format
+            if let parsed = formatter.date(from: combined) { return parsed.timeIntervalSince1970 }
+        }
+        return nil
+    }
 }
 
 struct ConversationSummary: Identifiable, Hashable {
@@ -251,7 +325,11 @@ struct ChatMessageSummary: Identifiable, Hashable {
     let attachmentFileName: String?
     let replyToMessageID: String?
     let replyToText: String?
+    let prescriptionId: String?
 
+    var attachmentSize: String? = nil
+    var attachmentDuration: String? = nil
+    var messageStatus: String? = nil
     var isOutgoing: Bool = false
 }
 
@@ -267,8 +345,10 @@ struct NotificationSummary: Identifiable, Hashable {
     let title: String
     let message: String
     let type: String
-    let isRead: Bool
+    var isRead: Bool
     let timestamp: TimeInterval
+    var relatedId: String = ""
+    var senderId: String = ""
 }
 
 struct DoctorWalletSummary: Codable, Hashable {
@@ -346,40 +426,6 @@ struct PrescriptionSummary: Identifiable, Hashable {
     let instructions: String
     let imageUrl: String?
     let createdAt: TimeInterval?
-}
-
-struct PharmacyProductSummary: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let description: String
-    let category: String
-    let price: Double
-    let imageUrl: String?
-    let manufacturer: String?
-    let inStock: Bool
-}
-
-struct PharmacyCartItem: Identifiable, Hashable {
-    let id: String
-    let productId: String
-    let name: String
-    let price: Double
-    let quantity: Int
-    let imageUrl: String?
-
-    var lineTotal: Double { price * Double(quantity) }
-}
-
-struct PharmacyCategory: Identifiable, Hashable {
-    let id: String
-    let title: String
-    let subtitle: String
-}
-
-struct AdminMetric: Identifiable, Hashable {
-    let id: String
-    let title: String
-    let value: String
 }
 
 struct PaymentInitiationResponse: Decodable {

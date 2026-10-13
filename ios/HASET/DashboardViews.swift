@@ -1,8 +1,11 @@
 import PhotosUI
 import AVFoundation
+import StoreKit
 import SwiftUI
 import UIKit
 import WebKit
+import UniformTypeIdentifiers
+import QuickLook
 
 private struct HostedCheckoutDestination: Identifiable {
     let id = UUID()
@@ -75,6 +78,8 @@ struct DashboardRootView: View {
     let role: UserRole
     @EnvironmentObject private var appViewModel: AppViewModel
     @State private var selectedTab: DashboardTab = .home
+    @State private var dashboardSheet: DashboardSheetItem?
+    @State private var navigationAlert: AlertState?
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -95,6 +100,78 @@ struct DashboardRootView: View {
                 .tag(DashboardTab.profile)
         }
         .tint(HASETTheme.greenPrimary)
+        .onChange(of: appViewModel.pendingNavigation) { destination in
+            guard let destination else { return }
+            handlePendingNavigation(destination)
+        }
+        .sheet(item: $dashboardSheet) { item in
+            switch item {
+            case .notifications:
+                embeddedSheet {
+                    NotificationsView()
+                }
+            case .prescriptions:
+                embeddedSheet {
+                    PrescriptionsListView(role: role)
+                }
+            case .chat(let conversation):
+                ChatThreadView(conversation: conversation, role: role)
+                    .environmentObject(appViewModel)
+            }
+        }
+        .alert(item: $navigationAlert) { state in
+            Alert(
+                title: Text(state.title),
+                message: Text(state.message),
+                dismissButton: .default(Text(appViewModel.tr("ok")))
+            )
+        }
+    }
+
+    private func embeddedSheet<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        NavigationStack {
+            content()
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(appViewModel.tr("done")) { dashboardSheet = nil }
+                    }
+                }
+        }
+        .environmentObject(appViewModel)
+    }
+
+    private func handlePendingNavigation(_ destination: PendingNavigation) {
+        appViewModel.clearPendingNavigation()
+        switch destination {
+        case .tab(let tab):
+            selectedTab = tab
+        case .chat(let otherUserId):
+            if let conversation = appViewModel.conversations.first(where: { $0.otherUserId == otherUserId }) {
+                dashboardSheet = .chat(conversation)
+            } else {
+                selectedTab = .chat
+            }
+        case .prescriptions:
+            dashboardSheet = .prescriptions
+        case .notifications:
+            dashboardSheet = .notifications
+        case .alert(let title, let message):
+            navigationAlert = AlertState(title: title, message: message)
+        }
+    }
+}
+
+private enum DashboardSheetItem: Identifiable {
+    case notifications
+    case prescriptions
+    case chat(ConversationSummary)
+
+    var id: String {
+        switch self {
+        case .notifications: return "notifications"
+        case .prescriptions: return "prescriptions"
+        case .chat(let conversation): return "chat-\(conversation.id)"
+        }
     }
 }
 
@@ -130,7 +207,7 @@ struct RoleHomeView: View {
                 case .doctor:
                     doctorContent
                 case .admin:
-                    adminContent
+                    EmptyView()
                 }
             }
             .padding(20)
@@ -322,11 +399,12 @@ struct RoleHomeView: View {
             Spacer()
 
             NavigationLink {
-                DoctorsCatalogView()
+                GlobalSearchView()
             } label: {
                 headerIconButton("magnifyingglass")
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(appViewModel.tr("search"))
 
             NavigationLink {
                 NotificationsView()
@@ -514,8 +592,8 @@ struct RoleHomeView: View {
 
             SectionTitle(appViewModel.tr("quick_actions"))
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
-                NavigationLink { ScheduleView() } label: {
-                    doctorActionCard(title: appViewModel.tr("schedule"), systemImage: "calendar")
+                NavigationLink { AppointmentsOverviewView(role: .doctor) } label: {
+                    doctorActionCard(title: appViewModel.tr("manage_schedule"), systemImage: "calendar")
                 }
                 .buttonStyle(.plain)
 
@@ -779,40 +857,6 @@ struct RoleHomeView: View {
             return name.lowercased().hasPrefix("dr.") || name.lowercased().hasPrefix("dr ") ? name : "Dr. \(name)"
         }
         return name
-    }
-
-    private var adminContent: some View {
-        Group {
-            SectionTitle(appViewModel.tr("system_metrics"))
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(StaticContentService.adminMetrics) { metric in
-                    CardContainer {
-                        Text(metric.value)
-                            .font(HASETTheme.font(.medium, 22))
-                            .foregroundStyle(HASETTheme.greenPrimary)
-                        Text(metric.title)
-                            .font(HASETTheme.font(.regular, 14))
-                            .foregroundStyle(HASETTheme.textSecondary)
-                            .padding(.top, 4)
-                    }
-                }
-            }
-
-            NavigationLink { UsersView() } label: {
-                FeatureStackCard(title: appViewModel.tr("all_users"), subtitle: "Patients, doctors, and administrators.")
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink { ActivityLogsView() } label: {
-                FeatureStackCard(title: "Audit Logs", subtitle: "Registration, notification, and account activity.")
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink { NotificationsView() } label: {
-                FeatureStackCard(title: appViewModel.tr("notifications"), subtitle: "Operational alerts and approvals.")
-            }
-            .buttonStyle(.plain)
-        }
     }
 
     private func metricsRow(items: [(String, String)]) -> some View {
@@ -1206,20 +1250,23 @@ private struct DoctorWalletView: View {
     @State private var showWithdraw = false
     @State private var amount = ""
     @State private var mfaCode = ""
-    @State private var submitting = false
     @State private var message: String?
     @State private var showNoBalanceAlert = false
-    @State private var checkingMFA = false
-    @State private var showMFARequired = false
-    @State private var showMFAEnrollment = false
     @State private var payoutMethod = "mobile_money"
+    @State private var withdrawalOtpSent = false
+    @State private var sendCodePhase: AnimatedSendButton.Phase = .idle
+    @State private var confirmPhase: AnimatedSendButton.Phase = .idle
+    @State private var showWithdrawalConfirmation = false
     @State private var showPayoutAccounts = false
-    @State private var payoutSetupAfterMFA = false
     @State private var selectedPayoutProvider = ""
     @State private var destinationPhone = ""
     @State private var destinationMFA = ""
     @State private var destinationMessage: String?
     @State private var savingDestination = false
+    @State private var destinationSendPhase: AnimatedSendButton.Phase = .idle
+    @State private var destinationOtpSent = false
+    @State private var resendSeconds = 0
+    @State private var destinationCooldownTask: Task<Void, Never>?
 
     private let payoutProviderOptions = [
         "Vodacom M-Pesa",
@@ -1307,22 +1354,21 @@ private struct DoctorWalletView: View {
                         }
                     }
                 }
-                Button(checkingMFA ? appViewModel.tr("checking_security") : appViewModel.tr("btn_withdraw")) {
+                Button(appViewModel.tr("btn_withdraw")) {
                     if (appViewModel.doctorWallet?.balance ?? 0) > 0 {
-                        checkMfaThenWithdraw()
+                        selectDefaultPayoutMethod()
+                        showWithdraw = true
                     } else {
                         showNoBalanceAlert = true
                     }
                 }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(checkingMFA)
-                Button { checkMfaThenConfigurePayout() } label: {
+                Button { configurePayoutDestination() } label: {
                     Label(appViewModel.tr("payout_accounts"), systemImage: "wallet.pass.fill")
                         .frame(maxWidth: .infinity)
                 }
                     .buttonStyle(.borderedProminent)
                     .tint(HASETTheme.greenPrimary)
-                    .disabled(checkingMFA)
                 SectionTitle(appViewModel.tr("withdrawal_history"))
                 if appViewModel.doctorWalletLoading && appViewModel.doctorWithdrawals.isEmpty { ProgressView() }
                 else if let error = appViewModel.doctorWalletError {
@@ -1375,25 +1421,6 @@ private struct DoctorWalletView: View {
         } message: {
             Text(appViewModel.tr("no_balance_withdrawal"))
         }
-        .alert(appViewModel.tr("mfa_required_for_withdrawal_title"), isPresented: $showMFARequired) {
-            Button(appViewModel.tr("cancel"), role: .cancel) {}
-            Button(appViewModel.tr("enable_mfa")) { showMFAEnrollment = true }
-        } message: {
-            Text(appViewModel.tr("mfa_required_for_withdrawal_message"))
-        }
-        .sheet(isPresented: $showMFAEnrollment) {
-            MFAEnrollmentView(
-                onComplete: {
-                    showMFAEnrollment = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        if payoutSetupAfterMFA { showPayoutAccounts = true }
-                        else { selectDefaultPayoutMethod(); showWithdraw = true }
-                    }
-                },
-                onCancel: { showMFAEnrollment = false }
-            )
-            .environmentObject(appViewModel)
-        }
         .sheet(isPresented: $showWithdraw) {
             VStack(spacing: 16) {
                 Text(appViewModel.tr("request_withdrawal")).font(.title3.bold())
@@ -1406,13 +1433,38 @@ private struct DoctorWalletView: View {
                     Text(selectedDestinationLabel).font(.caption).foregroundStyle(HASETTheme.textSecondary)
                 }
                 TextField(appViewModel.tr("withdrawal_amount"), text: $amount).keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                SixDigitMFAInput(code: $mfaCode, isInvalid: false, isVerified: false) {}
-                if let message { Text(message).foregroundStyle(.red) }
-                Button(submitting ? appViewModel.tr("submitting") : appViewModel.tr("submit")) { submitWithdrawal() }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(submitting || availablePayoutMethods.isEmpty)
+                if withdrawalOtpSent {
+                    Text(appViewModel.tr("withdrawal_email_code_notice"))
+                        .font(.caption).foregroundStyle(HASETTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                    SixDigitMFAInput(code: $mfaCode, isInvalid: message != nil, isVerified: false) {}
+                    AnimatedSendButton(
+                        idleTitle: appViewModel.tr("verify_and_withdraw"),
+                        sendingTitle: appViewModel.tr("submitting"),
+                        successTitle: appViewModel.tr("withdrawal_requested"),
+                        phase: $confirmPhase,
+                        disabled: availablePayoutMethods.isEmpty
+                    ) { submitWithdrawal() }
+                } else {
+                    AnimatedSendButton(
+                        idleTitle: appViewModel.tr("continue_to_email_verification"),
+                        sendingTitle: appViewModel.tr("sending_email_code"),
+                        successTitle: appViewModel.tr("code_sent"),
+                        phase: $sendCodePhase,
+                        disabled: availablePayoutMethods.isEmpty
+                    ) { sendWithdrawalCode() }
+                }
+                if let message { Text(message).foregroundStyle(.red).font(.caption) }
                 Button(appViewModel.tr("cancel")) { clearPayoutState(); showWithdraw = false }
-            }.padding(24).interactiveDismissDisabled(submitting)
+            }
+            .padding(24)
+            .background(HASETTheme.backgroundPrimary)
+            .interactiveDismissDisabled(sendCodePhase == .sending || confirmPhase == .sending)
+            .overlay {
+                if showWithdrawalConfirmation {
+                    ConfirmationOverlay(message: appViewModel.tr("withdrawal_request_submitted"))
+                }
+            }
         }
         .sheet(isPresented: $showPayoutAccounts) {
             ScrollView {
@@ -1442,9 +1494,28 @@ private struct DoctorWalletView: View {
                     TextField(appViewModel.tr("mobile_number"), text: $destinationPhone)
                         .keyboardType(.phonePad)
                         .textFieldStyle(.roundedBorder)
+                    Text(appViewModel.tr("email_verification_code_hint"))
+                        .font(.caption).foregroundStyle(HASETTheme.textSecondary)
+                        .multilineTextAlignment(.center)
                     SixDigitMFAInput(code: $destinationMFA, isInvalid: destinationMessage != nil, isVerified: false) {}
+                    AnimatedSendButton(
+                        idleTitle: destinationOtpSent ? appViewModel.tr("resend_email_code") : appViewModel.tr("send_email_code"),
+                        sendingTitle: appViewModel.tr("sending_email_code"),
+                        successTitle: appViewModel.tr("code_sent"),
+                        phase: $destinationSendPhase,
+                        disabled: resendSeconds > 0
+                    ) { sendDestinationCode() }
+                    if resendSeconds > 0 {
+                        Text(String(format: appViewModel.tr("resend_email_code_countdown"), resendSeconds))
+                            .font(.caption).foregroundStyle(HASETTheme.textSecondary)
+                            .frame(maxWidth: .infinity)
+                    }
+                    if destinationOtpSent {
+                        Text(appViewModel.tr("email_verification_code_sent"))
+                            .font(.caption).foregroundStyle(HASETTheme.greenPrimary)
+                    }
                     if let destinationMessage { Text(destinationMessage).foregroundStyle(.red).font(.caption) }
-                    Button(savingDestination ? appViewModel.tr("submitting") : appViewModel.tr("submit_for_approval")) { submitPayoutDestination() }
+                    Button(savingDestination ? appViewModel.tr("submitting") : appViewModel.tr("save_payout_account")) { submitPayoutDestination() }
                         .buttonStyle(PrimaryButtonStyle()).disabled(savingDestination || selectedPayoutProvider.isEmpty)
                     Button(appViewModel.tr("cancel")) { clearDestinationState(); showPayoutAccounts = false }
                 }.padding(24)
@@ -1453,6 +1524,9 @@ private struct DoctorWalletView: View {
                 if selectedPayoutProvider.isEmpty {
                     selectedPayoutProvider = payoutProviderOptions.first ?? ""
                 }
+            }
+            .onDisappear {
+                destinationCooldownTask?.cancel()
             }
             .interactiveDismissDisabled(savingDestination)
         }
@@ -1475,55 +1549,42 @@ private struct DoctorWalletView: View {
             : (appViewModel.doctorWallet?.mobileMoneyDestination?.label ?? appViewModel.tr("mobile_money"))
     }
 
-    private func checkMfaThenWithdraw() {
-        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
-            appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: appViewModel.tr("authentication_expired"))
+    private func sendWithdrawalCode() {
+        guard let value = Int(amount), value >= 5000, Double(value) <= (appViewModel.doctorWallet?.balance ?? 0) else {
+            message = appViewModel.tr("enter_valid_withdrawal_amount")
             return
         }
-        checkingMFA = true
-        payoutSetupAfterMFA = false
-        Task {
-            do {
-                let service = AuthService()
-                let freshSession = try await service.refreshSessionIfNeeded(session)
-                SessionStore().saveSession(freshSession)
-                appViewModel.activeSession = freshSession
-                let enabled = try await service.mobileMFAStatus(idToken: freshSession.idToken)
-                checkingMFA = false
-                if enabled { selectDefaultPayoutMethod(); showWithdraw = true }
-                else { showMFARequired = true }
-            } catch {
-                checkingMFA = false
-                appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
-            }
-        }
-    }
-
-    private func checkMfaThenConfigurePayout() {
-        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
-            appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: appViewModel.tr("authentication_expired"))
+        guard !payoutMethod.isEmpty, availablePayoutMethods.contains(where: { $0.0 == payoutMethod }) else {
+            message = appViewModel.tr("no_verified_payout_destination")
             return
         }
-        checkingMFA = true
-        payoutSetupAfterMFA = true
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            message = appViewModel.tr("authentication_expired")
+            return
+        }
+        sendCodePhase = .sending
+        message = nil
         Task {
             do {
                 let service = AuthService()
                 let fresh = try await service.refreshSessionIfNeeded(session)
-                SessionStore().saveSession(fresh); appViewModel.activeSession = fresh
-                let enabled = try await service.mobileMFAStatus(idToken: fresh.idToken)
-                checkingMFA = false
-                if enabled { showPayoutAccounts = true } else { showMFARequired = true }
+                SessionStore().saveSession(fresh)
+                appViewModel.activeSession = fresh
+                try await service.sendDoctorPayoutEmailOtp(idToken: fresh.idToken)
+                await MainActor.run {
+                    sendCodePhase = .success
+                    withdrawalOtpSent = true
+                    mfaCode = ""
+                }
             } catch {
-                checkingMFA = false
-                appViewModel.alertState = AlertState(title: appViewModel.tr("error"), message: error.localizedDescription)
+                await MainActor.run {
+                    sendCodePhase = .failed
+                    message = error.localizedDescription
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                        if !withdrawalOtpSent { sendCodePhase = .idle }
+                    }
+                }
             }
-        }
-    }
-
-    private func selectDefaultPayoutMethod() {
-        if !availablePayoutMethods.contains(where: { $0.0 == payoutMethod }) {
-            payoutMethod = availablePayoutMethods.first?.0 ?? "mobile_money"
         }
     }
 
@@ -1533,23 +1594,102 @@ private struct DoctorWalletView: View {
             return
         }
         guard mfaCode.count == 6 else {
-            message = appViewModel.tr("enter_six_digit_mfa")
+            message = appViewModel.tr("email_code_required")
             return
         }
-        guard let session = SessionStore().loadSession() else {
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
             message = appViewModel.tr("authentication_expired")
             return
         }
-        submitting = true; message = nil
+        confirmPhase = .sending
+        message = nil
         Task { do {
-            guard let token = try await AuthService().verifyMobileMFA(code: mfaCode, idToken: session.idToken) else {
-                throw ServiceError.message(appViewModel.tr("enter_six_digit_mfa"))
+            let service = AuthService()
+            let fresh = try await service.refreshSessionIfNeeded(session)
+            SessionStore().saveSession(fresh)
+            appViewModel.activeSession = fresh
+            let token = try await service.verifyDoctorActionCode(code: mfaCode, idToken: fresh.idToken)
+            try await service.requestDoctorWithdrawal(amount: value, reason: "Doctor payout request", payoutMethod: payoutMethod, idToken: fresh.idToken, mfaActionToken: token)
+            await MainActor.run {
+                confirmPhase = .success
+                showWithdrawalConfirmation = true
             }
-            try await AuthService().requestDoctorWithdrawal(amount: value, reason: "Doctor payout request", payoutMethod: payoutMethod, idToken: session.idToken, mfaActionToken: token)
             await appViewModel.loadDoctorWithdrawals()
-            await MainActor.run { clearPayoutState(); showWithdraw = false }
-        } catch { await MainActor.run { submitting = false; message = error.localizedDescription; mfaCode = "" } } }
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            await MainActor.run {
+                clearPayoutState()
+                showWithdrawalConfirmation = false
+                showWithdraw = false
+            }
+        } catch {
+            await MainActor.run {
+                confirmPhase = .failed
+                message = error.localizedDescription
+                mfaCode = ""
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    if !showWithdrawalConfirmation { confirmPhase = .idle }
+                }
+            }
+        } }
     }
+
+    private func configurePayoutDestination() {
+        clearDestinationState()
+        showPayoutAccounts = true
+    }
+
+    private func sendDestinationCode() {
+        guard destinationSendPhase != .sending, resendSeconds <= 0 else { return }
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            destinationMessage = appViewModel.tr("authentication_expired")
+            return
+        }
+        destinationSendPhase = .sending
+        destinationMessage = nil
+        Task {
+            do {
+                let service = AuthService()
+                let fresh = try await service.refreshSessionIfNeeded(session)
+                SessionStore().saveSession(fresh)
+                appViewModel.activeSession = fresh
+                try await service.sendDoctorPayoutEmailOtp(idToken: fresh.idToken)
+                await MainActor.run {
+                    destinationOtpSent = true
+                    destinationSendPhase = .success
+                    startDestinationCooldown()
+                }
+            } catch {
+                await MainActor.run {
+                    destinationSendPhase = .failed
+                    destinationMessage = error.localizedDescription
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                        if !destinationOtpSent { destinationSendPhase = .idle }
+                    }
+                }
+            }
+        }
+    }
+
+    private func startDestinationCooldown(seconds: Int = 60) {
+        resendSeconds = seconds
+        destinationCooldownTask?.cancel()
+        destinationCooldownTask = Task { @MainActor in
+            while resendSeconds > 0 && !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled else { return }
+                resendSeconds -= 1
+            }
+            guard !Task.isCancelled else { return }
+            destinationSendPhase = .idle
+        }
+    }
+
+    private func selectDefaultPayoutMethod() {
+        if !availablePayoutMethods.contains(where: { $0.0 == payoutMethod }) {
+            payoutMethod = availablePayoutMethods.first?.0 ?? "mobile_money"
+        }
+    }
+
     private func submitPayoutDestination() {
         let provider = selectedPayoutProvider.trimmingCharacters(in: .whitespacesAndNewlines)
         let phone = destinationPhone.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1559,45 +1699,61 @@ private struct DoctorWalletView: View {
             return
         }
         guard destinationMFA.count == 6 else {
-            destinationMessage = appViewModel.tr("enter_six_digit_mfa")
+            destinationMessage = appViewModel.tr("email_code_required")
             return
         }
-        guard let session = SessionStore().loadSession() else {
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
             destinationMessage = appViewModel.tr("authentication_expired")
             return
         }
         savingDestination = true; destinationMessage = nil
         Task { do {
-            guard let token = try await AuthService().verifyMobileMFA(code: destinationMFA, idToken: session.idToken) else {
-                throw ServiceError.message(appViewModel.tr("enter_six_digit_mfa"))
-            }
-            try await AuthService().updateDoctorPayoutDestination(type: "mobile_money", provider: provider, phone: phone, bankCode: "", bankAccount: "", idToken: session.idToken, mfaActionToken: token)
-            try await AuthService().mirrorPayoutDestinationForApproval(
-                doctorId: session.userId,
+            let service = AuthService()
+            let fresh = try await service.refreshSessionIfNeeded(session)
+            SessionStore().saveSession(fresh); appViewModel.activeSession = fresh
+            let token = try await service.verifyDoctorActionCode(code: destinationMFA, idToken: fresh.idToken)
+            try await service.updateDoctorPayoutDestination(type: "mobile_money", provider: provider, phone: phone, bankCode: "", bankAccount: "", idToken: fresh.idToken, mfaActionToken: token)
+            try await service.mirrorPayoutDestinationInstant(
+                doctorId: fresh.userId,
                 destinationType: "mobile_money",
                 provider: provider,
                 bankCode: "",
                 phoneNumber: phone,
                 bankAccount: "",
-                idToken: session.idToken
+                idToken: fresh.idToken
             )
             await MainActor.run {
-                clearDestinationState(); showPayoutAccounts = false
+                clearDestinationState()
+                showPayoutAccounts = false
+                appViewModel.markPayoutDestinationAvailable(type: "mobile_money", provider: provider, phone: phone)
                 appViewModel.alertState = AlertState(
-                    title: appViewModel.tr("payout_account_submitted_title"),
-                    message: appViewModel.tr("payout_account_submitted_message")
+                    title: appViewModel.tr("payout_account_saved_title"),
+                    message: appViewModel.tr("payout_account_saved_message")
                 )
             }
         } catch { await MainActor.run { savingDestination = false; destinationMessage = error.localizedDescription; destinationMFA = "" } } }
     }
     private func clearDestinationState() {
+        destinationCooldownTask?.cancel()
+        destinationCooldownTask = nil
         selectedPayoutProvider = payoutProviderOptions.first ?? ""
         destinationPhone = ""
         destinationMFA = ""
         destinationMessage = nil
         savingDestination = false
+        destinationSendPhase = .idle
+        destinationOtpSent = false
+        resendSeconds = 0
     }
-    private func clearPayoutState() { amount = ""; mfaCode = ""; submitting = false; message = nil }
+    private func clearPayoutState() {
+        amount = ""
+        mfaCode = ""
+        message = nil
+        withdrawalOtpSent = false
+        sendCodePhase = .idle
+        confirmPhase = .idle
+        showWithdrawalConfirmation = false
+    }
 }
 
 private struct FeatureStackCard: View {
@@ -1844,7 +2000,7 @@ struct BookAppointmentView: View {
                 doctor: doctor,
                 amount: consultationFeeAmount,
                 initialMethod: paymentMethod,
-                onPaymentConfirmed: {
+                onPaymentConfirmed: { _ in
                     submitAppointment(paymentConfirmed: true)
                     showPaymentSheet = false
                 }
@@ -2095,7 +2251,7 @@ struct PaymentCheckoutView: View {
     let doctor: DoctorSummary
     let amount: Double
     let initialMethod: PaymentMethod
-    let onPaymentConfirmed: () -> Void
+    let onPaymentConfirmed: (Int?) -> Void
     var onCancelRegistrationPayment: (() -> Void)? = nil
 
     @EnvironmentObject private var appViewModel: AppViewModel
@@ -2140,7 +2296,8 @@ struct PaymentCheckoutView: View {
         doctor: DoctorSummary,
         amount: Double,
         initialMethod: PaymentMethod,
-        onPaymentConfirmed: @escaping () -> Void,
+        consultationIdOverride: String? = nil,
+        onPaymentConfirmed: @escaping (Int?) -> Void,
         onCancelRegistrationPayment: (() -> Void)? = nil
     ) {
         self.doctor = doctor
@@ -2152,6 +2309,8 @@ struct PaymentCheckoutView: View {
         let registrationUserId = SessionStore().loadSession()?.userId ?? ""
         if doctor.id == "doctor_registration", !registrationUserId.isEmpty {
             _consultationId = State(initialValue: "registration-\(registrationUserId)")
+        } else if let consultationIdOverride, !consultationIdOverride.isEmpty {
+            _consultationId = State(initialValue: consultationIdOverride)
         } else {
             _consultationId = State(initialValue: "consult-\(UUID().uuidString.lowercased())")
         }
@@ -2668,7 +2827,7 @@ struct PaymentCheckoutView: View {
                         processingPulse = false
                         statusMessage = appViewModel.tr("payment_confirmed")
                         hostedCheckout = nil
-                        onPaymentConfirmed()
+                        onPaymentConfirmed(transactionId)
                         dismiss()
                     }
                     return true
@@ -2963,6 +3122,8 @@ struct AppointmentsOverviewView: View {
     @State private var appointmentToReschedule: AppointmentSummary?
     @State private var actionInProgressId: String?
     @State private var selectedConversation: ConversationSummary?
+    @State private var exportPayload: [Any]?
+    @State private var exportError: String?
 
     init(role: UserRole, initialStatus: AppointmentSummary.Status? = nil) {
         self.role = role
@@ -2985,7 +3146,7 @@ struct AppointmentsOverviewView: View {
                     get: { selectedStatus ?? .pending },
                     set: { selectedStatus = $0 }
                 )) {
-                    ForEach([AppointmentSummary.Status.pending, .completed, .cancelled], id: \.id) { status in
+                    ForEach([AppointmentSummary.Status.pending, .approved, .completed, .cancelled], id: \.id) { status in
                         Text(status.localizedLabel(languageCode: appViewModel.selectedLanguage)).tag(status)
                     }
                 }
@@ -3060,6 +3221,40 @@ struct AppointmentsOverviewView: View {
         }
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle(role == .patient ? appViewModel.tr("my_appointments") : appViewModel.tr("appointments"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        export(.csv)
+                    } label: {
+                        Label(appViewModel.tr("export_csv"), systemImage: "tablecells")
+                    }
+                    Button {
+                        export(.pdf)
+                    } label: {
+                        Label(appViewModel.tr("export_pdf"), systemImage: "doc.fill")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel(appViewModel.tr("export_appointments"))
+                .disabled(appointments.isEmpty)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { exportPayload != nil },
+            set: { if !$0 { exportPayload = nil } }
+        )) {
+            ShareSheet(items: exportPayload ?? [])
+        }
+        .alert(appViewModel.tr("error"), isPresented: Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
         .task {
             await appViewModel.loadAppointments(force: false)
         }
@@ -3122,7 +3317,7 @@ struct AppointmentsOverviewView: View {
                     pendingConfirmation = AppointmentConfirmation(appointment: appointment, action: .approve)
                 }
             }
-        } else if role == .patient && (appointment.status == .pending || appointment.status == .approved) {
+        } else if role == .patient && appointment.canPatientCancel {
             HStack(spacing: 10) {
                 appointmentActionButton(
                     title: appViewModel.tr("cancel"),
@@ -3183,6 +3378,26 @@ struct AppointmentsOverviewView: View {
 
     private func actionLabel(_ action: AppointmentAction) -> String {
         appViewModel.tr(action.localizationKey)
+    }
+
+    private enum ExportFormat {
+        case csv
+        case pdf
+    }
+
+    private func export(_ format: ExportFormat) {
+        let rows = appointments
+        guard !rows.isEmpty else { return }
+        switch format {
+        case .csv:
+            exportPayload = [AppointmentExportBuilder.csv(rows)]
+        case .pdf:
+            guard let data = AppointmentExportBuilder.pdf(rows) else {
+                exportError = appViewModel.tr("export_failed")
+                return
+            }
+            exportPayload = [data]
+        }
     }
 
     private func statusColor(_ status: AppointmentSummary.Status) -> Color {
@@ -3452,13 +3667,23 @@ struct ChatThreadView: View {
     @State private var selectedMessageIDs: Set<String> = []
     @State private var isSelectingMessages = false
     @State private var attachmentItem: PhotosPickerItem?
-    @State private var showAttachmentError = false
+    @State private var videoPickerItem: PhotosPickerItem?
+    @State private var showAttachmentSheet = false
+    @State private var showCameraPicker = false
+    @State private var showDocumentPicker = false
+    @State private var chatErrorMessage: String?
+    @State private var isPreparingAttachment = false
+    @State private var previewFileURL: URL?
+    @State private var showPrescriptionSheet = false
+    @State private var selectedChatPrescription: PrescriptionSummary?
+    @State private var showServiceRequestSheet = false
+    @State private var serviceStatuses: [String: String] = [:]
+    @State private var pendingServicePayment: PendingServicePayment?
     @State private var recorder: AVAudioRecorder?
     @State private var isRecording = false
     @State private var recordingSeconds = 0
     @State private var recordingTimer: Timer?
     @State private var audioPlayer: AVAudioPlayer?
-    @State private var showChatActions = false
     @State private var replyMessage: ChatMessageSummary?
     @State private var chatSendAccess = ChatSendAccessSummary(canSend: false, message: "Checking chat access...")
 
@@ -3499,120 +3724,13 @@ struct ChatThreadView: View {
                 .padding(.vertical, 8)
                 .background(Color.white)
             }
-            ScrollView {
-                LazyVStack(spacing: 10) {
-                    ForEach(messages) { message in
-                        let bodyView = AnyView(messageBody(message))
-                        let statusView = AnyView(messageStatus(message))
-                        HStack {
-                            if message.isOutgoing { Spacer(minLength: 32) }
-                            HStack(alignment: .bottom, spacing: 8) {
-                                bodyView
+            messagesScroll()
 
-                                if message.isOutgoing { statusView }
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .fill(message.isOutgoing ? HASETTheme.greenPrimary : Color.white)
-                            )
-                            .frame(maxWidth: 280, alignment: message.isOutgoing ? .trailing : .leading)
-                            .contextMenu { messageContextMenu(message) }
-                            if !message.isOutgoing { Spacer(minLength: 32) }
-                        }
-                    }
-                }
-                .padding(20)
+            if let accessMessage = chatSendAccess.message, !chatSendAccess.canSend {
+                chatAccessBanner(accessMessage)
             }
 
-            if let message = chatSendAccess.message, !chatSendAccess.canSend {
-                Text(message)
-                    .font(HASETTheme.font(.medium, 12))
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.orange.opacity(0.09))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.orange.opacity(0.35), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-            }
-
-            HStack(spacing: 10) {
-                Button { showChatActions.toggle() } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
-                }
-                .disabled(!chatSendAccess.canSend)
-                .confirmationDialog("Chat actions", isPresented: $showChatActions, titleVisibility: .visible) {
-                    if role == .doctor {
-                        Button("Send prescription") { draftMessage = "Prescription: please add medication details" }
-                        Button("Request service payment") { draftMessage = "Service payment request: please confirm the service and amount" }
-                    } else {
-                        Button("Request service payment") { draftMessage = "Service payment request: please confirm the service and amount" }
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Choose an action to prepare a message for this conversation.")
-                }
-                PhotosPicker(selection: $attachmentItem, matching: .images) {
-                    Image(systemName: "paperclip")
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
-                }
-                .disabled(!chatSendAccess.canSend)
-                Button {
-                    if isRecording { stopRecording() } else { startRecording() }
-                } label: {
-                    if isRecording {
-                        Text(String(format: "%02d:%02d", recordingSeconds / 60, recordingSeconds % 60))
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.red)
-                    } else {
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 19, weight: .semibold))
-                            .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
-                    }
-                }
-                .disabled(!chatSendAccess.canSend)
-                TextField("Type a message", text: $draftMessage, axis: .vertical)
-                    .disabled(!chatSendAccess.canSend)
-                    .lineLimit(1...4)
-                    .font(HASETTheme.font(.regular, 15))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 11)
-                    .background(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(HASETTheme.backgroundPrimary)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(HASETTheme.divider, lineWidth: 1)
-                    )
-                Button {
-                    sendMessage()
-                } label: {
-                    Image(systemName: "paperplane.fill")
-                        .foregroundStyle(.white)
-                        .font(.system(size: 17, weight: .semibold))
-                        .frame(width: 48, height: 48)
-                        .background(Circle().fill(HASETTheme.greenPrimary))
-                        .shadow(color: HASETTheme.greenPrimary.opacity(0.22), radius: 5, y: 3)
-                }
-                .disabled(!chatSendAccess.canSend || draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
+            chatInputBar()
         }
         .background(HASETTheme.backgroundPrimary)
         .navigationTitle(conversation.name)
@@ -3623,23 +3741,98 @@ struct ChatThreadView: View {
             await appViewModel.markChatMessagesRead(chatRoomId: chatRoomId)
             await appViewModel.loadConversations(force: true)
         }
-        .onChange(of: attachmentItem) { item in
-            guard let item else { return }
-            Task {
-                guard chatSendAccess.canSend else {
-                    attachmentItem = nil
-                    return
-                }
-                guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-                do {
-                    let url = try await appViewModel.uploadChatAttachment(data, fileName: "image-\(UUID().uuidString).jpg", mimeType: "image/jpeg")
-                    try await appViewModel.sendChatMessage(chatRoomId: chatRoomId, receiverId: otherUserId, receiverName: otherUserName, message: "Image", messageType: "image", attachmentURL: url, attachmentFileName: "image.jpg")
-                    await loadMessages()
-                } catch { showAttachmentError = true }
-                attachmentItem = nil
+        .task(id: pendingServiceIds) {
+            // Mirrors Android's persistent ValueEventListener per pending
+            // service card: Firebase's REST streaming endpoint pushes status
+            // the moment the backend flips the request to paid. When a card
+            // becomes paid it leaves `pendingServiceIds` and the task restarts.
+            guard !pendingServiceIds.isEmpty else { return }
+            let ids = pendingServiceIds
+            let session = appViewModel.activeSession ?? SessionStore().loadSession()
+            let stream = AuthService().servicePaymentStatusUpdates(serviceIds: ids, idToken: session?.idToken)
+            for await update in stream {
+                if Task.isCancelled { return }
+                serviceStatuses[update.serviceId] = update.status
             }
         }
-        .alert("Attachment failed", isPresented: $showAttachmentError) { Button("OK", role: .cancel) {} }
+        .onChange(of: attachmentItem) { item in
+            guard let item else { return }
+            showAttachmentSheet = false
+            Task { await handlePickedImage(item) }
+        }
+        .onChange(of: videoPickerItem) { item in
+            guard let item else { return }
+            showAttachmentSheet = false
+            Task { await handlePickedVideo(item) }
+        }
+        .sheet(isPresented: $showCameraPicker) {
+            CameraChatPicker { image in
+                showCameraPicker = false
+                Task { await handleCameraImage(image) }
+            } onCancel: {
+                showCameraPicker = false
+            }
+        }
+        .fileImporter(
+            isPresented: $showDocumentPicker,
+            allowedContentTypes: ChatAttachmentProcessor.documentTypes,
+            allowsMultipleSelection: false
+        ) { result in
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            Task { await handlePickedDocument(url) }
+        }
+        .sheet(isPresented: Binding(
+            get: { previewFileURL != nil },
+            set: { if !$0 { previewFileURL = nil } }
+        )) {
+            if let previewFileURL {
+                QuickLookChatPreview(fileURL: previewFileURL)
+            }
+        }
+        .sheet(isPresented: $showPrescriptionSheet) {
+            ChatPrescriptionSheet(
+                chatRoomId: chatRoomId,
+                patientId: otherUserId,
+                patientName: otherUserName,
+                onSent: { await loadMessages() }
+            )
+            .environmentObject(appViewModel)
+        }
+        .sheet(item: $selectedChatPrescription) { item in
+            PrescriptionDetailView(prescription: item, onDeleted: { selectedChatPrescription = nil })
+                .environmentObject(appViewModel)
+        }
+        .sheet(isPresented: $showServiceRequestSheet) {
+            ChatServiceRequestSheet(
+                chatRoomId: chatRoomId,
+                doctorId: currentUserId,
+                doctorName: appViewModel.currentUser?.fullName ?? "",
+                patientId: otherUserId,
+                patientName: otherUserName,
+                onSent: { await loadMessages() }
+            )
+            .environmentObject(appViewModel)
+        }
+        .sheet(item: $pendingServicePayment) { pending in
+            PaymentCheckoutView(
+                doctor: pending.checkoutDoctor,
+                amount: pending.payload.patientPayAmount ?? 0,
+                initialMethod: .mobileMoney,
+                consultationIdOverride: "service-\(pending.messageId)",
+                onPaymentConfirmed: { transactionId in
+                    Task {
+                        await completeServicePayment(pending: pending, transactionId: transactionId)
+                    }
+                }
+            )
+            .environmentObject(appViewModel)
+        }
+        .alert(appViewModel.tr("error"), isPresented: Binding(
+            get: { chatErrorMessage != nil },
+            set: { if !$0 { chatErrorMessage = nil } }
+        )) { Button("OK", role: .cancel) {} } message: {
+            Text(chatErrorMessage ?? "")
+        }
         .screenshotProtected()
     }
 
@@ -3658,7 +3851,7 @@ struct ChatThreadView: View {
                     recorder.record(); self.recorder = recorder; isRecording = true; recordingSeconds = 0
                     recordingTimer?.invalidate()
                     recordingTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in recordingSeconds += 1 }
-                } catch { showAttachmentError = true }
+                } catch { chatErrorMessage = appViewModel.tr("attachment_failed") }
             }
         }
     }
@@ -3674,7 +3867,7 @@ struct ChatThreadView: View {
                 let remoteURL = try await appViewModel.uploadChatAttachment(data, fileName: url.lastPathComponent, mimeType: "audio/mp4")
                 try await appViewModel.sendChatMessage(chatRoomId: chatRoomId, receiverId: otherUserId, receiverName: otherUserName, message: "Voice message", messageType: "audio", attachmentURL: remoteURL, attachmentFileName: url.lastPathComponent)
                 await loadMessages()
-            } catch { showAttachmentError = true }
+            } catch { chatErrorMessage = appViewModel.tr("attachment_failed") }
             try? FileManager.default.removeItem(at: url)
         }
     }
@@ -3682,6 +3875,190 @@ struct ChatThreadView: View {
     private func loadMessages() async {
         guard !currentUserId.isEmpty else { return }
         messages = await appViewModel.loadChatMessages(chatRoomId: chatRoomId, currentUserId: currentUserId)
+        await refreshServicePaymentStatuses()
+    }
+
+    private var pendingServiceIds: [String] {
+        messages
+            .filter { $0.messageType == "service" }
+            .compactMap { message -> String? in
+                guard let payload = ChatServicePayload(json: message.message),
+                      let serviceId = payload.serviceId, !serviceId.isEmpty else { return nil }
+                return (serviceStatuses[serviceId] ?? payload.paymentStatus ?? "").lowercased() == "paid" ? nil : serviceId
+            }
+            .sorted()
+    }
+
+    private func refreshServicePaymentStatuses() async {
+        let session = appViewModel.activeSession ?? SessionStore().loadSession()
+        let serviceMessages = messages.filter { $0.messageType == "service" }
+        for message in serviceMessages {
+            guard let payload = ChatServicePayload(json: message.message),
+                  let serviceId = payload.serviceId, !serviceId.isEmpty else { continue }
+            if let status = await AuthService().fetchServicePaymentStatus(
+                serviceId: serviceId,
+                idToken: session?.idToken
+            ) {
+                serviceStatuses[serviceId] = status
+            }
+        }
+    }
+
+    private func completeServicePayment(pending: PendingServicePayment, transactionId: Int?) async {
+        guard let serviceId = pending.payload.serviceId else { return }
+        let session = appViewModel.activeSession ?? SessionStore().loadSession()
+        do {
+            try await AuthService().updateServicePaymentStatus(
+                serviceId: serviceId,
+                status: "paid",
+                transactionId: transactionId,
+                idToken: session?.idToken
+            )
+            serviceStatuses[serviceId] = "paid"
+            await loadMessages()
+        } catch {
+            chatErrorMessage = error.localizedDescription
+        }
+    }
+
+    @ViewBuilder
+    private func chatInputBar() -> some View {
+        HStack(spacing: 10) {
+            Button {
+                showAttachmentSheet = true
+            } label: {
+                Image(systemName: "paperclip")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
+            }
+            .disabled(!chatSendAccess.canSend || isPreparingAttachment)
+            .accessibilityLabel(appViewModel.tr("attach_file"))
+            .sheet(isPresented: $showAttachmentSheet) {
+                ChatAttachmentSheet(
+                    role: role,
+                    onCamera: {
+                        showAttachmentSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showCameraPicker = true
+                        }
+                    },
+                    onDocument: {
+                        showAttachmentSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showDocumentPicker = true
+                        }
+                    },
+                    imageSelection: $attachmentItem,
+                    videoSelection: $videoPickerItem,
+                    onPrescription: {
+                        showAttachmentSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showPrescriptionSheet = true
+                        }
+                    },
+                    onRequestService: {
+                        showAttachmentSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showServiceRequestSheet = true
+                        }
+                    }
+                )
+                .environmentObject(appViewModel)
+            }
+            Button {
+                if isRecording { stopRecording() } else { startRecording() }
+            } label: {
+                if isRecording {
+                    Text(String(format: "%02d:%02d", recordingSeconds / 60, recordingSeconds % 60))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.red)
+                } else {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 19, weight: .semibold))
+                        .foregroundStyle(chatSendAccess.canSend ? HASETTheme.greenPrimary : HASETTheme.textSecondary.opacity(0.45))
+                }
+            }
+            .disabled(!chatSendAccess.canSend)
+            TextField("Type a message", text: $draftMessage, axis: .vertical)
+                .disabled(!chatSendAccess.canSend)
+                .lineLimit(1...4)
+                .font(HASETTheme.font(.regular, 15))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(HASETTheme.backgroundPrimary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(HASETTheme.divider, lineWidth: 1)
+                )
+            Button {
+                sendMessage()
+            } label: {
+                Image(systemName: "paperplane.fill")
+                    .foregroundStyle(.white)
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 48, height: 48)
+                    .background(Circle().fill(HASETTheme.greenPrimary))
+                    .shadow(color: HASETTheme.greenPrimary.opacity(0.22), radius: 5, y: 3)
+            }
+            .disabled(!chatSendAccess.canSend || draftMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.white)
+    }
+
+    @ViewBuilder
+    private func messagesScroll() -> some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(messages) { message in
+                    let bodyView = AnyView(messageBody(message))
+                    let statusView = AnyView(messageStatus(message))
+                    HStack {
+                        if message.isOutgoing { Spacer(minLength: 32) }
+                        HStack(alignment: .bottom, spacing: 8) {
+                            bodyView
+
+                            if message.isOutgoing { statusView }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(message.isOutgoing ? HASETTheme.greenPrimary : Color.white)
+                        )
+                        .frame(maxWidth: 280, alignment: message.isOutgoing ? .trailing : .leading)
+                        .contextMenu { messageContextMenu(message) }
+                        if !message.isOutgoing { Spacer(minLength: 32) }
+                    }
+                }
+            }
+            .padding(20)
+        }
+    }
+
+    @ViewBuilder
+    private func chatAccessBanner(_ text: String) -> some View {
+        Text(text)
+            .font(HASETTheme.font(.medium, 12))
+            .foregroundStyle(.orange)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.orange.opacity(0.09))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
     }
 
     private func refreshChatSendAccess() async {
@@ -3698,6 +4075,247 @@ struct ChatThreadView: View {
         else { selectedMessageIDs.insert(id) }
     }
 
+    private func handlePickedImage(_ item: PhotosPickerItem) async {
+        attachmentItem = nil
+        guard chatSendAccess.canSend else { return }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+            return
+        }
+        guard let prepared = ChatAttachmentProcessor.imageData(data) else {
+            chatErrorMessage = appViewModel.tr("image_too_large")
+            return
+        }
+        await uploadAndSend(
+            data: prepared,
+            fileName: "image-\(UUID().uuidString).jpg",
+            mimeType: "image/jpeg",
+            label: "Image",
+            messageType: "image"
+        )
+    }
+
+    private func handleCameraImage(_ image: UIImage) async {
+        guard chatSendAccess.canSend else { return }
+        guard let data = ChatAttachmentProcessor.jpegData(from: image) else {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+            return
+        }
+        await uploadAndSend(
+            data: data,
+            fileName: "image-\(UUID().uuidString).jpg",
+            mimeType: "image/jpeg",
+            label: "Image",
+            messageType: "image"
+        )
+    }
+
+    private func handlePickedVideo(_ item: PhotosPickerItem) async {
+        videoPickerItem = nil
+        guard chatSendAccess.canSend else { return }
+        guard let picked = try? await item.loadTransferable(type: PickedChatVideo.self) else {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+            return
+        }
+        await sendVideoFile(at: picked.url)
+    }
+
+    private func handlePickedDocument(_ url: URL) async {
+        guard chatSendAccess.canSend else { return }
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url) else {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+            return
+        }
+        guard data.count <= ChatAttachmentProcessor.maxDocumentBytes else {
+            chatErrorMessage = appViewModel.tr("document_too_large")
+            return
+        }
+        let name = url.lastPathComponent
+        await uploadAndSend(
+            data: data,
+            fileName: name,
+            mimeType: ChatAttachmentProcessor.mimeType(for: name),
+            label: "Document",
+            messageType: "document"
+        )
+    }
+
+    private func sendVideoFile(at url: URL) async {
+        do {
+            let data = try await ChatAttachmentProcessor.videoData(url: url)
+            await uploadAndSend(
+                data: data,
+                fileName: "video-\(UUID().uuidString).mp4",
+                mimeType: "video/mp4",
+                label: "Video",
+                messageType: "video"
+            )
+        } catch ChatAttachmentProcessor.AttachmentError.tooLarge {
+            chatErrorMessage = appViewModel.tr("video_too_large")
+        } catch {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+        }
+    }
+
+    private func uploadAndSend(
+        data: Data,
+        fileName: String,
+        mimeType: String,
+        label: String,
+        messageType: String
+    ) async {
+        guard chatSendAccess.canSend else { return }
+        isPreparingAttachment = true
+        defer { isPreparingAttachment = false }
+        do {
+            let remote = try await appViewModel.uploadChatAttachment(
+                data,
+                fileName: fileName,
+                mimeType: mimeType
+            )
+            try await appViewModel.sendChatMessage(
+                chatRoomId: chatRoomId,
+                receiverId: otherUserId,
+                receiverName: otherUserName,
+                message: label,
+                messageType: messageType,
+                attachmentURL: remote,
+                attachmentFileName: fileName,
+                attachmentSize: ChatAttachmentProcessor.formattedSize(data.count)
+            )
+            await loadMessages()
+        } catch {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+        }
+    }
+
+    @ViewBuilder
+    private func serviceMessageCard(message: ChatMessageSummary, payload: ChatServicePayload) -> some View {
+        let status = payload.serviceId.flatMap { serviceStatuses[$0] } ?? payload.paymentStatus
+        let paid = status == "paid" || payload.isPaid == true
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "creditcard.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(message.isOutgoing ? .white : HASETTheme.greenPrimary)
+                Text(payload.serviceName ?? appViewModel.tr("service"))
+                    .font(HASETTheme.font(.medium, 15))
+                    .lineLimit(2)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                    Text(appViewModel.tr("total_fee"))
+                        .font(HASETTheme.font(.regular, 13))
+                    Spacer()
+                    Text(String(format: "%,.0f TZS", payload.appointmentFee ?? 0))
+                        .font(HASETTheme.font(.medium, 13))
+                }
+                HStack {
+                    Text("\(appViewModel.tr("you_pay")) (\(payload.patientPercentage ?? 0)%):")
+                        .font(HASETTheme.font(.regular, 13))
+                    Spacer()
+                    Text(String(format: "%,.0f TZS", payload.patientPayAmount ?? 0))
+                        .font(HASETTheme.font(.medium, 13))
+                        .foregroundStyle(HASETTheme.greenPrimary)
+                }
+            }
+            HStack {
+                Text(paid ? appViewModel.tr("payment_complete") : appViewModel.tr("payment_pending"))
+                    .font(HASETTheme.font(.medium, 12))
+                    .foregroundStyle(paid ? HASETTheme.greenPrimary : .orange)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule().fill((paid ? HASETTheme.greenPrimary : Color.orange).opacity(0.12))
+                    )
+                Spacer()
+                if paid {
+                    Text(appViewModel.tr("paid"))
+                        .font(HASETTheme.font(.medium, 12))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                } else if !message.isOutgoing {
+                    Button {
+                        startServicePayment(message: message, payload: payload)
+                    } label: {
+                        Text(appViewModel.tr("pay_now"))
+                            .font(HASETTheme.font(.medium, 13))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(HASETTheme.greenPrimary))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .frame(maxWidth: 250, alignment: .leading)
+    }
+
+    private func startServicePayment(message: ChatMessageSummary, payload: ChatServicePayload) {
+        guard (payload.patientPayAmount ?? 0) > 0 else {
+            chatErrorMessage = appViewModel.tr("error")
+            return
+        }
+        let doctor = DoctorSummary(
+            id: message.senderId,
+            name: otherUserName,
+            specialty: "",
+            hospital: "",
+            phoneNumber: nil,
+            email: nil,
+            address: nil,
+            bio: nil,
+            rating: 0,
+            experienceYears: nil,
+            verified: false,
+            isDemo: false,
+            consultationFee: "",
+            availableToday: false,
+            profileImage: nil,
+            availableTimes: nil
+        )
+        pendingServicePayment = PendingServicePayment(
+            messageId: message.id,
+            payload: payload,
+            checkoutDoctor: doctor
+        )
+    }
+
+    private func openChatPrescription(_ message: ChatMessageSummary) {
+        guard let prescriptionId = message.prescriptionId, !prescriptionId.isEmpty else {
+            chatErrorMessage = appViewModel.tr("prescription_not_found")
+            return
+        }
+        Task {
+            let session = appViewModel.activeSession ?? SessionStore().loadSession()
+            do {
+                selectedChatPrescription = try await AuthService().fetchPrescription(
+                    prescriptionId: prescriptionId,
+                    idToken: session?.idToken
+                )
+            } catch {
+                chatErrorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func previewAttachment(_ message: ChatMessageSummary) async {
+        guard let value = message.attachmentURL, let remote = URL(string: value) else { return }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: remote)
+            let fallbackName = message.messageType == "video" ? "video.mp4" : "document"
+            let name = message.attachmentFileName ?? fallbackName
+            let local = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(UUID().uuidString)-\(name)")
+            try data.write(to: local)
+            previewFileURL = local
+        } catch {
+            chatErrorMessage = appViewModel.tr("attachment_failed")
+        }
+    }
+
     @ViewBuilder private func messageContextMenu(_ message: ChatMessageSummary) -> some View {
         Button { isSelectingMessages = true; selectedMessageIDs.insert(message.id) } label: { Text("Select") }
         Button { UIPasteboard.general.string = message.message } label: { Text("Copy") }
@@ -3711,11 +4329,63 @@ struct ChatThreadView: View {
 
     @ViewBuilder private func messageBody(_ message: ChatMessageSummary) -> some View {
         if message.messageType == "image", let value = message.attachmentURL, let url = URL(string: value) {
-            AsyncImage(url: url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView() }
-                .frame(maxWidth: 180, maxHeight: 180)
+            Button {
+                Task { await previewAttachment(message) }
+            } label: {
+                AsyncImage(url: url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView() }
+                    .frame(maxWidth: 180, maxHeight: 180)
+            }
+            .buttonStyle(.plain)
+        } else if message.messageType == "prescription" {
+            Button {
+                openChatPrescription(message)
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "cross.case.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(message.isOutgoing ? .white : HASETTheme.greenPrimary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(message.message)
+                            .font(HASETTheme.font(.medium, 14))
+                        Text(appViewModel.tr("view_prescription"))
+                            .font(HASETTheme.font(.regular, 12))
+                            .opacity(0.8)
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .opacity(0.7)
+                }
+                .foregroundStyle(message.isOutgoing ? .white : HASETTheme.textPrimary)
+                .frame(maxWidth: 240, alignment: .leading)
+            }
+            .buttonStyle(.plain)
         } else if message.messageType == "audio", let value = message.attachmentURL, let url = URL(string: value) {
             Button { playVoice(url) } label: { Label("Play voice message", systemImage: "play.circle.fill") }
                 .foregroundStyle(message.isOutgoing ? .white : HASETTheme.greenPrimary)
+        } else if message.messageType == "service", let payload = ChatServicePayload(json: message.message) {
+            serviceMessageCard(message: message, payload: payload)
+        } else if message.messageType == "document" || message.messageType == "video" {
+            Button {
+                Task { await previewAttachment(message) }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: message.messageType == "video" ? "film.fill" : "doc.fill")
+                        .font(.system(size: 22))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(message.attachmentFileName ?? message.message)
+                            .font(HASETTheme.font(.medium, 14))
+                            .lineLimit(1)
+                        if let size = message.attachmentSize {
+                            Text(size)
+                                .font(HASETTheme.font(.regular, 12))
+                                .opacity(0.8)
+                        }
+                    }
+                }
+                .foregroundStyle(message.isOutgoing ? .white : HASETTheme.textPrimary)
+                .frame(maxWidth: 220, alignment: .leading)
+            }
+            .buttonStyle(.plain)
         } else {
             Text(message.message)
                 .font(HASETTheme.font(.regular, 15))
@@ -3740,7 +4410,7 @@ struct ChatThreadView: View {
                 let (data, _) = try await URLSession.shared.data(from: url)
                 let player = try AVAudioPlayer(data: data)
                 await MainActor.run { audioPlayer = player; player.play() }
-            } catch { showAttachmentError = true }
+            } catch { chatErrorMessage = appViewModel.tr("attachment_failed") }
         }
     }
 
@@ -3758,8 +4428,9 @@ struct ChatThreadView: View {
                     receiverId: otherUserId,
                     receiverName: otherUserName,
                     message: text,
-                    messageType: text.hasPrefix("Prescription:") ? "prescription" : (text.hasPrefix("Service payment request:") ? "service_payment" : "text")
-                    , replyToMessageID: replyMessage?.id, replyToText: replyMessage?.message
+                    messageType: "text",
+                    replyToMessageID: replyMessage?.id,
+                    replyToText: replyMessage?.message
                 )
                 await loadMessages()
                 await appViewModel.markChatMessagesRead(chatRoomId: chatRoomId)
@@ -3775,6 +4446,7 @@ struct ChatThreadView: View {
 struct ProfileScreen: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     @State private var showDeleteConfirmation = false
+    @State private var profileSheet: ProfileSheetItem?
 
     var body: some View {
         ScrollView {
@@ -3844,12 +4516,13 @@ struct ProfileScreen: View {
                     VStack(spacing: 0) {
                         if let user = appViewModel.currentUser, user.role == .patient || user.role == .doctor {
                             NavigationLink {
-                                MedicalRecordsView(role: user.role)
+                                PrescriptionsListView(role: user.role)
+                                    .environmentObject(appViewModel)
                             } label: {
                                 ProfileOptionRow(
                                     icon: "cross.case",
-                                    title: appViewModel.tr("medical_records"),
-                                    subtitle: appViewModel.tr("my_prescriptions")
+                                    title: appViewModel.tr("my_prescriptions"),
+                                    subtitle: appViewModel.tr("my_prescriptions_desc")
                                 )
                             }
                             .buttonStyle(.plain)
@@ -3865,12 +4538,12 @@ struct ProfileScreen: View {
                             }
                         .buttonStyle(.plain)
                         rowDivider()
-                        Button {} label: {
+                        Button { profileSheet = .rating } label: {
                             ProfileOptionRow(icon: "hand.thumbsup", title: appViewModel.tr("rate_app"), subtitle: appViewModel.tr("rate_app_desc"))
                         }
                         .buttonStyle(.plain)
                         rowDivider()
-                        Button {} label: {
+                        Button { profileSheet = .support } label: {
                             ProfileOptionRow(icon: "phone", title: appViewModel.tr("contact_us"), subtitle: appViewModel.tr("contact_us_desc"))
                         }
                         .buttonStyle(.plain)
@@ -3978,6 +4651,16 @@ struct ProfileScreen: View {
         } message: {
             Text(appViewModel.tr("delete_account_confirm_message"))
         }
+        .sheet(item: $profileSheet) { item in
+            switch item {
+            case .rating:
+                RateAppView()
+                    .environmentObject(appViewModel)
+            case .support:
+                SupportSheet()
+                    .environmentObject(appViewModel)
+            }
+        }
         .task {
             await appViewModel.refreshCurrentUser()
         }
@@ -4009,6 +4692,18 @@ struct ProfileScreen: View {
             return name.lowercased().hasPrefix("dr.") || name.lowercased().hasPrefix("dr ") ? name : "Dr. \(name)"
         }
         return name
+    }
+}
+
+private enum ProfileSheetItem: Identifiable {
+    case rating
+    case support
+
+    var id: String {
+        switch self {
+        case .rating: return "rating"
+        case .support: return "support"
+        }
     }
 }
 
@@ -4184,6 +4879,278 @@ private struct ProfileAvatarView: View {
                     .font(HASETTheme.font(.medium, fontSize))
                     .foregroundStyle(HASETTheme.greenPrimary)
             )
+    }
+}
+
+struct GlobalSearchView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @State private var query = ""
+    @State private var recentSearches: [String] = SearchHistoryStore.load()
+    @State private var articles: [ArticleSummary] = []
+    @State private var loading = false
+    @State private var loadedOnce = false
+    @State private var loadFailed = false
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var matchedDoctors: [DoctorSummary] {
+        let needle = trimmedQuery.lowercased()
+        guard !needle.isEmpty else { return [] }
+        return appViewModel.doctors.filter {
+            $0.name.lowercased().contains(needle)
+                || $0.specialty.lowercased().contains(needle)
+                || $0.hospital.lowercased().contains(needle)
+        }
+    }
+
+    private var matchedArticles: [ArticleSummary] {
+        let needle = trimmedQuery.lowercased()
+        guard !needle.isEmpty else { return [] }
+        return articles.filter {
+            $0.title.lowercased().contains(needle)
+                || $0.excerpt.lowercased().contains(needle)
+                || $0.category.lowercased().contains(needle)
+        }
+    }
+
+    var body: some View {
+        Group {
+            if trimmedQuery.isEmpty {
+                idleContent
+            } else {
+                resultsContent
+            }
+        }
+        .background(HASETTheme.backgroundPrimary)
+        .navigationTitle(appViewModel.tr("search"))
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: appViewModel.tr("search_doctors_articles"))
+        .onSubmit(of: .search) { commitSearch() }
+        .task { await loadIfNeeded() }
+    }
+
+    private var idleContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                SectionTitle(appViewModel.tr("browse_by_category"))
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 14) {
+                    PatientServiceShortcut(title: appViewModel.tr("popular_doctors"), systemImage: "stethoscope", destination: AnyView(DoctorsCatalogView()))
+                    PatientServiceShortcut(title: appViewModel.tr("articles"), systemImage: "newspaper", destination: AnyView(ArticlesView(role: .patient)))
+                    PatientServiceShortcut(title: appViewModel.tr("find_hospital"), systemImage: "cross.case", destination: AnyView(HospitalListView()))
+                    PatientServiceShortcut(title: appViewModel.tr("prescriptions"), systemImage: "cross.case", destination: AnyView(PrescriptionsListView(role: .patient)))
+                }
+
+                if !recentSearches.isEmpty {
+                    HStack {
+                        SectionTitle(appViewModel.tr("recent_searches"))
+                        Spacer()
+                        Button(appViewModel.tr("clear")) { clearRecentSearches() }
+                            .font(HASETTheme.font(.medium, 12))
+                            .foregroundStyle(HASETTheme.redPrimary)
+                            .accessibilityLabel(appViewModel.tr("clear_recent_searches"))
+                    }
+                    VStack(spacing: 0) {
+                        ForEach(Array(recentSearches.enumerated()), id: \.offset) { index, term in
+                            Button {
+                                query = term
+                                commitSearch()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .foregroundStyle(HASETTheme.textSecondary)
+                                    Text(term)
+                                        .font(HASETTheme.font(.regular, 14))
+                                        .foregroundStyle(HASETTheme.textPrimary)
+                                    Spacer()
+                                    Image(systemName: "arrow.up.left")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(HASETTheme.textSecondary)
+                                }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 4)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("\(appViewModel.tr("recent_searches")): \(term)")
+                            if index < recentSearches.count - 1 {
+                                Divider().overlay(HASETTheme.divider)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(20)
+        }
+    }
+
+    private var resultsContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                if loading {
+                    HStack {
+                        Spacer()
+                        ProgressView().tint(HASETTheme.greenPrimary)
+                        Spacer()
+                    }
+                    .padding(.top, 30)
+                }
+
+                if !matchedDoctors.isEmpty {
+                    SectionTitle("\(appViewModel.tr("doctors")) (\(matchedDoctors.count))")
+                    VStack(spacing: 0) {
+                        ForEach(Array(matchedDoctors.enumerated()), id: \.element.id) { index, doctor in
+                            NavigationLink {
+                                DoctorDetailView(doctor: doctor)
+                            } label: {
+                                SearchResultRow(
+                                    title: doctor.name,
+                                    subtitle: doctor.specialty,
+                                    imageSource: doctor.profileImage
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            if index < matchedDoctors.count - 1 {
+                                Divider().overlay(HASETTheme.divider).padding(.leading, 56)
+                            }
+                        }
+                    }
+                }
+
+                if !matchedArticles.isEmpty {
+                    SectionTitle("\(appViewModel.tr("articles")) (\(matchedArticles.count))")
+                    VStack(spacing: 0) {
+                        ForEach(Array(matchedArticles.enumerated()), id: \.element.id) { index, article in
+                            NavigationLink {
+                                ArticleDetailView(article: article)
+                            } label: {
+                                SearchResultRow(
+                                    title: article.title,
+                                    subtitle: article.category,
+                                    imageSource: article.imageURL
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            if index < matchedArticles.count - 1 {
+                                Divider().overlay(HASETTheme.divider).padding(.leading, 56)
+                            }
+                        }
+                    }
+                }
+
+                if !loading && matchedDoctors.isEmpty && matchedArticles.isEmpty {
+                    CardContainer {
+                        VStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 26))
+                                .foregroundStyle(HASETTheme.textSecondary)
+                            Text(appViewModel.tr("no_results_for"))
+                                .font(HASETTheme.font(.medium, 15))
+                                .foregroundStyle(HASETTheme.textPrimary)
+                                .multilineTextAlignment(.center)
+                            Text(trimmedQuery)
+                                .font(HASETTheme.font(.regular, 13))
+                                .foregroundStyle(HASETTheme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                    }
+                }
+
+                if loadFailed {
+                    Button(appViewModel.tr("retry")) {
+                        Task { await loadIfNeeded(force: true) }
+                    }
+                    .font(HASETTheme.font(.medium, 14))
+                    .foregroundStyle(HASETTheme.greenPrimary)
+                }
+            }
+            .padding(20)
+        }
+    }
+
+    private func loadIfNeeded(force: Bool = false) async {
+        guard !loadedOnce || force else { return }
+        loading = true
+        loadFailed = false
+        if appViewModel.doctors.isEmpty {
+            await appViewModel.loadDoctors(force: force)
+        }
+        do {
+            articles = try await AuthService().fetchPopularArticles(idToken: appViewModel.currentIdToken())
+            loadedOnce = true
+        } catch {
+            loadFailed = true
+        }
+        loading = false
+    }
+
+    private func commitSearch() {
+        let term = trimmedQuery
+        guard !term.isEmpty else { return }
+        SearchHistoryStore.add(term)
+        recentSearches = SearchHistoryStore.load()
+    }
+
+    private func clearRecentSearches() {
+        SearchHistoryStore.clear()
+        recentSearches = []
+    }
+}
+
+private struct SearchResultRow: View {
+    let title: String
+    let subtitle: String
+    let imageSource: String?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ProfileAvatarView(
+                imageSource: imageSource ?? "",
+                initials: String(title.prefix(1)).uppercased(),
+                size: 40,
+                fontSize: 15
+            )
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HASETTheme.font(.medium, 15))
+                    .foregroundStyle(HASETTheme.textPrimary)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(HASETTheme.font(.regular, 13))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(HASETTheme.textSecondary)
+        }
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+enum SearchHistoryStore {
+    private static let key = "recent_searches"
+    private static let limit = 8
+
+    static func load() -> [String] {
+        UserDefaults.standard.stringArray(forKey: key) ?? []
+    }
+
+    static func add(_ term: String) {
+        let trimmed = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        var items = load().filter { $0.caseInsensitiveCompare(trimmed) != .orderedSame }
+        items.insert(trimmed, at: 0)
+        if items.count > limit { items = Array(items.prefix(limit)) }
+        UserDefaults.standard.set(items, forKey: key)
+    }
+
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }
 
@@ -5014,273 +5981,360 @@ struct ArticleDetailView: View {
     }
 }
 
-struct PharmacyView: View {
+struct RateAppView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
-    @State private var selectedCategory: String?
-    @State private var products: [PharmacyProductSummary] = []
-    @State private var cartItems: [PharmacyCartItem] = []
-    @State private var searchText = ""
-    @State private var showCart = false
-    @State private var loading = true
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedRating = 0
 
-    private var filteredProducts: [PharmacyProductSummary] {
-        products.filter { product in
-            let matchesCategory = selectedCategory == nil || product.category == selectedCategory
-            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-            let matchesSearch = query.isEmpty
-                || product.name.localizedCaseInsensitiveContains(query)
-                || product.description.localizedCaseInsensitiveContains(query)
-            return matchesCategory && matchesSearch
+    private var ratingText: String {
+        switch selectedRating {
+        case 1: return appViewModel.tr("rating_poor")
+        case 2: return appViewModel.tr("rating_fair")
+        case 3: return appViewModel.tr("rating_good")
+        case 4: return appViewModel.tr("rating_very_good")
+        case 5: return appViewModel.tr("rating_excellent")
+        default: return appViewModel.tr("tap_to_rate")
         }
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                RoundedInputField(
-                    title: appViewModel.selectedLanguage == "sw" ? "Tafuta bidhaa" : "Search products",
-                    systemImage: "magnifyingglass",
-                    text: $searchText
-                )
+        NavigationStack {
+            VStack(spacing: 20) {
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 54))
+                    .foregroundStyle(HASETTheme.greenPrimary)
+                    .accessibilityHidden(true)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        categoryChip(title: appViewModel.selectedLanguage == "sw" ? "Zote" : "All", key: nil)
-                        ForEach(StaticContentService.pharmacyCategories) { category in
-                            categoryChip(title: category.title, key: category.id)
+                Text(appViewModel.tr("rate_app_title"))
+                    .font(HASETTheme.font(.medium, 20))
+                    .foregroundStyle(HASETTheme.textPrimary)
+                    .multilineTextAlignment(.center)
+
+                Text(ratingText)
+                    .font(HASETTheme.font(.regular, 15))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.updatesFrequently)
+
+                HStack(spacing: 14) {
+                    ForEach(1...5, id: \.self) { star in
+                        Button {
+                            selectedRating = star
+                        } label: {
+                            Image(systemName: star <= selectedRating ? "star.fill" : "star")
+                                .font(.system(size: 34))
+                                .foregroundStyle(star <= selectedRating ? Color.yellow : HASETTheme.textSecondary)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(appViewModel.tr("star_content_desc") + " \(star)")
+                        .accessibilityAddTraits(star <= selectedRating ? .isSelected : [])
                     }
                 }
 
-                if showCart {
-                    cartSection
+                Button {
+                    submitRating()
+                } label: {
+                    Text(appViewModel.tr("rate_now"))
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(selectedRating == 0)
+                .accessibilityHint(appViewModel.tr("rate_now_hint"))
 
-                if loading {
-                    ProgressView().padding(.vertical, 20)
-                } else if filteredProducts.isEmpty {
-                    CardContainer {
-                        Text(appViewModel.selectedLanguage == "sw" ? "Hakuna bidhaa zilizopatikana" : "No products found")
-                            .font(HASETTheme.font(.medium, 15))
-                            .foregroundStyle(HASETTheme.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 12)
-                    }
-                } else {
-                    LazyVStack(spacing: 12) {
-                        ForEach(filteredProducts) { product in
-                            CardContainer {
-                                HStack(alignment: .top, spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(product.name)
-                                            .font(HASETTheme.font(.medium, 16))
-                                        if !product.description.isEmpty {
-                                            Text(product.description)
-                                                .font(HASETTheme.font(.regular, 13))
-                                                .foregroundStyle(HASETTheme.textSecondary)
-                                                .lineLimit(2)
-                                        }
-                                        Text(String(format: "TZS %.0f", product.price))
-                                            .font(HASETTheme.font(.medium, 14))
-                                            .foregroundStyle(HASETTheme.greenPrimary)
-                                    }
-                                    Spacer()
-                                    Button(product.inStock ? "Add" : "Out") {
-                                        Task { await addToCart(product) }
-                                    }
-                                    .font(HASETTheme.font(.medium, 13))
-                                    .foregroundStyle(product.inStock ? HASETTheme.greenPrimary : HASETTheme.textSecondary)
-                                    .disabled(!product.inStock)
-                                }
-                            }
-                        }
-                    }
+                Button(appViewModel.tr("not_now")) { dismiss() }
+                    .font(HASETTheme.font(.medium, 15))
+                    .foregroundStyle(HASETTheme.textSecondary)
+
+                Spacer()
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(HASETTheme.backgroundPrimary)
+            .navigationTitle(appViewModel.tr("rate_app"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(appViewModel.tr("cancel")) { dismiss() }
                 }
             }
-            .padding(20)
+        }
+    }
+
+    private func submitRating() {
+        let defaults = UserDefaults.standard
+        defaults.set(true, forKey: "rating_requested")
+        defaults.set(selectedRating, forKey: "last_submitted_rating")
+        requestSystemReview()
+        dismiss()
+    }
+
+    private func requestSystemReview() {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first
+        if let scene {
+            SKStoreReviewController.requestReview(in: scene)
+        }
+    }
+}
+
+struct NotificationsView: View {
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedTab = 0
+
+    private var appointmentNotifications: [AppointmentSummary] {
+        let hidden = AppViewModel.notificationHiddenAppointmentIds()
+        return appViewModel.appointments.filter {
+            !hidden.contains($0.id) && $0.rawStatus.lowercased() != "read"
+        }
+    }
+
+    private var appointmentBadgeCount: Int { appointmentNotifications.count }
+    private var paymentBadgeCount: Int { appViewModel.notifications.filter { !$0.isRead }.count }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $selectedTab) {
+                Text(appointmentTabTitle).tag(0)
+                Text(paymentTabTitle).tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    if selectedTab == 0 {
+                        appointmentTabContent
+                    } else {
+                        paymentTabContent
+                    }
+                }
+                .padding(.bottom, 16)
+            }
         }
         .background(HASETTheme.backgroundPrimary)
-        .navigationTitle(appViewModel.selectedLanguage == "sw" ? "Duka la Dawa" : "Pharmacy")
+        .navigationTitle(appViewModel.tr("notifications"))
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showCart.toggle()
+                Menu {
+                    Button {
+                        clearAppointments()
+                    } label: {
+                        Label(appViewModel.tr("clear_appointments"), systemImage: "calendar")
+                    }
+                    Button(role: .destructive) {
+                        Task { await clearAll() }
+                    } label: {
+                        Label(appViewModel.tr("clear_all"), systemImage: "trash")
+                    }
                 } label: {
-                    Label("Cart", systemImage: "cart")
-                        .overlay(alignment: .topTrailing) {
-                            if !cartItems.isEmpty {
-                                Text("\(cartItems.count)")
-                                    .font(.caption2)
-                                    .padding(4)
-                                    .background(HASETTheme.greenPrimary)
-                                    .foregroundStyle(.white)
-                                    .clipShape(Circle())
-                                    .offset(x: 8, y: -8)
-                            }
-                        }
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundStyle(HASETTheme.greenPrimary)
                 }
             }
         }
         .task {
-            AuditLogger.shared.logOpenPharmacy(
-                profile: appViewModel.currentUser,
-                idToken: appViewModel.activeSession?.idToken
-            )
-            await reload()
+            await appViewModel.loadAppointments(force: true)
+            await appViewModel.loadNotifications(force: true)
         }
-        .refreshable { await reload() }
     }
 
-    private var cartSection: some View {
-        CardContainer {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(appViewModel.selectedLanguage == "sw" ? "Kikapu" : "Cart")
-                    .font(HASETTheme.font(.medium, 16))
-                if cartItems.isEmpty {
-                    Text(appViewModel.selectedLanguage == "sw" ? "Kikapu kiko tupu" : "Your cart is empty")
-                        .foregroundStyle(HASETTheme.textSecondary)
-                } else {
-                    ForEach(cartItems) { item in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(item.name)
-                                Text("x\(item.quantity) • TZS \(Int(item.lineTotal))")
-                                    .font(HASETTheme.font(.regular, 12))
-                                    .foregroundStyle(HASETTheme.textSecondary)
-                            }
-                            Spacer()
-                            Button("-") { Task { await updateQuantity(item, delta: -1) } }
-                            Button("+") { Task { await updateQuantity(item, delta: 1) } }
-                        }
-                    }
+    private var appointmentTabTitle: String {
+        badgeLabel(base: appViewModel.tr("appointment"), count: appointmentBadgeCount)
+    }
+
+    private var paymentTabTitle: String {
+        badgeLabel(base: appViewModel.tr("info"), count: paymentBadgeCount)
+    }
+
+    private func badgeLabel(base: String, count: Int) -> String {
+        count > 0 ? "\(base) (\(count))" : base
+    }
+
+    @ViewBuilder
+    private var appointmentTabContent: some View {
+        if appointmentNotifications.isEmpty {
+            emptyState(appViewModel.tr("no_appointments"))
+        } else {
+            ForEach(Array(appointmentNotifications.enumerated()), id: \.element.id) { index, appointment in
+                Button {
+                    dismiss()
+                    appViewModel.pendingNavigation = .tab(.appointments)
+                } label: {
+                    appointmentRow(appointment)
+                }
+                .buttonStyle(.plain)
+                if index < appointmentNotifications.count - 1 {
+                    Divider().padding(.leading, 76)
                 }
             }
         }
     }
 
     @ViewBuilder
-    private func categoryChip(title: String, key: String?) -> some View {
-        Button {
-            selectedCategory = key
-            Task { await loadProducts() }
-        } label: {
-            Text(title)
-                .font(HASETTheme.font(.medium, 13))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(selectedCategory == key ? HASETTheme.greenPrimary : HASETTheme.backgroundCard)
-                .foregroundStyle(selectedCategory == key ? .white : HASETTheme.textPrimary)
-                .clipShape(Capsule())
-        }
-    }
-
-    private func reload() async {
-        loading = true
-        await loadProducts()
-        await loadCart()
-        loading = false
-    }
-
-    private func loadProducts() async {
-        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
-        products = (try? await AuthService().fetchPharmacyProducts(category: selectedCategory, idToken: token)) ?? []
-    }
-
-    private func loadCart() async {
-        guard let userId = appViewModel.currentUser?.userId else {
-            cartItems = []
-            return
-        }
-        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
-        cartItems = (try? await AuthService().fetchPharmacyCart(userId: userId, idToken: token)) ?? []
-    }
-
-    private func addToCart(_ product: PharmacyProductSummary) async {
-        guard let userId = appViewModel.currentUser?.userId else { return }
-        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
-        let existing = cartItems.first { $0.productId == product.id }
-        let quantity = (existing?.quantity ?? 0) + 1
-        let item = PharmacyCartItem(
-            id: product.id,
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: quantity,
-            imageUrl: product.imageUrl
-        )
-        try? await AuthService().upsertPharmacyCartItem(userId: userId, item: item, idToken: token)
-        await loadCart()
-    }
-
-    private func updateQuantity(_ item: PharmacyCartItem, delta: Int) async {
-        guard let userId = appViewModel.currentUser?.userId else { return }
-        let token = appViewModel.activeSession?.idToken ?? SessionStore().loadSession()?.idToken
-        let next = item.quantity + delta
-        if next <= 0 {
-            try? await AuthService().removePharmacyCartItem(userId: userId, productId: item.productId, idToken: token)
+    private var paymentTabContent: some View {
+        if appViewModel.notifications.isEmpty {
+            emptyState(appViewModel.tr("no_notifications"))
         } else {
-            let updated = PharmacyCartItem(
-                id: item.id,
-                productId: item.productId,
-                name: item.name,
-                price: item.price,
-                quantity: next,
-                imageUrl: item.imageUrl
-            )
-            try? await AuthService().upsertPharmacyCartItem(userId: userId, item: updated, idToken: token)
-        }
-        await loadCart()
-    }
-}
-
-struct ScheduleView: View {
-    @EnvironmentObject private var appViewModel: AppViewModel
-    var body: some View {
-        List(StaticContentService.timeSlots, id: \.self) { slot in
-            HStack {
-                Text(slot)
-                    .font(HASETTheme.font(.medium, 15))
-                Spacer()
-                Text(appViewModel.tr("available"))
-                    .font(HASETTheme.font(.regular, 12))
-                    .foregroundStyle(HASETTheme.greenPrimary)
-            }
-            .padding(.vertical, 4)
-        }
-        .navigationTitle(appViewModel.tr("manage_schedule"))
-        .scrollContentBackground(.hidden)
-        .background(HASETTheme.backgroundPrimary)
-    }
-}
-
-struct NotificationsView: View {
-    @EnvironmentObject private var appViewModel: AppViewModel
-
-    var body: some View {
-        Form {
-            Toggle(appViewModel.tr("notification"), isOn: Binding(
-                get: { appViewModel.notificationEnabled },
-                set: { appViewModel.setNotificationEnabled($0) }
-            ))
-
-            Section(appViewModel.tr("recent")) {
-                ForEach(appViewModel.notifications) { item in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title)
-                            .font(HASETTheme.font(.medium, 14))
-                        if !item.message.isEmpty {
-                            Text(item.message)
-                                .font(HASETTheme.font(.regular, 12))
-                                .foregroundStyle(HASETTheme.textSecondary)
-                        }
-                    }
+            ForEach(appViewModel.notifications) { item in
+                paymentRow(item)
+                if item.id != appViewModel.notifications.last?.id {
+                    Divider().padding(.leading, 76)
                 }
             }
         }
-        .navigationTitle(appViewModel.tr("notifications"))
-        .task {
-            await appViewModel.loadNotifications(force: false)
+    }
+
+    private func emptyState(_ text: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: "bell.badge")
+                .font(.system(size: 30, weight: .regular))
+                .foregroundStyle(HASETTheme.textSecondary.opacity(0.6))
+                .padding(.top, 40)
+            Text(text)
+                .font(HASETTheme.font(.regular, 14))
+                .foregroundStyle(HASETTheme.textSecondary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 24)
+    }
+
+    private func appointmentRow(_ appointment: AppointmentSummary) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "calendar")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(HASETTheme.greenPrimary)
+                .frame(width: 48, height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(HASETTheme.greenPrimary.opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(String(format: appViewModel.tr("appointment_status_title"), appointment.status.localizedLabel(languageCode: appViewModel.selectedLanguage)))
+                        .font(HASETTheme.font(.medium, 15))
+                        .foregroundStyle(HASETTheme.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(relativeTime(appointment.createdAt))
+                        .font(HASETTheme.font(.regular, 11))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                }
+                Text(String(format: appViewModel.tr("appointment_notification_message"), doctorName(for: appointment), appointment.date, appointment.time))
+                    .font(HASETTheme.font(.regular, 13))
+                    .foregroundStyle(HASETTheme.textSecondary)
+                    .lineLimit(2)
+                if let (text, color) = statusBadge(appointment) {
+                    Text(text)
+                        .font(HASETTheme.font(.medium, 11))
+                        .foregroundStyle(color)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule().fill(color.opacity(0.12))
+                        )
+                        .padding(.top, 2)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private func paymentRow(_ item: NotificationSummary) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: infoIcon(for: item.type))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(HASETTheme.greenPrimary)
+                .frame(width: 48, height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(HASETTheme.greenPrimary.opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(item.title)
+                        .font(HASETTheme.font(.medium, 15))
+                        .foregroundStyle(HASETTheme.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(relativeTime(item.timestamp))
+                        .font(HASETTheme.font(.regular, 11))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                }
+                if !item.message.isEmpty {
+                    Text(item.message)
+                        .font(HASETTheme.font(.regular, 13))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private func doctorName(for appointment: AppointmentSummary) -> String {
+        let role = appViewModel.currentUser?.role
+        if role == .doctor {
+            return appViewModel.currentUser?.fullName ?? "Doctor"
+        }
+        return appointment.title
+    }
+
+    private func statusBadge(_ appointment: AppointmentSummary) -> (String, Color)? {
+        switch appointment.status {
+        case .pending:
+            return (appViewModel.tr("pending"), .orange)
+        case .approved:
+            return (appViewModel.tr("approved"), HASETTheme.greenPrimary)
+        case .completed:
+            return (appViewModel.tr("completed"), HASETTheme.greenPrimary)
+        case .cancelled:
+            return (appViewModel.tr("canceled"), HASETTheme.redPrimary)
+        case .declined:
+            return (appViewModel.tr("declined"), HASETTheme.redPrimary)
+        }
+    }
+
+    private func infoIcon(for type: String) -> String {
+        let normalized = type.lowercased()
+        if normalized == "withdrawal" { return "wallet.pass.fill" }
+        if normalized == "payment" { return "creditcard.fill" }
+        return "bell.fill"
+    }
+
+    /// Replicates Android's `GenericNotificationAdapter.getRelativeTime()`
+    /// exactly (Android hardcodes these English strings).
+    private func relativeTime(_ timestampMilliseconds: TimeInterval?) -> String {
+        guard let timestampMilliseconds, timestampMilliseconds > 0 else { return "" }
+        let now = Date().timeIntervalSince1970 * 1000
+        let diff = now - timestampMilliseconds
+        if diff < 60_000 { return "Just now" }
+        if diff < 3_600_000 { return "\(Int(diff / 60_000)) min ago" }
+        if diff < 86_400_000 { return "\(Int(diff / 3_600_000))h ago" }
+        if diff < 604_800_000 { return "\(Int(diff / 86_400_000))d ago" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd MMM"
+        return formatter.string(from: Date(timeIntervalSince1970: timestampMilliseconds / 1000))
+    }
+
+    private func clearAppointments() {
+        var hidden = AppViewModel.notificationHiddenAppointmentIds()
+        hidden.formUnion(appointmentNotifications.map { $0.id })
+        AppViewModel.saveNotificationHiddenAppointmentIds(hidden)
+        appViewModel.refreshNotificationBadge()
+    }
+
+    private func clearAll() async {
+        clearAppointments()
+        await appViewModel.clearAllNotifications()
     }
 }
 
@@ -5672,22 +6726,45 @@ private struct SupportSheet: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var bugReport = ""
+    @State private var submitting = false
+    @State private var resultMessage: String?
+    @State private var resultIsError = false
+
+    private var trimmedReport: String {
+        bugReport.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section(appViewModel.tr("contact")) {
                     Link(appViewModel.tr("support_whatsapp"), destination: URL(string: StaticContentService.supportWhatsAppURL)!)
+                        .accessibilityLabel(appViewModel.tr("support_whatsapp"))
                     Link(appViewModel.tr("call_support"), destination: URL(string: "tel://\(StaticContentService.supportPhone)")!)
+                        .accessibilityLabel(appViewModel.tr("call_support"))
                 }
 
                 Section(appViewModel.tr("bug_report")) {
                     TextEditor(text: $bugReport)
                         .frame(minHeight: 120)
-                    Button(appViewModel.tr("submit_report")) {
-                        appViewModel.submitBugReport(bugReport)
-                        dismiss()
+                        .accessibilityLabel(appViewModel.tr("bug_report"))
+                    if let resultMessage {
+                        Text(resultMessage)
+                            .font(HASETTheme.font(.regular, 13))
+                            .foregroundStyle(resultIsError ? HASETTheme.redPrimary : HASETTheme.greenPrimary)
                     }
+                    Button {
+                        Task { await submit() }
+                    } label: {
+                        HStack {
+                            if submitting {
+                                ProgressView().tint(HASETTheme.greenPrimary)
+                            }
+                            Text(appViewModel.tr("submit_report"))
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(submitting || trimmedReport.isEmpty)
                 }
             }
             .navigationTitle(appViewModel.tr("support"))
@@ -5697,6 +6774,22 @@ private struct SupportSheet: View {
                 }
             }
         }
+    }
+
+    private func submit() async {
+        guard !submitting else { return }
+        submitting = true
+        resultMessage = nil
+        do {
+            try await appViewModel.submitBugReport(bugReport)
+            resultIsError = false
+            resultMessage = appViewModel.tr("report_recorded")
+            bugReport = ""
+        } catch {
+            resultIsError = true
+            resultMessage = appViewModel.tr("failed_to_submit_report")
+        }
+        submitting = false
     }
 }
 
@@ -5916,25 +7009,6 @@ private struct SettingsDivider: View {
     }
 }
 
-struct MedicalRecordsView: View {
-    let role: UserRole
-    @EnvironmentObject private var appViewModel: AppViewModel
-
-    var body: some View {
-        List {
-            NavigationLink {
-                PrescriptionsListView(role: role)
-                    .environmentObject(appViewModel)
-            } label: {
-                Label(appViewModel.tr("my_prescriptions"), systemImage: "cross.case")
-            }
-            Label("Consultation Summary", systemImage: "doc.text")
-            Label("Lab Reports", systemImage: "waveform.path.ecg")
-        }
-        .navigationTitle(appViewModel.tr("medical_records"))
-    }
-}
-
 struct EditProfileView: View {
     @EnvironmentObject private var appViewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
@@ -6121,28 +7195,6 @@ struct EditProfileView: View {
     }
 }
 
-struct UsersView: View {
-    @EnvironmentObject private var appViewModel: AppViewModel
-    var body: some View {
-        List(["All Users", "Doctors", "Patients", "Administrators"], id: \.self) { item in
-            Text(item)
-                .font(HASETTheme.font(.regular, 15))
-        }
-        .navigationTitle(appViewModel.tr("all_users"))
-    }
-}
-
-struct ActivityLogsView: View {
-    @EnvironmentObject private var appViewModel: AppViewModel
-    var body: some View {
-        List(["Login", "Registration", "Notification", "Doctor Approval", "Profile Update"], id: \.self) { item in
-            Text(item)
-                .font(HASETTheme.font(.regular, 15))
-        }
-        .navigationTitle(appViewModel.tr("activity_logs"))
-    }
-}
-
 private extension NavigationLink where Label == Text, Destination: View {
     func profileLink() -> some View {
         self
@@ -6151,5 +7203,811 @@ private extension NavigationLink where Label == Text, Destination: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color.white))
+    }
+}
+
+enum AppointmentExportBuilder {
+    private static let pageWidth: CGFloat = 595
+    private static let pageHeight: CGFloat = 842
+    private static let margin: CGFloat = 40
+
+    static func csv(_ rows: [AppointmentSummary]) -> String {
+        func escape(_ value: String) -> String {
+            if value.contains(",") || value.contains("\"") || value.contains("\n") {
+                return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
+            }
+            return value
+        }
+        var lines = ["Appointment ID,Title,Participant,Status,Date,Time,Display,Type"]
+        for row in rows {
+            let fields = [
+                row.id,
+                "Appointment",
+                row.title,
+                row.status.rawValue,
+                row.date,
+                row.time,
+                row.dateText,
+                row.appointmentType ?? ""
+            ]
+            lines.append(fields.map(escape).joined(separator: ","))
+        }
+        return lines.joined(separator: "\r\n")
+    }
+
+    static func pdf(_ rows: [AppointmentSummary]) -> Data? {
+        let renderer = UIGraphicsPDFRenderer(
+            bounds: CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
+        )
+        var y: CGFloat = 0
+        let data = renderer.pdfData { context in
+            context.beginPage()
+            y = draw(
+                "AfyaHASET Appointments",
+                font: .systemFont(ofSize: 18, weight: .bold),
+                color: .black,
+                at: y + margin,
+                width: pageWidth - margin * 2
+            )
+            y += 4
+            y = draw(
+                "Exported \(Formatters.mediumDate.string(from: Date())) • \(rows.count) appointments",
+                font: .systemFont(ofSize: 11),
+                color: .darkGray,
+                at: y,
+                width: pageWidth - margin * 2
+            )
+            y += 16
+
+            for row in rows {
+                if y > pageHeight - margin - 70 {
+                    context.beginPage()
+                    y = margin
+                }
+                y = draw(
+                    "\(row.title) — \(row.status.rawValue)",
+                    font: .systemFont(ofSize: 13, weight: .semibold),
+                    color: .black,
+                    at: y,
+                    width: pageWidth - margin * 2
+                )
+                y += 2
+                y = draw(
+                    "\(row.dateText)\(row.appointmentType.map { " • \($0)" } ?? "")",
+                    font: .systemFont(ofSize: 11),
+                    color: .darkGray,
+                    at: y,
+                    width: pageWidth - margin * 2
+                )
+                y += 14
+            }
+        }
+        return data.isEmpty ? nil : data
+    }
+
+    private static func draw(
+        _ text: String,
+        font: UIFont,
+        color: UIColor,
+        at y: CGFloat,
+        width: CGFloat
+    ) -> CGFloat {
+        let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        let bounding = (text as NSString).boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes,
+            context: nil
+        )
+        (text as NSString).draw(
+            in: CGRect(x: margin, y: y, width: width, height: ceil(bounding.height)),
+            withAttributes: attributes
+        )
+        return y + ceil(bounding.height)
+    }
+}
+
+enum ChatAttachmentProcessor {
+    enum AttachmentError: Error {
+        case tooLarge
+        case failed
+    }
+
+    static let maxImageBytes = 1_048_576
+    static let maxDocumentBytes = 1_048_576
+    static let maxVideoBytes = 5_242_880
+
+    static let documentTypes: [UTType] = [
+        .pdf,
+        .plainText,
+        .commaSeparatedText,
+        .rtf,
+        UTType("org.openxmlformats.wordprocessingml.document") ?? .data,
+        UTType("org.openxmlformats.spreadsheetml.sheet") ?? .data,
+        UTType("com.microsoft.word.doc") ?? .data,
+        UTType("com.microsoft.excel.xls") ?? .data
+    ]
+
+    static func mimeType(for fileName: String) -> String {
+        switch (fileName as NSString).pathExtension.lowercased() {
+        case "pdf": return "application/pdf"
+        case "txt": return "text/plain"
+        case "csv": return "text/csv"
+        case "rtf": return "application/rtf"
+        case "doc": return "application/msword"
+        case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "xls": return "application/vnd.ms-excel"
+        case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "png": return "image/png"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "mp4": return "video/mp4"
+        case "mov": return "video/quicktime"
+        case "m4a": return "audio/mp4"
+        default: return "application/octet-stream"
+        }
+    }
+
+    static func formattedSize(_ bytes: Int) -> String {
+        if bytes >= 1_048_576 {
+            return String(format: "%.1f MB", Double(bytes) / 1_048_576)
+        }
+        if bytes >= 1024 {
+            return String(format: "%.1f KB", Double(bytes) / 1024)
+        }
+        return "\(bytes) B"
+    }
+
+    static func imageData(_ data: Data) -> Data? {
+        guard let image = UIImage(data: data) else {
+            return data.count <= maxImageBytes ? data : nil
+        }
+        return jpegData(from: image)
+    }
+
+    static func jpegData(from image: UIImage) -> Data? {
+        let longestSide = max(image.size.width, image.size.height)
+        guard longestSide > 0 else { return nil }
+        let scale = min(1, 1800 / longestSide)
+        let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        var quality: CGFloat = 0.88
+        var encoded = resized.jpegData(compressionQuality: quality)
+        while let current = encoded, current.count > maxImageBytes, quality > 0.4 {
+            quality -= 0.12
+            encoded = resized.jpegData(compressionQuality: quality)
+        }
+        guard let data = encoded, data.count <= maxImageBytes else { return nil }
+        return data
+    }
+
+    static func videoData(url: URL) async throws -> Data {
+        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        if size > 0, size <= maxVideoBytes {
+            return try Data(contentsOf: url)
+        }
+        return try await compressedVideoData(at: url)
+    }
+
+    private static func compressedVideoData(at url: URL) async throws -> Data {
+        let asset = AVURLAsset(url: url)
+        guard let session = AVAssetExportSession(
+            asset: asset,
+            presetName: AVAssetExportPresetMediumQuality
+        ) else {
+            throw AttachmentError.failed
+        }
+        let output = FileManager.default.temporaryDirectory
+            .appendingPathComponent("chat-video-\(UUID().uuidString).mp4")
+        try? FileManager.default.removeItem(at: output)
+        session.outputURL = output
+        session.outputFileType = .mp4
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            session.exportAsynchronously {
+                continuation.resume()
+            }
+        }
+        guard session.status == .completed else {
+            throw AttachmentError.failed
+        }
+        let exportedSize = (try? output.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        defer { try? FileManager.default.removeItem(at: output) }
+        guard exportedSize > 0, exportedSize <= maxVideoBytes else {
+            throw AttachmentError.tooLarge
+        }
+        return try Data(contentsOf: output)
+    }
+}
+
+struct PickedChatVideo: Transferable {
+    let url: URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { received in
+            SentTransferredFile(received.url)
+        } importing: { received in
+            let extensionName = received.file.pathExtension.isEmpty ? "mp4" : received.file.pathExtension
+            let copy = FileManager.default.temporaryDirectory
+                .appendingPathComponent("chat-video-\(UUID().uuidString).\(extensionName)")
+            try? FileManager.default.removeItem(at: copy)
+            try FileManager.default.copyItem(at: received.file, to: copy)
+            return PickedChatVideo(url: copy)
+        }
+    }
+}
+
+struct CameraChatPicker: UIViewControllerRepresentable {
+    let onImage: (UIImage) -> Void
+    let onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.mediaTypes = ["public.image"]
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImage: onImage, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        private let onImage: (UIImage) -> Void
+        private let onCancel: () -> Void
+
+        init(onImage: @escaping (UIImage) -> Void, onCancel: @escaping () -> Void) {
+            self.onImage = onImage
+            self.onCancel = onCancel
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            if let image = info[.originalImage] as? UIImage {
+                onImage(image)
+            } else {
+                onCancel()
+            }
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            onCancel()
+        }
+    }
+}
+
+struct QuickLookChatPreview: UIViewControllerRepresentable {
+    let fileURL: URL
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(items: [fileURL])
+    }
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        private let items: [URL]
+
+        init(items: [URL]) {
+            self.items = items
+        }
+
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
+            items.count
+        }
+
+        func previewController(
+            _ controller: QLPreviewController,
+            previewItemAt index: Int
+        ) -> QLPreviewItem {
+            items[index] as NSURL
+        }
+    }
+}
+
+struct ChatAttachmentSheet: View {
+    let role: UserRole
+    let onCamera: () -> Void
+    let onDocument: () -> Void
+    @Binding var imageSelection: PhotosPickerItem?
+    @Binding var videoSelection: PhotosPickerItem?
+    var onPrescription: (() -> Void)? = nil
+    var onRequestService: (() -> Void)? = nil
+
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button {
+                        onCamera()
+                    } label: {
+                        Label(appViewModel.tr("take_photo"), systemImage: "camera")
+                    }
+                }
+                PhotosPicker(selection: $imageSelection, matching: .images) {
+                    Label(appViewModel.tr("photo_library"), systemImage: "photo.on.rectangle")
+                }
+                PhotosPicker(selection: $videoSelection, matching: .videos) {
+                    Label(appViewModel.tr("video_library"), systemImage: "film")
+                }
+                Button {
+                    onDocument()
+                } label: {
+                    Label(appViewModel.tr("browse_document"), systemImage: "doc")
+                }
+                if role == .doctor {
+                    if let onPrescription {
+                        Button {
+                            onPrescription()
+                        } label: {
+                            Label(appViewModel.tr("send_prescription"), systemImage: "cross.case")
+                        }
+                    }
+                    if let onRequestService {
+                        Button {
+                            onRequestService()
+                        } label: {
+                            Label(appViewModel.tr("request_service_payment"), systemImage: "creditcard")
+                        }
+                    }
+                }
+            }
+            .navigationTitle(appViewModel.tr("attach_file"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(appViewModel.tr("cancel")) { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+struct ChatPrescriptionSheet: View {
+    let chatRoomId: String
+    let patientId: String
+    let patientName: String
+    let onSent: () async -> Void
+
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var instructions = ""
+    @State private var medicineName = ""
+    @State private var dosage = ""
+    @State private var frequency = ""
+    @State private var duration = ""
+    @State private var medicines: [PrescriptionMedicine] = []
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var imageData: Data?
+    @State private var appointments: [AppointmentSummary] = []
+    @State private var selectedAppointmentId = ""
+    @State private var loadingAppointments = true
+    @State private var saving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(appViewModel.tr("patient"))
+                            .font(HASETTheme.font(.medium, 13))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                        Text(patientName)
+                            .font(HASETTheme.font(.medium, 16))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(HASETTheme.backgroundPrimary)
+                    )
+
+                    if loadingAppointments {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else if appointments.isEmpty {
+                        Text(appViewModel.tr("no_appointments_for_patient"))
+                            .font(HASETTheme.font(.regular, 13))
+                            .foregroundStyle(.orange)
+                    } else {
+                        Picker(appViewModel.tr("select_appointment"), selection: $selectedAppointmentId) {
+                            Text(appViewModel.tr("select_appointment")).tag("")
+                            ForEach(appointments) { appointment in
+                                Text(appointmentLabel(appointment)).tag(appointment.id)
+                            }
+                        }
+                    }
+
+                    TextField(appViewModel.tr("instructions"), text: $instructions, axis: .vertical)
+                        .lineLimit(3...6)
+                        .textFieldStyle(.roundedBorder)
+
+                    TextField(appViewModel.tr("medicine_name"), text: $medicineName)
+                        .textFieldStyle(.roundedBorder)
+                    TextField(appViewModel.tr("dosage"), text: $dosage)
+                        .textFieldStyle(.roundedBorder)
+                    TextField(appViewModel.tr("frequency"), text: $frequency)
+                        .textFieldStyle(.roundedBorder)
+                    TextField(appViewModel.tr("duration_days"), text: $duration)
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(.roundedBorder)
+
+                    Button(appViewModel.tr("add_medicine")) { addMedicine() }
+                        .disabled(medicineName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    ForEach(medicines) { medicine in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(medicine.name)
+                                    .font(HASETTheme.font(.medium, 14))
+                                Text("\(medicine.dosage) • \(medicine.frequency) • \(medicine.duration) \(appViewModel.tr("days"))")
+                                    .font(HASETTheme.font(.regular, 12))
+                                    .foregroundStyle(HASETTheme.textSecondary)
+                            }
+                            Spacer()
+                            Button {
+                                medicines.removeAll { $0.id == medicine.id }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white)
+                        )
+                    }
+
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        Label(
+                            imageData == nil ? appViewModel.tr("upload_image") : appViewModel.tr("image_selected"),
+                            systemImage: imageData == nil ? "photo.badge.plus" : "photo.badge.checkmark"
+                        )
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle(appViewModel.tr("send_prescription"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(appViewModel.tr("cancel")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saving ? appViewModel.tr("saving") : appViewModel.tr("save")) {
+                        Task { await save() }
+                    }
+                    .disabled(saving || appointments.isEmpty)
+                }
+            }
+            .task { await loadAppointments() }
+            .onChange(of: selectedPhoto) { item in
+                Task { imageData = try? await item?.loadTransferable(type: Data.self) }
+            }
+            .alert(appViewModel.tr("error"), isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button(appViewModel.tr("ok"), role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
+            .screenshotProtected()
+        }
+    }
+
+    private func addMedicine() {
+        let trimmedName = medicineName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        medicines.append(
+            PrescriptionMedicine(
+                id: UUID().uuidString,
+                name: trimmedName,
+                dosage: dosage.trimmingCharacters(in: .whitespacesAndNewlines),
+                frequency: frequency.trimmingCharacters(in: .whitespacesAndNewlines),
+                duration: Int(duration.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+            )
+        )
+        medicineName = ""
+        dosage = ""
+        frequency = ""
+        duration = ""
+    }
+
+    @MainActor
+    private func loadAppointments() async {
+        guard let session = appViewModel.activeSession ?? SessionStore().loadSession() else {
+            loadingAppointments = false
+            return
+        }
+        do {
+            let all = try await AuthService().fetchAppointments(
+                userId: session.userId,
+                role: .doctor,
+                idToken: session.idToken
+            )
+            appointments = all
+                .filter { ($0.patientId ?? "") == patientId }
+                .sorted { ($0.createdAt ?? 0) > ($1.createdAt ?? 0) }
+            selectedAppointmentId = appointments.first?.id ?? ""
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        loadingAppointments = false
+    }
+
+    private func save() async {
+        guard let profile = appViewModel.currentUser,
+              let session = appViewModel.activeSession ?? SessionStore().loadSession() else { return }
+        guard !selectedAppointmentId.isEmpty else {
+            errorMessage = appViewModel.tr("select_appointment_required")
+            return
+        }
+        guard !medicines.isEmpty else {
+            errorMessage = appViewModel.tr("at_least_one_medicine")
+            return
+        }
+
+        saving = true
+        defer { saving = false }
+        do {
+            var imageURL: String?
+            if let imageData {
+                imageURL = try await AuthService().uploadPrescriptionImage(imageData)
+            }
+            let prescriptionId = try await AuthService().createPrescription(
+                patientId: patientId,
+                patientName: patientName,
+                doctorId: session.userId,
+                doctorName: profile.fullName,
+                appointmentId: selectedAppointmentId,
+                medicines: medicines,
+                instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines),
+                imageUrl: imageURL,
+                idToken: session.idToken
+            )
+            try await appViewModel.sendChatMessage(
+                chatRoomId: chatRoomId,
+                receiverId: patientId,
+                receiverName: patientName,
+                message: appViewModel.tr("new_prescription_issued"),
+                messageType: "prescription",
+                prescriptionId: prescriptionId
+            )
+            await onSent()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func appointmentLabel(_ appointment: AppointmentSummary) -> String {
+        [appointment.dateText, appointment.time, appointment.title]
+            .filter { !$0.isEmpty }
+            .joined(separator: " • ")
+    }
+}
+
+struct ChatServicePayload: Codable, Hashable {
+    let serviceId: String?
+    let serviceName: String?
+    let appointmentFee: Double?
+    let patientPercentage: Int?
+    let patientPayAmount: Double?
+    let doctorId: String?
+    let patientId: String?
+    let isPaid: Bool?
+    let paymentStatus: String?
+    let createdAt: TimeInterval?
+
+    init?(json: String) {
+        guard let data = json.data(using: .utf8),
+              let value = try? JSONDecoder().decode(ChatServicePayload.self, from: data) else {
+            return nil
+        }
+        self = value
+    }
+}
+
+struct PendingServicePayment: Identifiable {
+    let messageId: String
+    let payload: ChatServicePayload
+    let checkoutDoctor: DoctorSummary
+
+    var id: String { messageId }
+}
+
+struct ChatServiceRequestSheet: View {
+    let chatRoomId: String
+    let doctorId: String
+    let doctorName: String
+    let patientId: String
+    let patientName: String
+    let onSent: () async -> Void
+
+    @EnvironmentObject private var appViewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var serviceName = ""
+    @State private var feeText = ""
+    @State private var patientPercentage = 50
+    @State private var saving = false
+    @State private var errorMessage: String?
+
+    private var appointmentFee: Double {
+        Double(feeText.replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)) ?? 0
+    }
+
+    private var patientPayAmount: Double {
+        appointmentFee * Double(patientPercentage) / 100.0
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(appViewModel.tr("patient"))
+                            .font(HASETTheme.font(.medium, 13))
+                            .foregroundStyle(HASETTheme.textSecondary)
+                        Text(patientName)
+                            .font(HASETTheme.font(.medium, 16))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(HASETTheme.backgroundPrimary)
+                    )
+
+                    TextField(appViewModel.tr("service_name"), text: $serviceName)
+                        .textFieldStyle(.roundedBorder)
+
+                    TextField(appViewModel.tr("service_fee"), text: $feeText)
+                        .keyboardType(.numberPad)
+                        .textFieldStyle(.roundedBorder)
+
+                    Stepper(
+                        "\(appViewModel.tr("you_pay")) \(patientPercentage)%",
+                        value: $patientPercentage,
+                        in: 0...100,
+                        step: 5
+                    )
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(appViewModel.tr("total_fee"))
+                                .font(HASETTheme.font(.regular, 14))
+                            Spacer()
+                            Text(String(format: "%,.0f TZS", appointmentFee))
+                                .font(HASETTheme.font(.medium, 14))
+                        }
+                        HStack {
+                            Text("\(appViewModel.tr("you_pay")) (\(patientPercentage)%):")
+                                .font(HASETTheme.font(.regular, 14))
+                            Spacer()
+                            Text(String(format: "%,.0f TZS", patientPayAmount))
+                                .font(HASETTheme.font(.medium, 14))
+                                .foregroundStyle(HASETTheme.greenPrimary)
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.white)
+                    )
+
+                    if appointmentFee > 0, patientPayAmount < HASETConstants.minPaymentAmount {
+                        Text(appViewModel.tr("service_min_amount"))
+                            .font(HASETTheme.font(.regular, 13))
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle(appViewModel.tr("request_service_payment"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(appViewModel.tr("cancel")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saving ? appViewModel.tr("saving") : appViewModel.tr("send")) {
+                        Task { await save() }
+                    }
+                    .disabled(saving)
+                }
+            }
+            .alert(appViewModel.tr("error"), isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button(appViewModel.tr("ok"), role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
+            .screenshotProtected()
+        }
+    }
+
+    private func save() async {
+        let trimmedName = serviceName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            errorMessage = appViewModel.tr("service_name_required")
+            return
+        }
+        guard appointmentFee > 0 else {
+            errorMessage = appViewModel.tr("service_fee_required")
+            return
+        }
+        guard patientPayAmount >= HASETConstants.minPaymentAmount else {
+            errorMessage = appViewModel.tr("service_min_amount")
+            return
+        }
+        guard let profile = appViewModel.currentUser,
+              let session = appViewModel.activeSession ?? SessionStore().loadSession() else { return }
+
+        saving = true
+        defer { saving = false }
+
+        let serviceId = UUID().uuidString
+        let payload: [String: Any] = [
+            "serviceId": serviceId,
+            "serviceName": trimmedName,
+            "appointmentFee": appointmentFee,
+            "patientPercentage": patientPercentage,
+            "patientPayAmount": patientPayAmount,
+            "doctorId": session.userId,
+            "patientId": patientId,
+            "isPaid": false,
+            "createdAt": Int(Date().timeIntervalSince1970 * 1000),
+            "paymentStatus": "pending"
+        ]
+        do {
+            let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+            let json = String(data: data, encoding: .utf8) ?? "{}"
+            let messageId = try await appViewModel.sendChatMessage(
+                chatRoomId: chatRoomId,
+                receiverId: patientId,
+                receiverName: patientName,
+                message: json,
+                messageType: "service"
+            )
+            try await AuthService().createServicePaymentRequest(
+                serviceId: serviceId,
+                messageId: messageId,
+                chatRoomId: chatRoomId,
+                doctorId: session.userId,
+                patientId: patientId,
+                serviceName: trimmedName,
+                appointmentFee: appointmentFee,
+                patientPercentage: patientPercentage,
+                patientPayAmount: patientPayAmount,
+                idToken: session.idToken
+            )
+            await onSent()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

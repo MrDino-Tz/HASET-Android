@@ -358,20 +358,16 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Action Buttons -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/enter_your_sixdigit_authenticator_code"
-                android:textColor="@color/text_primary"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
-
-            <com.haset.hasetapp.ui.MfaCodeInputView
-                android:id="@+id/mfaCodeInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginBottom="20dp"
+                android:drawableStart="@drawable/ic_email"
+                android:drawablePadding="10dp"
+                android:gravity="center_vertical"
+                android:text="@string/withdrawal_email_code_notice"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -382,7 +378,7 @@
                     android:id="@+id/btnConfirmWithdraw"
                     android:layout_width="match_parent"
                     android:layout_height="60dp"
-                    android:text="@string/confirm_withdrawal"
+                    android:text="@string/continue_to_email_verification"
                     android:textStyle="bold"
                     android:textColor="@color/white"
                     android:fontFamily="@font/poppins_medium"

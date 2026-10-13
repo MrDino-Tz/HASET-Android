@@ -1,6 +1,7 @@
 import SwiftUI
 import UserNotifications
 import UIKit
+import GoogleSignIn
 
 final class HASETNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(
@@ -37,6 +38,11 @@ final class HASETAppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         PushNotificationService.configure()
         UNUserNotificationCenter.current().delegate = notificationDelegate
+        if let plistPath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+           let plist = NSDictionary(contentsOfFile: plistPath),
+           let clientID = plist["CLIENT_ID"] as? String {
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+        }
         return true
     }
 
@@ -60,6 +66,9 @@ struct HASETApp: App {
             RootView()
                 .environmentObject(appViewModel)
                 .onOpenURL { url in
+                    if GIDSignIn.sharedInstance.handle(url) {
+                        return
+                    }
                     appViewModel.handleIncomingURL(url)
                 }
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in

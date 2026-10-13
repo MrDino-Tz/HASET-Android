@@ -2,6 +2,7 @@ package com.haset.hasetapp.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -45,8 +46,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class DoctorWalletActivity extends BaseActivity {
-    private static final int MFA_ENROLLMENT_REQUEST = 1703;
+    private static final int WITHDRAWAL_EMAIL_OTP_REQUEST = 1704;
     private static final double DEFAULT_WITHDRAWAL_FEE = 1500.0;
+    private static final long PAYOUT_OTP_RESEND_DELAY_MS = 60_000L;
     private TextView tvBalance, tvTotalEarnings, tvWithdrawReadiness;
     private RecyclerView rvTransactions;
     private PreferenceManager preferenceManager;
@@ -61,6 +63,8 @@ public class DoctorWalletActivity extends BaseActivity {
     private double withdrawalFee = DEFAULT_WITHDRAWAL_FEE;
     private WithdrawalHistoryAdapter historyAdapter;
     private List<WithdrawalRequest> latestWithdrawalRequests;
+    private CountDownTimer payoutOtpResendTimer;
+    private boolean destinationOtpSending;
     // private boolean securityWarningShown = false;
 
     @Override
@@ -180,8 +184,8 @@ public class DoctorWalletActivity extends BaseActivity {
         
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         
-        btnWithdraw.setOnClickListener(v -> checkMfaThenShowWithdrawal());
-        btnPayoutAccounts.setOnClickListener(v -> checkMfaThenShowPayoutAccounts());
+        btnWithdraw.setOnClickListener(v -> showWithdrawalIfReady());
+        btnPayoutAccounts.setOnClickListener(v -> showPayoutAccountDialog());
         
         ivToggleBalance.setOnClickListener(v -> {
             isBalanceVisible = !isBalanceVisible;
@@ -393,7 +397,6 @@ public class DoctorWalletActivity extends BaseActivity {
         ImageView ivBankSelected = view.findViewById(R.id.ivBankSelected);
         MaterialButton btnCancel = view.findViewById(R.id.btnCancel);
         MaterialButton btnConfirmWithdraw = view.findViewById(R.id.btnConfirmWithdraw);
-        MfaCodeInputView mfaCodeInput = view.findViewById(R.id.mfaCodeInput);
 
         double feeAmountForLimit = Math.max(0, withdrawalFee);
         double maxPayoutAmount = Math.max(0, currentWallet.getBalance() - feeAmountForLimit);
@@ -494,10 +497,29 @@ public class DoctorWalletActivity extends BaseActivity {
                 return;
             }
 
-            // Process withdrawal
-            if (!mfaCodeInput.isComplete()) { mfaCodeInput.setErrorState(true); Toast.makeText(this, "Enter the six-digit MFA code", Toast.LENGTH_SHORT).show(); return; }
             if (selectedMethod[0].isEmpty()) { Toast.makeText(this, R.string.no_verified_payout_destination, Toast.LENGTH_LONG).show(); return; }
-            processWithdrawal(amount, feeAmount, selectedMethod[0], btnConfirmWithdraw, mfaCodeInput.getCode());
+            btnConfirmWithdraw.setEnabled(false);
+            btnConfirmWithdraw.setText(R.string.sending_email_code);
+            viewModel.sendWithdrawalEmailOtp(new FirebaseHelper.OnCompleteListener<Void>() {
+                @Override public void onSuccess(Void ignored) {
+                    if (isFinishing()) return;
+                    if (withdrawDialog != null && withdrawDialog.isShowing()) withdrawDialog.dismiss();
+                    Intent intent = new Intent(DoctorWalletActivity.this, WithdrawalEmailOtpActivity.class);
+                    intent.putExtra(WithdrawalEmailOtpActivity.EXTRA_AMOUNT, amount);
+                    intent.putExtra(WithdrawalEmailOtpActivity.EXTRA_FEE, feeAmount);
+                    intent.putExtra(WithdrawalEmailOtpActivity.EXTRA_METHOD, selectedMethod[0]);
+                    intent.putExtra(WithdrawalEmailOtpActivity.EXTRA_CODE_SENT_AT, System.currentTimeMillis());
+                    startActivityForResult(intent, WITHDRAWAL_EMAIL_OTP_REQUEST);
+                }
+
+                @Override public void onError(String error) {
+                    if (isFinishing()) return;
+                    btnConfirmWithdraw.setEnabled(true);
+                    btnConfirmWithdraw.setText(R.string.continue_to_email_verification);
+                    ErrorDisplay.toast(DoctorWalletActivity.this,
+                            error != null ? error : getString(R.string.email_code_send_failed));
+                }
+            });
         });
 
         withdrawDialog.setContentView(view);
@@ -507,7 +529,7 @@ public class DoctorWalletActivity extends BaseActivity {
         withdrawDialog.show();
     }
 
-    private void checkMfaThenShowWithdrawal() {
+    private void showWithdrawalIfReady() {
         if (currentWallet == null || currentWallet.getBalance() <= 0) {
             Toast.makeText(this, R.string.no_balance_withdrawal, Toast.LENGTH_SHORT).show();
             return;
@@ -516,35 +538,11 @@ public class DoctorWalletActivity extends BaseActivity {
             Toast.makeText(this, payoutDestinationUnavailableMessage(), Toast.LENGTH_LONG).show();
             return;
         }
-        com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
-        if (user == null) {
+        if (FirebaseHelper.getFirebaseAuth().getCurrentUser() == null) {
             Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
             return;
         }
-        btnWithdraw.setEnabled(false);
-        user.getIdToken(true).addOnSuccessListener(token ->
-            RetrofitClient.getInstance().getMobileMfaApiService()
-                .status("Bearer " + token.getToken())
-                .enqueue(new Callback<JsonObject>() {
-                    @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                        updateWithdrawButtonState();
-                        boolean enabled = response.isSuccessful() && response.body() != null
-                                && response.body().has("two_factor_enabled")
-                                && response.body().get("two_factor_enabled").getAsBoolean();
-                        if (enabled) showWithdrawBottomSheet();
-                        else showMfaRequiredDialog();
-                    }
-
-                    @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
-                        updateWithdrawButtonState();
-                        Toast.makeText(DoctorWalletActivity.this,
-                                R.string.mfa_status_unavailable, Toast.LENGTH_LONG).show();
-                    }
-                })
-        ).addOnFailureListener(error -> {
-            updateWithdrawButtonState();
-            Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
-        });
+        showWithdrawBottomSheet();
     }
 
     private boolean hasApprovedPayoutDestination() {
@@ -646,44 +644,6 @@ public class DoctorWalletActivity extends BaseActivity {
         return getString(R.string.withdraw_reason_configured_not_ready);
     }
 
-    private void showMfaRequiredDialog() {
-        CustomDialog dialog = new CustomDialog(this)
-                .setDialogType(CustomDialog.DialogType.INFO)
-                .setTitle(getString(R.string.mfa_required_for_withdrawal_title))
-                .setMessage(getString(R.string.mfa_required_for_withdrawal_message))
-                .setPositiveButton(getString(R.string.enable_mfa), v ->
-                        startActivityForResult(
-                                new Intent(this, MfaEnrollmentActivity.class),
-                                MFA_ENROLLMENT_REQUEST))
-                .setNegativeButton(getString(android.R.string.cancel), null)
-                .setPositiveButtonColor(R.color.info_color)
-                .show();
-    }
-
-    private void checkMfaThenShowPayoutAccounts() {
-        com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
-        if (user == null) { Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show(); return; }
-        btnPayoutAccounts.setEnabled(false);
-        user.getIdToken(true).addOnSuccessListener(token -> RetrofitClient.getInstance().getMobileMfaApiService()
-                .status("Bearer " + token.getToken()).enqueue(new Callback<JsonObject>() {
-                    @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                        btnPayoutAccounts.setEnabled(true);
-                        boolean enabled = response.isSuccessful() && response.body() != null
-                                && response.body().has("two_factor_enabled")
-                                && response.body().get("two_factor_enabled").getAsBoolean();
-                        if (enabled) showPayoutAccountDialog(); else showMfaRequiredDialog();
-                    }
-                    @Override public void onFailure(Call<JsonObject> call, Throwable throwable) {
-                        btnPayoutAccounts.setEnabled(true);
-                        Toast.makeText(DoctorWalletActivity.this, R.string.mfa_status_unavailable, Toast.LENGTH_LONG).show();
-                    }
-                }))
-                .addOnFailureListener(error -> {
-                    btnPayoutAccounts.setEnabled(true);
-                    Toast.makeText(this, R.string.authentication_expired, Toast.LENGTH_SHORT).show();
-                });
-    }
-
     private void showPayoutAccountDialog() {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_payout_destination, null);
         RadioGroup typeGroup = view.findViewById(R.id.rgDestinationType);
@@ -693,7 +653,9 @@ public class DoctorWalletActivity extends BaseActivity {
         TextInputEditText phone = view.findViewById(R.id.etPayoutPhone);
         AutoCompleteTextView bankCode = view.findViewById(R.id.etBankCode);
         TextInputEditText bankAccount = view.findViewById(R.id.etBankAccount);
-        MfaCodeInputView mfaCode = view.findViewById(R.id.destinationMfaCodeInput);
+        MfaCodeInputView codeInput = view.findViewById(R.id.destinationMfaCodeInput);
+        MaterialButton sendCodeButton = view.findViewById(R.id.btnSendDestinationOtp);
+        TextView otpStatus = view.findViewById(R.id.tvDestinationOtpStatus);
         String[] providers = {"Vodacom M-Pesa", "Airtel Money", "Tigo Pesa", "Halotel", "Mixx by Yas"};
         provider.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, providers));
         String[] banks = {"CRDB", "NMB", "TCB", "AKIBA Bank", "DTB", "KCB", "Azania Bank", "Mwanga Bank", "Selcom MF Bank"};
@@ -705,18 +667,20 @@ public class DoctorWalletActivity extends BaseActivity {
             bankFields.setVisibility(View.GONE);
         });
 
+        sendCodeButton.setOnClickListener(v -> sendDestinationEmailCode(sendCodeButton, otpStatus));
+
         androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Payout accounts")
                 .setView(view)
                 .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton("Submit for approval", null)
+                .setPositiveButton(R.string.save_payout_account, null)
                 .create();
         dialog.setOnShowListener(ignored -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             boolean bank = false;
-            String code = mfaCode.getCode();
-            if (!mfaCode.isComplete()) {
-                mfaCode.setErrorState(true);
-                Toast.makeText(this, "Enter your six-digit MFA code", Toast.LENGTH_SHORT).show();
+            String code = codeInput.getCode();
+            if (!codeInput.isComplete()) {
+                codeInput.setErrorState(true);
+                Toast.makeText(this, R.string.email_code_required, Toast.LENGTH_SHORT).show();
                 return;
             }
             JsonObject body = new JsonObject();
@@ -732,34 +696,75 @@ public class DoctorWalletActivity extends BaseActivity {
             submitPayoutDestination(body, code, dialog);
         }));
         dialog.show();
-        mfaCode.focusFirst();
+        codeInput.focusFirst();
+    }
+
+    private void sendDestinationEmailCode(MaterialButton sendButton, TextView statusText) {
+        if (destinationOtpSending) return;
+        destinationOtpSending = true;
+        sendButton.setEnabled(false);
+        sendButton.setText(R.string.sending_email_code);
+        viewModel.sendWithdrawalEmailOtp(new FirebaseHelper.OnCompleteListener<Void>() {
+            @Override public void onSuccess(Void ignored) {
+                if (isFinishing()) return;
+                destinationOtpSending = false;
+                statusText.setText(R.string.email_verification_code_sent);
+                statusText.setVisibility(View.VISIBLE);
+                startDestinationOtpCooldown(sendButton);
+            }
+
+            @Override public void onError(String error) {
+                if (isFinishing()) return;
+                destinationOtpSending = false;
+                sendButton.setEnabled(true);
+                sendButton.setText(R.string.resend_email_code);
+                statusText.setText(error != null ? error : getString(R.string.email_code_send_failed));
+                statusText.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void startDestinationOtpCooldown(MaterialButton sendButton) {
+        if (payoutOtpResendTimer != null) payoutOtpResendTimer.cancel();
+        sendButton.setEnabled(false);
+        payoutOtpResendTimer = new CountDownTimer(PAYOUT_OTP_RESEND_DELAY_MS, 1000L) {
+            @Override public void onTick(long millisUntilFinished) {
+                sendButton.setText(getString(R.string.resend_email_code_countdown,
+                        (int) Math.ceil(millisUntilFinished / 1000.0)));
+            }
+
+            @Override public void onFinish() {
+                sendButton.setEnabled(true);
+                sendButton.setText(R.string.resend_email_code);
+            }
+        }.start();
     }
 
     private String text(android.widget.EditText field) {
         return field.getText() == null ? "" : field.getText().toString().trim();
     }
 
-    private void submitPayoutDestination(JsonObject destination, String mfaCode, androidx.appcompat.app.AlertDialog dialog) {
+    private void submitPayoutDestination(JsonObject destination, String emailCode, androidx.appcompat.app.AlertDialog dialog) {
         com.google.firebase.auth.FirebaseUser user = FirebaseHelper.getFirebaseAuth().getCurrentUser();
         if (user == null) { dialog.dismiss(); return; }
         user.getIdToken(true).addOnSuccessListener(token -> {
             String bearer = "Bearer " + token.getToken();
-            JsonObject codeBody = new JsonObject(); codeBody.addProperty("code", mfaCode);
+            JsonObject codeBody = new JsonObject(); codeBody.addProperty("code", emailCode);
             RetrofitClient.getInstance().getMobileMfaApiService().verify(bearer, codeBody).enqueue(new Callback<JsonObject>() {
                 @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                     if (!response.isSuccessful() || response.body() == null || !response.body().has("mfa_action_token")) {
                         dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                        Toast.makeText(DoctorWalletActivity.this, "Invalid or expired MFA code.", Toast.LENGTH_LONG).show(); return;
+                        Toast.makeText(DoctorWalletActivity.this, R.string.invalid_or_expired_email_code, Toast.LENGTH_LONG).show(); return;
                     }
                     String actionToken = response.body().get("mfa_action_token").getAsString();
                     RetrofitClient.getInstance().getDoctorPayoutApiService().updatePayoutDestination(bearer, actionToken, destination).enqueue(new Callback<JsonObject>() {
                         @Override public void onResponse(Call<JsonObject> c, Response<JsonObject> r) {
                             dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
                             if (r.isSuccessful()) {
-                                mirrorPendingPayoutDestination(destination, user.getUid());
+                                mirrorInstantPayoutDestination(destination, user.getUid());
                                 dialog.dismiss();
-                                Toast.makeText(DoctorWalletActivity.this, R.string.payout_account_submitted, Toast.LENGTH_LONG).show();
-                                updatePendingPayoutDestinationUi(destination);
+                                Toast.makeText(DoctorWalletActivity.this, R.string.payout_account_saved, Toast.LENGTH_LONG).show();
+                                applyInstantPayoutDestinationUi(destination);
                                 updateWithdrawButtonState();
                                 viewModel.refreshWalletBalance(preferenceManager.getUserId());
                             } else {
@@ -774,14 +779,14 @@ public class DoctorWalletActivity extends BaseActivity {
                         @Override public void onFailure(Call<JsonObject> c, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while saving payout account."); }
                     });
                 }
-                @Override public void onFailure(Call<JsonObject> call, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while verifying MFA."); }
+                @Override public void onFailure(Call<JsonObject> call, Throwable t) { dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true); com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this, "Network error while verifying the code."); }
             });
         }).addOnFailureListener(error -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true));
     }
 
     private void submitPayoutDestinationThroughFirebase(JsonObject destination, String doctorId, androidx.appcompat.app.AlertDialog dialog) {
         dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-        FirebaseHelper.submitPayoutDestinationForApproval(
+        FirebaseHelper.savePayoutDestinationInstant(
                 doctorId,
                 destination.has("destination_type") ? destination.get("destination_type").getAsString() : "",
                 destination.has("provider") ? destination.get("provider").getAsString() : "",
@@ -792,9 +797,9 @@ public class DoctorWalletActivity extends BaseActivity {
                     @Override
                     public void onSuccess(Boolean result) {
                         dialog.dismiss();
-                        updatePendingPayoutDestinationUi(destination);
+                        applyInstantPayoutDestinationUi(destination);
                         viewModel.refreshWalletBalance(preferenceManager.getUserId());
-                        Toast.makeText(DoctorWalletActivity.this, R.string.payout_account_submitted, Toast.LENGTH_LONG).show();
+                        Toast.makeText(DoctorWalletActivity.this, R.string.payout_account_saved, Toast.LENGTH_LONG).show();
                         updateWithdrawButtonState();
                     }
 
@@ -802,25 +807,25 @@ public class DoctorWalletActivity extends BaseActivity {
                     public void onError(String error) {
                         dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setEnabled(true);
                         com.haset.hasetapp.utils.ErrorDisplay.toast(DoctorWalletActivity.this,
-                                error != null ? error : "Unable to submit payout account.");
+                                error != null ? error : "Unable to save payout account.");
                     }
                 });
     }
 
-    private void updatePendingPayoutDestinationUi(JsonObject destination) {
+    private void applyInstantPayoutDestinationUi(JsonObject destination) {
         boolean bank = "bank".equals(destination.get("destination_type").getAsString());
         if (currentWallet == null) {
             currentWallet = new DoctorWalletEntity(preferenceManager.getUserId(), 0);
         }
         if (bank) {
-            currentWallet.setBankAvailable(false);
-            currentWallet.setBankPending(true);
-            currentWallet.setBankStatus("pending");
+            currentWallet.setBankAvailable(true);
+            currentWallet.setBankPending(false);
+            currentWallet.setBankStatus("approved");
             currentWallet.setBankLabel((destination.get("bank_code").getAsString() + "  " + destination.get("bank_account").getAsString()).trim());
         } else {
-            currentWallet.setMobileMoneyAvailable(false);
-            currentWallet.setMobileMoneyPending(true);
-            currentWallet.setMobileMoneyStatus("pending");
+            currentWallet.setMobileMoneyAvailable(true);
+            currentWallet.setMobileMoneyPending(false);
+            currentWallet.setMobileMoneyStatus("approved");
             currentWallet.setMobileMoneyLabel((destination.get("provider").getAsString() + "  " + destination.get("phone_number").getAsString()).trim());
         }
     }
@@ -834,8 +839,8 @@ public class DoctorWalletActivity extends BaseActivity {
                 || normalized.contains("payout destination");
     }
 
-    private void mirrorPendingPayoutDestination(JsonObject destination, String doctorId) {
-        FirebaseHelper.submitPayoutDestinationForApproval(
+    private void mirrorInstantPayoutDestination(JsonObject destination, String doctorId) {
+        FirebaseHelper.savePayoutDestinationInstant(
                 doctorId,
                 destination.has("destination_type") ? destination.get("destination_type").getAsString() : "",
                 destination.has("provider") ? destination.get("provider").getAsString() : "",
@@ -914,20 +919,23 @@ public class DoctorWalletActivity extends BaseActivity {
         return null;
     }
 
-    private void processWithdrawal(double amount, double feeAmount, String payoutMethod, MaterialButton confirmBtn, String mfaCode) {
-        confirmBtn.setEnabled(false);
-        confirmBtn.setText(R.string.processing);
-
-        // The backend uses the independently verified payout destination stored on the wallet.
-        viewModel.requestWithdrawalSecure(amount, feeAmount, "Doctor payout request", payoutMethod, mfaCode);
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == MFA_ENROLLMENT_REQUEST && resultCode == RESULT_OK) {
-            checkMfaThenShowWithdrawal();
+        if (requestCode == WITHDRAWAL_EMAIL_OTP_REQUEST && resultCode == RESULT_OK) {
+            Toast.makeText(this, R.string.withdrawal_request_submitted, Toast.LENGTH_LONG).show();
+            String doctorId = preferenceManager.getUserId();
+            viewModel.refreshWalletBalance(doctorId);
+            viewModel.refreshWithdrawalRequests(doctorId);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (payoutOtpResendTimer != null) {
+            payoutOtpResendTimer.cancel();
+        }
+        super.onDestroy();
     }
 
     @Override

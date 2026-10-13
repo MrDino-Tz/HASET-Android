@@ -337,6 +337,38 @@ struct LoginView: View {
                         appViewModel.login(email: email, password: password)
                     }
                     .buttonStyle(PrimaryButtonStyle())
+                    .disabled(appViewModel.isLoading || appViewModel.isGoogleSignInInProgress)
+
+                    Text(appViewModel.tr("or"))
+                        .font(HASETTheme.font(.medium, 14))
+                        .foregroundStyle(HASETTheme.textSecondary)
+                        .padding(.bottom, 16)
+
+                    Button {
+                        appViewModel.signInWithGoogle()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image("GoogleLogo")
+                                .resizable()
+                                .renderingMode(.original)
+                                .scaledToFit()
+                                .frame(width: 24, height: 24)
+                            Text(appViewModel.tr("continue_with_google"))
+                                .font(HASETTheme.font(.medium, 16))
+                                .foregroundStyle(HASETTheme.textPrimary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            RoundedRectangle(cornerRadius: 50, style: .continuous)
+                                .fill(HASETTheme.backgroundCard)
+                                .shadow(color: Color.black.opacity(0.08), radius: 8, y: 4)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(appViewModel.isLoading || appViewModel.isGoogleSignInInProgress)
+                    .opacity(appViewModel.isLoading || appViewModel.isGoogleSignInInProgress ? 0.6 : 1)
+                    .accessibilityLabel(appViewModel.tr("continue_with_google"))
                     .padding(.bottom, 24)
 
                     HStack(spacing: 4) {

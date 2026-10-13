@@ -101,3 +101,148 @@ struct PrimaryButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
     }
 }
+
+struct CheckmarkShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.18, y: rect.midY + rect.height * 0.02))
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.42, y: rect.midY + rect.height * 0.30))
+        path.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.16, y: rect.midY - rect.height * 0.26))
+        return path
+    }
+}
+
+struct AnimatedSendButton: View {
+    enum Phase: Equatable {
+        case idle
+        case sending
+        case success
+        case failed
+    }
+
+    let idleTitle: String
+    let sendingTitle: String
+    let successTitle: String
+    @Binding var phase: Phase
+    var disabled = false
+    var action: () -> Void
+
+    @State private var showCheckmark = false
+
+    private var planeOffset: CGFloat { phase == .sending || phase == .failed ? 160 : 0 }
+    private var planeRise: CGFloat { phase == .sending ? -70 : 0 }
+    private var planeRotation: Double { phase == .sending ? -38 : 0 }
+    private var planeScale: CGFloat { phase == .sending ? 0.6 : 1 }
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                HStack(spacing: 10) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .offset(x: planeOffset, y: planeRise)
+                        .rotationEffect(.degrees(planeRotation))
+                        .scaleEffect(planeScale)
+                        .opacity(phase == .idle ? 1 : 0)
+                    Text(idleTitle)
+                        .opacity(phase == .idle ? 1 : 0)
+                }
+                .animation(.easeOut(duration: 0.34), value: phase)
+
+                HStack(spacing: 10) {
+                    if phase == .sending {
+                        ProgressView().tint(.white).controlSize(.small)
+                    }
+                    Text(phase == .failed ? idleTitle : sendingTitle)
+                        .opacity(phase == .sending ? 1 : (phase == .failed ? 1 : 0))
+                }
+
+                if phase == .success {
+                    HStack(spacing: 10) {
+                        CheckmarkShape()
+                            .trim(from: 0, to: showCheckmark ? 1 : 0)
+                            .stroke(Color.white, style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
+                            .frame(width: 20, height: 20)
+                        Text(successTitle)
+                    }
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
+            }
+            .font(HASETTheme.font(.medium, 16))
+            .foregroundStyle(Color.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(backgroundColor)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled || phase == .sending)
+        .onChange(of: phase) { newPhase in
+            showCheckmark = false
+            if newPhase == .success {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
+                    showCheckmark = true
+                }
+            }
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch phase {
+        case .failed:
+            return HASETTheme.redPrimary
+        case .success:
+            return HASETTheme.greenPrimary
+        case .idle, .sending:
+            return HASETTheme.greenPrimary.opacity(disabled ? 0.55 : 1)
+        }
+    }
+}
+
+struct ConfirmationOverlay: View {
+    let message: String
+    @State private var animate = false
+    @State private var drawCheck = false
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.45).ignoresSafeArea()
+            VStack(spacing: 18) {
+                ZStack {
+                    Circle()
+                        .fill(HASETTheme.greenPrimary)
+                        .frame(width: 92, height: 92)
+                        .scaleEffect(animate ? 1 : 0.4)
+                        .opacity(animate ? 1 : 0)
+                    CheckmarkShape()
+                        .trim(from: 0, to: drawCheck ? 1 : 0)
+                        .stroke(Color.white, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                        .frame(width: 46, height: 46)
+                }
+                Text(message)
+                    .font(HASETTheme.font(.medium, 17))
+                    .foregroundStyle(HASETTheme.textPrimary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 32)
+            .padding(.vertical, 36)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(HASETTheme.backgroundCard)
+                    .shadow(color: .black.opacity(0.15), radius: 24, x: 0, y: 12)
+            )
+            .padding(32)
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.6)) {
+                animate = true
+            }
+            withAnimation(.easeOut(duration: 0.35).delay(0.18)) {
+                drawCheck = true
+            }
+        }
+        .transition(.opacity)
+    }
+}
